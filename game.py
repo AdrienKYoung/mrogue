@@ -504,7 +504,7 @@ def target_tile(max_range=None):
     y = player.y
     oldMouseX = mouse.cx
     oldMouseY = mouse.cy
-
+    offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
 
     while True:
         libtcod.console_flush()
@@ -532,9 +532,8 @@ def target_tile(max_range=None):
             x += 1
             y += 1
 
-
         if oldMouseX != mouse.cx or oldMouseY != mouse.cy:
-            x, y = mouse.cx, mouse.cy
+            x, y = mouse.cx + offsetx, mouse.cy + offsety
 
         cursor.x = x
         cursor.y = y
@@ -623,8 +622,9 @@ def menu(header, options, width):
 def get_names_under_mouse():
 
     global mouse
-    
-    (x, y) = (mouse.cx, mouse.cy)
+
+    offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
+    (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
     names = [obj.name for obj in objects
                 if (obj.x == x and obj.y == y and (libtcod.map_is_in_fov(fov_map, obj.x, obj.y) or (obj.always_visible and map[obj.x][obj.y].explored)))]
     names = ', '.join(names)
@@ -1004,7 +1004,27 @@ def render_all():
     libtcod.console_print_ex(panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, get_names_under_mouse())
         
     libtcod.console_blit(panel, 0, 0, consts.SCREEN_WIDTH, consts.PANEL_HEIGHT, 0, 0, consts.PANEL_Y)
-    
+
+    # RENDER UI OVERLAY
+
+    libtcod.console_set_default_background(ui_util, libtcod.black)
+    libtcod.console_clear(ui_util)
+
+    libtcod.console_set_default_background(ui, libtcod.black)
+    libtcod.console_clear(ui)
+
+    under = get_names_under_mouse()
+
+    if under != '':
+        unders = under.split(', ')
+        y = 1
+        max_width = 0
+        for line in unders:
+            libtcod.console_print(ui, mouse.cx, mouse.cy + y, line.capitalize())
+            if len(line) > max_width: max_width = len(line)
+            y += 1
+        libtcod.console_blit(ui, mouse.cx, mouse.cy + 1, max_width, y - 1, 0, mouse.cx, mouse.cy + 1, 1.0, 0.5)
+
  
 #############################################
 # Initialization & Main Loop
@@ -1052,8 +1072,8 @@ def new_game():
     game_state = 'playing'
     
     inventory = []
-    # item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball))
-    # inventory.append(item)
+    item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball))
+    inventory.append(item)
 
     memory = []
     # spell = GameObject(0, 0, '?', 'mystery spell', libtcod.yellow, item=Item(use_function=spells.cast_lightning, type="spell"))
@@ -1150,5 +1170,6 @@ libtcod.sys_set_fps(consts.LIMIT_FPS)
 con = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 mapCon = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
 ui = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
+ui_util = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 panel = libtcod.console_new(consts.SCREEN_WIDTH, consts.PANEL_HEIGHT)
 rightPanel = libtcod.console_new(consts.RIGHT_PANEL_WIDTH, consts.RIGHT_PANEL_HEIGHT)
