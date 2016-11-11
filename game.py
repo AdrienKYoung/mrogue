@@ -3,17 +3,7 @@ import math
 import textwrap
 import shelve
 import consts
-
-# Colors
-color_dark_wall = libtcod.dark_grey
-color_dark_wall_c = libtcod.grey
-color_dark_ground = libtcod.darkest_grey
-color_dark_ground_c = libtcod.darker_grey
-color_lit_wall = libtcod.dark_amber
-color_lit_wall_c = libtcod.amber
-color_lit_ground = libtcod.darkest_amber
-color_lit_ground_c = libtcod.darker_amber
-
+import terrain
 
 #############################################
 # Classes
@@ -143,7 +133,9 @@ class PlayerStats:
 
 class Fighter:
 
-    def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=1.0, attack_damage=1, damage_variance=0.15, spell_power=0, death_function=None, loot_table=None):
+    def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=1.0, attack_damage=1,
+                 damage_variance=0.15, spell_power=0, death_function=None, loot_table=None, breath=6,
+                 can_breath_underwater=False):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -159,6 +151,16 @@ class Fighter:
         self.base_damage_variance = damage_variance
         self.base_spell_power = spell_power
         self.base_accuracy = accuracy
+        self.max_breath = breath
+        self.breath = breath
+        self.can_breath_underwater = can_breath_underwater
+
+    def adjust_stamina(self, amount):
+        self.stamina += amount
+        if self.stamina < 0:
+            self.stamina = 0
+        if self.stamina > self.max_stamina:
+            self.stamina = self.max_stamina
 
     def take_damage(self, damage):
         if damage > 0:
@@ -192,6 +194,20 @@ class Fighter:
         self.hp += amount
         if self.hp > self.max_hp:
             self.hp = self.max_hp
+
+    def on_tick(self):
+        # Manage breath/drowning
+        if map[self.owner.x][self.owner.y].tile_type == 'deep water':
+            if not self.can_breath_underwater:
+                if self.breath > 0:
+                    self.breath -= 1
+                else:
+                    drown_damage = int(self.max_hp / 4)
+                    message('The ' + self.owner.name + ' drowns, suffering ' + str(drown_damage) + ' damage!',
+                            libtcod.blue)
+                    self.take_damage(drown_damage)
+        elif self.breath < self.max_breath:
+            self.breath += 1
 
     @property
     def accuracy(self):
@@ -298,20 +314,26 @@ class GameObject:
         
     def move(self, dx, dy):
         if not is_blocked(self.x + dx, self.y + dy):
+            if self.fighter is not None:
+                cost = map[self.x][self.y].stamina_cost
+                if cost > 0:
+                    if self.fighter.stamina >= cost:
+                        self.fighter.adjust_stamina(-cost)
+                    else:
+                        if self.name == 'player':
+                            message("You don't have the stamina leave this space!", libtcod.light_yellow)
+                        return
+                else:
+                    self.fighter.adjust_stamina(consts.STAMINA_REGEN_MOVE)     # gain stamina for moving across normal terrain
             self.x += dx
             self.y += dy
 
     def draw(self):
         if (libtcod.map_is_in_fov(fov_map, self.x, self.y) or
-            (self.always_visible and map[self.x][self.y].explored)):
+                (self.always_visible and map[self.x][self.y].explored)):
             offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
             libtcod.console_set_default_foreground(mapCon, self.color)
             libtcod.console_put_char(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
-        
-    def clear(self):
-        if libtcod.map_is_in_fov(fov_map, self.x, self.y):
-            offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
-            libtcod.console_put_char_ex(mapCon, self.x - offsetx, self.y - offsety, '.', color_lit_ground_c, color_lit_ground )
         
     def move_towards(self, target_x, target_y):
         dx = target_x - self.x
@@ -327,7 +349,7 @@ class GameObject:
         # Scan the map and set all walls to unwalkable
         for y1 in range(consts.MAP_HEIGHT):
             for x1 in range(consts.MAP_WIDTH):
-                libtcod.map_set_properties(fov, x1, y1, not map[x1][y1].block_sight, not map[x1][y1].blocked)
+                libtcod.map_set_properties(fov, x1, y1, not map[x1][y1].blocks_sight, not map[x1][y1].blocks)
         
         # Scan all objects to see if there are objects that must be navigated around
         for obj in objects:
@@ -366,14 +388,50 @@ class GameObject:
         objects.remove(self)
         objects.insert(0, self)
 
+    def on_tick(self):
+        if self.fighter:
+            self.fighter.on_tick()
+
+
 class Tile:
     
-    def __init__(self, blocked, block_sight = None):
+    def __init__(self, tile_type='stone floor'):
         self.explored = False
-        self.blocked = blocked
-        if block_sight is None: block_sight = blocked
-        self.block_sight = block_sight
-        
+        self.tile_type = tile_type
+
+    @property
+    def name(self):
+        return terrain.data[self.tile_type].name
+
+    @property
+    def blocks(self):
+        return terrain.data[self.tile_type].blocks
+
+    @property
+    def blocks_sight(self):
+        return terrain.data[self.tile_type].blocks_sight
+
+    @property
+    def tile_char(self):
+        return terrain.data[self.tile_type].char
+
+    @property
+    def color_fg(self):
+        return terrain.data[self.tile_type].foreground_color
+
+    @property
+    def color_bg(self):
+        return terrain.data[self.tile_type].background_color
+
+    @property
+    def description(self):
+        return terrain.data[self.tile_type].description
+
+    @property
+    def stamina_cost(self):
+        return terrain.data[self.tile_type].stamina_cost
+
+
 class Rect:
 
     def __init__(self, x, y, w, h):
@@ -406,23 +464,27 @@ def get_all_equipped(obj):
     else:
         return []
 
+
 def get_equipped_in_slot(slot):
     for obj in inventory:
         if obj.equipment and obj.equipment.is_equipped and obj.equipment.slot == slot:
             return obj.equipment
     return None
-    
+
+
 def from_dungeon_level(table):
     for (value, level) in reversed(table):
         if dungeon_level >= level:
             return value
     return 0
-    
+
+
 def random_choice(chances_dict):
     chances = chances_dict.values()
     strings = chances_dict.keys()
     return strings[random_choice_index(chances)]
-    
+
+
 def random_choice_index(chances):
     dice = libtcod.random_get_int(0, 1, sum(chances))
     running_sum = 0
@@ -432,7 +494,8 @@ def random_choice_index(chances):
         if dice <= running_sum:
             return choice
         choice += 1
-        
+
+
 def check_level_up():
     level_up_xp = consts.LEVEL_UP_BASE + player.level * consts.LEVEL_UP_FACTOR
     if player.fighter.xp >= level_up_xp:
@@ -453,23 +516,25 @@ def check_level_up():
             player.fighter.power += 1
         elif choice == 2:
             player.fighter.defense += 1
-    
+
+
 def next_level():
     global dungeon_level
 
-    message('You fall down the stairs like a klutz.', libtcod.white)
-    player.fighter.take_damage(3)
+    message('You descend...', libtcod.white)
     dungeon_level += 1
     make_map()
     initialize_fov()
-    
+
+
 def player_death(player):
     global game_state
     message('You\'re dead, sucka.', libtcod.grey)
     game_state = 'dead'
     player.char = '%'
     player.color = libtcod.dark_red
- 
+
+
 def monster_death(monster):
     if monster.fighter.loot_table is not None:
         drop = getLoot(monster.fighter)
@@ -484,6 +549,7 @@ def monster_death(monster):
     monster.ai = None
     monster.name = 'remains of ' + monster.name
     monster.send_to_back()
+
 
 def target_monster(max_range=None):
     while True:
@@ -639,6 +705,7 @@ def message(new_msg, color = libtcod.white):
             del game_msgs[0]
         game_msgs.append( (line, color) )
 
+
 def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
     bar_width = int(float(value) / maximum * total_width)
     
@@ -652,11 +719,12 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
     libtcod.console_set_default_foreground(rightPanel, libtcod.white)
     libtcod.console_print_ex(rightPanel, x + total_width / 2, y, libtcod.BKGND_NONE, libtcod.CENTER,
         name + ': ' + str(value) + '/' + str(maximum))
-    
+
+
 def is_blocked(x, y):
     global map
 
-    if map[x][y].blocked:
+    if map[x][y].blocks:
         return True
         
     for object in objects:
@@ -664,6 +732,7 @@ def is_blocked(x, y):
             return True
             
     return False
+
 
 def place_objects(room):
 
@@ -689,11 +758,15 @@ def place_objects(room):
             # choice = 'goblin'
             # HACK ALERT HACK ALERT
             if choice == 'golem':
-                fighter_component = Fighter(hp=100, attack_damage=30, armor=50, evasion=5, accuracy=0.5, xp=75, death_function=monster_death, loot_table=loot.table['default'])
+                fighter_component = Fighter(hp=100, attack_damage=30, armor=50, evasion=5, accuracy=0.5, xp=75,
+                                            death_function=monster_death, loot_table=loot.table['default'],
+                                            can_breath_underwater=True)
                 ai_component = BasicMonster(speed=0.5)
                 monster = GameObject(x, y, 'G', 'golem', libtcod.sepia, blocks=True, fighter=fighter_component, ai=ai_component)
             elif choice == 'goblin':
-                fighter_component = Fighter(hp=20, attack_damage=10, armor=5, evasion=15, accuracy=0.65, xp=75, death_function=monster_death, loot_table=loot.table['default'])
+                fighter_component = Fighter(hp=20, attack_damage=10, armor=5, evasion=15, accuracy=0.65, xp=75,
+                                            death_function=monster_death, loot_table=loot.table['default'],
+                                            can_breath_underwater=True)
                 ai_component = BasicMonster(speed=0.8)
                 monster = GameObject(x, y, 'g', 'goblin', libtcod.desaturated_green, blocks=True, fighter=fighter_component, ai=ai_component)
                 
@@ -726,32 +799,40 @@ def place_objects(room):
                 item = GameObject(x, y, '[', 'shield', libtcod.yellow, equipment=equipment_component, always_visible = True)
             objects.append(item)
             item.send_to_back()
-                
+
+
 def create_room(room):
     global map
     for x in range(room.x1 + 1, room.x2):
         for y in range(room.y1 + 1, room.y2):
-            map[x][y].blocked = False
-            map[x][y].block_sight = False
+            dice = libtcod.random_get_int(0, 0, 3)
+            dice = 1
+            if dice == 0:
+                map[x][y].tile_type = 'shallow water'
+            elif dice == 1:
+                map[x][y].tile_type = 'deep water'
+            else:
+                map[x][y].tile_type = 'stone floor'
+
 
 def create_h_tunnel(x1, x2, y):
     global map
     for x in range(min(x1, x2), max(x1, x2) + 1):
-        map[x][y].blocked = False
-        map[x][y].block_sight = False
-            
+            map[x][y].tile_type = 'stone floor'
+
+
 def create_v_tunnel(y1, y2, x):
     global map
     for y in range(min(y1, y2), max(y1, y2) + 1):
-        map[x][y].blocked = False
-        map[x][y].block_sight = False
-            
+            map[x][y].tile_type = 'stone floor'
+
+
 def make_map():
     global map, objects, stairs
     
     objects = [player]
     
-    map = [[ Tile(True)
+    map = [[ Tile('stone wall')
         for y in range(consts.MAP_HEIGHT) ]
             for x in range(consts.MAP_WIDTH) ]
 
@@ -794,7 +875,8 @@ def make_map():
     stairs = GameObject(new_x, new_y, '<', 'stairs downward', libtcod.white, always_visible=True)
     objects.append(stairs)
     stairs.send_to_back()
-    
+
+
 def player_move_or_attack(dx, dy):
 
     global fov_recompute
@@ -814,6 +896,7 @@ def player_move_or_attack(dx, dy):
         player.move(dx, dy)
         fov_recompute = True
 
+
 def getLoot(monster):
     loot_table = monster.loot_table
     drop = loot_table[libtcod.random_get_int(0,0,len(loot_table) - 1)]
@@ -822,13 +905,14 @@ def getLoot(monster):
         item = Item(use_function=proto['on_use'], type=proto['type'])
         return GameObject(monster.owner.x,monster.owner.y,proto['char'],proto['name'],proto['color'],item=item)
 
+
 def handle_keys():
  
     global game_state, stairs
     global key
     
-    #key = libtcod.console_check_for_keypress()  #real-time
-    #key = libtcod.console_wait_for_keypress(True)  #turn-based
+    # key = libtcod.console_check_for_keypress()  #real-time
+    # key = libtcod.console_wait_for_keypress(True)  #turn-based
  
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         #Alt+Enter: toggle fullscreen
@@ -838,10 +922,10 @@ def handle_keys():
         return 'exit'  #exit game
  
     if game_state == 'playing':
- 
- 
-        #movement keys - assume fov_recompute is true, then set to false if no movement
+
+        # movement keys - assume fov_recompute is true, then set to false if no movement
         fov_recompute = True
+        key_char = chr(key.c)
         if key.vk == libtcod.KEY_UP:
             player_move_or_attack(0, -1)
         elif key.vk == libtcod.KEY_DOWN:
@@ -866,36 +950,43 @@ def handle_keys():
             player_move_or_attack(0, 1)
         elif key.vk == libtcod.KEY_KP3:
             player_move_or_attack(1, 1)
-        elif key.vk == libtcod.KEY_KP5:
+        elif key.vk == libtcod.KEY_KP5 or key_char == 's':
+            player.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)    # gain stamina for standing still
             pass
         else:
-            key_char = chr(key.c)
             if key_char == 'g':
                 for object in objects:
                     if object.x == player.x and object.y == player.y and object.item:
                         object.item.pick_up()
-                        break
+                        return 'picked-up-item'
             if key_char == 'i':
                 chosen_item = inventory_menu('Press the key next to an item to use it, or any other to cancel.\n')
                 if chosen_item is not None:
                     chosen_item.use()
+                    return 'used-item'
             if key_char == 'd':
                 chosen_item = inventory_menu('Press the key next to an item to drop it, or any other to cancel.\n')
                 if chosen_item is not None:
                     chosen_item.drop()
+                    return 'dropped-item'
             if key_char == ',' and key.shift:
                 if stairs.x == player.x and stairs.y == player.y:
                     next_level()
             if key_char == 'c':
                 level_up_xp = consts.LEVEL_UP_BASE + player.level * consts.LEVEL_UP_FACTOR
-                msgbox('Character Information\n\nLevel: ' + str(player.level) + '\nExperience: ' + str(player.fighter.xp) +
-                    '\nExperience to level up: ' + str(level_up_xp) + '\n\nMaximum HP: ' + str(player.fighter.max_hp) +
-                    '\nAttack: ' + str(player.fighter.power) + '\nDefense: ' + str(player.fighter.defense), consts.CHARACTER_SCREEN_WIDTH)
+                msgbox('Character Information\n\nLevel: ' + str(player.level) + '\nExperience: ' +
+                       str(player.fighter.xp) + '\nExperience to level up: ' + str(level_up_xp) + '\n\nMaximum HP: ' +
+                       str(player.fighter.max_hp) + '\nAttack: ' + str(player.fighter.power) + '\nDefense: ' +
+                       str(player.fighter.defense),
+                       consts.CHARACTER_SCREEN_WIDTH)
             if key_char == 'z':
                 if len(memory) == 0:
                     message('You have no spells in your memory to cast.', libtcod.purple)
+                elif map[player.x][player.y].tile_type == 'deep water':
+                    message('You cannot cast spells underwater.', libtcod.purple)
                 else:
                     cast_spell()
+                    return 'casted-spell'
             return 'didnt-take-turn'
 
 
@@ -911,6 +1002,7 @@ def cast_spell():
         memory[choice - 1].item.use()
     else:
         message('No such spell.', libtcod.purple)
+
 
 def clear_map():
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
@@ -934,23 +1026,22 @@ def render_all():
     
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
-            wall = map[x][y].block_sight
+            # wall = map[x][y].blocks_sight
             visible = libtcod.map_is_in_fov(fov_map, x, y)
+            # color_fg = copy.copy(map[x][y].color_fg)
+            # color_bg = copy.copy(map[x][y].color_bg)
+            color_fg = libtcod.Color(map[x][y].color_fg[0], map[x][y].color_fg[1], map[x][y].color_fg[2])
+            color_bg = libtcod.Color(map[x][y].color_bg[0], map[x][y].color_bg[1], map[x][y].color_bg[2])
             if not visible:
                 if map[x][y].explored:
-                    if wall:
-                        libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, '#', color_dark_wall_c, color_dark_wall )
-                    else:
-                        libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, '.', color_dark_ground_c, color_dark_ground )
+                    libtcod.color_scale_HSV(color_fg, 0.1, 0.4)
+                    libtcod.color_scale_HSV(color_bg, 0.1, 0.4)
+                    libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, map[x][y].tile_char, color_fg, color_bg)
             else:
-                if wall:
-                    libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, '#', color_lit_wall_c, color_lit_wall )
-                else:
-                    libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, '.', color_lit_ground_c, color_lit_ground )
+                libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, map[x][y].tile_char, color_fg, color_bg)
                 map[x][y].explored = True
-    
-    
-    #draw all objects in the list
+
+    # draw all objects in the list
     for object in objects:
         if object != player:
             object.draw()
@@ -958,7 +1049,7 @@ def render_all():
     
     libtcod.console_blit(mapCon, 0, 0, consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 0, 0, 0)
 
-    # REDNER RIGHT PANEL
+    # RENDER RIGHT PANEL
 
     libtcod.console_set_default_background(rightPanel, libtcod.black)
     libtcod.console_clear(rightPanel)
@@ -966,25 +1057,33 @@ def render_all():
     render_bar(1, 1, consts.BAR_WIDTH, 'HP', player.fighter.hp, player.fighter.max_hp,
                libtcod.dark_red, libtcod.darker_red)
 
-    if player.fighter.stamina > 0:
-        render_bar(1, 2, consts.BAR_WIDTH, 'Stamina', player.fighter.stamina, player.fighter.max_stamina,
+    render_bar(1, 2, consts.BAR_WIDTH, 'Stamina', player.fighter.stamina, player.fighter.max_stamina,
                    libtcod.dark_green, libtcod.darker_green)
 
+    # Breath
+    if player.fighter.breath < player.fighter.max_breath:
+        breath_text = ''
+        for num in range(0, player.fighter.breath):
+            breath_text += 'O '
+        libtcod.console_set_default_foreground(rightPanel, libtcod.dark_blue)
+        libtcod.console_print(rightPanel, 1, 3, breath_text)
+        libtcod.console_set_default_foreground(rightPanel, libtcod.white)
+
     # Base stats
-    libtcod.console_print(rightPanel, 1, 4, 'INT: ' + str(player.playerStats.int))
-    libtcod.console_print(rightPanel, 1, 5, 'WIZ: ' + str(player.playerStats.wiz))
-    libtcod.console_print(rightPanel, 1, 6, 'STR: ' + str(player.playerStats.str))
-    libtcod.console_print(rightPanel, 1, 7, 'AGI: ' + str(player.playerStats.agi))
+    libtcod.console_print(rightPanel, 1, 5, 'INT: ' + str(player.playerStats.int))
+    libtcod.console_print(rightPanel, 1, 6, 'WIZ: ' + str(player.playerStats.wiz))
+    libtcod.console_print(rightPanel, 1, 7, 'STR: ' + str(player.playerStats.str))
+    libtcod.console_print(rightPanel, 1, 8, 'AGI: ' + str(player.playerStats.agi))
 
     # Level/XP
-    libtcod.console_print(rightPanel, 1, 9, 'Lvl: ' + str(player.level))
-    libtcod.console_print(rightPanel, 1, 10, 'XP:  ' + str(player.fighter.xp))
+    libtcod.console_print(rightPanel, 1, 10, 'Lvl: ' + str(player.level))
+    libtcod.console_print(rightPanel, 1, 11, 'XP:  ' + str(player.fighter.xp))
 
     # Spells in memory
-    libtcod.console_print(rightPanel, 1, 12, 'Spells in memory:')
+    libtcod.console_print(rightPanel, 1, 13, 'Spells in memory:')
     y = 1
     for spell in memory:
-        libtcod.console_print(rightPanel, 1, 12 + y, str(y) + ') ' + spell.name)
+        libtcod.console_print(rightPanel, 1, 13 + y, str(y) + ') ' + spell.name)
         y += 1
 
     libtcod.console_blit(rightPanel, 0, 0, consts.RIGHT_PANEL_WIDTH, consts.RIGHT_PANEL_HEIGHT, 0, consts.MAP_VIEWPORT_WIDTH, 0)
@@ -1082,7 +1181,8 @@ def new_game():
     #Welcome message
     game_msgs = []
     message('Welcome to the dungeon...', libtcod.gold)
-    
+
+
 def initialize_fov():
     global fov_recompute, fov_map
     
@@ -1093,7 +1193,8 @@ def initialize_fov():
     fov_map = libtcod.map_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
-            libtcod.map_set_properties(fov_map, x, y, not map[x][y].block_sight, not map[x][y].blocked)
+            libtcod.map_set_properties(fov_map, x, y, not map[x][y].blocks_sight, not map[x][y].blocks)
+
 
 def save_game():
     file = shelve.open('savegame', 'n')
@@ -1107,7 +1208,8 @@ def save_game():
     file['game_state'] = game_state
     file['dungeon_level'] = dungeon_level
     file.close()
-            
+
+
 def load_game():
     global map, objects, player, inventory, memory, game_msgs, game_state, dungeon_level, stairs
 
@@ -1124,7 +1226,8 @@ def load_game():
     file.close()
     
     initialize_fov()
-            
+
+
 def play_game():
     global key, mouse
     player_action = None
@@ -1133,36 +1236,35 @@ def play_game():
     key = libtcod.Key()
     while not libtcod.console_is_window_closed():
 
-        #render the screen
+        # render the screen
         libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE,key,mouse)
         render_all()
         libtcod.console_flush()
-	
-        #check for level up
+
+        # check for level up
         check_level_up()
     
-        #erase all objects at their old locations, before they move
-        for object in objects:
-            object.clear()
+        # erase the map so it can be redrawn next frame
         clear_map()
-	
-        #handle keys and exit game if needed
+
+        # handle keys and exit game if needed
         player_action = handle_keys()
         if player_action == 'exit':
             save_game()
             break
-            
-        #Let monsters take their turn
+
+        # Let monsters take their turn
         if game_state == 'playing' and player_action != 'didnt-take-turn':
+            player.on_tick()
             for object in objects:
                 if object.ai:
                     object.ai.take_turn()
+                    object.on_tick()
 
 
-#my modules
+# my modules
 import spells
 import loot
-                    
 
 libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
 libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'Let\'s Try Making a Roguelike', False)
