@@ -322,11 +322,12 @@ class GameObject:
                     else:
                         if self.name == 'player':
                             message("You don't have the stamina leave this space!", libtcod.light_yellow)
-                        return
+                        return False
                 else:
                     self.fighter.adjust_stamina(consts.STAMINA_REGEN_MOVE)     # gain stamina for moving across normal terrain
             self.x += dx
             self.y += dy
+            return True
 
     def draw(self):
         if (libtcod.map_is_in_fov(fov_map, self.x, self.y) or
@@ -537,7 +538,7 @@ def player_death(player):
 
 def monster_death(monster):
     if monster.fighter.loot_table is not None:
-        drop = getLoot(monster.fighter)
+        drop = get_loot(monster.fighter)
         if drop:
             objects.append(drop)
             drop.send_to_back()
@@ -892,12 +893,14 @@ def player_move_or_attack(dx, dy):
             
     if target is not None:
         player.fighter.attack(target)
+        return True
     else:
-        player.move(dx, dy)
+        value = player.move(dx, dy)
         fov_recompute = True
+        return value
 
 
-def getLoot(monster):
+def get_loot(monster):
     loot_table = monster.loot_table
     drop = loot_table[libtcod.random_get_int(0,0,len(loot_table) - 1)]
     if drop:
@@ -926,32 +929,34 @@ def handle_keys():
         # movement keys - assume fov_recompute is true, then set to false if no movement
         fov_recompute = True
         key_char = chr(key.c)
+        moved = False
         if key.vk == libtcod.KEY_UP:
-            player_move_or_attack(0, -1)
+            moved = player_move_or_attack(0, -1)
         elif key.vk == libtcod.KEY_DOWN:
-            player_move_or_attack(0, 1)
+            moved = player_move_or_attack(0, 1)
         elif key.vk == libtcod.KEY_LEFT:
-            player_move_or_attack(-1, 0)
+            moved = player_move_or_attack(-1, 0)
         elif key.vk == libtcod.KEY_RIGHT:
-            player_move_or_attack(1, 0)
+            moved = player_move_or_attack(1, 0)
         elif key.vk == libtcod.KEY_KP7:
-            player_move_or_attack(-1, -1)
+            moved = player_move_or_attack(-1, -1)
         elif key.vk == libtcod.KEY_KP8:
-            player_move_or_attack(0, -1)
+            moved = player_move_or_attack(0, -1)
         elif key.vk == libtcod.KEY_KP9:
-            player_move_or_attack(1, -1)
+            moved = player_move_or_attack(1, -1)
         elif key.vk == libtcod.KEY_KP4:
-            player_move_or_attack(-1, 0)
+            moved = player_move_or_attack(-1, 0)
         elif key.vk == libtcod.KEY_KP6:
-            player_move_or_attack(1, 0)
+            moved = player_move_or_attack(1, 0)
         elif key.vk == libtcod.KEY_KP1:
-            player_move_or_attack(-1, 1)
+            moved = player_move_or_attack(-1, 1)
         elif key.vk == libtcod.KEY_KP2:
-            player_move_or_attack(0, 1)
+            moved = player_move_or_attack(0, 1)
         elif key.vk == libtcod.KEY_KP3:
-            player_move_or_attack(1, 1)
+            moved = player_move_or_attack(1, 1)
         elif key.vk == libtcod.KEY_KP5 or key_char == 's':
-            player.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)    # gain stamina for standing still
+            player.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT) # gain stamina for standing still
+            moved = True  # so that this counts as a turn passing
             pass
         else:
             if key_char == 'g':
@@ -987,6 +992,8 @@ def handle_keys():
                 else:
                     cast_spell()
                     return 'casted-spell'
+            return 'didnt-take-turn'
+        if not moved:
             return 'didnt-take-turn'
 
 
