@@ -497,26 +497,30 @@ def random_choice_index(chances):
         choice += 1
 
 
-def check_level_up():
-    level_up_xp = consts.LEVEL_UP_BASE + player.level * consts.LEVEL_UP_FACTOR
-    if player.fighter.xp >= level_up_xp:
-        player.level += 1
-        player.fighter.xp -= level_up_xp
-        message('You grow stronger! You have reached level ' + str(player.level) + '!', libtcod.green)
-        choice = None
-        while choice == None:
-            choice = menu('Level up! Choose a stat to raise:\n',
-            ['Constitution (+20 HP, from ' + str(player.fighter.base_max_hp) + ')',
-                'Strength (+1 attack, from ' + str(player.fighter.base_power) + ')',
-                'Agility (+1 defense, from ' + str(player.fighter.base_defense) + ')'], consts.LEVEL_SCREEN_WIDTH)
-                
-        if choice == 0:
-            player.fighter.max_hp += 20
-            player.fighter.hp += 20
-        elif choice == 1:
-            player.fighter.power += 1
-        elif choice == 2:
-            player.fighter.defense += 1
+def level_up():
+    player.level += 1
+    message('You grow stronger! You have reached level ' + str(player.level) + '!', libtcod.green)
+    choice = None
+    while choice == None:
+        choice = menu('Level up! Choose a stat to raise:\n',
+        ['Constitution (+20 HP, from ' + str(player.fighter.base_max_hp) + ')',
+            'Strength (+1 attack, from ' + str(player.fighter.base_power) + ')',
+            'Agility (+1 defense, from ' + str(player.fighter.base_defense) + ')',
+            'Intelligence (increases spell dmage)',
+            'Wisdom (increases spell slots, spell utility)'
+         ], consts.LEVEL_SCREEN_WIDTH)
+
+    if choice == 0:
+        player.fighter.max_hp += 20
+        player.fighter.hp += 20
+    elif choice == 1:
+        player.playerStats.str += 1
+    elif choice == 2:
+        player.playerStats.agi += 1
+    elif choice == 3:
+        player.playerStats.int += 1
+    elif choice == 4:
+        player.playerStats.wis += 1
 
 
 def next_level():
@@ -906,7 +910,7 @@ def get_loot(monster):
     if drop:
         proto = loot.proto[drop]
         item = Item(use_function=proto['on_use'], type=proto['type'])
-        return GameObject(monster.owner.x,monster.owner.y,proto['char'],proto['name'],proto['color'],item=item)
+        return GameObject(monster.owner.x, monster.owner.y, proto['char'], proto['name'], proto['color'], item=item)
 
 
 def handle_keys():
@@ -978,9 +982,7 @@ def handle_keys():
                 if stairs.x == player.x and stairs.y == player.y:
                     next_level()
             if key_char == 'c':
-                level_up_xp = consts.LEVEL_UP_BASE + player.level * consts.LEVEL_UP_FACTOR
-                msgbox('Character Information\n\nLevel: ' + str(player.level) + '\nExperience: ' +
-                       str(player.fighter.xp) + '\nExperience to level up: ' + str(level_up_xp) + '\n\nMaximum HP: ' +
+                msgbox('Character Information\n\nLevel: ' + str(player.level) + '\n\nMaximum HP: ' +
                        str(player.fighter.max_hp) + '\nAttack: ' + str(player.fighter.power) + '\nDefense: ' +
                        str(player.fighter.defense),
                        consts.CHARACTER_SCREEN_WIDTH)
@@ -1247,9 +1249,6 @@ def play_game():
         libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE,key,mouse)
         render_all()
         libtcod.console_flush()
-
-        # check for level up
-        check_level_up()
     
         # erase the map so it can be redrawn next frame
         clear_map()
