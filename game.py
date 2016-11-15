@@ -433,6 +433,10 @@ class Tile:
     def stamina_cost(self):
         return terrain.data[self.tile_type].stamina_cost
 
+    @property
+    def jumpable(self):
+        return terrain.data[self.tile_type].jumpable
+
 
 class Rect:
 
@@ -610,10 +614,13 @@ def target_tile(max_range=None):
         cursor.x = x
         cursor.y = y
 
-        if ((mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and libtcod.map_is_in_fov(fov_map, x, y) and
-            (max_range is None or player.distance(x, y) <= max_range)):
-            objects.remove(cursor)
-            return x, y
+        if (mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and libtcod.map_is_in_fov(fov_map, x, y):
+            if max_range is None or player.distance(x, y) <= max_range:
+                objects.remove(cursor)
+                return x, y
+            else:
+                objects.remove(cursor)
+                return None, None  # out of range
             
         if mouse.rbutton_pressed or key.vk == libtcod.KEY_ESCAPE:
             objects.remove(cursor)
@@ -698,7 +705,7 @@ def get_names_under_mouse():
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
     (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
     names = [obj.name for obj in objects
-                if (obj.x == x and obj.y == y and (libtcod.map_is_in_fov(fov_map, obj.x, obj.y) or (obj.always_visible and map[obj.x][obj.y].explored)))]
+                if (obj.x == x and obj.y == y and (libtcod.map_is_in_fov(fov_map, obj.x, obj.y) or (obj.always_visible and map[obj.x][obj.y].explored)) and obj.name != 'cursor')]
     names = ', '.join(names)
     return names.capitalize()
 
@@ -709,7 +716,7 @@ def message(new_msg, color = libtcod.white):
     for line in new_msg_lines:
         if len(game_msgs) == consts.MSG_HEIGHT:
             del game_msgs[0]
-        game_msgs.append( (line, color) )
+        game_msgs.append((line, color))
 
 
 def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
@@ -749,7 +756,7 @@ def place_objects(room):
     # monster_chances['creature'] = from_dungeon_level([[20, 2], [35, 4], [80, 8]])
     
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
-    item_chances = { 'heal':70, 'lightning':10, 'confuse':10, 'fireball':10 }
+    item_chances = {'heal':70, 'lightning':10, 'confuse':10, 'fireball':10 }
     item_chances['sword'] = 25
     item_chances['shield'] = 25
 
@@ -1002,15 +1009,42 @@ def handle_keys():
                 else:
                     cast_spell()
                     return 'casted-spell'
+            if key_char == 'j':
+                if player.fighter.stamina >= consts.JUMP_STAMINA_COST:
+                    if map[player.x][player.y].jumpable:
+                        return jump()
+                    else:
+                        message('You cannot jump from this terrain!', libtcod.light_yellow)
+                else:
+                    message("You don't have the stamina to jump!", libtcod.light_yellow)
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
 
 
+def jump():
+    global player, fov_recompute
+    message('Jump to where?', libtcod.white)
+
+    render_all()
+    libtcod.console_flush()
+    (x, y) = target_tile(consts.BASE_JUMP_RANGE)
+    if x is not None and y is not None:
+        if not is_blocked(x, y):
+            player.x = x
+            player.y = y
+            fov_recompute = True
+            player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
+            return 'jumped'
+
+    message('Cannot jump there', libtcod.white)
+    return 'didnt-take-turn'
+
+
 def cast_spell():
     message('Cast which spell?', libtcod.purple)
 
-    render_all();
+    render_all()
     libtcod.console_flush()
 
     choice = libtcod.console_wait_for_keypress(True).c - 48
