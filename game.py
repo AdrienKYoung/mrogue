@@ -4,6 +4,7 @@ import textwrap
 import shelve
 import consts
 import terrain
+import random
 
 #############################################
 # Classes
@@ -876,10 +877,17 @@ def make_map():
             place_objects(new_room)
             rooms.append(new_room)
             num_rooms += 1
-            
-    stairs = GameObject(new_x, new_y, '<', 'stairs downward', libtcod.white, always_visible=True)
+
+    #Generate every-floor random features
+    sample = random.sample(rooms,2)
+    x,y = sample[0].center()
+    stairs = GameObject(x, y, '<', 'stairs downward', libtcod.white, always_visible=True)
     objects.append(stairs)
     stairs.send_to_back()
+    x, y = sample[1].center()
+    level_shrine = GameObject(x,y, '=', 'shrine of power', libtcod.white, always_visible=True)
+    objects.append(level_shrine)
+    level_shrine.send_to_back()
 
 
 def player_move_or_attack(dx, dy):
