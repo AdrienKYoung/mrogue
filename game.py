@@ -287,7 +287,7 @@ class BasicMonster:
 
 class GameObject:
 
-    def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None, playerStats=None, always_visible=False):
+    def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None, playerStats=None, always_visible=False, interact=None):
         self.x = x
         self.y = y
         self.char = char
@@ -296,6 +296,7 @@ class GameObject:
         self.blocks = blocks
         self.fighter = fighter
         self.always_visible = always_visible
+        self.interact = interact
         if self.fighter:
             self.fighter.owner = self
         self.ai = ai
@@ -502,7 +503,7 @@ def random_choice_index(chances):
         choice += 1
 
 
-def level_up():
+def level_up(altar = None):
     player.level += 1
     message('You grow stronger! You have reached level ' + str(player.level) + '!', libtcod.green)
     choice = None
@@ -527,6 +528,8 @@ def level_up():
     elif choice == 4:
         player.playerStats.wis += 1
 
+    if altar:
+        objects.remove(altar)
 
 def next_level():
     global dungeon_level
@@ -901,7 +904,7 @@ def make_map():
     objects.append(stairs)
     stairs.send_to_back()
     x, y = sample[1].center()
-    level_shrine = GameObject(x,y, '=', 'shrine of power', libtcod.white, always_visible=True)
+    level_shrine = GameObject(x,y, '=', 'shrine of power', libtcod.white, always_visible=True, interact=level_up)
     objects.append(level_shrine)
     level_shrine.send_to_back()
 
@@ -989,9 +992,12 @@ def handle_keys():
         else:
             if key_char == 'g':
                 for object in objects:
-                    if object.x == player.x and object.y == player.y and object.item:
-                        object.item.pick_up()
-                        return 'picked-up-item'
+                    if object.x == player.x and object.y == player.y:
+                        if object.item:
+                            object.item.pick_up()
+                            return 'picked-up-item'
+                        elif object.interact:
+                            object.interact(object)
             if key_char == 'i':
                 chosen_item = inventory_menu('Press the key next to an item to use it, or any other to cancel.\n')
                 if chosen_item is not None:
