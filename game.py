@@ -580,7 +580,11 @@ def object_at_coords(x, y):
 
     ops = [t for t in objects if (t.x == x and t.y == y)]
     if len(ops) > 1:
-        return ops[menu("Which object?", [o.name for o in ops], 20)]
+        menu_choice = menu("Which object?", [o.name for o in ops], 20)
+        if menu_choice is not None:
+            return ops[menu_choice]
+        else:
+            return None
     elif len(ops) == 0:
         return dungeon_map[x][y]
     else:
@@ -689,6 +693,11 @@ def menu(header, options, width):
         header_height = 0
 
     height = len(options) + header_height
+
+    libtcod.console_clear(window)
+    render_all()
+    libtcod.console_flush()
+
 
     libtcod.console_set_default_foreground(window, libtcod.white)
     libtcod.console_print_rect_ex(window, 0, 0, width, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
@@ -1040,12 +1049,9 @@ def handle_keys():
             if key_char == 'e':
                 x, y = target_tile()
                 obj = object_at_coords(x, y)
-                libtcod.console_clear(window)
-                render_all()
-                libtcod.console_flush()
                 if obj and hasattr(obj, 'description'):
                     menu(obj.name + '\n' + obj.description, ['back'], 20)
-                else:
+                elif obj is not None:
                     menu(obj.name, ['back'], 20)
             return 'didnt-take-turn'
         if not moved:
@@ -1097,6 +1103,9 @@ def render_all():
     global fov_map, color_dark_wall, color_lit_wall
     global color_dark_ground, color_lit_ground
     global fov_recompute
+
+    if not in_game:
+        return
 
     libtcod.console_set_default_foreground(mapCon, libtcod.white)
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
@@ -1238,8 +1247,10 @@ def main_menu():
     
 
 def new_game():
-    global player, inventory, game_msgs, game_state, dungeon_level, memory
-    
+    global player, inventory, game_msgs, game_state, dungeon_level, memory, in_game
+
+    in_game = True
+
     #create object representing the player
     fighter_component = Fighter(hp=100, xp=0, stamina=100, death_function=player_death)
     player = GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component, playerStats=PlayerStats())
@@ -1292,7 +1303,9 @@ def save_game():
 
 
 def load_game():
-    global dungeon_map, objects, player, inventory, memory, game_msgs, game_state, dungeon_level, stairs
+    global dungeon_map, objects, player, inventory, memory, game_msgs, game_state, dungeon_level, stairs, in_game
+
+    in_game = True
 
     file = shelve.open('savegame', 'r')
     dungeon_map = file['map']
@@ -1310,7 +1323,7 @@ def load_game():
 
 
 def play_game():
-    global key, mouse
+    global key, mouse, game_state, in_game
     player_action = None
     
     mouse = libtcod.Mouse()
@@ -1329,6 +1342,7 @@ def play_game():
         player_action = handle_keys()
         if player_action == 'exit':
             save_game()
+            in_game = False
             break
 
         # Let monsters take their turn
@@ -1344,6 +1358,7 @@ def play_game():
 import spells
 import loot
 
+in_game = False
 libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
 libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'Let\'s Try Making a Roguelike', False)
 libtcod.sys_set_fps(consts.LIMIT_FPS)
