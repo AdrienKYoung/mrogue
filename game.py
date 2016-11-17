@@ -531,6 +531,7 @@ def level_up(altar = None):
     if altar:
         objects.remove(altar)
 
+
 def next_level():
     global dungeon_level
 
@@ -574,16 +575,18 @@ def target_monster(max_range=None):
                 return obj
 
 
-def object_at_coords(x,y):
+def object_at_coords(x, y):
     global dungeon_map
 
     ops = [t for t in objects if (t.x == x and t.y == y)]
     if len(ops) > 1:
-        return ops[menu("Which object?",[o.name for o in ops],20)]
+        return ops[menu("Which object?", [o.name for o in ops], 20)]
     elif len(ops) == 0:
         return dungeon_map[x][y]
     else:
         return ops[0]
+
+
 def target_tile(max_range=None):
     global key, mouse
 
@@ -677,14 +680,16 @@ def msgbox(text, width=50):
 
 
 def menu(header, options, width):
+    global window
+
     if len(options) > 26: raise ValueError('Cannot have a menu with more than 26 options.')
     
     header_height = libtcod.console_get_height_rect(con, 0, 0, width, consts.SCREEN_HEIGHT, header)
-    if header == '': header_height = 0
-    
+    if header == '':
+        header_height = 0
+
     height = len(options) + header_height
-    window = libtcod.console_new(width, height)
-    
+
     libtcod.console_set_default_foreground(window, libtcod.white)
     libtcod.console_print_rect_ex(window, 0, 0, width, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
     y = header_height
@@ -1026,19 +1031,22 @@ def handle_keys():
                     return 'casted-spell'
             if key_char == 'j':
                 if player.fighter.stamina >= consts.JUMP_STAMINA_COST:
-                    if map[player.x][player.y].jumpable:
+                    if dungeon_map[player.x][player.y].jumpable:
                         return jump()
                     else:
                         message('You cannot jump from this terrain!', libtcod.light_yellow)
                 else:
                     message("You don't have the stamina to jump!", libtcod.light_yellow)
             if key_char == 'e':
-                x,y = target_tile()
-                obj = object_at_coords(x,y)
-                if obj and hasattr(obj,'description'):
-                    menu(obj.name + '\n' + obj.description,['back'],20)
+                x, y = target_tile()
+                obj = object_at_coords(x, y)
+                libtcod.console_clear(window)
+                render_all()
+                libtcod.console_flush()
+                if obj and hasattr(obj, 'description'):
+                    menu(obj.name + '\n' + obj.description, ['back'], 20)
                 else:
-                    menu(obj.name,['back'],20)
+                    menu(obj.name, ['back'], 20)
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
@@ -1340,6 +1348,7 @@ libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GRE
 libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'Let\'s Try Making a Roguelike', False)
 libtcod.sys_set_fps(consts.LIMIT_FPS)
 con = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
+window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 mapCon = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
 ui = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 ui_util = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
