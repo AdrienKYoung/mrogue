@@ -198,7 +198,7 @@ class Fighter:
 
     def on_tick(self):
         # Manage breath/drowning
-        if map[self.owner.x][self.owner.y].tile_type == 'deep water':
+        if dungeon_map[self.owner.x][self.owner.y].tile_type == 'deep water':
             if not self.can_breath_underwater:
                 if self.breath > 0:
                     self.breath -= 1
@@ -316,7 +316,7 @@ class GameObject:
     def move(self, dx, dy):
         if not is_blocked(self.x + dx, self.y + dy):
             if self.fighter is not None:
-                cost = map[self.x][self.y].stamina_cost
+                cost = dungeon_map[self.x][self.y].stamina_cost
                 if cost > 0:
                     if self.fighter.stamina >= cost:
                         self.fighter.adjust_stamina(-cost)
@@ -332,7 +332,7 @@ class GameObject:
 
     def draw(self):
         if (libtcod.map_is_in_fov(fov_map, self.x, self.y) or
-                (self.always_visible and map[self.x][self.y].explored)):
+                (self.always_visible and dungeon_map[self.x][self.y].explored)):
             offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
             libtcod.console_set_default_foreground(mapCon, self.color)
             libtcod.console_put_char(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
@@ -351,7 +351,7 @@ class GameObject:
         # Scan the map and set all walls to unwalkable
         for y1 in range(consts.MAP_HEIGHT):
             for x1 in range(consts.MAP_WIDTH):
-                libtcod.map_set_properties(fov, x1, y1, not map[x1][y1].blocks_sight, not map[x1][y1].blocks)
+                libtcod.map_set_properties(fov, x1, y1, not dungeon_map[x1][y1].blocks_sight, not dungeon_map[x1][y1].blocks)
         
         # Scan all objects to see if there are objects that must be navigated around
         for obj in objects:
@@ -571,6 +571,16 @@ def target_monster(max_range=None):
                 return obj
 
 
+def object_at_coords(x,y):
+    global dungeon_map
+
+    ops = [t for t in objects if (t.x == x and t.y == y)]
+    if len(ops) > 1:
+        return ops[menu("Which object?",[o.name for o in ops],20)]
+    elif len(ops) == 0:
+        return dungeon_map[x][y]
+    else:
+        return ops[0]
 def target_tile(max_range=None):
     global key, mouse
 
@@ -735,9 +745,8 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
 
 
 def is_blocked(x, y):
-    global map
-
-    if map[x][y].blocks:
+    global dungeon_map
+    if dungeon_map[x][y].blocks:
         return True
         
     for object in objects:
@@ -815,37 +824,37 @@ def place_objects(room):
 
 
 def create_room(room):
-    global map
+    global dungeon_map
     for x in range(room.x1 + 1, room.x2):
         for y in range(room.y1 + 1, room.y2):
             dice = libtcod.random_get_int(0, 0, 3)
             dice = 1
             if dice == 0:
-                map[x][y].tile_type = 'shallow water'
+                dungeon_map[x][y].tile_type = 'shallow water'
             elif dice == 1:
-                map[x][y].tile_type = 'deep water'
+                dungeon_map[x][y].tile_type = 'deep water'
             else:
-                map[x][y].tile_type = 'stone floor'
+                dungeon_map[x][y].tile_type = 'stone floor'
 
 
 def create_h_tunnel(x1, x2, y):
-    global map
+    global dungeon_map
     for x in range(min(x1, x2), max(x1, x2) + 1):
-            map[x][y].tile_type = 'stone floor'
+        dungeon_map[x][y].tile_type = 'stone floor'
 
 
 def create_v_tunnel(y1, y2, x):
-    global map
+    global dungeon_map
     for y in range(min(y1, y2), max(y1, y2) + 1):
-            map[x][y].tile_type = 'stone floor'
+        dungeon_map[x][y].tile_type = 'stone floor'
 
 
 def make_map():
-    global map, objects, stairs
+    global dungeon_map, objects, stairs
     
     objects = [player]
-    
-    map = [[ Tile('stone wall')
+
+    dungeon_map = [[ Tile('stone wall')
         for y in range(consts.MAP_HEIGHT) ]
             for x in range(consts.MAP_WIDTH) ]
 
@@ -1004,7 +1013,7 @@ def handle_keys():
             if key_char == 'z':
                 if len(memory) == 0:
                     message('You have no spells in your memory to cast.', libtcod.purple)
-                elif map[player.x][player.y].tile_type == 'deep water':
+                elif dungeon_map[player.x][player.y].tile_type == 'deep water':
                     message('You cannot cast spells underwater.', libtcod.purple)
                 else:
                     cast_spell()
@@ -1017,6 +1026,13 @@ def handle_keys():
                         message('You cannot jump from this terrain!', libtcod.light_yellow)
                 else:
                     message("You don't have the stamina to jump!", libtcod.light_yellow)
+            if key_char == 'e':
+                x,y = target_tile()
+                obj = object_at_coords(x,y)
+                if obj and hasattr(obj,'description'):
+                    menu(obj.name + '\n' + obj.description,['back'],20)
+                else:
+                    menu(obj.name,['back'],20)
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
@@ -1077,20 +1093,20 @@ def render_all():
     
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
-            # wall = map[x][y].blocks_sight
+            # wall = dungeon_map[x][y].blocks_sight
             visible = libtcod.map_is_in_fov(fov_map, x, y)
-            # color_fg = copy.copy(map[x][y].color_fg)
-            # color_bg = copy.copy(map[x][y].color_bg)
-            color_fg = libtcod.Color(map[x][y].color_fg[0], map[x][y].color_fg[1], map[x][y].color_fg[2])
-            color_bg = libtcod.Color(map[x][y].color_bg[0], map[x][y].color_bg[1], map[x][y].color_bg[2])
+            # color_fg = copy.copy(dungeon_map[x][y].color_fg)
+            # color_bg = copy.copy(dungeon_map[x][y].color_bg)
+            color_fg = libtcod.Color(dungeon_map[x][y].color_fg[0], dungeon_map[x][y].color_fg[1], dungeon_map[x][y].color_fg[2])
+            color_bg = libtcod.Color(dungeon_map[x][y].color_bg[0], dungeon_map[x][y].color_bg[1], dungeon_map[x][y].color_bg[2])
             if not visible:
-                if map[x][y].explored:
+                if dungeon_map[x][y].explored:
                     libtcod.color_scale_HSV(color_fg, 0.1, 0.4)
                     libtcod.color_scale_HSV(color_bg, 0.1, 0.4)
-                    libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, map[x][y].tile_char, color_fg, color_bg)
+                    libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg, color_bg)
             else:
-                libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, map[x][y].tile_char, color_fg, color_bg)
-                map[x][y].explored = True
+                libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg, color_bg)
+                dungeon_map[x][y].explored = True
 
     # draw all objects in the list
     for object in objects:
@@ -1244,12 +1260,12 @@ def initialize_fov():
     fov_map = libtcod.map_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
-            libtcod.map_set_properties(fov_map, x, y, not map[x][y].blocks_sight, not map[x][y].blocks)
+            libtcod.map_set_properties(fov_map, x, y, not dungeon_map[x][y].blocks_sight, not dungeon_map[x][y].blocks)
 
 
 def save_game():
     file = shelve.open('savegame', 'n')
-    file['map'] = map
+    file['map'] = dungeon_map
     file['objects'] = objects
     file['player_index'] = objects.index(player)
     file['stairs_index'] = objects.index(stairs)
@@ -1262,10 +1278,10 @@ def save_game():
 
 
 def load_game():
-    global map, objects, player, inventory, memory, game_msgs, game_state, dungeon_level, stairs
+    global dungeon_map, objects, player, inventory, memory, game_msgs, game_state, dungeon_level, stairs
 
     file = shelve.open('savegame', 'r')
-    map = file['map']
+    dungeon_map = file['map']
     objects = file['objects']
     player = objects[file['player_index']]
     stairs = objects[file['stairs_index']]

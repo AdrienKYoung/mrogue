@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/MagicRoguelike.iml" filepath="$PROJECT_DIR$/.idea/MagicRoguelike.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/magic-roguelike.iml" filepath="$PROJECT_DIR$/.idea/magic-roguelike.iml" />
     </modules>
   </component>
