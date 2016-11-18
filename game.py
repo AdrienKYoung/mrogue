@@ -513,7 +513,7 @@ def level_up(altar = None):
         ['Constitution (+20 HP, from ' + str(player.fighter.base_max_hp) + ')',
             'Strength (+1 attack, from ' + str(player.fighter.base_power) + ')',
             'Agility (+1 defense, from ' + str(player.fighter.base_defense) + ')',
-            'Intelligence (increases spell dmage)',
+            'Intelligence (increases spell damage)',
             'Wisdom (increases spell slots, spell utility)'
          ], consts.LEVEL_SCREEN_WIDTH)
 
@@ -527,7 +527,7 @@ def level_up(altar = None):
     elif choice == 3:
         player.playerStats.int += 1
     elif choice == 4:
-        player.playerStats.wis += 1
+        player.playerStats.wiz += 1
 
     if altar:
         objects.remove(altar)
@@ -1040,7 +1040,7 @@ def handle_keys():
             if key_char == 'e':
                 x, y = target_tile()
                 obj = object_at_coords(x, y)
-                if obj and hasattr(obj, 'description'):
+                if obj and hasattr(obj, 'description') and obj.description is not None:
                     menu(obj.name + '\n' + obj.description, ['back'], 20)
                 elif obj is not None:
                     menu(obj.name, ['back'], 20)
@@ -1086,7 +1086,7 @@ def clear_map():
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
-            libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, ' ', libtcod.black, libtcod.black)
+            libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, 219, libtcod.black, libtcod.black)
 
 
 def render_all():
@@ -1244,7 +1244,7 @@ def new_game():
 
     #create object representing the player
     fighter_component = Fighter(hp=100, xp=0, stamina=100, death_function=player_death)
-    player = GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component, playerStats=PlayerStats())
+    player = GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component, playerStats=PlayerStats(), description='You, the fearless adventurer!')
     player.level = 1
     
     #generate map
