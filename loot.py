@@ -11,6 +11,7 @@ proto = {
         'char': '/',
         'on_use': spells.cast_lightning,
         'color': libtcodpy.yellow,
-        'type': 'spell'
+        'type': 'spell',
+        'description': 'Strikes the nearest foe with a powerful bolt'
     }
 }

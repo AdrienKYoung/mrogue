@@ -287,7 +287,7 @@ class BasicMonster:
 
 class GameObject:
 
-    def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None, playerStats=None, always_visible=False, interact=None):
+    def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None, playerStats=None, always_visible=False, interact=None, description=None):
         self.x = x
         self.y = y
         self.char = char
@@ -297,6 +297,7 @@ class GameObject:
         self.fighter = fighter
         self.always_visible = always_visible
         self.interact = interact
+        self.description = description
         if self.fighter:
             self.fighter.owner = self
         self.ai = ai
@@ -777,8 +778,8 @@ def place_objects(room):
 
     max_monsters = from_dungeon_level([[2, 1], [3, 4], [5, 6]])
     monster_chances = {}
-    monster_chances['goblin'] = 80
-    monster_chances['golem'] = from_dungeon_level([[10, 1], [50, 3], [130, 6]])
+    monster_chances['monster_goblin'] = 80
+    monster_chances['monster_golem'] = from_dungeon_level([[10, 1], [50, 3], [130, 6]])
     # monster_chances['creature'] = from_dungeon_level([[20, 2], [35, 4], [80, 8]])
     
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
@@ -792,23 +793,13 @@ def place_objects(room):
         y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
         
         if not is_blocked(x, y):
-            choice = random_choice(monster_chances)
-            # HACK ALERT HACK ALERT
-            # choice = 'goblin'
-            # HACK ALERT HACK ALERT
-            if choice == 'golem':
-                fighter_component = Fighter(hp=100, attack_damage=30, armor=50, evasion=5, accuracy=0.5, xp=75,
-                                            death_function=monster_death, loot_table=loot.table['default'],
-                                            can_breath_underwater=True)
-                ai_component = BasicMonster(speed=0.5)
-                monster = GameObject(x, y, 'G', 'golem', libtcod.sepia, blocks=True, fighter=fighter_component, ai=ai_component)
-            elif choice == 'goblin':
-                fighter_component = Fighter(hp=20, attack_damage=10, armor=5, evasion=15, accuracy=0.65, xp=75,
-                                            death_function=monster_death, loot_table=loot.table['default'],
-                                            can_breath_underwater=True)
-                ai_component = BasicMonster(speed=0.8)
-                monster = GameObject(x, y, 'g', 'goblin', libtcod.desaturated_green, blocks=True, fighter=fighter_component, ai=ai_component)
-                
+            p = monsters.proto[random_choice(monster_chances)]
+            fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'], evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
+                                        death_function=monster_death, loot_table=loot.table[p['loot']],
+                                        can_breath_underwater=True)
+            ai_component = BasicMonster(speed=p['speed'])
+            monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
+                                 ai=ai_component, description=p['description'])
             objects.append(monster)
             
     num_items = libtcod.random_get_int(0, 0, max_items)
@@ -1357,6 +1348,7 @@ def play_game():
 # my modules
 import spells
 import loot
+import monsters
 
 in_game = False
 libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
