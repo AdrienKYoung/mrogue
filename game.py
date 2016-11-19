@@ -783,9 +783,9 @@ def place_objects(room):
     # monster_chances['creature'] = from_dungeon_level([[20, 2], [35, 4], [80, 8]])
     
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
-    item_chances = {'heal':70, 'lightning':10, 'confuse':10, 'fireball':10 }
-    item_chances['sword'] = 25
-    item_chances['shield'] = 25
+    item_chances = {'potion_healing':70, 'spell_lightning':10, 'spell_confusion':10, 'spell_fireball':10 }
+    item_chances['equipment_longsword'] = 25
+    item_chances['equipment_shield'] = 25
 
     num_monsters = libtcod.random_get_int(0, 0, max_monsters)
     for i in range(num_monsters):
@@ -795,7 +795,7 @@ def place_objects(room):
         if not is_blocked(x, y):
             p = monsters.proto[random_choice(monster_chances)]
             fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'], evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
-                                        death_function=monster_death, loot_table=loot.table[p['loot']],
+                                        death_function=monster_death, loot_table=loot.table[p.get('loot','default')],
                                         can_breath_underwater=True)
             ai_component = BasicMonster(speed=p['speed'])
             monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
@@ -809,24 +809,19 @@ def place_objects(room):
         
         if not is_blocked(x, y):
             choice = random_choice(item_chances)
-            if choice == 'heal':
-                item_component = Item(use_function=spells.cast_heal)
-                item = GameObject(x, y, '!', 'healing potion', libtcod.yellow, item=item_component, always_visible=True)
-            elif choice == 'confuse':
-                item_component = Item(use_function=spells.cast_confuse)
-                item = GameObject(x, y, '#', 'scroll of confusion', libtcod.yellow, item=item_component, always_visible=True)
-            elif choice == 'fireball':
-                item_component = Item(use_function=spells.cast_fireball)
-                item = GameObject(x, y, '#', 'scroll of fireball', libtcod.yellow, item=item_component, always_visible=True)
-            elif choice == 'lightning':
-                item_component = Item(use_function=spells.cast_lightning)
-                item = GameObject(x, y, '#', 'scroll of lightning bolt', libtcod.yellow, item=item_component, always_visible=True)
-            elif choice == 'sword':
-                equipment_component = Equipment(slot='right hand', attack_damage_bonus=10)
-                item = GameObject(x, y, '/', 'sword', libtcod.yellow, equipment=equipment_component, always_visible = True)
-            elif choice == 'shield':
-                equipment_component = Equipment(slot='left hand', armor_bonus=5)
-                item = GameObject(x, y, '[', 'shield', libtcod.yellow, equipment=equipment_component, always_visible = True)
+            p = loot.proto[choice]
+            item_component = Item(use_function=p.get('on_use'))
+            equipment_component = None
+            if (p['type'] == 'equipment'):
+                equipment_component = Equipment(
+                    slot=p['slot'],
+                    attack_damage_bonus=p.get('attack_damage_bonus',0),
+                    armor_bonus=p.get('armor_bonus',0),
+                    max_hp_bonus=p.get('max_hp_bonus',0),
+                    evasion_bonus=p.get('evasion_bonus',0),
+                    spell_power_bonus=p.get('spell_power_bonus',0)
+                )
+            item = GameObject(x, y, p['char'], p['name'], p.get('color',libtcod.white), item=item_component, equipment=equipment_component, always_visible=True)
             objects.append(item)
             item.send_to_back()
 
