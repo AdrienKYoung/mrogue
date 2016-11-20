@@ -47,6 +47,7 @@ proto = {
         'description': 'Potions that heals wounds when consumed'
     },
 
+    #WEAPONS
     'equipment_longsword': {
         'name': 'Longsword',
         'char': '/',
@@ -57,6 +58,7 @@ proto = {
         'description': 'A hand-and-a-half cruciform sword'
     },
 
+    #ARMOR
     'equipment_shield': {
         'name': 'Shield',
         'char': '[',

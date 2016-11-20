@@ -2,10 +2,6 @@ import game as main
 import consts
 import libtcodpy as libtcod
 
-table = {
-
-}
-
 proto = {
     'monster_goblin': {
         'name': 'Goblin Lurker',
@@ -49,5 +45,11 @@ proto = {
         'loot': 'default',#'boss_undead',
         'attributes': {'flying': 'always', 'spell_warp_weapon': 20, 'spell_blink': 10},
         'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.'
+    }
+}
+
+encounters = {
+    'encounter_goblin_pack': {
+        'monster_goblin':[3,5]
     }
 }
