@@ -826,8 +826,8 @@ def is_blocked(x, y):
     return False
 
 
-def get_floor_spawns(floor):
-    return [[k,libtcod.random_get_int(0,v[0],v[1])] for (k,v) in floor['spawns'].items()]
+def get_room_spawns(room):
+    return [[k,libtcod.random_get_int(0,v[0],v[1])] for (k,v) in room['spawns'].items()]
 
 def place_objects(room):
     global dungeon_level
@@ -838,27 +838,20 @@ def place_objects(room):
     item_chances['equipment_shield'] = 25
 
     table = dungeon.table["dungeon_{}".format(dungeon_level)]['versions']
-    floor = table[random_choice_index([e['weight'] for e in table])]
-    print "floor: {}".format(floor)
-    spawns = get_floor_spawns(floor)
-    print spawns
+    spawns = get_room_spawns(table[random_choice_index([e['weight'] for e in table])])
     for s in spawns:
         for n in range(0,s[1]):
-            if s[0].startswith('monster'):
-                x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
-                y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
-                if not is_blocked(x, y):
-                    p = monsters.proto[s[0]]
-                    fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'], evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
-                                                death_function=monster_death, loot_table=loot.table[p.get('loot','default')],
-                                                can_breath_underwater=True)
-                    ai_component = BasicMonster(speed=p['speed'])
-                    monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
-                                         ai=ai_component, description=p['description'])
-                    objects.append(monster)
-            elif s[0].startswith('encounter'):
-                encounter = monsters.encounters[s[0]]
-                #TODO - Spawn encounter
+            x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
+            y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
+            if not is_blocked(x, y):
+                p = monsters.proto[s[0]]
+                fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'], evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
+                                            death_function=monster_death, loot_table=loot.table[p.get('loot','default')],
+                                            can_breath_underwater=True)
+                ai_component = BasicMonster(speed=p['speed'])
+                monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
+                                     ai=ai_component, description=p['description'])
+                objects.append(monster)
             
     num_items = libtcod.random_get_int(0, 0, max_items)
     for i in range(num_items):
