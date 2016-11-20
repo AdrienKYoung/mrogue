@@ -12,7 +12,7 @@ import random
 
 
 class Equipment:
-    def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0, attack_damage_bonus=0, armor_bonus=0, evasion_bonus=0, spell_power_bonus=0):
+    def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0, attack_damage_bonus=0, armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0):
         self.power_bonus = power_bonus
         self.defense_bonus = defense_bonus
         self.max_hp_bonus = max_hp_bonus
@@ -22,6 +22,8 @@ class Equipment:
         self.armor_bonus = armor_bonus
         self.evasion_bonus = evasion_bonus
         self.spell_power_bonus = spell_power_bonus
+        self.stamina_cost = stamina_cost
+        self.str_requirement = str_requirement
         
     def toggle(self):
         if self.is_equipped:
@@ -174,6 +176,16 @@ class Fighter:
                     player.fighter.xp += self.xp
             
     def attack(self, target):
+
+        if self.owner.name == 'player':
+            stamina_cost = consts.UNARMED_STAMINA_COST / (self.owner.playerStats.str / consts.UNARMED_STAMINA_COST)
+            if get_equipped_in_slot('right hand') is not None:
+                stamina_cost = get_equipped_in_slot('right hand').stamina_cost / (self.owner.playerStats.str / get_equipped_in_slot('right hand').str_requirement)
+            if self.stamina < stamina_cost:
+                message("You can't find the strength to swing your weapon!", libtcod.light_yellow)
+                return 'failed'
+            else:
+                self.adjust_stamina(-stamina_cost)
 
         chance_to_hit = consts.EVADE_FACTOR / (consts.EVADE_FACTOR + target.fighter.evasion)
         chance_to_hit *= self.accuracy
@@ -870,7 +882,9 @@ def place_objects(room):
                     armor_bonus=p.get('armor_bonus',0),
                     max_hp_bonus=p.get('max_hp_bonus',0),
                     evasion_bonus=p.get('evasion_bonus',0),
-                    spell_power_bonus=p.get('spell_power_bonus',0)
+                    spell_power_bonus=p.get('spell_power_bonus',0),
+                    stamina_cost=p.get('stamina_cost',0),
+                    str_requirement=p.get('str_requirement',0)
                 )
             item = GameObject(x, y, p['char'], p['name'], p.get('color',libtcod.white), item=item_component, equipment=equipment_component, always_visible=True)
             objects.append(item)
@@ -974,8 +988,7 @@ def player_move_or_attack(dx, dy):
             break
             
     if target is not None:
-        player.fighter.attack(target)
-        return True
+        return player.fighter.attack(target) != 'failed'
     else:
         value = player.move(dx, dy)
         fov_recompute = True

@@ -55,7 +55,9 @@ proto = {
         'type': 'equipment',
         'attack_damage_bonus': 10,
         'slot':'right hand',
-        'description': 'A hand-and-a-half cruciform sword'
+        'description': 'A hand-and-a-half cruciform sword',
+        'stamina_cost': 10,
+        'str_requirement': 10
     },
 
     #ARMOR
