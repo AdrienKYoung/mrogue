@@ -180,7 +180,7 @@ class Fighter:
         if self.owner.name == 'player':
             stamina_cost = consts.UNARMED_STAMINA_COST / (self.owner.playerStats.str / consts.UNARMED_STAMINA_COST)
             if get_equipped_in_slot('right hand') is not None:
-                stamina_cost = get_equipped_in_slot('right hand').stamina_cost / (self.owner.playerStats.str / get_equipped_in_slot('right hand').str_requirement)
+                stamina_cost = int((float(get_equipped_in_slot('right hand').stamina_cost) / (float(self.owner.playerStats.str) / float(get_equipped_in_slot('right hand').str_requirement))))
             if self.stamina < stamina_cost:
                 message("You can't find the strength to swing your weapon!", libtcod.light_yellow)
                 return 'failed'
@@ -1313,7 +1313,8 @@ def new_game():
     game_state = 'playing'
     
     inventory = []
-    item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball))
+    item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball), description='the sword you started with')
+
     inventory.append(item)
 
     memory = []
