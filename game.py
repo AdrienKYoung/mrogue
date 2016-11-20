@@ -592,21 +592,49 @@ def object_at_coords(x, y):
         return ops[0]
 
 
-def target_tile(max_range=None):
+def target_tile(max_range=None, targeting_type='pick'):
     global key, mouse
 
-    cursor = GameObject(0, 0, 219, 'cursor', libtcod.white)
+    cursor = GameObject(0, 0, ' ', 'cursor', libtcod.white)
     objects.append(cursor)
+    cursor.x = player.x
+    cursor.y = player.y
     x = player.x
     y = player.y
     oldMouseX = mouse.cx
     oldMouseY = mouse.cy
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
+    selected_x = player.x
+    selected_y = player.y
 
     while True:
         libtcod.console_flush()
         libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE,key,mouse)
         render_all()
+
+        # Render range shading
+        libtcod.console_clear(ui)
+        libtcod.console_set_key_color(ui, libtcod.magenta)
+        for draw_x in range(consts.MAP_WIDTH):
+            for draw_y in range(consts.MAP_HEIGHT):
+                if round((player.distance(draw_x + offsetx, draw_y + offsety))) > max_range:
+                    libtcod.console_put_char_ex(ui, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.black)
+                else:
+                    libtcod.console_put_char_ex(ui, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.magenta)
+        libtcod.console_blit(ui, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, 0, 0, 0, 0.2)
+        # Render cursor
+        libtcod.console_set_default_background(ui, libtcod.magenta)
+        libtcod.console_clear(ui)
+        if targeting_type == 'beam' or targeting_type == 'beam_interrupt':
+            libtcod.line_init(player.x, player.y, cursor.x, cursor.y)
+            line_x, line_y = libtcod.line_step()
+            while (not line_x is None):
+                libtcod.console_put_char_ex(ui, line_x - offsetx, line_y - offsety, ' ', libtcod.white, libtcod.yellow)
+                line_x, line_y = libtcod.line_step()
+        libtcod.console_put_char_ex(ui, selected_x - offsetx, selected_y - offsety, ' ', libtcod.light_yellow, libtcod.white)
+
+        libtcod.console_blit(ui, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, 0, 0, 0, 0.4)
+
 
         if key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4:
             x -= 1
@@ -635,17 +663,41 @@ def target_tile(max_range=None):
         cursor.x = x
         cursor.y = y
 
+        selected_x = cursor.x
+        selected_y = cursor.y
+        beam_values = []
+
+        if targeting_type == 'beam_interrupt' or targeting_type == 'beam':
+            libtcod.line_init(player.x, player.y, cursor.x, cursor.y)
+            line_x, line_y = libtcod.line_step()
+            ended = False
+            while (not ended):
+                if line_x is None or line_y is None:
+                    ended = True
+                else:
+                    if targeting_type == 'beam':
+                        beam_values.append((line_x, line_y))  # beam targeting adds every space in the line to the return value
+                    elif targeting_type == 'beam_interrupt':
+                        if is_blocked(line_x, line_y):  # beam interrupt scans until it hits something
+                            selected_x = line_x
+                            selected_y = line_y
+                            ended = True
+                    line_x, line_y = libtcod.line_step()
+
         if (mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and libtcod.map_is_in_fov(fov_map, x, y):
-            if max_range is None or player.distance(x, y) <= max_range:
+            if max_range is None or round((player.distance(x, y))) <= max_range:
                 objects.remove(cursor)
-                return x, y
+                if targeting_type == 'beam':
+                    return beam_values
+                else:
+                    return selected_x, selected_y
             else:
                 objects.remove(cursor)
                 return None, None  # out of range
             
         if mouse.rbutton_pressed or key.vk == libtcod.KEY_ESCAPE:
             objects.remove(cursor)
-            return None, None
+            return None, None  # cancelled
 
         oldMouseX = mouse.cx
         oldMouseY = mouse.cy
@@ -732,8 +784,8 @@ def get_names_under_mouse():
 
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
     (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
-    names = [obj.name for obj in objects
-                if (obj.x == x and obj.y == y and (libtcod.map_is_in_fov(fov_map, obj.x, obj.y) or (obj.always_visible and map[obj.x][obj.y].explored)) and obj.name != 'cursor')]
+    names = [obj.name for obj in objects if (obj.x == x and obj.y == y and (libtcod.map_is_in_fov(fov_map, obj.x, obj.y)
+                            or (obj.always_visible and dungeon_map[obj.x][obj.y].explored)) and obj.name != 'cursor')]
     names = ', '.join(names)
     return names.capitalize()
 
@@ -1050,7 +1102,7 @@ def jump():
 
     render_all()
     libtcod.console_flush()
-    (x, y) = target_tile(consts.BASE_JUMP_RANGE)
+    (x, y) = target_tile(consts.BASE_JUMP_RANGE, 'pick')
     if x is not None and y is not None:
         if not is_blocked(x, y):
             player.x = x
@@ -1058,8 +1110,11 @@ def jump():
             fov_recompute = True
             player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
             return 'jumped'
+        else:
+            message('There is something in the way.', libtcod.white)
+            return 'didnt-take-turn'
 
-    message('Cannot jump there', libtcod.white)
+    message('Out of range.', libtcod.white)
     return 'didnt-take-turn'
 
 
@@ -1181,9 +1236,6 @@ def render_all():
     libtcod.console_blit(panel, 0, 0, consts.SCREEN_WIDTH, consts.PANEL_HEIGHT, 0, 0, consts.PANEL_Y)
 
     # RENDER UI OVERLAY
-
-    libtcod.console_set_default_background(ui_util, libtcod.black)
-    libtcod.console_clear(ui_util)
 
     libtcod.console_set_default_background(ui, libtcod.black)
     libtcod.console_clear(ui)
@@ -1353,6 +1405,5 @@ con = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 mapCon = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
 ui = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
-ui_util = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 panel = libtcod.console_new(consts.SCREEN_WIDTH, consts.PANEL_HEIGHT)
 rightPanel = libtcod.console_new(consts.RIGHT_PANEL_WIDTH, consts.RIGHT_PANEL_HEIGHT)

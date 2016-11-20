@@ -1,5 +1,5 @@
 import consts
-
+import libtcodpy as libtcod
 
 class TileData:
 
@@ -23,5 +23,7 @@ data = {
     'shallow water': TileData(False, False, 'shallow water', '~', (115, 220, 255), (0, 127, 255),
                              'a shallow pool of grimy water', consts.SHALLOW_WATER_COST),
     'deep water': TileData(False, False, 'deep water', '~', (0, 64, 128), (0, 32, 64),
-                             'a deep pool of grimy water', consts.DEEP_WATER_COST, False)
+                             'a deep pool of grimy water', consts.DEEP_WATER_COST, False),
+    'chasm': TileData(True, False, 'chasm', libtcod.CHAR_BLOCK1, (16, 16, 32), (0, 0, 16),
+                             'a pit descending into darkness')
 }
