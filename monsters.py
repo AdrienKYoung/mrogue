@@ -47,9 +47,3 @@ proto = {
         'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.'
     }
 }
-
-encounters = {
-    'encounter_goblin_pack': {
-        'monster_goblin':[3,5]
-    }
-}

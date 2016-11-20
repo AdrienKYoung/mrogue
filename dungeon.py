@@ -27,5 +27,5 @@ table = {
 }
 
 bosses = {
-    'monster_nosferatu': { 'dungeon_2':10, 'dungeon_3':15, 'dungeon_4':15, 'dungeon_5':20 }
+    'monster_nosferatu': { 'dungeon_2':15, 'dungeon_3':15, 'dungeon_4':15, 'dungeon_5':20 }
 }

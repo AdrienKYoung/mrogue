@@ -841,29 +841,31 @@ def is_blocked(x, y):
 def get_room_spawns(room):
     return [[k,libtcod.random_get_int(0,v[0],v[1])] for (k,v) in room['spawns'].items()]
 
-def place_objects(room):
-    global dungeon_level
+def spawn_monster(name,room):
+    x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
+    y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
+    if not is_blocked(x, y):
+        p = monsters.proto[name]
+        fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'],
+                                    evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
+                                    death_function=monster_death, loot_table=loot.table[p.get('loot', 'default')],
+                                    can_breath_underwater=True)
+        ai_component = BasicMonster(speed=p['speed'])
+        monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
+                             ai=ai_component, description=p['description'])
+        objects.append(monster)
 
+def place_objects(room):
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
     item_chances = {'potion_healing':70, 'spell_lightning':10, 'spell_confusion':10, 'spell_fireball':10 }
     item_chances['equipment_longsword'] = 25
     item_chances['equipment_shield'] = 25
 
-    table = dungeon.table["dungeon_{}".format(dungeon_level)]['versions']
+    table = dungeon.table[get_dungeon_level()]['versions']
     spawns = get_room_spawns(table[random_choice_index([e['weight'] for e in table])])
     for s in spawns:
         for n in range(0,s[1]):
-            x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
-            y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
-            if not is_blocked(x, y):
-                p = monsters.proto[s[0]]
-                fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'], evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
-                                            death_function=monster_death, loot_table=loot.table[p.get('loot','default')],
-                                            can_breath_underwater=True)
-                ai_component = BasicMonster(speed=p['speed'])
-                monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
-                                     ai=ai_component, description=p['description'])
-                objects.append(monster)
+            spawn_monster(s[0],room)
             
     num_items = libtcod.random_get_int(0, 0, max_items)
     for i in range(num_items):
@@ -889,6 +891,17 @@ def place_objects(room):
             item = GameObject(x, y, p['char'], p['name'], p.get('color',libtcod.white), item=item_component, equipment=equipment_component, always_visible=True)
             objects.append(item)
             item.send_to_back()
+
+def check_boss(level):
+    global spawned_bosses
+
+    for (k,v) in dungeon.bosses.items():
+        chance = v.get(level)
+        if chance is not None and spawned_bosses.get(k) is None:
+            if chance >= libtcod.random_get_int(0,0,100):
+                spawned_bosses[k] = True
+                return k
+    return None
 
 
 def create_room(room):
@@ -918,7 +931,7 @@ def create_v_tunnel(y1, y2, x):
 
 
 def make_map():
-    global dungeon_map, objects, stairs
+    global dungeon_map, objects, stairs, dungeon_level, spawned_bosses
     
     objects = [player]
 
@@ -927,6 +940,7 @@ def make_map():
             for x in range(consts.MAP_WIDTH) ]
 
     rooms = []
+    spawned_bosses = {}
     num_rooms = 0
     
     for r in range(consts.MAX_ROOMS):
@@ -972,7 +986,13 @@ def make_map():
     level_shrine = GameObject(x,y, '=', 'shrine of power', libtcod.white, always_visible=True, interact=level_up)
     objects.append(level_shrine)
     level_shrine.send_to_back()
+    boss = check_boss(get_dungeon_level())
+    if boss is not None:
+        spawn_monster(boss,sample[1])
 
+def get_dungeon_level():
+    global dungeon_level
+    return "dungeon_{}".format(dungeon_level)
 
 def player_move_or_attack(dx, dy):
 
