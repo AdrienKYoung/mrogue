@@ -11,6 +11,15 @@ import random
 #############################################
 
 
+class StatusEffect:
+    def __init__(self, name, time_limit=None, color=libtcod.white, on_apply=None, on_end=None):
+        self.name = name
+        self.time_limit = time_limit
+        self.color = color
+        self.on_apply = on_apply
+        self.on_end = on_end
+
+
 class Equipment:
     def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0, attack_damage_bonus=0, armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0):
         self.power_bonus = power_bonus
@@ -48,12 +57,12 @@ class ConfusedMonster:
         self.old_ai = old_ai
         self.num_turns = num_turns
         
-    def take_turn(self):
+    def act(self):
         if self.num_turns > 0:
             self.owner.move(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
             self.num_turns -= 1
         else:
-            self.owner.ai = self.old_ai
+            self.owner.ai.behavior = self.old_ai
             if libtcod.map_is_in_fov(fov_map, self.owner.x, self.owner.y):
                 message('The ' + self.owner.name + ' is no longer confused.', libtcod.light_grey)
 
@@ -94,6 +103,8 @@ class Item:
                     inventory.remove(self.owner)
                 elif self.type == 'spell':
                     memory.remove(self.owner)
+            else:
+                return 'cancelled'
                 
     def drop(self):
         if self.owner.equipment:
@@ -157,6 +168,7 @@ class Fighter:
         self.max_breath = breath
         self.breath = breath
         self.can_breath_underwater = can_breath_underwater
+        self.status_effects = []
 
     def adjust_stamina(self, amount):
         self.stamina += amount
@@ -211,7 +223,7 @@ class Fighter:
     def on_tick(self):
         # Manage breath/drowning
         if dungeon_map[self.owner.x][self.owner.y].tile_type == 'deep water':
-            if not self.can_breath_underwater:
+            if not (self.can_breath_underwater or self.has_status('waterbreathing')):
                 if self.breath > 0:
                     self.breath -= 1
                 else:
@@ -221,6 +233,34 @@ class Fighter:
                     self.take_damage(drown_damage)
         elif self.breath < self.max_breath:
             self.breath += 1
+
+        # Manage status effect timers
+        removed_effects = []
+        for effect in self.status_effects:
+            if effect.time_limit is not None:
+                effect.time_limit -= 1
+                if effect.time_limit <= 0:
+                    removed_effects.append(effect)
+        for effect in removed_effects:
+            if effect.on_end is not None:
+                effect.on_end(self.owner)
+            self.status_effects.remove(effect)
+
+    def apply_status_effect(self, new_effect):
+        # check for existing matching effects
+        for effect in self.status_effects:
+            if effect.name == new_effect.name:
+                # refresh the effect
+                effect.time_limit = new_effect.time_limit
+        self.status_effects.append(new_effect)
+        if new_effect.on_apply is not None:
+            new_effect.on_apply(self.owner)
+
+    def has_status(self, name):
+        for effect in self.status_effects:
+            if effect.name == name:
+                return True
+        return False
 
     @property
     def accuracy(self):
@@ -275,17 +315,10 @@ class Fighter:
         return self.base_max_hp + bonus
 
 
-class BasicMonster:
+class AI_Default:
 
-    def __init__(self, speed=1.0):
-        self.turn_ticker = 0.0
-        self.speed = speed
-
-    def take_turn(self):
-        self.turn_ticker += self.speed
-        while self.turn_ticker > 1.0:
-            self.act()
-            self.turn_ticker -= 1.0
+    def __init__(self):
+        self.last_seen_position = None
 
     def act(self):
         monster = self.owner
@@ -295,11 +328,82 @@ class BasicMonster:
 
             elif player.fighter.hp > 0:
                 monster.fighter.attack(player)
+            self.last_seen_position = (player.x, player.y)
+        elif self.last_seen_position is not None and not\
+                (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
+            monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
+
+
+class AI_TunnelSpider:
+
+    def __init__(self):
+        self.closest_web = None
+        self.state = 'resting'
+        self.last_seen_position = None
+
+    def act(self):
+        monster = self.owner
+        if self.state == 'resting':
+            if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+                self.state = 'hunting'
+                self.act()
+            elif web_at_tile(monster.x, monster.y) is None:
+                self.state = 'retreating'
+                self.act()
+        elif self.state == 'retreating':
+            self.closest_web = self.find_closest_web()
+            if self.closest_web is None:
+                self.state = 'hunting'
+                self.act()
+            else:
+                monster.move_astar(self.closest_web.x, self.closest_web.y)
+                if web_at_tile(monster.x, monster.y) is not None:
+                    self.state = 'resting'
+        elif self.state == 'hunting':
+            if monster.distance_to(player) < 2 and player.fighter.hp > 0:
+                monster.fighter.attack(player)
+                return
+            self.closest_web = self.find_closest_web()
+            if self.closest_web is not None and monster.distance_to(self.closest_web) > consts.TUNNEL_SPIDER_MAX_WEB_DIST:
+                self.state = 'retreating'
+                self.act()
+            elif libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+                    monster.move_astar(player.x, player.y)
+                    self.last_seen_position = (player.x, player.y)
+            elif self.last_seen_position is not None and not \
+                    (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
+                monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
+
+    def find_closest_web(self):
+        closest_web = None
+        closest_dist = consts.TUNNEL_SPIDER_MAX_WEB_DIST
+        for obj in objects:
+            if obj.name == 'spiderweb':
+                if closest_web is None or self.owner.distance_to(obj) < closest_dist:
+                    closest_web = obj
+                    closest_dist = self.owner.distance_to(obj)
+        return closest_web
+
+
+
+
+class AI_General:
+    def __init__(self, speed=1.0, behavior=AI_Default()):
+        self.turn_ticker = 0.0
+        self.speed = speed
+        self.behavior = behavior
+
+    def take_turn(self):
+        self.turn_ticker += self.speed
+        while self.turn_ticker > 1.0:
+            self.behavior.act()
+            self.turn_ticker -= 1.044
 
 
 class GameObject:
 
-    def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None, playerStats=None, always_visible=False, interact=None, description=None):
+    def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None,
+                 playerStats=None, always_visible=False, interact=None, description=None, on_create=None, update_speed=1.0):
         self.x = x
         self.y = y
         self.char = char
@@ -310,11 +414,15 @@ class GameObject:
         self.always_visible = always_visible
         self.interact = interact
         self.description = description
+        self.on_create = on_create
         if self.fighter:
             self.fighter.owner = self
         self.ai = ai
+        #if self.ai:
+        #    self.ai.owner = self
         if self.ai:
-            self.ai.owner = self
+            self.ai = AI_General(update_speed, ai)
+            self.ai.behavior.owner = self
         self.item = item
         if self.item:
             self.item.owner = self
@@ -326,17 +434,23 @@ class GameObject:
         self.playerStats = playerStats
         if self.playerStats:
             self.playerStats.owner = self
+        if on_create is not None:
+            on_create(self)
         
     def move(self, dx, dy):
         if not is_blocked(self.x + dx, self.y + dy):
             if self.fighter is not None:
+                web = web_at_tile(self.x, self.y)
+                if web is not None and not self.name == 'tunnel_spider':
+                    message('The ' + self.name + ' struggles against the web.')
+                    objects.remove(web)
+                    return True
                 cost = dungeon_map[self.x][self.y].stamina_cost
-                if cost > 0:
+                if cost > 0 and self is player: # only the player cares about stamina costs (at least for now. I kind of like it this way) -T
                     if self.fighter.stamina >= cost:
                         self.fighter.adjust_stamina(-cost)
                     else:
-                        if self.name == 'player':
-                            message("You don't have the stamina leave this space!", libtcod.light_yellow)
+                        message("You don't have the stamina leave this space!", libtcod.light_yellow)
                         return False
                 else:
                     self.fighter.adjust_stamina(consts.STAMINA_REGEN_MOVE)     # gain stamina for moving across normal terrain
@@ -360,6 +474,10 @@ class GameObject:
         self.move(dx, dy)
         
     def move_astar(self, target_x, target_y):
+
+        if self.x == target_x and self.y == target_y:
+            return
+
         fov = libtcod.map_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
         
         # Scan the map and set all walls to unwalkable
@@ -395,7 +513,7 @@ class GameObject:
         dx = other.x - self.x
         dy = other.y - self.y
         return math.sqrt(dx ** 2 + dy ** 2)
-        
+
     def distance(self, x, y):
         return math.sqrt((self.x - x) ** 2 + (self.y - y) ** 2)
         
@@ -473,6 +591,22 @@ class Rect:
 #############################################
 # General Functions
 #############################################
+
+def web_at_tile(x, y):
+    for obj in objects:
+        if obj.x == x and obj.y == y and obj.name == 'spiderweb':
+            return obj
+    return None
+
+def make_spiderweb(obj):
+    for x in range(3):
+        for y in range(3):
+            makeweb = (x == 1 and y == 1) or (libtcod.random_get_int(0, 0, 2) == 0 and not is_blocked(obj.x + x - 1, obj.y + y - 1))
+            if makeweb:
+                web = GameObject(obj.x + x - 1, obj.y + y - 1, '*', 'spiderweb', libtcod.lightest_gray,
+                                 description='a web of spider silk. Stepping into a web will impede movement for a turn.')
+                objects.append(web)
+                web.send_to_back()
 
 def get_all_equipped(obj):
     if obj == player:
@@ -586,6 +720,7 @@ def target_monster(max_range=None):
         for obj in objects:
             if obj.x == x and obj.y == y:
                 return obj
+        return None
 
 
 def object_at_coords(x, y):
@@ -841,7 +976,8 @@ def is_blocked(x, y):
 def get_room_spawns(room):
     return [[k,libtcod.random_get_int(0,v[0],v[1])] for (k,v) in room['spawns'].items()]
 
-def spawn_monster(name,room):
+
+def spawn_monster(name, room):
     x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
     y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
     if not is_blocked(x, y):
@@ -850,10 +986,31 @@ def spawn_monster(name,room):
                                     evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
                                     death_function=monster_death, loot_table=loot.table[p.get('loot', 'default')],
                                     can_breath_underwater=True)
-        ai_component = BasicMonster(speed=p['speed'])
         monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
-                             ai=ai_component, description=p['description'])
+                             ai=p['ai'](), description=p['description'], on_create=p['on_create'], update_speed=p['speed'])
         objects.append(monster)
+
+
+def spawn_item(name, x, y):
+        p = loot.proto[name]
+        item_component = Item(use_function=p.get('on_use'))
+        equipment_component = None
+        if p['type'] == 'equipment':
+            equipment_component = Equipment(
+                slot=p['slot'],
+                attack_damage_bonus=p.get('attack_damage_bonus', 0),
+                armor_bonus=p.get('armor_bonus', 0),
+                max_hp_bonus=p.get('max_hp_bonus', 0),
+                evasion_bonus=p.get('evasion_bonus', 0),
+                spell_power_bonus=p.get('spell_power_bonus', 0),
+                stamina_cost=p.get('stamina_cost', 0),
+                str_requirement=p.get('str_requirement', 0)
+            )
+        item = GameObject(x, y, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
+                          equipment=equipment_component, always_visible=True)
+        objects.append(item)
+        item.send_to_back()
+
 
 def place_objects(room):
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
@@ -874,23 +1031,8 @@ def place_objects(room):
         
         if not is_blocked(x, y):
             choice = random_choice(item_chances)
-            p = loot.proto[choice]
-            item_component = Item(use_function=p.get('on_use'))
-            equipment_component = None
-            if (p['type'] == 'equipment'):
-                equipment_component = Equipment(
-                    slot=p['slot'],
-                    attack_damage_bonus=p.get('attack_damage_bonus',0),
-                    armor_bonus=p.get('armor_bonus',0),
-                    max_hp_bonus=p.get('max_hp_bonus',0),
-                    evasion_bonus=p.get('evasion_bonus',0),
-                    spell_power_bonus=p.get('spell_power_bonus',0),
-                    stamina_cost=p.get('stamina_cost',0),
-                    str_requirement=p.get('str_requirement',0)
-                )
-            item = GameObject(x, y, p['char'], p['name'], p.get('color',libtcod.white), item=item_component, equipment=equipment_component, always_visible=True)
-            objects.append(item)
-            item.send_to_back()
+            spawn_item(choice, x, y)
+
 
 def check_boss(level):
     global spawned_bosses
@@ -1085,8 +1227,11 @@ def handle_keys():
             if key_char == 'i':
                 chosen_item = inventory_menu('Press the key next to an item to use it, or any other to cancel.\n')
                 if chosen_item is not None:
-                    chosen_item.use()
-                    return 'used-item'
+                    use_result = chosen_item.use()
+                    if use_result == 'cancelled':
+                        return 'didnt-take-turn'
+                    else:
+                        return 'used-item'
             if key_char == 'd':
                 chosen_item = inventory_menu('Press the key next to an item to drop it, or any other to cancel.\n')
                 if chosen_item is not None:
@@ -1118,11 +1263,12 @@ def handle_keys():
                     message("You don't have the stamina to jump!", libtcod.light_yellow)
             if key_char == 'e':
                 x, y = target_tile()
-                obj = object_at_coords(x, y)
-                if obj and hasattr(obj, 'description') and obj.description is not None:
-                    menu(obj.name + '\n' + obj.description, ['back'], 20)
-                elif obj is not None:
-                    menu(obj.name, ['back'], 20)
+                if x is not None and y is not None:
+                    obj = object_at_coords(x, y)
+                    if obj and hasattr(obj, 'description') and obj.description is not None:
+                        menu(obj.name + '\n' + obj.description, ['back'], 20)
+                    elif obj is not None:
+                        menu(obj.name, ['back'], 20)
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
@@ -1130,6 +1276,13 @@ def handle_keys():
 
 def jump():
     global player, fov_recompute
+
+    web = web_at_tile(player.x, player.y)
+    if web is not None:
+        message('The player struggles against the web.')
+        objects.remove(web)
+        return 'webbed'
+
     message('Jump to where?', libtcod.white)
 
     render_all()
@@ -1242,11 +1395,22 @@ def render_all():
     libtcod.console_print(rightPanel, 1, 10, 'Lvl: ' + str(player.level))
     libtcod.console_print(rightPanel, 1, 11, 'XP:  ' + str(player.fighter.xp))
 
+    drawHeight = 13
+
+    # Status effects
+    if len(player.fighter.status_effects) > 0:
+        for effect in player.fighter.status_effects:
+            libtcod.console_set_default_foreground(rightPanel, effect.color)
+            libtcod.console_print(rightPanel, 1, drawHeight, effect.name + ' (' + str(effect.time_limit) + ')')
+            drawHeight += 1
+        drawHeight += 1
+        libtcod.console_set_default_foreground(rightPanel, libtcod.white)
+
     # Spells in memory
-    libtcod.console_print(rightPanel, 1, 13, 'Spells in memory:')
+    libtcod.console_print(rightPanel, 1, drawHeight, 'Spells in memory:')
     y = 1
     for spell in memory:
-        libtcod.console_print(rightPanel, 1, 13 + y, str(y) + ') ' + spell.name)
+        libtcod.console_print(rightPanel, 1, drawHeight + y, str(y) + ') ' + spell.name)
         y += 1
 
     libtcod.console_blit(rightPanel, 0, 0, consts.RIGHT_PANEL_WIDTH, consts.RIGHT_PANEL_HEIGHT, 0, consts.MAP_VIEWPORT_WIDTH, 0)
@@ -1334,8 +1498,10 @@ def new_game():
     
     inventory = []
     item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball), description='the sword you started with')
+    waterbreathing = GameObject(0, 0, '!', 'potion of waterbreathing', libtcod.yellow, item=Item(use_function=spells.cast_waterbreathing), description='This potion allows the drinker to breath underwater for a short time.')
 
     inventory.append(item)
+    inventory.append(waterbreathing)
 
     memory = []
     # spell = GameObject(0, 0, '?', 'mystery spell', libtcod.yellow, item=Item(use_function=spells.cast_lightning, type="spell"))
@@ -1343,6 +1509,9 @@ def new_game():
 
     #Welcome message
     game_msgs = []
+
+    spawn_item('spell_confusion', player.x, player.y)
+
     message('Welcome to the dungeon...', libtcod.gold)
 
 

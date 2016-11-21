@@ -4,7 +4,8 @@ table = {
     'dungeon_1': {
         'loot_profile':'early',
         'versions':[
-            { 'weight': 80,  'spawns': {'monster_goblin': [0,1]}},
+            #{ 'weight': 60,  'spawns': {'monster_goblin': [0,1]}},
+            { 'weight': 80,  'spawns': {'monster_tunnel_spider': [0,1]}},
             { 'weight': 20,  'spawns': {'monster_goblin': [2,3]}}
         ]
     },
