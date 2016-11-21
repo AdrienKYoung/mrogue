@@ -54,7 +54,7 @@ proto = {
         'name': 'Nosferatu',
         'char': 'N',
         'color': libtcod.purple,
-        'hp': 250,
+        'hp': 100,
         'attack_damage': 65,
         'armor': 40,
         'evasion': 50,
