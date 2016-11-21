@@ -1,5 +1,6 @@
 import game as main
 import consts
+import math
 import libtcodpy as libtcod
 
 
@@ -20,8 +21,8 @@ def cast_confuse():
     monster = main.target_monster(consts.CONFUSE_RANGE)
     if monster is None or monster.ai is None: return 'cancelled'
     else:
-        monster.fighter.apply_status_effect(main.StatusEffect('confusion', consts.CONFUSE_NUM_TURNS, color=libtcod.pink, on_apply=set_confused_behavior))
-        main.message('The ' + monster.name + ' is confused!', libtcod.light_blue)
+        if monster.fighter.apply_status_effect(main.StatusEffect('confusion', consts.CONFUSE_NUM_TURNS, color=libtcod.pink, on_apply=set_confused_behavior)):
+            main.message('The ' + monster.name + ' is confused!', libtcod.light_blue)
 
 def set_confused_behavior(object):
     if object.ai is not None:
@@ -51,3 +52,15 @@ def cast_heal():
 
 def cast_waterbreathing():
     main.player.fighter.apply_status_effect(main.StatusEffect('waterbreathing', 31, libtcod.light_azure))
+
+
+def cast_frog_tongue(frog, target):
+
+    if main.roll_to_hit(target.fighter.evasion, consts.FROG_TONGUE_ACC):
+        main.message('The frog pulls you from a distance with its toungue!', libtcod.dark_green)
+        target.fighter.take_damage(consts.FROG_TONGUE_DMG)
+        beam = main.beam(frog.x, frog.y, target.x, target.y)
+        target.x, target.y = beam[max(len(beam) - 3, 0)]
+        main.fov_recompute_fn()
+    else:
+        main.message('The frog tries to grab you with its tongue, but misses!', libtcod.grey)

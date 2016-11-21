@@ -149,7 +149,7 @@ class Fighter:
 
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=1.0, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, loot_table=None, breath=6,
-                 can_breath_underwater=False):
+                 can_breath_underwater=False, resistances=[]):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -168,6 +168,7 @@ class Fighter:
         self.max_breath = breath
         self.breath = breath
         self.can_breath_underwater = can_breath_underwater
+        self.resistances = resistances
         self.status_effects = []
 
     def adjust_stamina(self, amount):
@@ -199,9 +200,7 @@ class Fighter:
             else:
                 self.adjust_stamina(-stamina_cost)
 
-        chance_to_hit = consts.EVADE_FACTOR / (consts.EVADE_FACTOR + target.fighter.evasion)
-        chance_to_hit *= self.accuracy
-        if libtcod.random_get_float(0, 0, 1) < chance_to_hit:
+        if roll_to_hit(target.fighter.evasion, self.accuracy):
             # Target was hit
             damage = self.attack_damage * (1.0 - self.damage_variance + libtcod.random_get_float(0, 0, 2 * self.damage_variance))
             damage *= (consts.ARMOR_FACTOR / (consts.ARMOR_FACTOR + target.fighter.armor))
@@ -247,6 +246,12 @@ class Fighter:
             self.status_effects.remove(effect)
 
     def apply_status_effect(self, new_effect):
+        # check for immunity
+        for resist in self.resistances:
+            if resist == new_effect.name:
+                if libtcod.map_is_in_fov(fov_map, self.owner.x, self.owner.y):
+                    message('The ' + self.owner.name + ' resists.')
+                return False
         # check for existing matching effects
         for effect in self.status_effects:
             if effect.name == new_effect.name:
@@ -255,6 +260,7 @@ class Fighter:
         self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
             new_effect.on_apply(self.owner)
+        return True
 
     def has_status(self, name):
         for effect in self.status_effects:
@@ -315,6 +321,35 @@ class Fighter:
         return self.base_max_hp + bonus
 
 
+class AI_GiantFrog:
+
+    def __init__(self):
+        self.last_seen_position = None
+        self.tongue_cooldown = 0
+
+    def act(self):
+        monster = self.owner
+        if self.tongue_cooldown > 0:
+            self.tongue_cooldown -= 1
+        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+            if monster.distance_to(player) < 2:
+                if player.fighter.hp > 0:
+                    monster.fighter.attack(player)
+                return
+            elif monster.distance_to(player) <= consts.FROG_TONGUE_RANGE and self.tongue_cooldown == 0:
+                if player.fighter.hp > 0 and beam_interrupt(monster.x, monster.y, player.x, player.y) == (player.x, player.y):
+                    spells.cast_frog_tongue(monster, player)
+                    self.tongue_cooldown = libtcod.random_get_int(0, 1, consts.FROG_TONGUE_COOLDOWN)
+                    return
+
+            monster.move_astar(player.x, player.y)
+            self.last_seen_position = (player.x, player.y)
+
+        elif self.last_seen_position is not None and not \
+                (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
+            monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
+
+
 class AI_Default:
 
     def __init__(self):
@@ -334,6 +369,44 @@ class AI_Default:
             monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
 
 
+class ReekerGasBehavior:
+    def __init__(self):
+        self.ticks = consts.REEKER_PUFF_DURATION
+
+    def on_tick(self):
+        self.ticks -= 1
+        if self.ticks == consts.REEKER_PUFF_DURATION * 2 / 3:
+            self.owner.char = libtcod.CHAR_BLOCK2
+        elif self.ticks == consts.REEKER_PUFF_DURATION / 3:
+            self.owner.char = libtcod.CHAR_BLOCK1
+        elif self.ticks <= 0:
+            objects.remove(self.owner)
+            return
+        #self.owner.char = str(self.ticks)
+        for obj in objects:
+            if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
+                if obj.name != 'reeker':
+                    obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
+                    if libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
+                        message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
+
+class AI_Reeker:
+
+    def act(self):
+        monster = self.owner
+        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+            for i in range(consts.REEKER_PUFF_MAX):
+                if libtcod.random_get_int(0, 0, 10) < 3:
+                    # create puff
+                    position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
+                    puff_pos = (monster.x + position[0], monster.y + position[1])
+                    if not dungeon_map[puff_pos[0]][puff_pos[1]].blocks and object_at_tile(puff_pos[0], puff_pos[1], 'reeker gas') is None:
+                        puff = GameObject(monster.x + position[0], monster.y + position[1], libtcod.CHAR_BLOCK3,
+                                          'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
+                                          misc=ReekerGasBehavior())
+                        objects.append(puff)
+
+
 class AI_TunnelSpider:
 
     def __init__(self):
@@ -347,7 +420,7 @@ class AI_TunnelSpider:
             if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
                 self.state = 'hunting'
                 self.act()
-            elif web_at_tile(monster.x, monster.y) is None:
+            elif object_at_tile(monster.x, monster.y, 'spiderweb') is None:
                 self.state = 'retreating'
                 self.act()
         elif self.state == 'retreating':
@@ -357,7 +430,7 @@ class AI_TunnelSpider:
                 self.act()
             else:
                 monster.move_astar(self.closest_web.x, self.closest_web.y)
-                if web_at_tile(monster.x, monster.y) is not None:
+                if object_at_tile(monster.x, monster.y, 'spiderweb') is not None:
                     self.state = 'resting'
         elif self.state == 'hunting':
             if monster.distance_to(player) < 2 and player.fighter.hp > 0:
@@ -397,13 +470,14 @@ class AI_General:
         self.turn_ticker += self.speed
         while self.turn_ticker > 1.0:
             self.behavior.act()
-            self.turn_ticker -= 1.044
+            self.turn_ticker -= 1.0
 
 
 class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None,
-                 playerStats=None, always_visible=False, interact=None, description=None, on_create=None, update_speed=1.0):
+                 playerStats=None, always_visible=False, interact=None, description=None, on_create=None,
+                 update_speed=1.0, misc=None):
         self.x = x
         self.y = y
         self.char = char
@@ -436,11 +510,14 @@ class GameObject:
             self.playerStats.owner = self
         if on_create is not None:
             on_create(self)
+        self.misc = misc
+        if self.misc:
+            self.misc.owner = self
         
     def move(self, dx, dy):
         if not is_blocked(self.x + dx, self.y + dy):
             if self.fighter is not None:
-                web = web_at_tile(self.x, self.y)
+                web = object_at_tile(self.x, self.y, 'spiderweb')
                 if web is not None and not self.name == 'tunnel_spider':
                     message('The ' + self.name + ' struggles against the web.')
                     objects.remove(web)
@@ -525,6 +602,9 @@ class GameObject:
     def on_tick(self):
         if self.fighter:
             self.fighter.on_tick()
+        if self.misc and hasattr(self.misc, 'on_tick'):
+            self.misc.on_tick()
+
 
 
 class Tile:
@@ -592,9 +672,26 @@ class Rect:
 # General Functions
 #############################################
 
-def web_at_tile(x, y):
+# This function exists so files outside game.py can modify this global variable.
+# Hopefully there's a better way to do this    -T
+def fov_recompute_fn():
+    global fov_recompute
+    fov_recompute = True
+
+
+def roll_to_hit(evasion,  accuracy):
+    chance_to_hit = consts.EVADE_FACTOR / (consts.EVADE_FACTOR + evasion)
+    chance_to_hit *= accuracy
+    return libtcod.random_get_float(0, 0, 1) < chance_to_hit
+
+def random_position_in_circle(radius):
+    r = libtcod.random_get_float(0, 0.0, float(radius))
+    theta = libtcod.random_get_float(0, 0.0, 2.0 * math.pi)
+    return (int(round(r * math.cos(theta))), int(round(r * math.sin(theta))))
+
+def object_at_tile(x, y, name):
     for obj in objects:
-        if obj.x == x and obj.y == y and obj.name == 'spiderweb':
+        if obj.x == x and obj.y == y and obj.name == name:
             return obj
     return None
 
@@ -718,7 +815,7 @@ def target_monster(max_range=None):
         if x is None:
             return None
         for obj in objects:
-            if obj.x == x and obj.y == y:
+            if obj.x == x and obj.y == y and obj.fighter and obj.ai:
                 return obj
         return None
 
@@ -814,22 +911,11 @@ def target_tile(max_range=None, targeting_type='pick'):
         selected_y = cursor.y
         beam_values = []
 
-        if targeting_type == 'beam_interrupt' or targeting_type == 'beam':
-            libtcod.line_init(player.x, player.y, cursor.x, cursor.y)
-            line_x, line_y = libtcod.line_step()
-            ended = False
-            while (not ended):
-                if line_x is None or line_y is None:
-                    ended = True
-                else:
-                    if targeting_type == 'beam':
-                        beam_values.append((line_x, line_y))  # beam targeting adds every space in the line to the return value
-                    elif targeting_type == 'beam_interrupt':
-                        if is_blocked(line_x, line_y):  # beam interrupt scans until it hits something
-                            selected_x = line_x
-                            selected_y = line_y
-                            ended = True
-                    line_x, line_y = libtcod.line_step()
+        if targeting_type == 'beam_interrupt':
+            selected_x, selected_y = beam_interrupt(player.x, player.y, cursor.x, cursor.y)
+        elif targeting_type == 'beam':
+            beam_values = beam(player.x, player.y, cursor.x, cursor.y)
+            selected_x, selected_y = beam_values[len(beam_values) - 1]
 
         if (mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and libtcod.map_is_in_fov(fov_map, x, y):
             if max_range is None or round((player.distance(x, y))) <= max_range:
@@ -848,6 +934,28 @@ def target_tile(max_range=None, targeting_type='pick'):
 
         oldMouseX = mouse.cx
         oldMouseY = mouse.cy
+
+
+def beam(sourcex, sourcey, destx, desty):
+    libtcod.line_init(sourcex, sourcey, destx, desty)
+    line_x, line_y = libtcod.line_step()
+    beam_values = []
+    while line_x is not None:
+        coord = line_x, line_y
+        beam_values.append(coord)
+        line_x, line_y = libtcod.line_step()
+    # beam_values.append(destx, desty) TODO: need to test this
+    return beam_values
+
+
+def beam_interrupt(sourcex, sourcey, destx, desty):
+    libtcod.line_init(sourcex, sourcey, destx, desty)
+    line_x, line_y = libtcod.line_step()
+    while line_x is not None:
+        if is_blocked(line_x, line_y):  # beam interrupt scans until it hits something
+            return line_x, line_y
+        line_x, line_y = libtcod.line_step()
+    return destx, desty
 
 
 def closest_monster(max_range):
@@ -974,7 +1082,7 @@ def is_blocked(x, y):
 
 
 def get_room_spawns(room):
-    return [[k,libtcod.random_get_int(0,v[0],v[1])] for (k,v) in room['spawns'].items()]
+    return [[k, libtcod.random_get_int(0, v[0], v[1])] for (k, v) in room['spawns'].items()]
 
 
 def spawn_monster(name, room):
@@ -985,7 +1093,7 @@ def spawn_monster(name, room):
         fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'],
                                     evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
                                     death_function=monster_death, loot_table=loot.table[p.get('loot', 'default')],
-                                    can_breath_underwater=True)
+                                    can_breath_underwater=True, resistances=p['resistances'])
         monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
                              ai=p['ai'](), description=p['description'], on_create=p['on_create'], update_speed=p['speed'])
         objects.append(monster)
@@ -1019,10 +1127,11 @@ def place_objects(room):
     item_chances['equipment_shield'] = 25
 
     table = dungeon.table[get_dungeon_level()]['versions']
-    spawns = get_room_spawns(table[random_choice_index([e['weight'] for e in table])])
-    for s in spawns:
-        for n in range(0,s[1]):
-            spawn_monster(s[0],room)
+    for i in range(libtcod.random_get_int(0, 0, 4)):  # temporary line to spawn multiple monster groups in a room
+        spawns = get_room_spawns(table[random_choice_index([e['weight'] for e in table])])
+        for s in spawns:
+            for n in range(0,s[1]):
+                spawn_monster(s[0],room)
             
     num_items = libtcod.random_get_int(0, 0, max_items)
     for i in range(num_items):
@@ -1051,7 +1160,7 @@ def create_room(room):
     for x in range(room.x1 + 1, room.x2):
         for y in range(room.y1 + 1, room.y2):
             dice = libtcod.random_get_int(0, 0, 3)
-            dice = 1
+            dice = 2
             if dice == 0:
                 dungeon_map[x][y].tile_type = 'shallow water'
             elif dice == 1:
@@ -1138,8 +1247,6 @@ def get_dungeon_level():
 
 def player_move_or_attack(dx, dy):
 
-    global fov_recompute
-    
     x = player.x + dx
     y = player.y + dy
     
@@ -1153,7 +1260,7 @@ def player_move_or_attack(dx, dy):
         return player.fighter.attack(target) != 'failed'
     else:
         value = player.move(dx, dy)
-        fov_recompute = True
+        fov_recompute_fn()
         return value
 
 
@@ -1184,7 +1291,6 @@ def handle_keys():
     if game_state == 'playing':
 
         # movement keys - assume fov_recompute is true, then set to false if no movement
-        fov_recompute = True
         key_char = chr(key.c)
         moved = False
         if key.vk == libtcod.KEY_UP:
@@ -1275,9 +1381,9 @@ def handle_keys():
 
 
 def jump():
-    global player, fov_recompute
+    global player
 
-    web = web_at_tile(player.x, player.y)
+    web = object_at_tile(player.x, player.y, 'spiderweb')
     if web is not None:
         message('The player struggles against the web.')
         objects.remove(web)
@@ -1292,7 +1398,7 @@ def jump():
         if not is_blocked(x, y):
             player.x = x
             player.y = y
-            fov_recompute = True
+            fov_recompute_fn()
             player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
             return 'jumped'
         else:
@@ -1591,8 +1697,9 @@ def play_game():
             for object in objects:
                 if object.ai:
                     object.ai.take_turn()
+                if object is not player:
                     object.on_tick()
-
+5
 
 # my modules
 import spells

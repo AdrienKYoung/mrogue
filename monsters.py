@@ -3,7 +3,7 @@ import libtcodpy as libtcod
 
 proto = {
     'monster_goblin': {
-        'name': 'Goblin Lurker',
+        'name': 'goblin lurker',
         'char': 'g',
         'color': libtcod.desaturated_green,
         'hp': 20,
@@ -15,11 +15,47 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': None,
-        'ai' : main.AI_Default,
-        'description': 'Small vicious humanoid. Dangerous in groups.'
+        'ai': main.AI_Default,
+        'description': 'Small vicious humanoid. Dangerous in groups.',
+        'resistances': []
+    },
+    'monster_giant_frog': {
+        'name': 'giant frog',
+        'char': 'f',
+        'color': libtcod.lime,
+        'hp': 25,
+        'attack_damage': 7,
+        'armor': 3,
+        'evasion': 20,
+        'accuracy': 0.55,
+        'speed': 1.0,
+        'difficulty': 1,
+        'loot': 'default',
+        'on_create': None,
+        'ai': main.AI_GiantFrog,
+        'description': 'Unusually large amphibian that dwells in lakes and ponds. '
+                       'Can grab unwary adventurers with its sticky tongue.',
+        'resistances': []
+    },
+    'monster_reeker': {
+        'name': 'reeker',
+        'char': 24,
+        'color': libtcod.light_fuchsia,
+        'hp': 45,
+        'attack_damage': 0,
+        'armor': 3,
+        'evasion': 0,
+        'accuracy': 0,
+        'speed': 1.0,
+        'difficulty': 1,
+        'loot': 'default',
+        'on_create': None,
+        'ai': main.AI_Reeker,
+        'description': 'A short, stocky fungus that emits puffs of foul-smelling gas.',
+        'resistances': ['confusion']
     },
     'monster_golem': {
-        'name': 'Golem',
+        'name': 'golem',
         'char': 'G',
         'color': libtcod.sepia,
         'hp': 100,
@@ -31,11 +67,12 @@ proto = {
         'difficulty': 3,
         'loot': 'default',
         'on_create': None,
-        'ai' : main.AI_Default,
-        'description': 'Large stone golem, animated by magic. Slow but very strong.'
+        'ai': main.AI_Default,
+        'description': 'Large stone golem, animated by magic. Slow but very strong.',
+        'resistances': []
     },
     'monster_tunnel_spider': {
-        'name': 'Tunnel Spider',
+        'name': 'tunnel spider',
         'char': 's',
         'color': libtcod.gray,
         'hp': 16,
@@ -47,8 +84,9 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': main.make_spiderweb,
-        'ai' : main.AI_TunnelSpider,
-        'description': 'An arachnid who hunts by trapping hapless prey in its webs. Fast, but fragile.'
+        'ai': main.AI_TunnelSpider,
+        'description': 'An arachnid who hunts by trapping hapless prey in its webs. Fast, but fragile.',
+        'resistances': []
     },
     'monster_nosferatu': {
         'name': 'Nosferatu',
@@ -63,8 +101,9 @@ proto = {
         'difficulty': 12,
         'loot': 'default',#'boss_undead',
         'on_create': None,
-        'ai' : main.AI_Default,
+        'ai': main.AI_Default,
         'attributes': {'flying': 'always', 'spell_warp_weapon': 20, 'spell_blink': 10},
-        'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.'
+        'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.',
+        'resistances': []
     }
 }
