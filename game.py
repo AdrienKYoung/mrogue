@@ -1386,13 +1386,16 @@ def render_all():
     if fov_recompute:
         fov_recompute = False
         libtcod.map_compute_fov(fov_map, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS, consts.FOV_ALGO)
-    
+
+
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
-            # wall = dungeon_map[x][y].blocks_sight
+            # culling
+            if x - offsetx < 0 or x - offsetx > consts.MAP_VIEWPORT_WIDTH or\
+                                    y - offsety < 0 or y - offsety > consts.MAP_VIEWPORT_HEIGHT:
+                continue
+
             visible = libtcod.map_is_in_fov(fov_map, x, y)
-            # color_fg = copy.copy(dungeon_map[x][y].color_fg)
-            # color_bg = copy.copy(dungeon_map[x][y].color_bg)
             color_fg = libtcod.Color(dungeon_map[x][y].color_fg[0], dungeon_map[x][y].color_fg[1], dungeon_map[x][y].color_fg[2])
             color_bg = libtcod.Color(dungeon_map[x][y].color_bg[0], dungeon_map[x][y].color_bg[1], dungeon_map[x][y].color_bg[2])
             if not visible:
