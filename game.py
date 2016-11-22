@@ -708,13 +708,15 @@ def make_spiderweb(obj):
                 web.send_to_back()
 
 def get_all_equipped(equipped_list):
+    result = []
     for item in equipped_list:
         if item.equipment and item.equipment.is_equipped:
-            equipped_list.append(item.equipment)
-    return equipped_list
+            result.append(item.equipment)
+    return result
 
 
 def get_equipped_in_slot(equipped_list,slot):
+    print equipped_list
     for obj in equipped_list:
         if obj.equipment and obj.equipment.is_equipped and obj.equipment.slot == slot:
             return obj.equipment
