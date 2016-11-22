@@ -1401,19 +1401,22 @@ def get_description(obj):
     else:
         return ""
 
+
 def examine():
     x, y = target_tile()
     if x is not None and y is not None:
         obj = object_at_coords(x, y)
-        desc = obj.name + get_description(obj)
-        if obj and hasattr(obj, 'fighter') and obj.fighter is not None and \
-                hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
-            desc = desc + ' Inventory: '
-            print obj.fighter.inventory
-            for item in obj.fighter.inventory:
-                desc = desc + item.name + '; '
-
+        desc = ""
+        if obj is not None:
+            desc = obj.name + get_description(obj)
+            if hasattr(obj, 'fighter') and obj.fighter is not None and \
+                    hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
+                desc = desc + ' Inventory: '
+                print obj.fighter.inventory
+                for item in obj.fighter.inventory:
+                    desc = desc + item.name + '; '
         menu(desc, ['back'], 50)
+
 
 def jump():
     global player
