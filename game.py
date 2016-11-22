@@ -4,7 +4,6 @@ import textwrap
 import shelve
 import consts
 import terrain
-import random
 
 #############################################
 # Classes
@@ -401,7 +400,8 @@ class AI_Reeker:
                 if libtcod.random_get_int(0, 0, 10) < 3:
                     # create puff
                     position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
-                    puff_pos = (monster.x + position[0], monster.y + position[1])
+                    puff_pos = (clamp(monster.x + position[0], 0, consts.MAP_WIDTH),
+                                clamp(monster.y + position[1], 0, consts.MAP_HEIGHT))
                     if not dungeon_map[puff_pos[0]][puff_pos[1]].blocks and object_at_tile(puff_pos[0], puff_pos[1], 'reeker gas') is None:
                         puff = GameObject(monster.x + position[0], monster.y + position[1], libtcod.CHAR_BLOCK3,
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
@@ -651,28 +651,17 @@ class Tile:
     def jumpable(self):
         return terrain.data[self.tile_type].jumpable
 
-
-class Rect:
-
-    def __init__(self, x, y, w, h):
-        self.x1 = x
-        self.y1 = y
-        self.x2 = x + w
-        self.y2 = y + h
-        
-    def center(self):
-        center_x = (self.x1 + self.x2) / 2
-        center_y = (self.y1 + self.y2) / 2
-        return (center_x, center_y)
-        
-    def intersect(self, other):
-        return (self.x1 <= other.x2 and self.x2 >= other.x1 and
-                self.y1 <= other.y2 and self.y2 >= other.y1)
-
                 
 #############################################
 # General Functions
 #############################################
+
+def clamp(value, min_value, max_value):
+    if value < min_value:
+        value = min_value
+    if value > max_value:
+        value = max_value
+    return value
 
 # This function exists so files outside game.py can modify this global variable.
 # Hopefully there's a better way to do this    -T
@@ -781,7 +770,7 @@ def next_level():
 
     message('You descend...', libtcod.white)
     dungeon_level += 1
-    make_map()
+    generate_level()
     initialize_fov()
 
 
@@ -800,8 +789,8 @@ def monster_death(monster):
             objects.append(drop)
             drop.send_to_back()
 
-    if hasattr(monster.fighter,'equipment') and len(monster.fighter.equipment) > 0:
-        for item in monster.fighter.equipment:
+    if hasattr(monster.fighter,'inventory') and len(monster.fighter.inventory) > 0:
+        for item in monster.fighter.inventory:
             item.x = monster.x
             item.y = monster.y
             objects.append(item)
@@ -1078,7 +1067,6 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
 
 
 def is_blocked(x, y):
-    global dungeon_map
     if dungeon_map[x][y].blocks:
         return True
         
@@ -1176,95 +1164,10 @@ def check_boss(level):
     return None
 
 
-def create_room(room):
-    global dungeon_map
-    for x in range(room.x1 + 1, room.x2):
-        for y in range(room.y1 + 1, room.y2):
-            dice = libtcod.random_get_int(0, 0, 3)
-            dice = 2
-            if dice == 0:
-                dungeon_map[x][y].tile_type = 'shallow water'
-            elif dice == 1:
-                dungeon_map[x][y].tile_type = 'deep water'
-            else:
-                dungeon_map[x][y].tile_type = 'stone floor'
-
-
-def create_h_tunnel(x1, x2, y):
-    global dungeon_map
-    for x in range(min(x1, x2), max(x1, x2) + 1):
-        dungeon_map[x][y].tile_type = 'stone floor'
-
-
-def create_v_tunnel(y1, y2, x):
-    global dungeon_map
-    for y in range(min(y1, y2), max(y1, y2) + 1):
-        dungeon_map[x][y].tile_type = 'stone floor'
-
-
-def make_map():
-    global dungeon_map, objects, stairs, dungeon_level, spawned_bosses
-    
-    objects = [player]
-
-    dungeon_map = [[ Tile('stone wall')
-        for y in range(consts.MAP_HEIGHT) ]
-            for x in range(consts.MAP_WIDTH) ]
-
-    rooms = []
-    spawned_bosses = {}
-    num_rooms = 0
-    
-    for r in range(consts.MAX_ROOMS):
-        w = libtcod.random_get_int(0, consts.ROOM_MIN_SIZE, consts.ROOM_MAX_SIZE)
-        h = libtcod.random_get_int(0, consts.ROOM_MIN_SIZE, consts.ROOM_MAX_SIZE)
-        x = libtcod.random_get_int(0, 0, consts.MAP_WIDTH - w - 1)
-        y = libtcod.random_get_int(0, 0, consts.MAP_HEIGHT - h - 1)
-        
-        new_room = Rect(x, y, w, h)
-        
-        failed = False
-        for other_room in rooms:
-            if new_room.intersect(other_room):
-                failed = True
-                break
-                
-        if not failed:
-            create_room(new_room)
-            (new_x, new_y) = new_room.center()
-            
-            if num_rooms == 0:
-                player.x = new_x
-                player.y = new_y
-            else:
-                (prev_x, prev_y) = rooms[num_rooms-1].center()
-                if libtcod.random_get_int(0, 0, 1) == 0:
-                    create_h_tunnel(prev_x, new_x, prev_y)
-                    create_v_tunnel(prev_y, new_y, new_x)
-                else:
-                    create_v_tunnel(prev_y, new_y, prev_x)
-                    create_h_tunnel(prev_x, new_x, new_y)
-            place_objects(new_room)
-            rooms.append(new_room)
-            num_rooms += 1
-
-    #Generate every-floor random features
-    sample = random.sample(rooms,2)
-    x,y = sample[0].center()
-    stairs = GameObject(x, y, '<', 'stairs downward', libtcod.white, always_visible=True)
-    objects.append(stairs)
-    stairs.send_to_back()
-    x, y = sample[1].center()
-    level_shrine = GameObject(x,y, '=', 'shrine of power', libtcod.white, always_visible=True, interact=level_up)
-    objects.append(level_shrine)
-    level_shrine.send_to_back()
-    boss = check_boss(get_dungeon_level())
-    if boss is not None:
-        spawn_monster(boss,sample[1])
-
 def get_dungeon_level():
     global dungeon_level
     return "dungeon_{}".format(dungeon_level)
+
 
 def player_move_or_attack(dx, dy):
 
@@ -1405,15 +1308,16 @@ def examine():
     x, y = target_tile()
     if x is not None and y is not None:
         obj = object_at_coords(x, y)
-        desc = obj.name + get_description(obj)
-        if obj and hasattr(obj, 'fighter') and obj.fighter is not None and \
-                hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
-            desc = desc + ' Inventory: '
-            print obj.fighter.inventory
-            for item in obj.fighter.inventory:
-                desc = desc + item.name + '; '
+        if obj is not None:
+            desc = obj.name + '\n' + get_description(obj)
+            if obj and hasattr(obj, 'fighter') and obj.fighter is not None and \
+                    hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
+                desc = desc + ' Inventory: '
+                print obj.fighter.inventory
+                for item in obj.fighter.inventory:
+                    desc = desc + item.name + '; '
 
-        menu(desc, ['back'], 50)
+            menu(desc, ['back'], 50)
 
 def jump():
     global player
@@ -1589,6 +1493,10 @@ def render_all():
             y += 1
         libtcod.console_blit(ui, mouse.cx, mouse.cy + 1, max_width, y - 1, 0, mouse.cx, mouse.cy + 1, 1.0, 0.5)
 
+
+def generate_level():
+    global dungeon_map, objects, stairs, spawned_bosses
+    mapgen.make_map()
  
 #############################################
 # Initialization & Main Loop
@@ -1634,7 +1542,7 @@ def new_game():
     
     #generate map
     dungeon_level = 1
-    make_map()
+    generate_level()
     initialize_fov()
     game_state = 'playing'
 
@@ -1741,6 +1649,7 @@ import spells
 import loot
 import monsters
 import dungeon
+import mapgen
 
 in_game = False
 libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)

@@ -20,7 +20,7 @@ data = {
                              'the cold, cobblestone dungeon floor'),
     'stone wall': TileData(True, True, 'stone wall', '#', (255, 191, 0), (191, 143, 0),
                              'the sturdy masonry of the dungeon walls'),
-    'shallow water': TileData(False, False, 'shallow water', '~', (115, 220, 255), (0, 127, 255),
+    'shallow water': TileData(False, False, 'shallow water', '~', (0, 95, 191), (0, 64, 128),
                              'a shallow pool of grimy water', consts.SHALLOW_WATER_COST),
     'deep water': TileData(False, False, 'deep water', '~', (0, 64, 128), (0, 32, 64),
                              'a deep pool of grimy water', consts.DEEP_WATER_COST, False),
