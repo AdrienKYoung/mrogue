@@ -41,7 +41,8 @@ class Equipment:
             self.equip()
             
     def equip(self):
-        old_equipment = get_equipped_in_slot(self.slot)
+        global inventory
+        old_equipment = get_equipped_in_slot(inventory,self.slot)
         if old_equipment is not None:
             old_equipment.dequip()
         self.is_equipped = True
@@ -81,7 +82,7 @@ class Item:
                 objects.remove(self.owner)
                 message('You picked up a ' + self.owner.name + '!', libtcod.light_grey)
                 equipment = self.owner.equipment
-                if equipment and get_equipped_in_slot(equipment.slot) is None:
+                if equipment and get_equipped_in_slot(inventory,equipment.slot) is None:
                     equipment.equip()
         elif self.type == 'spell':
             if len(memory) >= player.playerStats.max_memory:
@@ -149,7 +150,7 @@ class Fighter:
 
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=1.0, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, loot_table=None, breath=6,
-                 can_breath_underwater=False, resistances=[]):
+                 can_breath_underwater=False, resistances=[], inventory=[]):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -168,7 +169,8 @@ class Fighter:
         self.max_breath = breath
         self.breath = breath
         self.can_breath_underwater = can_breath_underwater
-        self.resistances = resistances
+        self.resistances = list(resistances)
+        self.inventory = list(inventory)
         self.status_effects = []
 
     def adjust_stamina(self, amount):
@@ -192,8 +194,8 @@ class Fighter:
 
         if self.owner.name == 'player':
             stamina_cost = consts.UNARMED_STAMINA_COST / (self.owner.playerStats.str / consts.UNARMED_STAMINA_COST)
-            if get_equipped_in_slot('right hand') is not None:
-                stamina_cost = int((float(get_equipped_in_slot('right hand').stamina_cost) / (float(self.owner.playerStats.str) / float(get_equipped_in_slot('right hand').str_requirement))))
+            if get_equipped_in_slot(self.inventory,'right hand') is not None:
+                stamina_cost = int((float(get_equipped_in_slot(self.inventory,'right hand').stamina_cost) / (float(self.owner.playerStats.str) / float(get_equipped_in_slot(self.inventory,'right hand').str_requirement))))
             if self.stamina < stamina_cost:
                 message("You can't find the strength to swing your weapon!", libtcod.light_yellow)
                 return 'failed'
@@ -278,7 +280,7 @@ class Fighter:
 
     @property
     def attack_damage(self):
-        bonus = sum(equipment.attack_damage_bonus for equipment in get_all_equipped(self.owner))
+        bonus = sum(equipment.attack_damage_bonus for equipment in get_all_equipped(self.inventory))
         if self.owner.playerStats:
             return self.base_attack_damage + self.owner.playerStats.str + bonus
         else:
@@ -286,12 +288,12 @@ class Fighter:
 
     @property
     def armor(self):
-        bonus = sum(equipment.armor_bonus for equipment in get_all_equipped(self.owner))
+        bonus = sum(equipment.armor_bonus for equipment in get_all_equipped(self.inventory))
         return self.base_armor + bonus
 
     @property
     def evasion(self):
-        bonus = sum(equipment.evasion_bonus for equipment in get_all_equipped(self.owner))
+        bonus = sum(equipment.evasion_bonus for equipment in get_all_equipped(self.inventory))
         if self.owner.playerStats:
             return self.base_evasion + self.owner.playerStats.agi + bonus
         else:
@@ -299,7 +301,7 @@ class Fighter:
 
     @property
     def spell_power(self):
-        bonus = sum(equipment.spell_power_bonus for equipment in get_all_equipped(self.owner))
+        bonus = sum(equipment.spell_power_bonus for equipment in get_all_equipped(self.inventory))
         if self.owner.playerStats:
             return self.base_spell_power + self.owner.playerStats.int + bonus
         else:
@@ -307,17 +309,17 @@ class Fighter:
 
     @property
     def power(self):
-        bonus = sum(equipment.power_bonus for equipment in get_all_equipped(self.owner))
+        bonus = sum(equipment.power_bonus for equipment in get_all_equipped(self.inventory))
         return self.base_power + bonus
         
     @property
     def defense(self):
-        bonus = sum(equipment.defense_bonus for equipment in get_all_equipped(self.owner))
+        bonus = sum(equipment.defense_bonus for equipment in get_all_equipped(self.inventory))
         return self.base_defense + bonus
         
     @property
     def max_hp(self):
-        bonus = sum(equipment.max_hp_bonus for equipment in get_all_equipped(self.owner))
+        bonus = sum(equipment.max_hp_bonus for equipment in get_all_equipped(self.inventory))
         return self.base_max_hp + bonus
 
 
@@ -705,19 +707,15 @@ def make_spiderweb(obj):
                 objects.append(web)
                 web.send_to_back()
 
-def get_all_equipped(obj):
-    if obj == player:
-        equipped_list = []
-        for item in inventory:
-            if item.equipment and item.equipment.is_equipped:
-                equipped_list.append(item.equipment)
-        return equipped_list
-    else:
-        return []
+def get_all_equipped(equipped_list):
+    for item in equipped_list:
+        if item.equipment and item.equipment.is_equipped:
+            equipped_list.append(item.equipment)
+    return equipped_list
 
 
-def get_equipped_in_slot(slot):
-    for obj in inventory:
+def get_equipped_in_slot(equipped_list,slot):
+    for obj in equipped_list:
         if obj.equipment and obj.equipment.is_equipped and obj.equipment.slot == slot:
             return obj.equipment
     return None
@@ -799,6 +797,14 @@ def monster_death(monster):
         if drop:
             objects.append(drop)
             drop.send_to_back()
+
+    if hasattr(monster.fighter,'equipment') and len(monster.fighter.equipment) > 0:
+        for item in monster.fighter.equipment:
+            item.x = monster.x
+            item.y = monster.y
+            objects.append(item)
+            item.send_to_back()
+
     message(monster.name.capitalize() + ' is dead!', libtcod.red)
     monster.char = '%'
     monster.color = libtcod.dark_red
@@ -1093,29 +1099,42 @@ def spawn_monster(name, room):
         fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'],
                                     evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
                                     death_function=monster_death, loot_table=loot.table[p.get('loot', 'default')],
-                                    can_breath_underwater=True, resistances=p['resistances'])
+                                    can_breath_underwater=True, resistances=p['resistances'], inventory=spawn_monster_inventory(p.get('equipment')))
         monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
                              ai=p['ai'](), description=p['description'], on_create=p['on_create'], update_speed=p['speed'])
         objects.append(monster)
 
+def spawn_monster_inventory(proto):
+    result = []
+    if proto:
+        for slot in proto:
+            equip = random_choice(slot)
+            if equip != 'none':
+                result.append(create_item(equip))
+    return result
+
+def create_item(name):
+    p = loot.proto[name]
+    item_component = Item(use_function=p.get('on_use'))
+    equipment_component = None
+    if p['type'] == 'equipment':
+        equipment_component = Equipment(
+            slot=p['slot'],
+            attack_damage_bonus=p.get('attack_damage_bonus', 0),
+            armor_bonus=p.get('armor_bonus', 0),
+            max_hp_bonus=p.get('max_hp_bonus', 0),
+            evasion_bonus=p.get('evasion_bonus', 0),
+            spell_power_bonus=p.get('spell_power_bonus', 0),
+            stamina_cost=p.get('stamina_cost', 0),
+            str_requirement=p.get('str_requirement', 0)
+        )
+    return GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
+                      equipment=equipment_component, always_visible=True, description=p.get('description'))
 
 def spawn_item(name, x, y):
-        p = loot.proto[name]
-        item_component = Item(use_function=p.get('on_use'))
-        equipment_component = None
-        if p['type'] == 'equipment':
-            equipment_component = Equipment(
-                slot=p['slot'],
-                attack_damage_bonus=p.get('attack_damage_bonus', 0),
-                armor_bonus=p.get('armor_bonus', 0),
-                max_hp_bonus=p.get('max_hp_bonus', 0),
-                evasion_bonus=p.get('evasion_bonus', 0),
-                spell_power_bonus=p.get('spell_power_bonus', 0),
-                stamina_cost=p.get('stamina_cost', 0),
-                str_requirement=p.get('str_requirement', 0)
-            )
-        item = GameObject(x, y, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
-                          equipment=equipment_component, always_visible=True)
+        item = create_item(name)
+        item.x = x
+        item.y = y
         objects.append(item)
         item.send_to_back()
 
@@ -1368,17 +1387,31 @@ def handle_keys():
                 else:
                     message("You don't have the stamina to jump!", libtcod.light_yellow)
             if key_char == 'e':
-                x, y = target_tile()
-                if x is not None and y is not None:
-                    obj = object_at_coords(x, y)
-                    if obj and hasattr(obj, 'description') and obj.description is not None:
-                        menu(obj.name + '\n' + obj.description, ['back'], 20)
-                    elif obj is not None:
-                        menu(obj.name, ['back'], 20)
+                examine()
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
 
+
+def get_description(obj):
+    if obj and hasattr(obj, 'description') and obj.description is not None:
+        return obj.description
+    else:
+        return ""
+
+def examine():
+    x, y = target_tile()
+    if x is not None and y is not None:
+        obj = object_at_coords(x, y)
+        desc = obj.name + get_description(obj)
+        if obj and hasattr(obj, 'fighter') and obj.fighter is not None and \
+                hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
+            desc = desc + ' Inventory: '
+            print obj.fighter.inventory
+            for item in obj.fighter.inventory:
+                desc = desc + item.name + '; '
+
+        menu(desc, ['back'], 50)
 
 def jump():
     global player
@@ -1592,7 +1625,8 @@ def new_game():
     in_game = True
 
     #create object representing the player
-    fighter_component = Fighter(hp=100, xp=0, stamina=100, death_function=player_death)
+    inventory = []
+    fighter_component = Fighter(hp=100, xp=0, stamina=100, death_function=player_death, inventory=inventory)
     player = GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component, playerStats=PlayerStats(), description='You, the fearless adventurer!')
     player.level = 1
     
@@ -1601,8 +1635,7 @@ def new_game():
     make_map()
     initialize_fov()
     game_state = 'playing'
-    
-    inventory = []
+
     item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball), description='the sword you started with')
     waterbreathing = GameObject(0, 0, '!', 'potion of waterbreathing', libtcod.yellow, item=Item(use_function=spells.cast_waterbreathing), description='This potion allows the drinker to breath underwater for a short time.')
 

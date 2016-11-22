@@ -19,6 +19,24 @@ proto = {
         'description': 'Small vicious humanoid. Dangerous in groups.',
         'resistances': []
     },
+    'monster_goblin_warrior': {
+        'name': 'goblin warrior',
+        'char': 'g',
+        'color': libtcod.gray,
+        'hp': 20,
+        'attack_damage': 10,
+        'armor': 5,
+        'evasion': 5,
+        'accuracy': 0.65,
+        'speed': 0.8,
+        'difficulty': 1,
+        'loot': 'default',
+        'on_create': None,
+        'ai': main.AI_Default,
+        'description': 'Small vicious humanoid that scavenged some equipment.',
+        'resistances': [],
+        'equipment': [{'equipment_dagger':50,'equipment_longsword':50},{'none':50,'equipment_shield':50},{'none':50,'equipment_leather_armor':50}]
+    },
     'monster_giant_frog': {
         'name': 'giant frog',
         'char': 'f',

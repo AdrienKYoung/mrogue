@@ -59,6 +59,17 @@ proto = {
         'stamina_cost': 10,
         'str_requirement': 10
     },
+    'equipment_dagger': {
+        'name': 'Dagger',
+        'char': '-',
+        'color': libtcodpy.yellow,
+        'type': 'equipment',
+        'attack_damage_bonus': 3,
+        'slot':'right hand',
+        'description': 'A small double-edged knife',
+        'stamina_cost': 3,
+        'str_requirement': 3
+    },
 
     #ARMOR
     'equipment_shield': {
@@ -70,4 +81,14 @@ proto = {
         'slot': 'left hand',
         'description': 'An iron kite shield.'
     },
+
+    'equipment_leather_armor': {
+        'name': 'Leather Armor',
+        'char': chr(6),
+        'color': libtcodpy.yellow,
+        'type': 'equipment',
+        'armor_bonus': 5,
+        'slot': 'body',
+        'description': 'A hardened leather coat.'
+    }
 }
