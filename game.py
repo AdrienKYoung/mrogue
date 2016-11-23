@@ -1365,10 +1365,9 @@ def cast_spell():
 
 
 def clear_map():
-    offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
-    for y in range(consts.MAP_HEIGHT):
-        for x in range(consts.MAP_WIDTH):
-            libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, 219, libtcod.black, libtcod.black)
+    libtcod.console_set_default_background(mapCon, libtcod.black)
+    libtcod.console_set_default_foreground(mapCon, libtcod.black)
+    libtcod.console_clear(mapCon)
 
 
 def render_all():
