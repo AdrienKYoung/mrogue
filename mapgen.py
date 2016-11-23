@@ -69,6 +69,7 @@ class Rect:
 
 def create_room_random():
     choice = libtcod.random_get_int(0, 0, 2)
+
     choice = 2
     if choice == 0:
         return create_room_rectangle()
@@ -81,21 +82,30 @@ def create_room_random():
         return create_room_rectangle()
 
 
+def random_terrain():
+    dice = libtcod.random_get_int(0, 0, 3)
+    if dice == 0:
+        return 'shallow water'
+    elif dice == 1:
+        return 'grass floor'
+    else:
+        return 'stone floor'
+
 def create_room_rectangle():
     room = Room()
-    room.add_rectangle()
+    room.add_rectangle(tile_type=random_terrain())
     return room
 
 
 def create_room_circle():
     room = Room()
-    room.add_circle()
+    room.add_circle(tile_type=random_terrain())
     return room
 
 def create_room_cloud():
     room = Room()
     r = libtcod.random_get_int(0, 2, 5)
-    room.add_circle(r=r)
+    room.add_circle(r=r,tile_type=random_terrain())
     nodes = libtcod.random_get_int(0, 2 + r, 6 + r)
     for i in range(nodes):
         angle = (2 * math.pi / nodes) * (float(i) + 1.0)
@@ -108,11 +118,10 @@ def create_room(room):
     for x in range(room.x1 + 1, room.x2):
         for y in range(room.y1 + 1, room.y2):
             dice = libtcod.random_get_int(0, 0, 3)
-            dice = 2
             if dice == 0:
                 main.dungeon_map[x][y].tile_type = 'shallow water'
             elif dice == 1:
-                main.dungeon_map[x][y].tile_type = 'deep water'
+                main.dungeon_map[x][y].tile_type = 'grass floor'
             else:
                 main.dungeon_map[x][y].tile_type = 'stone floor'
 

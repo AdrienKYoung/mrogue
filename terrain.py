@@ -4,7 +4,7 @@ import libtcodpy as libtcod
 class TileData:
 
     def __init__(self, blocks, blocks_sight, name, char,
-                 foreground_color, background_color, description='unremarkable terrain', stamina_cost=0, jumpable=True):
+                 foreground_color, background_color, description='unremarkable terrain', stamina_cost=0, jumpable=True, burnTemp=0):
         self.blocks = blocks
         self.blocks_sight = blocks_sight
         self.name = name
@@ -14,6 +14,7 @@ class TileData:
         self.description = description
         self.stamina_cost = stamina_cost
         self.jumpable = jumpable
+        self.burnTemp = burnTemp
 
 data = {
     'stone floor': TileData(False, False, 'stone floor', '.', (128, 96, 0), (64, 48, 0),
@@ -25,5 +26,7 @@ data = {
     'deep water': TileData(False, False, 'deep water', '~', (0, 64, 128), (0, 32, 64),
                              'a deep pool of grimy water', consts.DEEP_WATER_COST, False),
     'chasm': TileData(True, False, 'chasm', libtcod.CHAR_BLOCK1, (16, 16, 32), (0, 0, 16),
-                             'a pit descending into darkness')
+                             'a pit descending into darkness'),
+    'grass floor': TileData(False, False, 'grass floor', ',', (4, 140, 13), (64, 48, 0),
+                             'a stone floor covered with cave grass'),
 }
