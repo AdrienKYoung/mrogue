@@ -1599,9 +1599,9 @@ def main_menu():
         libtcod.image_blit_2x(img, 0, 0, 0)
         libtcod.console_set_default_foreground(0, libtcod.light_yellow)
         libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT /2 - 8, libtcod.BKGND_NONE, libtcod.CENTER,
-            'TUTORIAL: THE ROGUELIKE')
+            'MAGIC-ROGUELIKE')
         libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.CENTER,
-            'by Tyler Soberanis')
+            'by Tyler Soberanis and Adrien Young')
         
         choice = menu('', ['NEW GAME', 'CONTINUE', 'QUIT'], 24)
         
