@@ -77,7 +77,7 @@ proto = {
         'char': 'f',
         'color': libtcod.lime,
         'hp': 25,
-        'attack_damage': 7,
+        'attack_damage': 4,
         'armor': 3,
         'evasion': 20,
         'accuracy': 0.55,

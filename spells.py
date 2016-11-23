@@ -47,7 +47,7 @@ def cast_heal():
         return 'cancelled'
         
     main.message('You feel better.', libtcod.white)
-    main.player.fighter.heal(20)
+    main.player.fighter.heal(consts.HEAL_AMOUNT)
 
 
 def cast_waterbreathing():
