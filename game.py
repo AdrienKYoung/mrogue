@@ -149,7 +149,7 @@ class Fighter:
 
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=1.0, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, loot_table=None, breath=6,
-                 can_breath_underwater=False, resistances=[], inventory=[]):
+                 can_breath_underwater=False, resistances=[], inventory=[], on_hit=None):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -171,6 +171,7 @@ class Fighter:
         self.resistances = list(resistances)
         self.inventory = list(inventory)
         self.status_effects = []
+        self.on_hit = on_hit
 
     def adjust_stamina(self, amount):
         self.stamina += amount
@@ -180,6 +181,9 @@ class Fighter:
             self.stamina = self.max_stamina
 
     def take_damage(self, damage):
+        if self.has_status('stung'):
+            damage *= consts.CENTIPEDE_STING_AMPLIFICATION
+            damage = int(damage)
         if damage > 0:
             self.hp -= damage
             if self.hp <= 0:
@@ -208,6 +212,8 @@ class Fighter:
             damage = math.ceil(damage)
             damage = int(damage)
             if damage > 0:
+                if self.on_hit is not None:
+                    self.on_hit(self.owner, target)
                 message(self.owner.name.capitalize() + ' attacks ' + target.name + ' for ' + str(damage) + ' damage!', libtcod.grey)
                 target.fighter.take_damage(damage)
             else:
@@ -258,6 +264,7 @@ class Fighter:
             if effect.name == new_effect.name:
                 # refresh the effect
                 effect.time_limit = new_effect.time_limit
+                return
         self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
             new_effect.on_apply(self.owner)
@@ -520,7 +527,7 @@ class GameObject:
         if not is_blocked(self.x + dx, self.y + dy):
             if self.fighter is not None:
                 web = object_at_tile(self.x, self.y, 'spiderweb')
-                if web is not None and not self.name == 'tunnel_spider':
+                if web is not None and not self.name == 'tunnel spider':
                     message('The ' + self.name + ' struggles against the web.')
                     objects.remove(web)
                     return True
@@ -579,8 +586,7 @@ class GameObject:
             # find the next coordinate in the computed full path
             x, y = libtcod.path_walk(my_path, True)
             if x or y:
-                self.x = x
-                self.y = y
+                self.move_towards(x, y)
         else:
             # Use the old function instead
             self.move_towards(target_x, target_y)
@@ -656,6 +662,9 @@ class Tile:
 # General Functions
 #############################################
 
+def centipede_on_hit(attacker, target):
+    target.fighter.apply_status_effect(StatusEffect('stung', consts.CENTIPEDE_STING_DURATION, libtcod.flame))
+
 def clamp(value, min_value, max_value):
     if value < min_value:
         value = min_value
@@ -705,7 +714,6 @@ def get_all_equipped(equipped_list):
 
 
 def get_equipped_in_slot(equipped_list,slot):
-    print equipped_list
     for obj in equipped_list:
         if obj.equipment and obj.equipment.is_equipped and obj.equipment.slot == slot:
             return obj.equipment
@@ -779,7 +787,7 @@ def player_death(player):
     message('You\'re dead, sucka.', libtcod.grey)
     game_state = 'dead'
     player.char = '%'
-    player.color = libtcod.dark_red
+    player.color = libtcod.darker_red
 
 
 def monster_death(monster):
@@ -798,7 +806,7 @@ def monster_death(monster):
 
     message(monster.name.capitalize() + ' is dead!', libtcod.red)
     monster.char = '%'
-    monster.color = libtcod.dark_red
+    monster.color = libtcod.darker_red
     monster.blocks = False
     monster.fighter = None
     monster.ai = None
@@ -1089,7 +1097,7 @@ def spawn_monster(name, room):
         fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'],
                                     evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
                                     death_function=monster_death, loot_table=loot.table[p.get('loot', 'default')],
-                                    can_breath_underwater=True, resistances=p['resistances'], inventory=spawn_monster_inventory(p.get('equipment')))
+                                    can_breath_underwater=True, resistances=p['resistances'], inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'))
         monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
                              ai=p['ai'](), description=p['description'], on_create=p['on_create'], update_speed=p['speed'])
         objects.append(monster)
@@ -1315,7 +1323,6 @@ def examine():
             if hasattr(obj, 'fighter') and obj.fighter is not None and \
                     hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
                 desc = desc + '\nInventory: '
-                print obj.fighter.inventory
                 for item in obj.fighter.inventory:
                     desc = desc + item.name + ', '
             menu(desc, ['back'], 50)

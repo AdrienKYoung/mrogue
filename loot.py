@@ -2,7 +2,8 @@ import libtcodpy
 import spells
 
 table = {
-    'default': ['spell_lightning',None]
+    'default': ['spell_lightning',None],
+    'none': [None]
 }
 
 proto = {
