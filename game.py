@@ -548,8 +548,11 @@ class GameObject:
         if (libtcod.map_is_in_fov(fov_map, self.x, self.y) or
                 (self.always_visible and dungeon_map[self.x][self.y].explored)):
             offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
-            libtcod.console_set_default_foreground(mapCon, self.color)
-            libtcod.console_put_char(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
+            if selected_monster is self:
+                libtcod.console_put_char_ex(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.black, self.color)
+            else:
+                libtcod.console_set_default_foreground(mapCon, self.color)
+                libtcod.console_put_char(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
         
     def move_towards(self, target_x, target_y):
         dx = target_x - self.x
@@ -851,10 +854,8 @@ def object_at_coords(x, y):
 def target_tile(max_range=None, targeting_type='pick'):
     global key, mouse
 
-    cursor = GameObject(0, 0, ' ', 'cursor', libtcod.white)
-    objects.append(cursor)
-    cursor.x = player.x
-    cursor.y = player.y
+    cursor_x = player.x
+    cursor_y = player.y
     x = player.x
     y = player.y
     oldMouseX = mouse.cx
@@ -882,7 +883,7 @@ def target_tile(max_range=None, targeting_type='pick'):
         libtcod.console_set_default_background(ui, libtcod.magenta)
         libtcod.console_clear(ui)
         if targeting_type == 'beam' or targeting_type == 'beam_interrupt':
-            libtcod.line_init(player.x, player.y, cursor.x, cursor.y)
+            libtcod.line_init(player.x, player.y, cursor_x, cursor_y)
             line_x, line_y = libtcod.line_step()
             while (not line_x is None):
                 libtcod.console_put_char_ex(ui, line_x - offsetx, line_y - offsety, ' ', libtcod.white, libtcod.yellow)
@@ -916,32 +917,29 @@ def target_tile(max_range=None, targeting_type='pick'):
         if oldMouseX != mouse.cx or oldMouseY != mouse.cy:
             x, y = mouse.cx + offsetx - consts.MAP_VIEWPORT_X, mouse.cy + offsety - consts.MAP_VIEWPORT_Y
 
-        cursor.x = x
-        cursor.y = y
+        cursor_x = x
+        cursor_y = y
 
-        selected_x = cursor.x
-        selected_y = cursor.y
+        selected_x = cursor_x
+        selected_y = cursor_y
         beam_values = []
 
         if targeting_type == 'beam_interrupt':
-            selected_x, selected_y = beam_interrupt(player.x, player.y, cursor.x, cursor.y)
+            selected_x, selected_y = beam_interrupt(player.x, player.y, cursor_x, cursor_y)
         elif targeting_type == 'beam':
-            beam_values = beam(player.x, player.y, cursor.x, cursor.y)
+            beam_values = beam(player.x, player.y, cursor_x, cursor_y)
             selected_x, selected_y = beam_values[len(beam_values) - 1]
 
         if (mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and libtcod.map_is_in_fov(fov_map, x, y):
             if max_range is None or round((player.distance(x, y))) <= max_range:
-                objects.remove(cursor)
                 if targeting_type == 'beam':
                     return beam_values
                 else:
                     return selected_x, selected_y
             else:
-                objects.remove(cursor)
                 return None, None  # out of range
             
         if mouse.rbutton_pressed or key.vk == libtcod.KEY_ESCAPE:
-            objects.remove(cursor)
             return None, None  # cancelled
 
         oldMouseX = mouse.cx
@@ -1082,7 +1080,7 @@ def get_names_under_mouse():
     (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
     names = [obj.name for obj in objects if (obj.x == x and obj.y == y and (libtcod.map_is_in_fov(fov_map, obj.x, obj.y)
-                            or (obj.always_visible and dungeon_map[obj.x][obj.y].explored)) and obj.name != 'cursor')]
+                            or (obj.always_visible and dungeon_map[obj.x][obj.y].explored)))]
     names = ', '.join(names)
 
     return names.capitalize()
@@ -1421,40 +1419,38 @@ def clear_map():
     libtcod.console_clear(mapCon)
 
 
-def render_all():
-
-    global fov_map, color_dark_wall, color_lit_wall
-    global color_dark_ground, color_lit_ground
+def render_map():
     global fov_recompute
-
-    if not in_game:
-        return
 
     libtcod.console_set_default_foreground(mapCon, libtcod.white)
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
 
     if fov_recompute:
         fov_recompute = False
-        libtcod.map_compute_fov(fov_map, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS, consts.FOV_ALGO)
-
+        libtcod.map_compute_fov(fov_map, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS,
+                                consts.FOV_ALGO)
 
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
             # culling
-            if x - offsetx < 0 or x - offsetx > consts.MAP_VIEWPORT_WIDTH or\
+            if x - offsetx < 0 or x - offsetx > consts.MAP_VIEWPORT_WIDTH or \
                                     y - offsety < 0 or y - offsety > consts.MAP_VIEWPORT_HEIGHT:
                 continue
 
             visible = libtcod.map_is_in_fov(fov_map, x, y)
-            color_fg = libtcod.Color(dungeon_map[x][y].color_fg[0], dungeon_map[x][y].color_fg[1], dungeon_map[x][y].color_fg[2])
-            color_bg = libtcod.Color(dungeon_map[x][y].color_bg[0], dungeon_map[x][y].color_bg[1], dungeon_map[x][y].color_bg[2])
+            color_fg = libtcod.Color(dungeon_map[x][y].color_fg[0], dungeon_map[x][y].color_fg[1],
+                                     dungeon_map[x][y].color_fg[2])
+            color_bg = libtcod.Color(dungeon_map[x][y].color_bg[0], dungeon_map[x][y].color_bg[1],
+                                     dungeon_map[x][y].color_bg[2])
             if not visible:
                 if dungeon_map[x][y].explored:
                     libtcod.color_scale_HSV(color_fg, 0.1, 0.4)
                     libtcod.color_scale_HSV(color_bg, 0.1, 0.4)
-                    libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg, color_bg)
+                    libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg,
+                                                color_bg)
             else:
-                libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg, color_bg)
+                libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg,
+                                            color_bg)
                 dungeon_map[x][y].explored = True
 
     # draw all objects in the list
@@ -1465,9 +1461,11 @@ def render_all():
 
     draw_border(mapCon, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
 
-    libtcod.console_blit(mapCon, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y)
+    libtcod.console_blit(mapCon, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X,
+                         consts.MAP_VIEWPORT_Y)
 
-    # RENDER SIDE PANEL
+
+def render_side_panel():
 
     libtcod.console_set_default_background(side_panel, libtcod.black)
     libtcod.console_clear(side_panel)
@@ -1476,7 +1474,7 @@ def render_all():
                libtcod.dark_red, libtcod.darker_red)
 
     render_bar(2, 3, consts.BAR_WIDTH, 'Stamina', player.fighter.stamina, player.fighter.max_stamina,
-                   libtcod.dark_green, libtcod.darker_green)
+               libtcod.dark_green, libtcod.darker_green)
 
     # Breath
     if player.fighter.breath < player.fighter.max_breath:
@@ -1511,17 +1509,24 @@ def render_all():
     # Spells in memory
     libtcod.console_print(side_panel, 2, drawHeight, 'Spells in memory:')
     drawHeight += 1
+    y = 1
     for spell in memory:
         libtcod.console_print(side_panel, 2, drawHeight, str(y) + ') ' + spell.name)
         drawHeight += 1
+        y += 1
 
     # Selected Monster
     if selected_monster is not None:
         drawHeight = consts.SIDE_PANEL_HEIGHT - 20
         libtcod.console_print(side_panel, 2, drawHeight, selected_monster.name)
         drawHeight += 2
-        render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp, libtcod.dark_red,  libtcod.darker_red)
-
+        render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
+                   libtcod.dark_red, libtcod.darker_red)
+        drawHeight += 2
+        for effect in selected_monster.fighter.status_effects:
+            libtcod.console_set_default_foreground(side_panel, effect.color)
+            libtcod.console_print(side_panel, 2, drawHeight, effect.name + ' (' + str(effect.time_limit) + ')')
+            drawHeight += 1
 
     draw_border(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
     for x in range(1, consts.SIDE_PANEL_WIDTH - 1):
@@ -1529,13 +1534,14 @@ def render_all():
     libtcod.console_put_char(side_panel, 0, 14, 199)
     libtcod.console_put_char(side_panel, consts.SIDE_PANEL_WIDTH - 1, 14, 182)
 
-    libtcod.console_blit(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT, 0, consts.SIDE_PANEL_X, consts.SIDE_PANEL_Y)
+    libtcod.console_blit(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT, 0, consts.SIDE_PANEL_X,
+                         consts.SIDE_PANEL_Y)
 
-    # RENDER BOTTOM PANEL
 
+def render_bottom_panel():
     libtcod.console_set_default_background(panel, libtcod.black)
     libtcod.console_clear(panel)
-    
+
     y = 1
     for (line, color) in game_msgs:
         libtcod.console_set_default_foreground(panel, color)
@@ -1549,8 +1555,8 @@ def render_all():
 
     libtcod.console_blit(panel, 0, 0, consts.PANEL_WIDTH, consts.PANEL_HEIGHT, 0, consts.PANEL_X, consts.PANEL_Y)
 
-    # RENDER UI OVERLAY
 
+def render_ui_overlay():
     libtcod.console_set_default_background(ui, libtcod.black)
     libtcod.console_clear(ui)
 
@@ -1565,6 +1571,20 @@ def render_all():
             if len(line) > max_width: max_width = len(line)
             y += 1
         libtcod.console_blit(ui, mouse.cx, mouse.cy + 1, max_width, y - 1, 0, mouse.cx, mouse.cy + 1, 1.0, 0.5)
+
+
+def render_all():
+
+    if not in_game:
+        return
+
+    render_map()
+
+    render_side_panel()
+
+    render_bottom_panel()
+
+    render_ui_overlay()
 
 
 def draw_border(console, x0, y0, width, height, foreground=libtcod.gray, background=libtcod.black):
@@ -1648,7 +1668,7 @@ def new_game():
     #Welcome message
     game_msgs = []
 
-    #spawn_item('spell_confusion', player.x, player.y)
+    spawn_item('spell_confusion', player.x, player.y)
 
     selected_monster = None
 
