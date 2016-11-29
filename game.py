@@ -402,9 +402,13 @@ class ReekerGasBehavior:
         for obj in objects:
             if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
                 if obj.name != 'reeker':
-                    obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
-                    if libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
-                        message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
+                    if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
+                        if libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
+                            message('A foul-smelling cloud of gas begins to form around the ' + obj.name, libtcod.fuchsia)
+                    else:
+                        obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
+                        if libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
+                            message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
 
 class AI_Reeker:
 
@@ -858,9 +862,16 @@ def target_monster(max_range=None):
         if x is None:
             return None
         for obj in objects:
-            if obj.x == x and obj.y == y and obj.fighter and obj.ai:
+            if obj.x == x and obj.y == y and obj.fighter and obj is not player:
                 return obj
         return None
+
+
+def get_monster_at_tile(x, y):
+    for obj in objects:
+        if obj.x == x and obj.y == y and obj.fighter and obj is not player:
+            return obj
+    return None
 
 
 def object_at_coords(x, y):
@@ -879,8 +890,8 @@ def object_at_coords(x, y):
         return ops[0]
 
 
-def target_tile(max_range=None, targeting_type='pick'):
-    global key, mouse
+def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0):
+    global key, mouse, selected_monster
 
     cursor_x = player.x
     cursor_y = player.y
@@ -895,7 +906,8 @@ def target_tile(max_range=None, targeting_type='pick'):
     while True:
         libtcod.console_flush()
         libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE,key,mouse)
-        render_all()
+        render_map()
+        render_side_panel(acc_mod=acc_mod)
 
         # Render range shading
         libtcod.console_clear(ui)
@@ -947,6 +959,10 @@ def target_tile(max_range=None, targeting_type='pick'):
 
         cursor_x = x
         cursor_y = y
+
+        monster_at_tile = get_monster_at_tile(cursor_x, cursor_y)
+        if monster_at_tile is not None:
+            selected_monster = monster_at_tile
 
         selected_x = cursor_x
         selected_y = cursor_y
@@ -1448,7 +1464,7 @@ def jump():
 
     render_message_panel()
     libtcod.console_flush()
-    (x, y) = target_tile(consts.BASE_JUMP_RANGE, 'pick')
+    (x, y) = target_tile(consts.BASE_JUMP_RANGE, 'pick', consts.JUMP_ATTACK_ACC_MOD)
     if x is not None and y is not None:
         if dungeon_map[x][y].blocks:
             message('There is something in the way.', libtcod.white)
@@ -1565,7 +1581,7 @@ def render_map():
                          consts.MAP_VIEWPORT_Y)
 
 
-def render_side_panel():
+def render_side_panel(acc_mod=1.0):
 
     libtcod.console_set_default_background(side_panel, libtcod.black)
     libtcod.console_clear(side_panel)
@@ -1624,7 +1640,7 @@ def render_side_panel():
                    libtcod.dark_red, libtcod.darker_red)
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
-        s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(selected_monster, player.fighter.accuracy))
+        s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(selected_monster, player.fighter.accuracy * acc_mod))
         s += '%'  # Yeah I know I suck with string formatting. Whatever, this works.  -T
         libtcod.console_print(side_panel, 2, drawHeight, s)
         drawHeight += 1
