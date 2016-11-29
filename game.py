@@ -9,7 +9,6 @@ import terrain
 # Classes
 #############################################
 
-
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, on_apply=None, on_end=None):
         self.name = name
@@ -194,33 +193,42 @@ class Fighter:
                     player.fighter.xp += self.xp
             
     def attack(self, target):
-
-        if self.owner.name == 'player':
+        stamina_cost = 0
+        if self.owner is player:
             stamina_cost = consts.UNARMED_STAMINA_COST / (self.owner.playerStats.str / consts.UNARMED_STAMINA_COST)
-            if get_equipped_in_slot(self.inventory,'right hand') is not None:
-                stamina_cost = int((float(get_equipped_in_slot(self.inventory,'right hand').stamina_cost) / (float(self.owner.playerStats.str) / float(get_equipped_in_slot(self.inventory,'right hand').str_requirement))))
+            if get_equipped_in_slot(self.inventory, 'right hand') is not None and self.owner is player:
+                stamina_cost = int((float(get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) / (
+                float(self.owner.playerStats.str) / float(
+                    get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
+        self.attack_ex(target, stamina_cost, self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
+                       'attacks')
+
+
+    def attack_ex(self, target, stamina_cost, accuracy, attack_damage, damage_variance, on_hit, verb):
+        # check stamina
+        if self.owner.name == 'player':
             if self.stamina < stamina_cost:
                 message("You can't find the strength to swing your weapon!", libtcod.light_yellow)
                 return 'failed'
             else:
                 self.adjust_stamina(-stamina_cost)
 
-        if roll_to_hit(target.fighter.evasion, self.accuracy):
+        if roll_to_hit(target, accuracy):
             # Target was hit
-            damage = self.attack_damage * (1.0 - self.damage_variance + libtcod.random_get_float(0, 0, 2 * self.damage_variance))
+            damage = attack_damage * (1.0 - damage_variance + libtcod.random_get_float(0, 0, 2 * damage_variance))
             damage *= (consts.ARMOR_FACTOR / (consts.ARMOR_FACTOR + target.fighter.armor))
             damage = math.ceil(damage)
             damage = int(damage)
             if damage > 0:
-                if self.on_hit is not None:
-                    self.on_hit(self.owner, target)
-                message(self.owner.name.capitalize() + ' attacks ' + target.name + ' for ' + str(damage) + ' damage!', libtcod.grey)
+                if on_hit is not None:
+                    on_hit(self.owner, target)
+                message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ' for ' + str(damage) + ' damage!', libtcod.grey)
                 target.fighter.take_damage(damage)
             else:
-                message(self.owner.name.capitalize() + ' attacks ' + target.name + ', but the attack is deflected!', libtcod.grey)
+                message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ', but the attack is deflected!', libtcod.grey)
         else:
-            message(self.owner.name.capitalize() + ' attacks ' + target.name + ', but misses!', libtcod.grey)
-    
+            message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
+
     def heal(self, amount):
         self.hp += amount
         if self.hp > self.max_hp:
@@ -257,14 +265,14 @@ class Fighter:
         for resist in self.resistances:
             if resist == new_effect.name:
                 if libtcod.map_is_in_fov(fov_map, self.owner.x, self.owner.y):
-                    message('The ' + self.owner.name + ' resists.')
+                    message('The ' + self.owner.name + ' resists.', libtcod.gray)
                 return False
         # check for existing matching effects
         for effect in self.status_effects:
             if effect.name == new_effect.name:
                 # refresh the effect
                 effect.time_limit = new_effect.time_limit
-                return
+                return True
         self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
             new_effect.on_apply(self.owner)
@@ -467,8 +475,6 @@ class AI_TunnelSpider:
         return closest_web
 
 
-
-
 class AI_General:
     def __init__(self, speed=1.0, behavior=AI_Default()):
         self.turn_ticker = 0.0
@@ -478,7 +484,8 @@ class AI_General:
     def take_turn(self):
         self.turn_ticker += self.speed
         while self.turn_ticker > 1.0:
-            self.behavior.act()
+            if not (self.owner.fighter and self.owner.fighter.has_status('stunned')):
+                self.behavior.act()
             self.turn_ticker -= 1.0
 
 
@@ -501,10 +508,9 @@ class GameObject:
         if self.fighter:
             self.fighter.owner = self
         self.ai = ai
-        #if self.ai:
-        #    self.ai.owner = self
         if self.ai:
             self.ai = AI_General(update_speed, ai)
+            self.ai.owner = self
             self.ai.behavior.owner = self
         self.item = item
         if self.item:
@@ -665,6 +671,25 @@ class Tile:
 # General Functions
 #############################################
 
+def blastcap_explode(blastcap):
+    global selected_monster
+
+    blastcap.fighter = None
+    message('The blastcap explodes, stunning nearby creatures!', libtcod.gold)
+    for obj in objects:
+        if obj.fighter and\
+                ((abs(obj.x - blastcap.x) <= 1 and obj.y == blastcap.y) or
+                     (abs(obj.y - blastcap.y) <= 1 and obj.x == blastcap.x)):
+            if obj.fighter.apply_status_effect(StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
+                message('The ' + obj.name + ' is stunned!', libtcod.gold)
+
+    if selected_monster is blastcap:
+        selected_monster = None
+        auto_target_monster()
+
+    objects.remove(blastcap)
+    return
+
 def centipede_on_hit(attacker, target):
     target.fighter.apply_status_effect(StatusEffect('stung', consts.CENTIPEDE_STING_DURATION, libtcod.flame))
 
@@ -682,10 +707,13 @@ def fov_recompute_fn():
     fov_recompute = True
 
 
-def roll_to_hit(evasion,  accuracy):
-    chance_to_hit = consts.EVADE_FACTOR / (consts.EVADE_FACTOR + evasion)
-    chance_to_hit *= accuracy
-    return libtcod.random_get_float(0, 0, 1) < chance_to_hit
+def roll_to_hit(target,  accuracy):
+    return libtcod.random_get_float(0, 0, 1) < get_chance_to_hit(target, accuracy)
+
+def get_chance_to_hit(target, accuracy):
+    if target.fighter.has_status('stunned'):
+        return 1.0
+    return (consts.EVADE_FACTOR / (consts.EVADE_FACTOR + target.fighter.evasion)) * accuracy
 
 def random_position_in_circle(radius):
     r = libtcod.random_get_float(0, 0.0, float(radius))
@@ -1054,6 +1082,30 @@ def auto_target_monster():
         selected_monster = None
 
 
+def target_next_monster():
+    global selected_monster
+
+    nearby = []
+    for obj in objects:
+        if libtcod.map_is_in_fov(fov_map, obj.x, obj.y) and obj.fighter and obj is not player:
+            nearby.append((obj.distance_to(player), obj))
+    nearby.sort(key=lambda m: m[0])
+
+    if len(nearby) == 0:
+        selected_monster = None
+        return
+    else:
+        i = 0
+        while nearby[i][1] is not selected_monster:
+            i += 1
+        if i + 1 == len(nearby):
+            selected_monster = nearby[0][1]
+            return
+        else:
+            selected_monster = nearby[i + 1][1]
+            return
+
+
 def mouse_select_monster():
     global mouse, selected_monster
 
@@ -1125,17 +1177,21 @@ def get_room_spawns(room):
     return [[k, libtcod.random_get_int(0, v[0], v[1])] for (k, v) in room['spawns'].items()]
 
 
-def spawn_monster(name, room):
-    x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
-    y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
+def spawn_monster(name, x, y):
     if not is_blocked(x, y):
         p = monsters.proto[name]
+        death = monster_death
+        if p.get('death_function'):
+            death = p.get('death_function')
         fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'],
                                     evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
-                                    death_function=monster_death, loot_table=loot.table[p.get('loot', 'default')],
+                                    death_function=death, loot_table=loot.table[p.get('loot', 'default')],
                                     can_breath_underwater=True, resistances=p['resistances'], inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'))
+        ai = None
+        if p.get('ai'):
+            ai = p.get('ai')()
         monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
-                             ai=p['ai'](), description=p['description'], on_create=p['on_create'], update_speed=p['speed'])
+                             ai=ai, description=p['description'], on_create=p['on_create'], update_speed=p['speed'])
         objects.append(monster)
 
 def spawn_monster_inventory(proto):
@@ -1184,7 +1240,9 @@ def place_objects(room):
         spawns = get_room_spawns(table[random_choice_index([e['weight'] for e in table])])
         for s in spawns:
             for n in range(0,s[1]):
-                spawn_monster(s[0],room)
+                x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
+                y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
+                spawn_monster(s[0], x, y)
             
     num_items = libtcod.random_get_int(0, 0, max_items)
     for i in range(num_items):
@@ -1264,6 +1322,9 @@ def handle_keys():
  
     if game_state == 'playing':
 
+        if player.fighter and player.fighter.has_status('stunned'):
+            return 'stunned'
+
         # movement keys - assume fov_recompute is true, then set to false if no movement
         key_char = chr(key.c)
         moved = False
@@ -1334,15 +1395,11 @@ def handle_keys():
                     cast_spell()
                     return 'casted-spell'
             if key_char == 'j':
-                if player.fighter.stamina >= consts.JUMP_STAMINA_COST:
-                    if dungeon_map[player.x][player.y].jumpable:
-                        return jump()
-                    else:
-                        message('You cannot jump from this terrain!', libtcod.light_yellow)
-                else:
-                    message("You don't have the stamina to jump!", libtcod.light_yellow)
+                return jump()
             if key_char == 'e':
                 examine()
+            if key.vk == libtcod.KEY_TAB:
+                target_next_monster()
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
@@ -1373,31 +1430,74 @@ def examine():
 def jump():
     global player
 
+    if not dungeon_map[player.x][player.y].jumpable:
+        message('You cannot jump from this terrain!', libtcod.light_yellow)
+        return 'didnt-take-turn'
+
     web = object_at_tile(player.x, player.y, 'spiderweb')
     if web is not None:
-        message('The player struggles against the web.')
+        message('You struggle against the web.')
         objects.remove(web)
         return 'webbed'
 
+    if player.fighter.stamina < consts.JUMP_STAMINA_COST:
+        message("You don't have the stamina to jump!", libtcod.light_yellow)
+        return 'didnt-take-turn'
+
     message('Jump to where?', libtcod.white)
 
-    render_all()
+    render_message_panel()
     libtcod.console_flush()
     (x, y) = target_tile(consts.BASE_JUMP_RANGE, 'pick')
     if x is not None and y is not None:
-        if not is_blocked(x, y):
-            player.x = x
-            player.y = y
-            fov_recompute_fn()
-            player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
-            return 'jumped'
-        else:
+        if dungeon_map[x][y].blocks:
             message('There is something in the way.', libtcod.white)
             return 'didnt-take-turn'
+        else:
+            jump_attack_target = None
+            for obj in objects:
+                if obj.x == x and obj.y == y and obj.blocks:
+                    jump_attack_target = obj
+                    break
+            if jump_attack_target is not None:
+                # Jump attack
+                land = land_next_to_target(jump_attack_target.x, jump_attack_target.y, player.x, player.y)
+                if land is not None:
+                    player.x = land[0]
+                    player.y = land[1]
+                    fov_recompute_fn()
+                    player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
+
+                    player.fighter.attack_ex(jump_attack_target, 0, player.fighter.accuracy * consts.JUMP_ATTACK_ACC_MOD,
+                                             player.fighter.attack_damage * consts.JUMP_ATTACK_DMG_MOD,
+                                             player.fighter.damage_variance, player.fighter.on_hit, 'jump-attacks')
+
+                    return 'jump-attacked'
+                else:
+                    message('There is something in the way.', libtcod.white)
+                    return 'didnt-take-turn'
+            else:
+                #jump to open space
+                player.x = x
+                player.y = y
+                fov_recompute_fn()
+                player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
+                return 'jumped'
+
 
     message('Out of range.', libtcod.white)
     return 'didnt-take-turn'
 
+
+def land_next_to_target(target_x, target_y, source_x, source_y):
+    if abs(target_x - source_x) <= 1 and abs(target_y - source_y) <= 1:
+        return source_x, source_y  # trivial case - if we are adjacent we don't need to move
+    b = beam(source_x, source_y, target_x, target_y)
+    land_x = b[len(b) - 2][0]
+    land_y = b[len(b) - 2][1]
+    if not is_blocked(land_x, land_y):
+        return land_x, land_y
+    return None
 
 def cast_spell():
     message('Cast which spell?', libtcod.purple)
@@ -1522,6 +1622,19 @@ def render_side_panel():
         drawHeight += 2
         render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
                    libtcod.dark_red, libtcod.darker_red)
+        drawHeight += 1
+        libtcod.console_set_default_foreground(side_panel, libtcod.gray)
+        s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(selected_monster, player.fighter.accuracy))
+        s += '%'  # Yeah I know I suck with string formatting. Whatever, this works.  -T
+        libtcod.console_print(side_panel, 2, drawHeight, s)
+        drawHeight += 1
+        if selected_monster.fighter.accuracy > 0:
+            s = "It's Accuracy : %d%%" % int(100.0 * get_chance_to_hit(player, selected_monster.fighter.accuracy))
+            s += '%'
+            libtcod.console_print(side_panel, 2, drawHeight, s)
+        else:
+            libtcod.console_print(side_panel, 2, drawHeight, 'Does not attack')
+
         drawHeight += 2
         for effect in selected_monster.fighter.status_effects:
             libtcod.console_set_default_foreground(side_panel, effect.color)
@@ -1538,7 +1651,7 @@ def render_side_panel():
                          consts.SIDE_PANEL_Y)
 
 
-def render_bottom_panel():
+def render_message_panel():
     libtcod.console_set_default_background(panel, libtcod.black)
     libtcod.console_clear(panel)
 
@@ -1582,7 +1695,7 @@ def render_all():
 
     render_side_panel()
 
-    render_bottom_panel()
+    render_message_panel()
 
     render_ui_overlay()
 
@@ -1670,6 +1783,8 @@ def new_game():
 
     spawn_item('spell_confusion', player.x, player.y)
 
+    spawn_monster('monster_blastcap', player.x, player.y - 1)
+
     selected_monster = None
 
     message('Welcome to the dungeon...', libtcod.gold)
@@ -1756,7 +1871,6 @@ def play_game():
 
         # Handle auto-targeting
         auto_target_monster()
-
 
 # my modules
 import spells

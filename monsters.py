@@ -98,14 +98,32 @@ proto = {
         'attack_damage': 0,
         'armor': 3,
         'evasion': 0,
-        'accuracy': 0,
+        'accuracy': 0.0,
         'speed': 1.0,
         'difficulty': 1,
         'loot': 'default',
         'on_create': None,
         'ai': main.AI_Reeker,
         'description': 'A short, stocky fungus that emits puffs of foul-smelling gas.',
-        'resistances': ['confusion']
+        'resistances': ['confusion', 'stunned']
+    },
+    'monster_blastcap': {
+        'name': 'blastcap',
+        'char': 5,
+        'color': libtcod.gold,
+        'hp': 1,
+        'attack_damage': 0,
+        'armor': 0,
+        'evasion': 0,
+        'accuracy': 0.0,
+        'speed': 1.0,
+        'difficulty': 0,
+        'loot': 'none',
+        'on_create': None,
+        'description': 'a volatile yellow fungus covered in softly glowing nodules. If disrupted, it bursts in a '
+                       'deafening crack, stunning anything adjacent for several turns.',
+        'resistances': ['confusion', 'stunned'],
+        'death_function': main.blastcap_explode
     },
     'monster_golem': {
         'name': 'golem',

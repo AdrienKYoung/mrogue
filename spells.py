@@ -1,6 +1,5 @@
 import game as main
 import consts
-import math
 import libtcodpy as libtcod
 
 
@@ -56,7 +55,7 @@ def cast_waterbreathing():
 
 def cast_frog_tongue(frog, target):
 
-    if main.roll_to_hit(target.fighter.evasion, consts.FROG_TONGUE_ACC):
+    if main.roll_to_hit(target, consts.FROG_TONGUE_ACC):
         main.message('The frog pulls you from a distance with its toungue!', libtcod.dark_green)
         target.fighter.take_damage(consts.FROG_TONGUE_DMG)
         beam = main.beam(frog.x, frog.y, target.x, target.y)
