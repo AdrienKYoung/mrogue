@@ -154,7 +154,7 @@ proto = {
         'speed': 1.5,
         'difficulty': 1,
         'loot': 'default',
-        'on_create': main.make_spiderweb,
+        'on_create': main.tunnel_spider_spawn_web,
         'ai': main.AI_TunnelSpider,
         'description': 'An arachnid who hunts by trapping hapless prey in its webs. Fast, but fragile.',
         'resistances': []

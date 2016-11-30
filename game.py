@@ -348,7 +348,7 @@ class AI_GiantFrog:
         if self.tongue_cooldown > 0:
             self.tongue_cooldown -= 1
         if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
-            if monster.distance_to(player) < 2:
+            if is_adjacent_diagonal(monster.x, monster.y, player.x, player.y):
                 if player.fighter.hp > 0:
                     monster.fighter.attack(player)
                 return
@@ -374,7 +374,7 @@ class AI_Default:
     def act(self):
         monster = self.owner
         if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
-            if monster.distance_to(player) >= 2:
+            if not is_adjacent_diagonal(monster.x, monster.y, player.x, player.y):
                 monster.move_astar(player.x, player.y)
 
             elif player.fighter.hp > 0:
@@ -454,7 +454,7 @@ class AI_TunnelSpider:
                 if object_at_tile(monster.x, monster.y, 'spiderweb') is not None:
                     self.state = 'resting'
         elif self.state == 'hunting':
-            if monster.distance_to(player) < 2 and player.fighter.hp > 0:
+            if is_adjacent_diagonal(monster.x, monster.y, player.x, player.y) and player.fighter.hp > 0:
                 monster.fighter.attack(player)
                 return
             self.closest_web = self.find_closest_web()
@@ -675,15 +675,39 @@ class Tile:
 # General Functions
 #############################################
 
+def adjacent_tiles_orthogonal(x, y):
+    adjacent = []
+    if x > 0:
+        adjacent.append((x - 1, y))
+    if x < consts.MAP_WIDTH - 1:
+        adjacent.append((x + 1, y))
+    if y > 0:
+        adjacent.append((x, y - 1))
+    if y < consts.MAP_WIDTH - 1:
+        adjacent.append((x, y + 1))
+    return adjacent
+
+def adjacent_tiles_diagonal(x, y):
+    adjacent = []
+    for i_y in range(y - 1, y + 2):
+        for i_x in range(x - 1, x + 2):
+            if 0 <= i_x < consts.MAP_WIDTH and 0 <= i_y < consts.MAP_HEIGHT and not (i_x == x and i_y == y):
+                adjacent.append((i_x, i_y))
+    return adjacent
+
+def is_adjacent_orthogonal(a_x, a_y, b_x, b_y):
+    return (abs(a_x - b_x) <= 1 and a_y == b_y) or (abs(a_y - b_y) <= 1 and a_x == b_x)
+
+def is_adjacent_diagonal(a_x, a_y, b_x, b_y):
+    return abs(a_x - b_x) <= 1 and abs(a_y - b_y) <= 1
+
 def blastcap_explode(blastcap):
     global selected_monster
 
     blastcap.fighter = None
     message('The blastcap explodes, stunning nearby creatures!', libtcod.gold)
     for obj in objects:
-        if obj.fighter and\
-                ((abs(obj.x - blastcap.x) <= 1 and obj.y == blastcap.y) or
-                     (abs(obj.y - blastcap.y) <= 1 and obj.x == blastcap.x)):
+        if obj.fighter and is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
             if obj.fighter.apply_status_effect(StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
                 message('The ' + obj.name + ' is stunned!', libtcod.gold)
 
@@ -730,15 +754,25 @@ def object_at_tile(x, y, name):
             return obj
     return None
 
-def make_spiderweb(obj):
-    for x in range(3):
-        for y in range(3):
-            makeweb = (x == 1 and y == 1) or (libtcod.random_get_int(0, 0, 2) == 0 and not is_blocked(obj.x + x - 1, obj.y + y - 1))
-            if makeweb:
-                web = GameObject(obj.x + x - 1, obj.y + y - 1, '*', 'spiderweb', libtcod.lightest_gray,
-                                 description='a web of spider silk. Stepping into a web will impede movement for a turn.')
-                objects.append(web)
-                web.send_to_back()
+
+# on_create function of tunnel spiders. Creates a web at the spiders location and several random adjacent spaces
+def tunnel_spider_spawn_web(obj):
+    adjacent = adjacent_tiles_diagonal(obj.x, obj.y)
+    webs = [(obj.x, obj.y)]
+    for a in adjacent:
+        if libtcod.random_get_int(0, 0, 2) == 0 and not dungeon_map[a[0]][a[1]].blocks:
+            webs.append(a)
+    for w in webs:
+        make_spiderweb(w[0], w[1])
+
+
+# creates a spiderweb at the target location
+def make_spiderweb(x, y):
+    web = GameObject(x, y, '*', 'spiderweb', libtcod.lightest_gray,
+                     description='a web of spider silk. Stepping into a web will impede movement for a turn.')
+    objects.append(web)
+    web.send_to_back()
+
 
 def get_all_equipped(equipped_list):
     result = []
