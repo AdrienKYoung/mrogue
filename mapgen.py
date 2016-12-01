@@ -249,4 +249,4 @@ def make_map():
     level_shrine.send_to_back()
     boss = main.check_boss(main.get_dungeon_level())
     if boss is not None:
-        main.spawn_monster(boss, sample[1])
+        main.spawn_monster(boss, sample[1].center()[0], sample[1].center()[1])

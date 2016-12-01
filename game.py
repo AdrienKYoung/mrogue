@@ -19,11 +19,12 @@ class StatusEffect:
 
 
 class Equipment:
-    def __init__(self, slot, power_bonus=0, defense_bonus=0, max_hp_bonus=0, attack_damage_bonus=0, armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0):
+    def __init__(self, slot, category, power_bonus=0, defense_bonus=0, max_hp_bonus=0, attack_damage_bonus=0, armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0):
         self.power_bonus = power_bonus
         self.defense_bonus = defense_bonus
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
+        self.category = category
         self.is_equipped = False
         self.attack_damage_bonus = attack_damage_bonus
         self.armor_bonus = armor_bonus
@@ -67,7 +68,8 @@ class ConfusedMonster:
 
 
 class Item:
-    def __init__(self, use_function=None, type='item'):
+    def __init__(self, category, use_function=None, type='item'):
+        self.category = category
         self.use_function = use_function
         self.type = type
         
@@ -113,6 +115,18 @@ class Item:
         self.owner.x = player.x
         self.owner.y = player.y
         message('You dropped a ' + self.owner.name + '.', libtcod.white)
+
+    def get_options_list(self):
+        options = []
+        if self.use_function is not None:
+            options.append('Use')
+        if self.owner.equipment:
+            if self.owner.equipment.is_equipped:
+                options.append('Unequip')
+            else:
+                options.append('Equip')
+        options.append('Drop')
+        return options
 
 
 class PlayerStats:
@@ -529,7 +543,7 @@ class GameObject:
         self.equipment = equipment
         if self.equipment:
             self.equipment.owner = self
-            self.item = Item()
+            self.item = Item(self.equipment.category)
             self.item.owner = self
         self.player_stats = player_stats
         if self.player_stats:
@@ -920,7 +934,7 @@ def object_at_coords(x, y):
 
     ops = [t for t in objects if (t.x == x and t.y == y)]
     if len(ops) > 1:
-        menu_choice = menu("Which object?", [o.name for o in ops], 20)
+        menu_choice = menu("Which object?", [o.name for o in ops], 40)
         if menu_choice is not None:
             return ops[menu_choice]
         else:
@@ -1067,35 +1081,67 @@ def closest_monster(max_range):
 
 
 def inventory_menu(header):
-    if len(inventory) == 0:
-        options = ['Inventory is empty.']
-    else:
-        options = []
+
+    libtcod.console_clear(window)
+    render_all()
+    libtcod.console_flush()
+
+    libtcod.console_set_default_foreground(window, libtcod.white)
+    libtcod.console_print(window, 1, 1, header)
+    y = 3
+    letter_index = ord('a')
+    height = 4 + len(loot.item_categories) + len(inventory)
+    draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
+    menu_items = []
+    for item_category in loot.item_categories:
+        libtcod.console_set_default_foreground(window, libtcod.gray)
+        for i in range(consts.INVENTORY_WIDTH):
+            libtcod.console_put_char(window, i, y, libtcod.CHAR_HLINE)
+        libtcod.console_put_char(window, 0, y, 199)
+        libtcod.console_put_char(window, consts.INVENTORY_WIDTH - 1, y, 182)
+        libtcod.console_print_ex(window, consts.INVENTORY_WIDTH / 2, y, libtcod.BKGND_DEFAULT, libtcod.CENTER,
+                                 item_category['plural'].capitalize())
+        y += 1
         for item in inventory:
-            text = item.name
-            if item.equipment and item.equipment.is_equipped:
-                text = text + ' (on ' + item.equipment.slot + ')'
-            options.append(text)
-        
-    index = menu(header, options, consts.INVENTORY_WIDTH)
-    if index is None or len(inventory) == 0: return None
-    return inventory[index].item
+            if item.item.category == item_category['name']:
+                libtcod.console_set_default_foreground(window, libtcod.white)
+                menu_items.append(item)
+                text = '(' + chr(letter_index) + ') ' + item.name.capitalize()
+                libtcod.console_print(window, 1, y, text)
+                if item.equipment and item.equipment.is_equipped:
+                    libtcod.console_set_default_foreground(window, libtcod.orange)
+                    libtcod.console_print_ex(window, consts.INVENTORY_WIDTH - 2, y, libtcod.BKGND_DEFAULT,
+                                             libtcod.RIGHT, '[E]')
+                y += 1
+                letter_index += 1
+
+    x = consts.MAP_VIEWPORT_X + 1
+    y = consts.MAP_VIEWPORT_Y + 1
+    libtcod.console_blit(window, 0, 0, consts.INVENTORY_WIDTH, height, 0, x, y, 1.0, 1.0)
+    libtcod.console_flush()
+
+    key = libtcod.console_wait_for_keypress(True)
+    index = key.c - ord('a')
+    if 0 <= index < len(inventory):
+        return menu_items[index].item
+    return None
 
 
 def msgbox(text, width=50):
     menu(text, [], width)
 
 
-def menu(header, options, width):
+def menu(header, options, width, x_center=None):
     global window
 
     if len(options) > 26: raise ValueError('Cannot have a menu with more than 26 options.')
     
-    header_height = libtcod.console_get_height_rect(con, 0, 0, width, consts.SCREEN_HEIGHT, header)
+    header_height = libtcod.console_get_height_rect(con, 0, 0, width - 2, consts.SCREEN_HEIGHT, header)
     if header == '':
         header_height = 0
 
-    height = len(options) + header_height
+    height = len(options) + header_height + 2
+    width += 2
 
     libtcod.console_clear(window)
     render_all()
@@ -1103,19 +1149,24 @@ def menu(header, options, width):
 
 
     libtcod.console_set_default_foreground(window, libtcod.white)
-    libtcod.console_print_rect_ex(window, 0, 0, width, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
-    y = header_height
+    libtcod.console_print_rect_ex(window, 1, 1, width - 2, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
+    y = header_height + 1
     letter_index = ord('a')
     
     for option_text in options:
         text = '(' + chr(letter_index) + ') ' + option_text
-        libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
+        libtcod.console_print_ex(window, 1, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
         y += 1
         letter_index += 1
-        
-    x = consts.SCREEN_WIDTH / 2 - width / 2
+
+    draw_border(window, 0, 0, width, height)
+
+    if x_center is None:
+        x = consts.MAP_VIEWPORT_X + consts.MAP_VIEWPORT_WIDTH / 2 - width / 2
+    else:
+        x = x_center - width / 2
     y = consts.SCREEN_HEIGHT / 2 - height / 2
-    libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
+    libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 1.0)
     libtcod.console_flush()
     key = libtcod.console_wait_for_keypress(True)
     
@@ -1262,11 +1313,12 @@ def spawn_monster_inventory(proto):
 
 def create_item(name):
     p = loot.proto[name]
-    item_component = Item(use_function=p.get('on_use'))
+    item_component = Item(category=p['category'], use_function=p.get('on_use'))
     equipment_component = None
     if p['type'] == 'equipment':
         equipment_component = Equipment(
             slot=p['slot'],
+            category=p['category'],
             attack_damage_bonus=p.get('attack_damage_bonus', 0),
             armor_bonus=p.get('armor_bonus', 0),
             max_hp_bonus=p.get('max_hp_bonus', 0),
@@ -1392,7 +1444,7 @@ def get_loot(monster):
     drop = loot_table[libtcod.random_get_int(0,0,len(loot_table) - 1)]
     if drop:
         proto = loot.proto[drop]
-        item = Item(use_function=proto['on_use'], type=proto['type'])
+        item = Item(category=proto['category'], use_function=proto['on_use'], type=proto['type'])
         return GameObject(monster.owner.x, monster.owner.y, proto['char'], proto['name'], proto['color'], item=item)
 
 
@@ -1466,15 +1518,17 @@ def handle_keys():
                         elif object.interact:
                             object.interact(object)
             if key_char == 'i':
-                chosen_item = inventory_menu('Press the key next to an item to use it, or any other to cancel.\n')
+                return inspect_inventory()
+            if key_char == 'u':
+                chosen_item = inventory_menu('Use which item?')
                 if chosen_item is not None:
                     use_result = chosen_item.use()
                     if use_result == 'cancelled':
-                        return 'didnt-take-turn'
+                       return 'didnt-take-turn'
                     else:
-                        return 'used-item'
+                       return 'used-item'
             if key_char == 'd':
-                chosen_item = inventory_menu('Press the key next to an item to drop it, or any other to cancel.\n')
+                chosen_item = inventory_menu('Drop which item?')
                 if chosen_item is not None:
                     chosen_item.drop()
                     return 'dropped-item'
@@ -1505,6 +1559,25 @@ def handle_keys():
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
+
+
+def inspect_inventory():
+    chosen_item = inventory_menu('Select which item?')
+    if chosen_item is not None:
+        options = chosen_item.get_options_list()
+        menu_choice = menu(chosen_item.owner.name + '\n\n' + chosen_item.owner.description + '\n', options, 30)
+        if menu_choice is not None:
+            if options[menu_choice] == 'Use':
+                chosen_item.use()
+            elif options[menu_choice] == 'Drop':
+                chosen_item.drop()
+            elif options[menu_choice] == 'Equip' or options[menu_choice] == 'Unequip':
+                chosen_item.owner.equipment.toggle()
+            else:
+                return inspect_inventory()
+        else:
+            return inspect_inventory()
+    return 'didnt-take-turn'
 
 
 def meditate():
@@ -1864,7 +1937,7 @@ def main_menu():
         libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.CENTER,
             'by Tyler Soberanis and Adrien Young')
         
-        choice = menu('', ['NEW GAME', 'CONTINUE', 'QUIT'], 24)
+        choice = menu('', ['NEW GAME', 'CONTINUE', 'QUIT'], 24, x_center=consts.SCREEN_WIDTH / 2)
         
         if choice == 0: #new game
             new_game()
@@ -1962,6 +2035,7 @@ def load_game():
     game_msgs = file['game_msgs']
     game_state = file['game_state']
     dungeon_level = file['dungeon_level']
+    selected_monster = None
     file.close()
     
     initialize_fov()

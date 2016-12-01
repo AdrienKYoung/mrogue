@@ -1,6 +1,13 @@
 import libtcodpy
 import spells
 
+item_categories = [
+    { 'name' : 'weapon', 'plural' : 'weapons' },
+    { 'name' : 'armor', 'plural' : 'armor' },
+    { 'name' : 'spell', 'plural' : 'spells' },
+    { 'name' : 'potion', 'plural' : 'potions' }
+]
+
 table = {
     'default': ['spell_lightning',None],
     'none': [None]
@@ -11,6 +18,7 @@ proto = {
     #SPELLS
     'spell_lightning': {
         'name': 'Lightning Bolt',
+        'category': 'spell',
         'char': '/',
         'on_use': spells.cast_lightning,
         'color': libtcodpy.yellow,
@@ -21,6 +29,7 @@ proto = {
 
     'spell_fireball': {
         'name': 'Fireball',
+        'category': 'spell',
         'char': '#',
         'on_use': spells.cast_fireball,
         'color': libtcodpy.red,
@@ -31,6 +40,7 @@ proto = {
 
     'spell_confusion': {
         'name': 'Confusion',
+        'category': 'spell',
         'char': '#',
         'color': libtcodpy.yellow,
         'on_use': spells.cast_confuse,
@@ -41,6 +51,7 @@ proto = {
     #POTIONS
     'potion_healing': {
         'name': 'Potion of Healing',
+        'category': 'potion',
         'char': '!',
         'color': libtcodpy.yellow,
         'on_use': spells.cast_heal,
@@ -51,6 +62,7 @@ proto = {
     #WEAPONS
     'equipment_longsword': {
         'name': 'Longsword',
+        'category': 'weapon',
         'char': '/',
         'color': libtcodpy.yellow,
         'type': 'equipment',
@@ -62,6 +74,7 @@ proto = {
     },
     'equipment_dagger': {
         'name': 'Dagger',
+        'category': 'weapon',
         'char': '-',
         'color': libtcodpy.yellow,
         'type': 'equipment',
@@ -75,6 +88,7 @@ proto = {
     #ARMOR
     'equipment_shield': {
         'name': 'Shield',
+        'category': 'armor',
         'char': '[',
         'color': libtcodpy.yellow,
         'type': 'equipment',
@@ -85,6 +99,7 @@ proto = {
 
     'equipment_leather_armor': {
         'name': 'Leather Armor',
+        'category': 'armor',
         'char': chr(6),
         'color': libtcodpy.yellow,
         'type': 'equipment',
