@@ -224,10 +224,13 @@ class Fighter:
                     on_hit(self.owner, target)
                 message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ' for ' + str(damage) + ' damage!', libtcod.grey)
                 target.fighter.take_damage(damage)
+                return 'hit'
             else:
                 message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ', but the attack is deflected!', libtcod.grey)
+                return 'blocked'
         else:
             message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
+            return 'miss'
 
     def heal(self, amount):
         self.hp += amount
@@ -1321,7 +1324,7 @@ def get_dungeon_level():
     return "dungeon_{}".format(dungeon_level)
 
 
-def player_move_or_attack(dx, dy):
+def player_move_or_attack(dx, dy, bash=False):
     global selected_monster
 
     x = player.x + dx
@@ -1334,7 +1337,10 @@ def player_move_or_attack(dx, dy):
             break
             
     if target is not None:
-        success = player.fighter.attack(target) != 'failed'
+        if bash:
+            success = player_bash_attack(target) != 'failed'
+        else:
+            success = player.fighter.attack(target) != 'failed'
         if success and target.fighter:
             selected_monster = target
         return success
@@ -1342,6 +1348,39 @@ def player_move_or_attack(dx, dy):
         value = player.move(dx, dy)
         fov_recompute_fn()
         return value
+
+
+def player_bash_attack(target):
+    result = player.fighter.attack_ex(target, consts.BASH_STAMINA_COST, player.fighter.accuracy * consts.BASH_ACC_MOD,
+                             player.fighter.attack_damage * consts.BASH_DMG_MOD, player.fighter.damage_variance,
+                             None, 'bashes')
+    if result == 'hit' and target.fighter:
+        # knock the target back one space. Stun it if it cannot move.
+        direction = target.x - player.x, target.y - player.y  # assumes the player is adjacent
+        stun = False
+        against = ''
+        if dungeon_map[target.x + direction[0]][target.y + direction[1]].blocks:
+            stun = True
+            against = dungeon_map[target.x + direction[0]][target.y + direction[1]].name
+        else:
+            for obj in objects:
+                if obj.x == target.x + direction[0] and obj.y == target.y + direction[1] and obj.blocks:
+                    stun = True
+                    against = obj.name
+                    break
+
+        if stun:
+            #  stun the target
+            if target.fighter.apply_status_effect(StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
+                message('The ' + target.name + ' collides with the ' + against + ', stunning it!', libtcod.gold)
+        else:
+            message('The ' + target.name + ' is knocked backwards.', libtcod.gray)
+            target.x += direction[0]
+            target.y += direction[1]
+            render_map()
+            libtcod.console_flush()
+
+    return result
 
 
 def get_loot(monster):
@@ -1375,33 +1414,25 @@ def handle_keys():
         if player.fighter and player.fighter.has_status('stunned'):
             return 'stunned'
 
-        # movement keys - assume fov_recompute is true, then set to false if no movement
         key_char = chr(key.c)
         moved = False
-        if key.vk == libtcod.KEY_UP:
-            moved = player_move_or_attack(0, -1)
-        elif key.vk == libtcod.KEY_DOWN:
-            moved = player_move_or_attack(0, 1)
-        elif key.vk == libtcod.KEY_LEFT:
-            moved = player_move_or_attack(-1, 0)
-        elif key.vk == libtcod.KEY_RIGHT:
-            moved = player_move_or_attack(1, 0)
+        ctrl = key.lctrl or key.rctrl
+        if key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_KP8:
+            moved = player_move_or_attack(0, -1, ctrl)
+        elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_KP2:
+            moved = player_move_or_attack(0, 1, ctrl)
+        elif key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4:
+            moved = player_move_or_attack(-1, 0, ctrl)
+        elif key.vk == libtcod.KEY_RIGHT or key.vk == libtcod.KEY_KP6:
+            moved = player_move_or_attack(1, 0, ctrl)
         elif key.vk == libtcod.KEY_KP7:
-            moved = player_move_or_attack(-1, -1)
-        elif key.vk == libtcod.KEY_KP8:
-            moved = player_move_or_attack(0, -1)
+            moved = player_move_or_attack(-1, -1, ctrl)
         elif key.vk == libtcod.KEY_KP9:
-            moved = player_move_or_attack(1, -1)
-        elif key.vk == libtcod.KEY_KP4:
-            moved = player_move_or_attack(-1, 0)
-        elif key.vk == libtcod.KEY_KP6:
-            moved = player_move_or_attack(1, 0)
+            moved = player_move_or_attack(1, -1, ctrl)
         elif key.vk == libtcod.KEY_KP1:
-            moved = player_move_or_attack(-1, 1)
-        elif key.vk == libtcod.KEY_KP2:
-            moved = player_move_or_attack(0, 1)
+            moved = player_move_or_attack(-1, 1, ctrl)
         elif key.vk == libtcod.KEY_KP3:
-            moved = player_move_or_attack(1, 1)
+            moved = player_move_or_attack(1, 1, ctrl)
         elif key.vk == libtcod.KEY_KP5 or key_char == 's':
             player.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT) # gain stamina for standing still
             moved = True  # so that this counts as a turn passing
