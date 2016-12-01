@@ -1569,10 +1569,13 @@ def inspect_inventory():
         if menu_choice is not None:
             if options[menu_choice] == 'Use':
                 chosen_item.use()
+                return 'used-item'
             elif options[menu_choice] == 'Drop':
                 chosen_item.drop()
+                return 'dropped-item'
             elif options[menu_choice] == 'Equip' or options[menu_choice] == 'Unequip':
                 chosen_item.owner.equipment.toggle()
+                return 'equipped-item'
             else:
                 return inspect_inventory()
         else:
