@@ -83,7 +83,7 @@ class Item:
                 if equipment and get_equipped_in_slot(inventory,equipment.slot) is None:
                     equipment.equip()
         elif self.type == 'spell':
-            if len(memory) >= player.playerStats.max_memory:
+            if len(memory) >= player.player_stats.max_memory:
                 message('You cannot hold any more spells in your memory!', libtcod.purple)
             else:
                 memory.append(self.owner)
@@ -141,7 +141,11 @@ class PlayerStats:
 
     @property
     def max_memory(self):
-        return 3 + math.floor(self.wiz / 4)
+        return 3 + int(math.floor(self.wiz / 4))
+
+    @property
+    def max_mana(self):
+        return 1 + int(math.floor(self.wiz / 4))
 
 
 class Fighter:
@@ -195,10 +199,10 @@ class Fighter:
     def attack(self, target):
         stamina_cost = 0
         if self.owner is player:
-            stamina_cost = consts.UNARMED_STAMINA_COST / (self.owner.playerStats.str / consts.UNARMED_STAMINA_COST)
+            stamina_cost = consts.UNARMED_STAMINA_COST / (self.owner.player_stats.str / consts.UNARMED_STAMINA_COST)
             if get_equipped_in_slot(self.inventory, 'right hand') is not None and self.owner is player:
                 stamina_cost = int((float(get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) / (
-                float(self.owner.playerStats.str) / float(
+                float(self.owner.player_stats.str) / float(
                     get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
         self.attack_ex(target, stamina_cost, self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
                        'attacks')
@@ -298,8 +302,8 @@ class Fighter:
     @property
     def attack_damage(self):
         bonus = sum(equipment.attack_damage_bonus for equipment in get_all_equipped(self.inventory))
-        if self.owner.playerStats:
-            return self.base_attack_damage + self.owner.playerStats.str + bonus
+        if self.owner.player_stats:
+            return self.base_attack_damage + self.owner.player_stats.str + bonus
         else:
             return self.base_attack_damage + bonus
 
@@ -311,16 +315,16 @@ class Fighter:
     @property
     def evasion(self):
         bonus = sum(equipment.evasion_bonus for equipment in get_all_equipped(self.inventory))
-        if self.owner.playerStats:
-            return self.base_evasion + self.owner.playerStats.agi + bonus
+        if self.owner.player_stats:
+            return self.base_evasion + self.owner.player_stats.agi + bonus
         else:
             return self.base_evasion + bonus
 
     @property
     def spell_power(self):
         bonus = sum(equipment.spell_power_bonus for equipment in get_all_equipped(self.inventory))
-        if self.owner.playerStats:
-            return self.base_spell_power + self.owner.playerStats.int + bonus
+        if self.owner.player_stats:
+            return self.base_spell_power + self.owner.player_stats.int + bonus
         else:
             return self.base_spell_power + bonus
 
@@ -499,7 +503,7 @@ class AI_General:
 class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None,
-                 playerStats=None, always_visible=False, interact=None, description=None, on_create=None,
+                 player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
                  update_speed=1.0, misc=None):
         self.x = x
         self.y = y
@@ -527,9 +531,9 @@ class GameObject:
             self.equipment.owner = self
             self.item = Item()
             self.item.owner = self
-        self.playerStats = playerStats
-        if self.playerStats:
-            self.playerStats.owner = self
+        self.player_stats = player_stats
+        if self.player_stats:
+            self.player_stats.owner = self
         if on_create is not None:
             on_create(self)
         self.misc = misc
@@ -833,13 +837,13 @@ def level_up(altar = None):
         player.fighter.max_hp += 20
         player.fighter.hp += 20
     elif choice == 1:
-        player.playerStats.str += 1
+        player.player_stats.str += 1
     elif choice == 2:
-        player.playerStats.agi += 1
+        player.player_stats.agi += 1
     elif choice == 3:
-        player.playerStats.int += 1
+        player.player_stats.int += 1
     elif choice == 4:
-        player.playerStats.wiz += 1
+        player.player_stats.wiz += 1
 
     if altar:
         objects.remove(altar)
@@ -1392,6 +1396,14 @@ def get_loot(monster):
         return GameObject(monster.owner.x, monster.owner.y, proto['char'], proto['name'], proto['color'], item=item)
 
 
+def do_queued_action(action):
+    if action == 'finish-meditate':
+        if len(player.mana) < player.player_stats.max_mana:
+            player.mana.append('normal')
+            message('You have finished meditating. You are infused with magical power.', libtcod.light_cyan)
+        return
+
+
 def handle_keys():
  
     global game_state, stairs, selected_monster
@@ -1413,6 +1425,13 @@ def handle_keys():
 
         if player.fighter and player.fighter.has_status('stunned'):
             return 'stunned'
+
+        if player.action_queue is not None and len(player.action_queue) > 0:
+            action = player.action_queue[0]
+            player.action_queue.remove(action)
+            do_queued_action(action)
+            return action
+
 
         key_char = chr(key.c)
         moved = False
@@ -1481,10 +1500,23 @@ def handle_keys():
                 examine()
             if key.vk == libtcod.KEY_TAB:
                 target_next_monster()
+            if key_char == 'm':
+                return meditate()
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
 
+
+def meditate():
+    if len(player.mana) < player.player_stats.max_mana:
+        message('You tap into the magic of the world around you...', libtcod.light_cyan)
+        for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
+            player.action_queue.append('channel-meditate')
+        player.action_queue.append('finish-meditate')
+        return 'start-meditate'
+    else:
+        message('You cannot gain any more power by meditating.', libtcod.light_cyan)
+        return 'didnt-take-turn'
 
 def get_description(obj):
     if obj and hasattr(obj, 'description') and obj.description is not None:
@@ -1667,16 +1699,31 @@ def render_side_panel(acc_mod=1.0):
         libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
     # Base stats
-    libtcod.console_print(side_panel, 2, 6, 'INT: ' + str(player.playerStats.int))
-    libtcod.console_print(side_panel, 2, 7, 'WIZ: ' + str(player.playerStats.wiz))
-    libtcod.console_print(side_panel, 2, 8, 'STR: ' + str(player.playerStats.str))
-    libtcod.console_print(side_panel, 2, 9, 'AGI: ' + str(player.playerStats.agi))
+    libtcod.console_print(side_panel, 2, 6, 'INT: ' + str(player.player_stats.int))
+    libtcod.console_print(side_panel, 2, 7, 'WIZ: ' + str(player.player_stats.wiz))
+    libtcod.console_print(side_panel, 2, 8, 'STR: ' + str(player.player_stats.str))
+    libtcod.console_print(side_panel, 2, 9, 'AGI: ' + str(player.player_stats.agi))
 
     # Level/XP
     libtcod.console_print(side_panel, 2, 11, 'Lvl: ' + str(player.level))
     libtcod.console_print(side_panel, 2, 12, 'XP:  ' + str(player.fighter.xp))
 
-    drawHeight = 16
+    # Mana
+    libtcod.console_print(side_panel, 2, 14, 'Mana:')
+    libtcod.console_put_char(side_panel, 2, 15, '[')
+    x = 4
+    for m in range(len(player.mana)):
+        libtcod.console_set_default_foreground(side_panel, libtcod.light_gray)
+        libtcod.console_put_char(side_panel, x, 15, '*')
+        x += 2
+    for m in range(player.player_stats.max_mana - len(player.mana)):
+        libtcod.console_set_default_foreground(side_panel, libtcod.dark_grey)
+        libtcod.console_put_char(side_panel, x, 15, '.')
+        x += 2
+    libtcod.console_set_default_foreground(side_panel, libtcod.white)
+    libtcod.console_put_char(side_panel, x, 15, ']')
+
+    drawHeight = 19
 
     # Status effects
     if len(player.fighter.status_effects) > 0:
@@ -1724,9 +1771,9 @@ def render_side_panel(acc_mod=1.0):
 
     draw_border(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
     for x in range(1, consts.SIDE_PANEL_WIDTH - 1):
-        libtcod.console_put_char(side_panel, x, 14, libtcod.CHAR_HLINE)
-    libtcod.console_put_char(side_panel, 0, 14, 199)
-    libtcod.console_put_char(side_panel, consts.SIDE_PANEL_WIDTH - 1, 14, 182)
+        libtcod.console_put_char(side_panel, x, 17, libtcod.CHAR_HLINE)
+    libtcod.console_put_char(side_panel, 0, 17, 199)
+    libtcod.console_put_char(side_panel, consts.SIDE_PANEL_WIDTH - 1, 17, 182)
 
     libtcod.console_blit(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT, 0, consts.SIDE_PANEL_X,
                          consts.SIDE_PANEL_Y)
@@ -1841,7 +1888,7 @@ def new_game():
     #create object representing the player
     inventory = []
     fighter_component = Fighter(hp=100, xp=0, stamina=100, death_function=player_death, inventory=inventory)
-    player = GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component, playerStats=PlayerStats(), description='You, the fearless adventurer!')
+    player = GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component, player_stats=PlayerStats(), description='You, the fearless adventurer!')
     player.level = 1
     
     #generate map
@@ -1856,6 +1903,8 @@ def new_game():
     #inventory.append(waterbreathing)
 
     memory = []
+    player.mana = []
+    player.action_queue = []
     # spell = GameObject(0, 0, '?', 'mystery spell', libtcod.yellow, item=Item(use_function=spells.cast_lightning, type="spell"))
     # memory.append(spell)
 
