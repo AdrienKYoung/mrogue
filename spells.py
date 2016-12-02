@@ -2,6 +2,11 @@ import game as main
 import consts
 import libtcodpy as libtcod
 
+class Spell:
+    def __init__(self, name, mana_cost, function):
+        self.name = name
+        self.mana_cost = mana_cost
+        self.function = function
 
 def cast_fireball():
     main.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
@@ -65,3 +70,26 @@ def cast_frog_tongue(frog, target):
         main.fov_recompute_fn()
     else:
         main.message('The frog tries to grab you with its tongue, but misses!', libtcod.grey)
+
+def cast_manabolt():
+    default = None
+    if main.selected_monster is not None:
+        default = main.selected_monster.x, main.selected_monster.y
+    target = main.target_tile(consts.MANABOLT_RANGE, 'beam_interrupt', acc_mod=consts.MANABOLT_ACC, default_target=default)
+    if target[0] is not None:
+        main.player.mana.remove(main.player.mana[0])
+        monster = main.get_monster_at_tile(target[0], target[1])
+        if monster is not None:
+            if main.roll_to_hit(monster, main.player.fighter.accuracy * consts.MANABOLT_ACC):
+                main.message('The manabolt hits the ' + monster.name + ', dealing ' + str(consts.MANABOLT_DMG) + ' damage!', libtcod.light_blue)
+                monster.fighter.take_damage(consts.MANABOLT_DMG)
+            else:
+                main.message('The manabolt misses the ' + monster.name + '.', libtcod.gray)
+        else:
+            main.message('The manabolt hits the ' + main.dungeon_map[target[0]][target[1]].tile_type + '.', libtcod.light_blue)
+        return 'cast-spell'
+    return 'didnt-take-turn'
+
+spell_library = {
+    'manabolt' : Spell('manabolt', 1, cast_manabolt)
+}

@@ -191,8 +191,8 @@ def create_v_tunnel(y1, y2, x):
 
 
 def scatter_reeds(room):
-    for y in range(room.w):
-        for x in range(room.h):
+    for y in range(room.w - 1):
+        for x in range(room.h - 1):
             if libtcod.random_get_int(0, 0, 3) == 0 and not main.dungeon_map[x + room.x1][y + room.y1].blocks:
                 create_reed(room.x1 + x, room.y1 + y)
 

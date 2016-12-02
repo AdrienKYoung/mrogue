@@ -5,7 +5,8 @@ item_categories = {
     'weapon' : { 'plural' : 'weapons' },
     'armor' : { 'plural' : 'armor' },
     'spell' : { 'plural' : 'spells' },
-    'potion' : { 'plural' : 'potions' }
+    'potion' : { 'plural' : 'potions' },
+    'book' : { 'plural' : 'books' }
 }
 
 table = {
@@ -65,9 +66,20 @@ proto = {
         'char': '!',
         'color': libtcodpy.yellow,
         'on_use': spells.cast_waterbreathing,
-        'type': 'potion',
+        'type': 'item',
         'description': "Drinking this potion causes temporary gills to form on the drinker's throat, allowing him or "
                        "her to breath water like a fish."
+    },
+
+    #TOMES
+    'tome_manabolt': {
+        'name' : 'Tome of Manabolt',
+        'category' : 'book',
+        'char' : '=',
+        'color' : libtcodpy.yellow,
+        'learn_spell' : 'manabolt',
+        'type' : 'item',
+        'description' : "A weathered book that holds the secrets of Manabolt."
     },
 
     #WEAPONS

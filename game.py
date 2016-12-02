@@ -9,6 +9,7 @@ import terrain
 # Classes
 #############################################
 
+
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, on_apply=None, on_end=None):
         self.name = name
@@ -68,10 +69,11 @@ class ConfusedMonster:
 
 
 class Item:
-    def __init__(self, category, use_function=None, type='item'):
+    def __init__(self, category, use_function=None, learn_spell=None, type='item'):
         self.category = category
         self.use_function = use_function
         self.type = type
+        self.learn_spell = learn_spell
         
     def pick_up(self):
         if self.type == 'item':
@@ -96,9 +98,7 @@ class Item:
         if self.owner.equipment:
             self.owner.equipment.toggle()
             return
-        if self.use_function is None:
-            message('The ' + self.owner.name + ' cannot be used.')
-        else:
+        if self.use_function is not None:
             if self.use_function() != 'cancelled':
                 if self.type == 'item':
                     inventory.remove(self.owner)
@@ -106,6 +106,17 @@ class Item:
                     memory.remove(self.owner)
             else:
                 return 'cancelled'
+        elif self.learn_spell is not None:
+            spell = spells.spell_library[self.learn_spell]
+            if spell in player.known_spells:
+                message('You already know this spell.', libtcod.light_blue)
+            else:
+                player.known_spells.append(spell)
+                message('You have mastered ' + spell.name + '!', libtcod.light_blue)
+                inventory.remove(self.owner)
+        else:
+            message('The ' + self.owner.name + ' cannot be used.')
+
                 
     def drop(self):
         if self.owner.equipment:
@@ -118,7 +129,7 @@ class Item:
 
     def get_options_list(self):
         options = []
-        if self.use_function is not None:
+        if self.use_function is not None or self.learn_spell is not None:
             options.append('Use')
         if self.owner.equipment:
             if self.owner.equipment.is_equipped:
@@ -789,7 +800,7 @@ def roll_to_hit(target,  accuracy):
 def get_chance_to_hit(target, accuracy):
     if target.fighter.has_status('stunned'):
         return 1.0
-    return (consts.EVADE_FACTOR / (consts.EVADE_FACTOR + target.fighter.evasion)) * accuracy
+    return max(min((consts.EVADE_FACTOR / (consts.EVADE_FACTOR + target.fighter.evasion)) * accuracy, 1.0), 0)
 
 def random_position_in_circle(radius):
     r = libtcod.random_get_float(0, 0.0, float(radius))
@@ -972,18 +983,22 @@ def object_at_coords(x, y):
         return ops[0]
 
 
-def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0):
+def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_target=None):
     global key, mouse, selected_monster
 
-    cursor_x = player.x
-    cursor_y = player.y
-    x = player.x
-    y = player.y
+    if default_target is None:
+        x = player.x
+        y = player.y
+    else:
+        x = default_target[0]
+        y = default_target[1]
+    cursor_x = x
+    cursor_y = y
     oldMouseX = mouse.cx
     oldMouseY = mouse.cy
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
-    selected_x = player.x
-    selected_y = player.y
+    selected_x = x
+    selected_y = y
 
     while True:
         libtcod.console_flush()
@@ -1013,7 +1028,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0):
                 line_x, line_y = libtcod.line_step()
         libtcod.console_put_char_ex(ui, selected_x - offsetx, selected_y - offsety, ' ', libtcod.light_yellow, libtcod.white)
 
-        libtcod.console_blit(ui, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 0, 0.4)
+        libtcod.console_blit(ui, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 0, 0.5)
 
 
         if key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4:
@@ -1357,7 +1372,7 @@ def spawn_monster_inventory(proto):
 
 def create_item(name):
     p = loot.proto[name]
-    item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'])
+    item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], learn_spell=p.get('learn_spell'))
     equipment_component = None
     if p['category'] == 'weapon' or p['category'] == 'armor':
         equipment_component = Equipment(
@@ -1578,13 +1593,16 @@ def handle_keys():
                        str(player.fighter.defense),
                        consts.CHARACTER_SCREEN_WIDTH)
             if key_char == 'z':
-                if len(memory) == 0:
-                    message('You have no spells in your memory to cast.', libtcod.purple)
-                elif dungeon_map[player.x][player.y].tile_type == 'deep water':
-                    message('You cannot cast spells underwater.', libtcod.purple)
+                if key.shift:
+                    return cast_spell_new()
                 else:
-                    cast_spell()
-                    return 'casted-spell'
+                    if len(memory) == 0:
+                        message('You have no spells in your memory to cast.', libtcod.purple)
+                    elif dungeon_map[player.x][player.y].tile_type == 'deep water':
+                        message('You cannot cast spells underwater.', libtcod.purple)
+                    else:
+                        cast_spell()
+                        return 'casted-spell'
             if key_char == 'j':
                 return jump()
             if key_char == 'e':
@@ -1596,6 +1614,24 @@ def handle_keys():
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
+
+
+def cast_spell_new():
+    if len(player.known_spells) <= 0:
+        message("You don't know any spells.", libtcod.light_blue)
+        return 'didnt-take-turn'
+    else:
+        names = []
+        for s in player.known_spells:
+            names.append(s.name)
+        selection = menu('Cast which spell?', names, 30)
+        if selection is not None:
+            if len(player.mana) >= player.known_spells[selection].mana_cost:
+                return player.known_spells[selection].function()
+            else:
+                message("You don't have enough mana to cast that spell.", libtcod.light_blue)
+                return 'didnt-take-turn'
+    return 'didnt-take-turn'
 
 
 def pick_up_item():
@@ -2074,6 +2110,7 @@ def new_game():
 
     memory = []
     player.mana = []
+    player.known_spells = [] #[spells.cast_manabolt]
     player.action_queue = []
     # spell = GameObject(0, 0, '?', 'mystery spell', libtcod.yellow, item=Item(use_function=spells.cast_lightning, type="spell"))
     # memory.append(spell)
@@ -2081,7 +2118,7 @@ def new_game():
     #Welcome message
     game_msgs = []
 
-    spawn_item('spell_confusion', player.x, player.y)
+    spawn_item('tome_manabolt', player.x, player.y)
 
     spawn_monster('monster_blastcap', player.x, player.y - 1)
 
@@ -2183,8 +2220,8 @@ import dungeon
 import mapgen
 
 in_game = False
-libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
-libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'Let\'s Try Making a Roguelike', False)
+libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GRAYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
+libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'Magic Roguelike', False)
 libtcod.sys_set_fps(consts.LIMIT_FPS)
 con = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
