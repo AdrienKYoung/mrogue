@@ -1090,30 +1090,44 @@ def inventory_menu(header):
     libtcod.console_print(window, 1, 1, header)
     y = 3
     letter_index = ord('a')
-    height = 4 + len(loot.item_categories) + len(inventory)
-    draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
     menu_items = []
-    for item_category in loot.item_categories:
-        libtcod.console_set_default_foreground(window, libtcod.gray)
-        for i in range(consts.INVENTORY_WIDTH):
-            libtcod.console_put_char(window, i, y, libtcod.CHAR_HLINE)
-        libtcod.console_put_char(window, 0, y, 199)
-        libtcod.console_put_char(window, consts.INVENTORY_WIDTH - 1, y, 182)
-        libtcod.console_print_ex(window, consts.INVENTORY_WIDTH / 2, y, libtcod.BKGND_DEFAULT, libtcod.CENTER,
-                                 item_category['plural'].capitalize())
-        y += 1
+    item_categories = []
+
+    if len(inventory) == 0:
+        height = 5
+        draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
+        libtcod.console_set_default_foreground(window, libtcod.dark_grey)
+        libtcod.console_print(window, 1, 3, 'Inventory is empty.')
+    else:
         for item in inventory:
-            if item.item.category == item_category['name']:
-                libtcod.console_set_default_foreground(window, libtcod.white)
-                menu_items.append(item)
-                text = '(' + chr(letter_index) + ') ' + item.name.capitalize()
-                libtcod.console_print(window, 1, y, text)
-                if item.equipment and item.equipment.is_equipped:
-                    libtcod.console_set_default_foreground(window, libtcod.orange)
-                    libtcod.console_print_ex(window, consts.INVENTORY_WIDTH - 2, y, libtcod.BKGND_DEFAULT,
-                                             libtcod.RIGHT, '[E]')
-                y += 1
-                letter_index += 1
+            item_categories.append(item.item.category)
+        height = 4 + len(item_categories) + len(inventory)
+        draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
+
+        for item_category in loot.item_categories:
+            if not item_category in item_categories:
+                continue
+            libtcod.console_set_default_foreground(window, libtcod.gray)
+            for i in range(consts.INVENTORY_WIDTH):
+                libtcod.console_put_char(window, i, y, libtcod.CHAR_HLINE)
+            libtcod.console_put_char(window, 0, y, 199)
+            libtcod.console_put_char(window, consts.INVENTORY_WIDTH - 1, y, 182)
+            libtcod.console_print_ex(window, consts.INVENTORY_WIDTH / 2, y, libtcod.BKGND_DEFAULT, libtcod.CENTER,
+                                     loot.item_categories[item_category]['plural'].capitalize())
+            y += 1
+            for item in inventory:
+                if item.item.category == item_category:
+                    libtcod.console_set_default_foreground(window, libtcod.white)
+                    menu_items.append(item)
+                    libtcod.console_set_color_control(libtcod.COLCTRL_1, item.color, libtcod.black)
+                    text = '(' + chr(letter_index) + ') %c' + str(item.char) + '%c ' + item.name.capitalize()
+                    libtcod.console_print(window, 1, y, text % (libtcod.COLCTRL_1, libtcod.COLCTRL_STOP))
+                    if item.equipment and item.equipment.is_equipped:
+                        libtcod.console_set_default_foreground(window, libtcod.orange)
+                        libtcod.console_print_ex(window, consts.INVENTORY_WIDTH - 2, y, libtcod.BKGND_DEFAULT,
+                                                 libtcod.RIGHT, '[E]')
+                    y += 1
+                    letter_index += 1
 
     x = consts.MAP_VIEWPORT_X + 1
     y = consts.MAP_VIEWPORT_Y + 1

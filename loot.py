@@ -1,12 +1,12 @@
 import libtcodpy
 import spells
 
-item_categories = [
-    { 'name' : 'weapon', 'plural' : 'weapons' },
-    { 'name' : 'armor', 'plural' : 'armor' },
-    { 'name' : 'spell', 'plural' : 'spells' },
-    { 'name' : 'potion', 'plural' : 'potions' }
-]
+item_categories = {
+    'weapon' : { 'plural' : 'weapons' },
+    'armor' : { 'plural' : 'armor' },
+    'spell' : { 'plural' : 'spells' },
+    'potion' : { 'plural' : 'potions' }
+}
 
 table = {
     'default': ['spell_lightning',None],
@@ -100,7 +100,7 @@ proto = {
     'equipment_leather_armor': {
         'name': 'Leather Armor',
         'category': 'armor',
-        'char': chr(6),
+        'char': '[',
         'color': libtcodpy.yellow,
         'type': 'equipment',
         'armor_bonus': 5,
