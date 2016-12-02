@@ -518,7 +518,7 @@ class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
-                 update_speed=1.0, misc=None):
+                 update_speed=1.0, misc=None, blocks_sight=False, on_step=None):
         self.x = x
         self.y = y
         self.char = char
@@ -553,7 +553,25 @@ class GameObject:
         self.misc = misc
         if self.misc:
             self.misc.owner = self
-        
+        self.blocks_sight = blocks_sight
+        self.on_step = on_step
+
+    def on_create(self):
+        if self.blocks_sight:
+            libtcod.map_set_properties(fov_map, self.x, self.y, not self.blocks_sight, True)
+
+    def set_position(self, x, y):
+        if self.blocks_sight:
+            libtcod.map_set_properties(fov_map, self.x, self.y, not dungeon_map[self.x][self.y].blocks_sight, True)
+            libtcod.map_set_properties(fov_map, x, y, False, True)
+            fov_recompute_fn()
+        self.x = x
+        self.y = y
+        stepped_on = get_objects(self.x, self.y, lambda o: o.on_step)
+        if len(stepped_on) > 0:
+            for obj in stepped_on:
+                obj.on_step(obj, self)
+
     def move(self, dx, dy):
         if not is_blocked(self.x + dx, self.y + dy):
             if self.fighter is not None:
@@ -571,19 +589,23 @@ class GameObject:
                         return False
                 else:
                     self.fighter.adjust_stamina(consts.STAMINA_REGEN_MOVE)     # gain stamina for moving across normal terrain
-            self.x += dx
-            self.y += dy
+
+            self.set_position(self.x + dx, self.y + dy)
             return True
 
     def draw(self):
-        if (libtcod.map_is_in_fov(fov_map, self.x, self.y) or
-                (self.always_visible and dungeon_map[self.x][self.y].explored)):
-            offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
+        offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
+        if libtcod.map_is_in_fov(fov_map, self.x, self.y):
             if selected_monster is self:
                 libtcod.console_put_char_ex(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.black, self.color)
             else:
                 libtcod.console_set_default_foreground(mapCon, self.color)
                 libtcod.console_put_char(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
+        elif self.always_visible and dungeon_map[self.x][self.y].explored:
+            shaded_color = libtcod.Color(self.color[0], self.color[1], self.color[2])
+            libtcod.color_scale_HSV(shaded_color, 0.1, 0.4)
+            libtcod.console_set_default_foreground(mapCon, shaded_color)
+            libtcod.console_put_char(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
         
     def move_towards(self, target_x, target_y):
         dx = target_x - self.x
@@ -696,6 +718,11 @@ class Tile:
 # General Functions
 #############################################
 
+def step_on_reed(reed, obj):
+    libtcod.map_set_properties(fov_map, reed.x, reed.y, True, True)
+    fov_recompute_fn()
+    objects.remove(reed)
+
 def adjacent_tiles_orthogonal(x, y):
     adjacent = []
     if x > 0:
@@ -726,7 +753,7 @@ def blastcap_explode(blastcap):
     global selected_monster
 
     blastcap.fighter = None
-    message('The blastcap explodes, stunning nearby creatures!', libtcod.gold)
+    message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
     for obj in objects:
         if obj.fighter and is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
             if obj.fighter.apply_status_effect(StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
@@ -967,13 +994,14 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0):
         # Render range shading
         libtcod.console_clear(ui)
         libtcod.console_set_key_color(ui, libtcod.magenta)
-        for draw_x in range(consts.MAP_WIDTH):
-            for draw_y in range(consts.MAP_HEIGHT):
-                if round((player.distance(draw_x + offsetx, draw_y + offsety))) > max_range:
-                    libtcod.console_put_char_ex(ui, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.black)
-                else:
-                    libtcod.console_put_char_ex(ui, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.magenta)
-        libtcod.console_blit(ui, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 0, 0.2)
+        if max_range is not None:
+            for draw_x in range(consts.MAP_WIDTH):
+                for draw_y in range(consts.MAP_HEIGHT):
+                    if round((player.distance(draw_x + offsetx, draw_y + offsety))) > max_range:
+                        libtcod.console_put_char_ex(ui, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.black)
+                    else:
+                        libtcod.console_put_char_ex(ui, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.magenta)
+            libtcod.console_blit(ui, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 0, 0.2)
         # Render cursor
         libtcod.console_set_default_background(ui, libtcod.magenta)
         libtcod.console_clear(ui)
@@ -1117,11 +1145,13 @@ def inventory_menu(header):
             y += 1
             for item in inventory:
                 if item.item.category == item_category:
-                    libtcod.console_set_default_foreground(window, libtcod.white)
                     menu_items.append(item)
-                    libtcod.console_set_color_control(libtcod.COLCTRL_1, item.color, libtcod.black)
-                    text = '(' + chr(letter_index) + ') %c' + str(item.char) + '%c ' + item.name.capitalize()
-                    libtcod.console_print(window, 1, y, text % (libtcod.COLCTRL_1, libtcod.COLCTRL_STOP))
+
+                    libtcod.console_set_default_foreground(window, libtcod.white)
+                    libtcod.console_print(window, 1, y, '(' + chr(letter_index) + ') ')
+                    libtcod.console_put_char_ex(window, 5, y, item.char, item.color, libtcod.black)
+                    libtcod.console_print(window, 7, y, item.name.capitalize())
+
                     if item.equipment and item.equipment.is_equipped:
                         libtcod.console_set_default_foreground(window, libtcod.orange)
                         libtcod.console_print_ex(window, consts.INVENTORY_WIDTH - 2, y, libtcod.BKGND_DEFAULT,
@@ -1327,9 +1357,9 @@ def spawn_monster_inventory(proto):
 
 def create_item(name):
     p = loot.proto[name]
-    item_component = Item(category=p['category'], use_function=p.get('on_use'))
+    item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'])
     equipment_component = None
-    if p['type'] == 'equipment':
+    if p['category'] == 'weapon' or p['category'] == 'armor':
         equipment_component = Equipment(
             slot=p['slot'],
             category=p['category'],
@@ -1445,8 +1475,7 @@ def player_bash_attack(target):
                 message('The ' + target.name + ' collides with the ' + against + ', stunning it!', libtcod.gold)
         else:
             message('The ' + target.name + ' is knocked backwards.', libtcod.gray)
-            target.x += direction[0]
-            target.y += direction[1]
+            target.set_position(target.x + direction[0], target.y + direction[1])
             render_map()
             libtcod.console_flush()
 
@@ -1466,7 +1495,7 @@ def do_queued_action(action):
     if action == 'finish-meditate':
         if len(player.mana) < player.player_stats.max_mana:
             player.mana.append('normal')
-            message('You have finished meditating. You are infused with magical power.', libtcod.light_cyan)
+            message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
         return
 
 
@@ -1524,13 +1553,7 @@ def handle_keys():
             pass
         else:
             if key_char == 'g':
-                for object in objects:
-                    if object.x == player.x and object.y == player.y:
-                        if object.item:
-                            object.item.pick_up()
-                            return 'picked-up-item'
-                        elif object.interact:
-                            object.interact(object)
+                return pick_up_item()
             if key_char == 'i':
                 return inspect_inventory()
             if key_char == 'u':
@@ -1575,6 +1598,45 @@ def handle_keys():
             return 'didnt-take-turn'
 
 
+def pick_up_item():
+    items_here = get_objects(player.x, player.y, condition=lambda o: o.item)
+    if len(items_here) > 0:
+        if len(items_here) == 1:
+            items_here[0].item.pick_up()
+            return 'picked-up-item'
+        options = []
+        options.append('All')
+        for item in items_here:
+            options.append(item.name)
+
+        selection = menu('Pick up which item?', options, 30)
+        if selection is not None:
+            if selection == 0:
+                for i in items_here:
+                    i.item.pick_up()
+            else:
+                items_here[selection - 1].item.pick_up()
+            return 'picked-up-item'
+    else:
+        interactable_here = get_objects(player.x, player.y, condition=lambda o:o.interact)
+        if len(interactable_here) > 0:
+            interactable_here[0].interact(interactable_here[0])
+            return 'interacted'
+    return 'didnt-take-turn'
+
+
+def get_objects(x, y, condition=None):
+    found = []
+    for obj in objects:
+        if obj.x == x and obj.y == y:
+            if condition is not None:
+                if condition(obj):
+                    found.append(obj)
+            else:
+                found.append(obj)
+    return found
+
+
 def inspect_inventory():
     chosen_item = inventory_menu('Select which item?')
     if chosen_item is not None:
@@ -1599,14 +1661,15 @@ def inspect_inventory():
 
 def meditate():
     if len(player.mana) < player.player_stats.max_mana:
-        message('You tap into the magic of the world around you...', libtcod.light_cyan)
+        message('You tap into the magic of the world around you...', libtcod.dark_cyan)
         for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
             player.action_queue.append('channel-meditate')
         player.action_queue.append('finish-meditate')
         return 'start-meditate'
     else:
-        message('You cannot gain any more power by meditating.', libtcod.light_cyan)
+        message('You cannot gain any more power by meditating.', libtcod.dark_cyan)
         return 'didnt-take-turn'
+
 
 def get_description(obj):
     if obj and hasattr(obj, 'description') and obj.description is not None:
@@ -1666,8 +1729,7 @@ def jump():
                 # Jump attack
                 land = land_next_to_target(jump_attack_target.x, jump_attack_target.y, player.x, player.y)
                 if land is not None:
-                    player.x = land[0]
-                    player.y = land[1]
+                    player.set_position(land[0], land[1])
                     fov_recompute_fn()
                     player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
 
@@ -1681,8 +1743,7 @@ def jump():
                     return 'didnt-take-turn'
             else:
                 #jump to open space
-                player.x = x
-                player.y = y
+                player.set_position(x, y)
                 fov_recompute_fn()
                 player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
                 return 'jumped'
@@ -1701,6 +1762,7 @@ def land_next_to_target(target_x, target_y, source_x, source_y):
     if not is_blocked(land_x, land_y):
         return land_x, land_y
     return None
+
 
 def cast_spell():
     message('Cast which spell?', libtcod.purple)
@@ -1824,6 +1886,25 @@ def render_side_panel(acc_mod=1.0):
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
+    # Objects here
+    libtcod.console_print(side_panel, 2, drawHeight, 'Objects here:')
+    libtcod.console_set_default_foreground(side_panel, libtcod.gray)
+    drawHeight += 1
+    objects_here = get_objects(player.x, player.y, lambda o: o is not player)
+    if len(objects_here) > 0:
+        end = min(len(objects_here), 4)
+        for i in range(end):
+            line = objects_here[i].name
+            line = (line[:consts.SIDE_PANEL_WIDTH - 8] + '...') if len(line) > consts.SIDE_PANEL_WIDTH - 5 else line
+            libtcod.console_print(side_panel, 4, drawHeight, line)
+            drawHeight += 1
+        if end < len(objects_here):
+            libtcod.console_print(side_panel, 4, drawHeight, '...' + str(len(objects_here) - 4) + ' more...')
+            drawHeight += 1
+    libtcod.console_print(side_panel, 4, drawHeight, dungeon_map[player.x][player.y].name)
+    drawHeight += 2
+    libtcod.console_set_default_foreground(side_panel, libtcod.white)
+
     # Spells in memory
     libtcod.console_print(side_panel, 2, drawHeight, 'Spells in memory:')
     drawHeight += 1
@@ -1835,7 +1916,7 @@ def render_side_panel(acc_mod=1.0):
 
     # Selected Monster
     if selected_monster is not None:
-        drawHeight = consts.SIDE_PANEL_HEIGHT - 20
+        drawHeight = consts.SIDE_PANEL_HEIGHT - 16
         libtcod.console_print(side_panel, 2, drawHeight, selected_monster.name)
         drawHeight += 2
         render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
@@ -1934,7 +2015,6 @@ def draw_border(console, x0, y0, width, height, foreground=libtcod.gray, backgro
     libtcod.console_put_char(console, x0, y0 + height - 1, 4)
 
 
-
 def generate_level():
     global dungeon_map, objects, stairs, spawned_bosses
     mapgen.make_map()
@@ -2020,7 +2100,8 @@ def initialize_fov():
     fov_map = libtcod.map_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
-            libtcod.map_set_properties(fov_map, x, y, not dungeon_map[x][y].blocks_sight, not dungeon_map[x][y].blocks)
+            sight_blockers = get_objects(x, y, lambda o: o.blocks_sight)
+            libtcod.map_set_properties(fov_map, x, y, len(sight_blockers) == 0 and not dungeon_map[x][y].blocks_sight, not dungeon_map[x][y].blocks)
 
 
 def save_game():
@@ -2092,6 +2173,7 @@ def play_game():
 
         # Handle auto-targeting
         auto_target_monster()
+
 
 # my modules
 import spells

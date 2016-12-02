@@ -66,6 +66,14 @@ class Rect:
         return (self.x1 <= other.x2 and self.x2 >= other.x1 and
                 self.y1 <= other.y2 and self.y2 >= other.y1)
 
+    @property
+    def w(self):
+        return self.x2 - self.x1
+
+    @property
+    def h(self):
+        return self.y2 - self.y1
+
 
 def create_room_random():
     choice = libtcod.random_get_int(0, 0, 2)
@@ -165,7 +173,7 @@ def create_wandering_tunnel(x1, y1, x2, y2):
             current_y += ydir
         # replace terrain at current tile with floor
         main.dungeon_map[current_x][current_y].tile_type = 'stone floor'
-        if libtcod.random_get_int(0, 0, 1) == 0:
+        if libtcod.random_get_int(0, 0, 1) == 0 or move == 'xy':
             main.dungeon_map[current_x - 1][current_y].tile_type = 'stone floor'
             main.dungeon_map[current_x + 1][current_y].tile_type = 'stone floor'
             main.dungeon_map[current_x][current_y - 1].tile_type = 'stone floor'
@@ -180,6 +188,25 @@ def create_h_tunnel(x1, x2, y):
 def create_v_tunnel(y1, y2, x):
     for y in range(min(y1, y2), max(y1, y2) + 1):
         main.dungeon_map[x][y].tile_type = 'stone floor'
+
+
+def scatter_reeds(room):
+    for y in range(room.w):
+        for x in range(room.h):
+            if libtcod.random_get_int(0, 0, 3) == 0 and not main.dungeon_map[x + room.x1][y + room.y1].blocks:
+                create_reed(room.x1 + x, room.y1 + y)
+
+
+def create_reed(x, y):
+    type_here = main.dungeon_map[x][y].tile_type
+    if type_here == 'deep water':
+        main.dungeon_map[x][y].tile_type = 'shallow water'
+    elif type_here != 'shallow water':
+        main.dungeon_map[x][y].tile_type = 'grass floor'
+    reed = main.GameObject(x, y, 244, 'reeds', libtcod.darker_green, always_visible=True, description='A thicket of '
+                           'reeds so tall they obstruct your vision. They are easily crushed underfoot.'
+                           , blocks_sight=True, on_step=main.step_on_reed)
+    main.objects.append(reed)
 
 def make_map():
 
@@ -234,6 +261,8 @@ def make_map():
                 #    create_v_tunnel(prev_y, new_y, prev_x)
                 #    create_h_tunnel(prev_x, new_x, new_y)
             main.place_objects(new_room)
+            if libtcod.random_get_int(0, 0, 5) == 0:
+                scatter_reeds(new_room)
             rooms.append(new_room)
             num_rooms += 1
 

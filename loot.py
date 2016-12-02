@@ -55,8 +55,19 @@ proto = {
         'char': '!',
         'color': libtcodpy.yellow,
         'on_use': spells.cast_heal,
+        'type': 'item',
+        'description': 'Potion that heals wounds when consumed'
+    },
+
+    'potion_waterbreathing': {
+        'name': 'Potion of Waterbreathing',
+        'category': 'potion',
+        'char': '!',
+        'color': libtcodpy.yellow,
+        'on_use': spells.cast_waterbreathing,
         'type': 'potion',
-        'description': 'Potions that heals wounds when consumed'
+        'description': "Drinking this potion causes temporary gills to form on the drinker's throat, allowing him or "
+                       "her to breath water like a fish."
     },
 
     #WEAPONS
@@ -65,7 +76,7 @@ proto = {
         'category': 'weapon',
         'char': '/',
         'color': libtcodpy.yellow,
-        'type': 'equipment',
+        'type': 'item',
         'attack_damage_bonus': 10,
         'slot':'right hand',
         'description': 'A hand-and-a-half cruciform sword',
@@ -77,7 +88,7 @@ proto = {
         'category': 'weapon',
         'char': '-',
         'color': libtcodpy.yellow,
-        'type': 'equipment',
+        'type': 'item',
         'attack_damage_bonus': 3,
         'slot':'right hand',
         'description': 'A small double-edged knife',
@@ -91,7 +102,7 @@ proto = {
         'category': 'armor',
         'char': '[',
         'color': libtcodpy.yellow,
-        'type': 'equipment',
+        'type': 'item',
         'armor_bonus': 5,
         'slot': 'left hand',
         'description': 'An iron kite shield.'
@@ -100,9 +111,9 @@ proto = {
     'equipment_leather_armor': {
         'name': 'Leather Armor',
         'category': 'armor',
-        'char': '[',
+        'char': chr(6),
         'color': libtcodpy.yellow,
-        'type': 'equipment',
+        'type': 'item',
         'armor_bonus': 5,
         'slot': 'body',
         'description': 'A hardened leather coat.'
