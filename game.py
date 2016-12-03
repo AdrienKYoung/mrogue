@@ -2148,9 +2148,9 @@ def new_game():
     initialize_fov()
     game_state = 'playing'
 
-    item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball), description='the sword you started with')
+    #item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball), description='the sword you started with')
     #waterbreathing = GameObject(0, 0, '!', 'potion of waterbreathing', libtcod.yellow, item=Item(use_function=spells.cast_waterbreathing), description='This potion allows the drinker to breath underwater for a short time.')
-    inventory.append(item)
+    #inventory.append(item)
     #inventory.append(waterbreathing)
 
     memory = []
