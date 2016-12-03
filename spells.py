@@ -51,7 +51,7 @@ def cast_fireball():
     (x, y) = main.target_tile()
     if x is None: return 'cancelled'
     main.message('The fireball explodes, burning everything within ' + str(consts.FIREBALL_RADIUS) + ' tiles!', libtcod.light_blue)
-    
+    main.create_fire(x,y,10)
     for obj in main.objects:
         if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
             main.message('The ' + obj.name + ' gets burned for ' + str(consts.FIREBALL_DAMAGE) + ' damage!', libtcod.light_blue)

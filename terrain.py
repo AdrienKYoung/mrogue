@@ -27,6 +27,8 @@ data = {
                              'a deep pool of grimy water', consts.DEEP_WATER_COST, False),
     'chasm': TileData(True, False, 'chasm', libtcod.CHAR_BLOCK1, (16, 16, 32), (0, 0, 16),
                              'a pit descending into darkness'),
-    'grass floor': TileData(False, False, 'grass floor', ',', (4, 140, 13), (64, 48, 0),
+    'grass floor': TileData(False, False, 'grass floor', ',', (4, 140, 13), (29, 71, 10),
                              'a stone floor covered with cave grass'),
+    'scorched floor': TileData(False, False, 'scorched floor', '.', (94, 55, 55), (30, 30, 30),
+                             'still-warm floor scorched by fire'),
 }

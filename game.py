@@ -11,12 +11,13 @@ import terrain
 
 
 class StatusEffect:
-    def __init__(self, name, time_limit=None, color=libtcod.white, on_apply=None, on_end=None):
+    def __init__(self, name, time_limit=None, color=libtcod.white, on_apply=None, on_end=None, on_tick=None):
         self.name = name
         self.time_limit = time_limit
         self.color = color
         self.on_apply = on_apply
         self.on_end = on_end
+        self.on_tick = on_tick
 
 
 class Equipment:
@@ -283,6 +284,8 @@ class Fighter:
         # Manage status effect timers
         removed_effects = []
         for effect in self.status_effects:
+            if effect.on_tick is not None:
+                effect.on_tick(self)
             if effect.time_limit is not None:
                 effect.time_limit -= 1
                 if effect.time_limit <= 0:
@@ -441,6 +444,27 @@ class ReekerGasBehavior:
                         obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
                         if libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
                             message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
+
+class FireBehavior:
+    def __init__(self,temp):
+        self.temperature = temp
+
+    def on_tick(self):
+        if self.temperature > 8:
+            self.owner.color = libtcod.Color(215,244,247)
+        elif self.temperature > 6:
+            self.owner.color = libtcod.Color(255,219,20)
+        elif self.temperature > 4:
+            self.owner.color = libtcod.Color(250,145,20)
+        elif self.temperature > 2:
+            self.owner.color = libtcod.Color(232,35,0)
+        else:
+            self.owner.color = libtcod.Color(100,100,100)
+
+        self.temperature -= 1
+        for obj in objects:
+            if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
+                obj.fighter.status_effects.append(StatusEffect('burning',self.temperature,libtcod.red,on_tick=fire_tick))
 
 class AI_Reeker:
 
@@ -1396,6 +1420,15 @@ def spawn_item(name, x, y):
         objects.append(item)
         item.send_to_back()
 
+def create_fire(x,y,temp):
+    component = FireBehavior(temp)
+    obj = GameObject(x,y,libtcod.CHAR_BLOCK2,'Fire',libtcod.red,misc=component)
+    objects.append(obj)
+    if temp > 4:
+        dungeon_map[x][y] = Tile('scorched floor')
+
+def fire_tick(fighter):
+    fighter.hp -= 5
 
 def place_objects(room):
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
@@ -2115,9 +2148,9 @@ def new_game():
     initialize_fov()
     game_state = 'playing'
 
-    #item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball), description='the sword you started with')
+    item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball), description='the sword you started with')
     #waterbreathing = GameObject(0, 0, '!', 'potion of waterbreathing', libtcod.yellow, item=Item(use_function=spells.cast_waterbreathing), description='This potion allows the drinker to breath underwater for a short time.')
-    #inventory.append(item)
+    inventory.append(item)
     #inventory.append(waterbreathing)
 
     memory = []
