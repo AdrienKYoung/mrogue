@@ -3,10 +3,48 @@ import consts
 import libtcodpy as libtcod
 
 class Spell:
-    def __init__(self, name, mana_cost, function):
+    def __init__(self, name, mana_cost, function, cost_string):
         self.name = name
         self.mana_cost = mana_cost
         self.function = function
+        self.cost_string = cost_string
+
+    def cast(self):
+        success = self.function()
+        if success:
+            self.subtract_cost()
+        return success
+
+    def check_mana(self):
+        pool = []
+        for m in main.player.mana:  # Create a mana pool that is a copy of the player's mana pool
+            pool.append(m)
+        for mana in self.mana_cost:
+            if mana == 'normal':  # First check every mana cost other than 'normal'
+                continue
+            else:
+                for i in range(self.mana_cost[mana]):
+                    if mana in pool:
+                        pool.remove(mana)  # If this mana exists in the pool, remove it and continue looping
+                    else:
+                        return False  # Special mana does not exist in the pool - failure
+        if 'normal' in self.mana_cost:
+            if len(pool) < self.mana_cost['normal']:
+                return False
+        return True
+
+    def subtract_cost(self):
+        for mana in self.mana_cost:  # First remove special mana
+            if mana == 'normal':
+                continue
+            for i in range(self.mana_cost[mana]):
+                main.player.mana.remove(mana)
+        if 'normal' in self.mana_cost:  # Then remove normal mana
+            for i in range(self.mana_cost['normal']):
+                if 'normal' in main.player.mana:  # First attempt to remove normal mana
+                    main.player.mana.remove('normal')
+                else:
+                    main.player.mana.remove(main.player.mana[len(main.player.mana) - 1]) # Then use rightmost mana
 
 def cast_fireball():
     main.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
@@ -77,7 +115,6 @@ def cast_manabolt():
         default = main.selected_monster.x, main.selected_monster.y
     target = main.target_tile(consts.MANABOLT_RANGE, 'beam_interrupt', acc_mod=consts.MANABOLT_ACC, default_target=default)
     if target[0] is not None:
-        main.player.mana.remove(main.player.mana[0])
         monster = main.get_monster_at_tile(target[0], target[1])
         if monster is not None:
             if main.roll_to_hit(monster, main.player.fighter.accuracy * consts.MANABOLT_ACC):
@@ -87,9 +124,25 @@ def cast_manabolt():
                 main.message('The manabolt misses the ' + monster.name + '.', libtcod.gray)
         else:
             main.message('The manabolt hits the ' + main.dungeon_map[target[0]][target[1]].tile_type + '.', libtcod.light_blue)
-        return 'cast-spell'
-    return 'didnt-take-turn'
+        return True
+    return False
+
+def cast_mend():
+    if main.player.fighter.hp < main.player.fighter.max_hp:
+        main.player.fighter.heal(consts.MEND_HEAL)
+        main.message('A soft green glow passes over you as your wounds are healed.', libtcod.light_blue)
+        return True
+    else:
+        main.message('You have no need of mending.', libtcod.light_blue)
+        return False
 
 spell_library = {
-    'manabolt' : Spell('manabolt', 1, cast_manabolt)
+    'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]'),
+    'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]')
+
+}
+
+mana_colors = {
+    'normal' : libtcod.gray,
+    'life' : libtcod.green
 }

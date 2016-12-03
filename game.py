@@ -1508,9 +1508,22 @@ def get_loot(monster):
 
 def do_queued_action(action):
     if action == 'finish-meditate':
+        manatype = 'normal'
+        if dungeon_map[player.x][player.y].tile_type == 'grass floor':  # Temporary - used for testing
+            manatype = 'life'
+
+
         if len(player.mana) < player.player_stats.max_mana:
-            player.mana.append('normal')
+            player.mana.append(manatype)
             message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
+            return
+        elif manatype != 'normal':
+            for i in range(len(player.mana)):
+                if player.mana[i] == 'normal':
+                    player.mana[i] = manatype
+                    message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
+                    return
+        message('You have finished meditating. You were unable to gain any more power than you already have.', libtcod.dark_cyan)
         return
 
 
@@ -1623,11 +1636,14 @@ def cast_spell_new():
     else:
         names = []
         for s in player.known_spells:
-            names.append(s.name)
+            names.append(s.name + ' ' + s.cost_string)
         selection = menu('Cast which spell?', names, 30)
         if selection is not None:
-            if len(player.mana) >= player.known_spells[selection].mana_cost:
-                return player.known_spells[selection].function()
+            if player.known_spells[selection].check_mana():
+                if player.known_spells[selection].cast():
+                    return 'cast-spell'
+                else:
+                    return 'didnt-take-turn'
             else:
                 message("You don't have enough mana to cast that spell.", libtcod.light_blue)
                 return 'didnt-take-turn'
@@ -1696,15 +1712,11 @@ def inspect_inventory():
 
 
 def meditate():
-    if len(player.mana) < player.player_stats.max_mana:
-        message('You tap into the magic of the world around you...', libtcod.dark_cyan)
-        for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
-            player.action_queue.append('channel-meditate')
-        player.action_queue.append('finish-meditate')
-        return 'start-meditate'
-    else:
-        message('You cannot gain any more power by meditating.', libtcod.dark_cyan)
-        return 'didnt-take-turn'
+    message('You tap into the magic of the world around you...', libtcod.dark_cyan)
+    for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
+        player.action_queue.append('channel-meditate')
+    player.action_queue.append('finish-meditate')
+    return 'start-meditate'
 
 
 def get_description(obj):
@@ -1901,7 +1913,7 @@ def render_side_panel(acc_mod=1.0):
     libtcod.console_put_char(side_panel, 2, 15, '[')
     x = 4
     for m in range(len(player.mana)):
-        libtcod.console_set_default_foreground(side_panel, libtcod.light_gray)
+        libtcod.console_set_default_foreground(side_panel, spells.mana_colors[player.mana[m]])
         libtcod.console_put_char(side_panel, x, 15, '*')
         x += 2
     for m in range(player.player_stats.max_mana - len(player.mana)):
@@ -2119,6 +2131,7 @@ def new_game():
     game_msgs = []
 
     spawn_item('tome_manabolt', player.x, player.y)
+    spawn_item('tome_mend', player.x, player.y)
 
     spawn_monster('monster_blastcap', player.x, player.y - 1)
 

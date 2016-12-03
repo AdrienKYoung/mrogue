@@ -82,6 +82,16 @@ proto = {
         'description' : "A weathered book that holds the secrets of Manabolt."
     },
 
+    'tome_mend': {
+        'name': 'Tome of Mend',
+        'category': 'book',
+        'char': '=',
+        'color': libtcodpy.yellow,
+        'learn_spell': 'mend',
+        'type': 'item',
+        'description': "A weathered book that holds the secrets of Mend."
+    },
+
     #WEAPONS
     'equipment_longsword': {
         'name': 'Longsword',
