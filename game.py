@@ -267,7 +267,7 @@ class Fighter:
         if self.hp > self.max_hp:
             self.hp = self.max_hp
 
-    def on_tick(self):
+    def on_tick(self, object=None):
         # Manage breath/drowning
         if dungeon_map[self.owner.x][self.owner.y].tile_type == 'deep water':
             if not (self.can_breath_underwater or self.has_status('waterbreathing')):
@@ -285,7 +285,7 @@ class Fighter:
         removed_effects = []
         for effect in self.status_effects:
             if effect.on_tick is not None:
-                effect.on_tick(self)
+                effect.on_tick(object=self.owner)
             if effect.time_limit is not None:
                 effect.time_limit -= 1
                 if effect.time_limit <= 0:
@@ -379,6 +379,7 @@ class AI_GiantFrog:
         self.tongue_cooldown = 0
 
     def act(self):
+        self.last_seen_position = (player.x, player.y)
         monster = self.owner
         if self.tongue_cooldown > 0:
             self.tongue_cooldown -= 1
@@ -394,7 +395,6 @@ class AI_GiantFrog:
                     return
 
             monster.move_astar(player.x, player.y)
-            self.last_seen_position = (player.x, player.y)
 
         elif self.last_seen_position is not None and not \
                 (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
@@ -424,7 +424,7 @@ class ReekerGasBehavior:
     def __init__(self):
         self.ticks = consts.REEKER_PUFF_DURATION
 
-    def on_tick(self):
+    def on_tick(self, object=None):
         self.ticks -= 1
         if self.ticks == consts.REEKER_PUFF_DURATION * 2 / 3:
             self.owner.char = libtcod.CHAR_BLOCK2
@@ -449,9 +449,9 @@ class FireBehavior:
     def __init__(self,temp):
         self.temperature = temp
 
-    def on_tick(self):
+    def on_tick(self, object=None):
         if self.temperature > 8:
-            self.owner.color = libtcod.Color(215,244,247)
+            self.owner.color = libtcod.Color(255,244,247)
         elif self.temperature > 6:
             self.owner.color = libtcod.Color(255,219,20)
         elif self.temperature > 4:
@@ -462,9 +462,18 @@ class FireBehavior:
             self.owner.color = libtcod.Color(100,100,100)
 
         self.temperature -= 1
-        for obj in objects:
-            if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
-                obj.fighter.status_effects.append(StatusEffect('burning',self.temperature,libtcod.red,on_tick=fire_tick))
+        if self.temperature == 0:
+            self.owner.destroy()
+        else:
+            for obj in objects:
+                if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
+                    obj.fighter.apply_status_effect(StatusEffect('burning', 8, libtcod.red, on_tick=fire_tick))
+            # Spread to adjacent tiles
+            if self.temperature < 9: # don't spread on the first turn
+                for tile in adjacent_tiles_diagonal(self.owner.x, self.owner.y):
+                    if dungeon_map[tile[0]][tile[1]].flammable:
+                        if libtcod.random_get_int(0, 0, 8) == 0:
+                            create_fire(tile[0], tile[1], 10)
 
 class AI_Reeker:
 
@@ -482,6 +491,54 @@ class AI_Reeker:
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())
                         objects.append(puff)
+
+
+class AI_Verman:
+    def __init__(self):
+        self.summons = []
+        self.summon_cooldown = 0
+        self.last_seen_position = None
+
+    def act(self):
+        monster = self.owner
+        if self.summon_cooldown > 0:
+            self.summon_cooldown -= 1
+        for s in self.summons: #  clear dead things from 'summoned' list
+            if not s.fighter:
+                self.summons.remove(s)
+        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+
+            self.last_seen_position = (player.x, player.y)
+            if self.summon_cooldown == 0 and len(self.summons) < 8:
+                # summon vermin
+                summon_choice = random_choice_index([e['weight'] for e in monsters.verman_summons])
+                summon_tiles = []
+                for y in range(5):
+                    for x in range(5):
+                        pos = monster.x - 2 + x, monster.y - 2 + y
+                        if not is_blocked(pos[0], pos[1]):
+                            summon_tiles.append(pos)
+                for i in range(monsters.verman_summons[summon_choice]['count']):
+                    if len(summon_tiles) > 0:
+                        pos = summon_tiles[libtcod.random_get_int(0, 0, len(summon_tiles) - 1)]
+                        spawn = spawn_monster(monsters.verman_summons[summon_choice]['monster'], pos[0], pos[1])
+                        spawn.fighter.loot_table = None
+                        self.summons.append(spawn)
+                        summon_tiles.remove(pos)
+                self.summon_cooldown = consts.VERMAN_MIN_COOLDOWN + libtcod.random_get_int(0, 0, consts.VERMAN_MAX_COOLDOWN - consts.VERMAN_MIN_COOLDOWN)
+                return
+
+            if is_adjacent_diagonal(monster.x, monster.y, player.x, player.y):
+                if player.fighter.hp > 0:
+                    monster.fighter.attack(player)
+                return
+
+            monster.move_astar(player.x, player.y)
+
+        elif self.last_seen_position is not None and not \
+                (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
+            monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
+
 
 
 class AI_TunnelSpider:
@@ -553,7 +610,7 @@ class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
-                 update_speed=1.0, misc=None, blocks_sight=False, on_step=None):
+                 update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False):
         self.x = x
         self.y = y
         self.char = char
@@ -590,6 +647,7 @@ class GameObject:
             self.misc.owner = self
         self.blocks_sight = blocks_sight
         self.on_step = on_step
+        self.burns = burns
 
     def on_create(self):
         if self.blocks_sight:
@@ -698,12 +756,17 @@ class GameObject:
         objects.remove(self)
         objects.insert(0, self)
 
-    def on_tick(self):
+    def on_tick(self, object=None):
         if self.fighter:
             self.fighter.on_tick()
         if self.misc and hasattr(self.misc, 'on_tick'):
-            self.misc.on_tick()
+            self.misc.on_tick(object)
 
+    def destroy(self):
+        if self.blocks_sight:
+            libtcod.map_set_properties(fov_map, self.x, self.y, not dungeon_map[self.x][self.y].blocks_sight, True)
+            fov_recompute_fn()
+        objects.remove(self)
 
 
 class Tile:
@@ -748,15 +811,17 @@ class Tile:
     def jumpable(self):
         return terrain.data[self.tile_type].jumpable
 
+    @property
+    def flammable(self):
+        return terrain.data[self.tile_type].flammable
+
                 
 #############################################
 # General Functions
 #############################################
 
 def step_on_reed(reed, obj):
-    libtcod.map_set_properties(fov_map, reed.x, reed.y, True, True)
-    fov_recompute_fn()
-    objects.remove(reed)
+    reed.destroy()
 
 def adjacent_tiles_orthogonal(x, y):
     adjacent = []
@@ -852,7 +917,8 @@ def tunnel_spider_spawn_web(obj):
 # creates a spiderweb at the target location
 def make_spiderweb(x, y):
     web = GameObject(x, y, '*', 'spiderweb', libtcod.lightest_gray,
-                     description='a web of spider silk. Stepping into a web will impede movement for a turn.')
+                     description='a web of spider silk. Stepping into a web will impede movement for a turn.',
+                     burns=True)
     objects.append(web)
     web.send_to_back()
 
@@ -940,6 +1006,54 @@ def player_death(player):
     game_state = 'dead'
     player.char = '%'
     player.color = libtcod.darker_red
+
+
+def bomb_beetle_corpse_tick(object=None):
+    if object is None:
+        return
+    object.bomb_timer -= 1
+    if object.bomb_timer > 2:
+        object.color = libtcod.black
+    elif object.bomb_timer > 1:
+        object.color = libtcod.darkest_red
+    elif object.bomb_timer > 0:
+        object.color = libtcod.red
+    elif object.bomb_timer <= 0:
+        message('The bomb beetle corpse explodes!', libtcod.orange)
+        create_fire(object.x, object.y, 10)
+        for tile in adjacent_tiles_diagonal(object.x, object.y):
+            if libtcod.random_get_int(0, 0, 3) != 0:
+                create_fire(tile[0], tile[1], 10)
+            monster = get_monster_at_tile(tile[0], tile[1])
+            if monster is not None:
+                monster.fighter.take_damage(consts.BOMB_BEETLE_DAMAGE)
+                if monster.fighter is not None:
+                    monster.fighter.apply_status_effect(StatusEffect('burning', 8, libtcod.red, on_tick=fire_tick))
+        objects.remove(object)
+
+def bomb_beetle_death(beetle):
+    global selected_monster
+
+    if beetle.fighter.loot_table is not None:
+        drop = get_loot(beetle.fighter)
+        if drop:
+            objects.append(drop)
+            drop.send_to_back()
+
+    message(beetle.name.capitalize() + ' is dead!', libtcod.red)
+    beetle.char = 149
+    beetle.color = libtcod.black
+    beetle.blocks = True
+    beetle.fighter = None
+    beetle.ai = None
+    beetle.name = 'beetle bomb'
+    beetle.description = 'The explosive carapace of a blast beetle. In a few turns, it will explode!'
+    beetle.bomb_timer = 3
+    beetle.on_tick = bomb_beetle_corpse_tick
+
+    if selected_monster is beetle:
+        selected_monster = None
+        auto_target_monster()
 
 
 def monster_death(monster):
@@ -1382,8 +1496,10 @@ def spawn_monster(name, x, y):
         if p.get('ai'):
             ai = p.get('ai')()
         monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
-                             ai=ai, description=p['description'], on_create=p['on_create'], update_speed=p['speed'])
+                             ai=ai, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'])
         objects.append(monster)
+        return monster
+    return None
 
 def spawn_monster_inventory(proto):
     result = []
@@ -1421,18 +1537,25 @@ def spawn_item(name, x, y):
         item.send_to_back()
 
 def create_fire(x,y,temp):
+    if dungeon_map[x][y].tile_type == 'shallow water' or \
+                    dungeon_map[x][y].tile_type == 'deep water' or is_blocked(x, y):
+        return
     component = FireBehavior(temp)
-    obj = GameObject(x,y,libtcod.CHAR_BLOCK2,'Fire',libtcod.red,misc=component)
+    obj = GameObject(x,y,'^','Fire',libtcod.red,misc=component)
     objects.append(obj)
     if temp > 4:
         dungeon_map[x][y] = Tile('scorched floor')
+    for obj in get_objects(x, y, condition=lambda o: o.burns):
+        obj.destroy()
 
-def fire_tick(fighter):
-    fighter.hp -= 5
+def fire_tick(object=None):
+    if object is None or object.fighter is None:
+        return
+    object.fighter.take_damage(5)
 
 def place_objects(room):
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
-    item_chances = {'potion_healing':70, 'spell_lightning':10, 'spell_confusion':10, 'spell_fireball':10 }
+    item_chances = {'potion_healing':70, 'scroll_lightning':10, 'scroll_confusion':10, 'scroll_fireball':10 }
     item_chances['equipment_longsword'] = 25
     item_chances['equipment_shield'] = 25
 
@@ -1639,16 +1762,17 @@ def handle_keys():
                        str(player.fighter.defense),
                        consts.CHARACTER_SCREEN_WIDTH)
             if key_char == 'z':
-                if key.shift:
-                    return cast_spell_new()
-                else:
-                    if len(memory) == 0:
-                        message('You have no spells in your memory to cast.', libtcod.purple)
-                    elif dungeon_map[player.x][player.y].tile_type == 'deep water':
-                        message('You cannot cast spells underwater.', libtcod.purple)
-                    else:
-                        cast_spell()
-                        return 'casted-spell'
+                return cast_spell_new()
+                #if key.shift:
+                #    return cast_spell_new()
+                #else:
+                #    if len(memory) == 0:
+                #        message('You have no spells in your memory to cast.', libtcod.purple)
+                #    elif dungeon_map[player.x][player.y].tile_type == 'deep water':
+                #        message('You cannot cast spells underwater.', libtcod.purple)
+                #    else:
+                #        cast_spell()
+                #        return 'casted-spell'
             if key_char == 'j':
                 return jump()
             if key_char == 'e':
@@ -1969,31 +2093,37 @@ def render_side_panel(acc_mod=1.0):
 
     # Objects here
     libtcod.console_print(side_panel, 2, drawHeight, 'Objects here:')
-    libtcod.console_set_default_foreground(side_panel, libtcod.gray)
     drawHeight += 1
     objects_here = get_objects(player.x, player.y, lambda o: o is not player)
     if len(objects_here) > 0:
-        end = min(len(objects_here), 4)
+        end = min(len(objects_here), 7)
+        if len(objects_here) == 8:
+            end = 8
         for i in range(end):
             line = objects_here[i].name
             line = (line[:consts.SIDE_PANEL_WIDTH - 8] + '...') if len(line) > consts.SIDE_PANEL_WIDTH - 5 else line
+            if objects_here[i].item:
+                libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
+            else:
+                libtcod.console_set_default_foreground(side_panel, libtcod.gray)
             libtcod.console_print(side_panel, 4, drawHeight, line)
             drawHeight += 1
-        if end < len(objects_here):
-            libtcod.console_print(side_panel, 4, drawHeight, '...' + str(len(objects_here) - 4) + ' more...')
+        libtcod.console_set_default_foreground(side_panel, libtcod.gray)
+        if end < len(objects_here) - 1:
+            libtcod.console_print(side_panel, 4, drawHeight, '...' + str(len(objects_here) - 7) + ' more...')
             drawHeight += 1
     libtcod.console_print(side_panel, 4, drawHeight, dungeon_map[player.x][player.y].name)
     drawHeight += 2
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
     # Spells in memory
-    libtcod.console_print(side_panel, 2, drawHeight, 'Spells in memory:')
-    drawHeight += 1
-    y = 1
-    for spell in memory:
-        libtcod.console_print(side_panel, 2, drawHeight, str(y) + ') ' + spell.name)
-        drawHeight += 1
-        y += 1
+    #libtcod.console_print(side_panel, 2, drawHeight, 'Spells in memory:')
+    #drawHeight += 1
+    #y = 1
+    #for spell in memory:
+    #    libtcod.console_print(side_panel, 2, drawHeight, str(y) + ') ' + spell.name)
+    #    drawHeight += 1
+    #    y += 1
 
     # Selected Monster
     if selected_monster is not None:
@@ -2165,6 +2295,7 @@ def new_game():
 
     spawn_item('tome_manabolt', player.x, player.y)
     spawn_item('tome_mend', player.x, player.y)
+    spawn_item('scroll_fireball', player.x, player.y)
 
     spawn_monster('monster_blastcap', player.x, player.y - 1)
 
@@ -2247,12 +2378,12 @@ def play_game():
 
         # Let monsters take their turn
         if game_state == 'playing' and player_action != 'didnt-take-turn':
-            player.on_tick()
+            player.on_tick(object=player)
             for object in objects:
                 if object.ai:
                     object.ai.take_turn()
                 if object is not player:
-                    object.on_tick()
+                    object.on_tick(object=object)
 
         # Handle auto-targeting
         auto_target_monster()

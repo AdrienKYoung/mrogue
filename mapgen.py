@@ -205,7 +205,7 @@ def create_reed(x, y):
         main.dungeon_map[x][y].tile_type = 'grass floor'
     reed = main.GameObject(x, y, 244, 'reeds', libtcod.darker_green, always_visible=True, description='A thicket of '
                            'reeds so tall they obstruct your vision. They are easily crushed underfoot.'
-                           , blocks_sight=True, on_step=main.step_on_reed)
+                           , blocks_sight=True, on_step=main.step_on_reed, burns=True)
     main.objects.append(reed)
 
 def make_map():

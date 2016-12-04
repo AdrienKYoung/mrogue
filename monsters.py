@@ -72,6 +72,23 @@ proto = {
         'resistances': [],
         'equipment': [{'equipment_dagger':50,'equipment_longsword':50},{'none':50,'equipment_shield':50},{'none':50,'equipment_leather_armor':50}]
     },
+    'monster_bomb_beetle': {
+        'name': 'bomb beetle',
+        'char': 'b',
+        'color': libtcod.light_sepia,
+        'hp': 25,
+        'attack_damage': 4,
+        'armor': 8,
+        'evasion': 8,
+        'accuracy': 0.75,
+        'speed': 0.9,
+        'difficulty': 1,
+        'loot': 'default',
+        'death_function' : main.bomb_beetle_death,
+        'ai': main.AI_Default,
+        'description': 'A round brown beetle. A warm glow emanates from beneath its carapace.',
+        'resistances': []
+    },
     'monster_giant_frog': {
         'name': 'giant frog',
         'char': 'f',
@@ -88,6 +105,24 @@ proto = {
         'ai': main.AI_GiantFrog,
         'description': 'Unusually large amphibian that dwells in lakes and ponds. '
                        'Can grab unwary adventurers with its sticky tongue.',
+        'resistances': []
+    },
+    'monster_verman': {
+        'name': 'verman',
+        'char': 'v',
+        'color': libtcod.amber,
+        'hp': 35,
+        'attack_damage': 6,
+        'armor': 3,
+        'evasion': 20,
+        'accuracy': 0.55,
+        'speed': 1.0,
+        'difficulty': 2,
+        'loot': 'default',
+        'on_create': None,
+        'ai': main.AI_Verman,
+        'description': "A filthy rat-faced humanoid clad with ragged scraps of leather. "
+                       "The vermin of the dungeon are drawn to his stench.",
         'resistances': []
     },
     'monster_reeker': {
@@ -178,3 +213,12 @@ proto = {
         'resistances': []
     }
 }
+
+verman_summons = [
+    {'weight' : 25, 'monster' : 'monster_cockroach', 'count' : 2},
+    {'weight' : 25, 'monster' : 'monster_cockroach', 'count' : 3},
+    {'weight' : 15, 'monster' : 'monster_cockroach', 'count' : 4},
+    {'weight' : 15, 'monster' : 'monster_centipede', 'count' : 1},
+    {'weight' : 10, 'monster' : 'monster_bomb_beetle', 'count' : 1},
+    {'weight' : 10, 'monster' : 'monster_tunnel_spider', 'count' : 1}
+]

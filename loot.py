@@ -10,42 +10,40 @@ item_categories = {
 }
 
 table = {
-    'default': ['spell_lightning',None],
+    'default': [None],
     'none': [None]
 }
 
 proto = {
 
-    #SPELLS
-    'spell_lightning': {
-        'name': 'Lightning Bolt',
-        'category': 'spell',
-        'char': '/',
+    #SCROLLS
+    'scroll_lightning': {
+        'name': 'Scroll of Lightning Bolt',
+        'category': 'scroll',
+        'char': '#',
         'on_use': spells.cast_lightning,
         'color': libtcodpy.yellow,
-        'type': 'spell',
-        'element': 'lightning',
+        'type': 'item',
         'description': 'Strikes the nearest foe with a powerful bolt'
     },
 
-    'spell_fireball': {
-        'name': 'Fireball',
+    'scroll_fireball': {
+        'name': 'Scroll of Fireball',
         'category': 'spell',
         'char': '#',
         'on_use': spells.cast_fireball,
-        'color': libtcodpy.red,
-        'type': 'spell',
-        'element': 'fire',
+        'color': libtcodpy.yellow,
+        'type': 'item',
         'description': 'Fires a flaming projectile at a target that explodes on impact'
     },
 
-    'spell_confusion': {
-        'name': 'Confusion',
-        'category': 'spell',
+    'scroll_confusion': {
+        'name': 'Scroll of Confusion',
+        'category': 'scroll',
         'char': '#',
         'color': libtcodpy.yellow,
         'on_use': spells.cast_confuse,
-        'type': 'spell',
+        'type': 'item',
         'description': 'Inflicts confusion on an enemy, causing them to move about erratically.'
     },
 
