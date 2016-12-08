@@ -12,6 +12,23 @@ class Room:
         self.max_x = None
         self.min_y = None
         self.max_y = None
+        self.pos = 0, 0
+
+    # define the world-space position of the upper-left-hand corner of this room. Adjust all tile positions
+    def set_pos(self, x, y):
+        new_tiles = {}
+        for tile in self.tiles.keys():
+            new_x = tile[0] - self.pos[0] + x - self.min_x
+            new_y = tile[1] - self.pos[1] + y - self.min_y
+            new_tiles[new_x, new_y] = self.tiles[(tile[0], tile[1])]
+        w = self.bounds[0] - 1
+        h = self.bounds[1] - 1
+        self.min_x = x
+        self.min_y = y
+        self.max_x = self.min_x + w
+        self.max_y = self.min_y + h
+        self.tiles = new_tiles
+        self.pos = x, y
 
     def set_tile(self, x, y, tile_type):
         if self.min_x is None or self.min_x > x:
@@ -49,6 +66,13 @@ class Room:
                 distsqrd = (x - r) ** 2 + (y - r) ** 2
                 if distsqrd <= r ** 2:
                     self.set_tile(x0 + x - r, y0 + y - r, tile_type)
+
+    def center(self):
+        center = (self.min_x + self.bounds[0] / 2, self.min_y + self.bounds[1] / 2)
+        if center in self.tiles.keys():
+            return center
+        else:
+            return None
 
 class Rect:
     def __init__(self, x, y, w, h):
@@ -134,13 +158,9 @@ def create_room(room):
                 main.dungeon_map[x][y].tile_type = 'stone floor'
 
 
-def apply_room(room, x0, y0):
-    dimensions = room.bounds
-    for x in range(dimensions[0]):
-        for y in range(dimensions[1]):
-            key = x + room.min_x, y + room.min_y
-            if key in room.tiles:
-                main.dungeon_map[x0 + x][y0 + y].tile_type = room.tiles[key]
+def apply_room(room):
+    for tile in room.tiles.keys():
+        main.dungeon_map[tile[0]][tile[1]].tile_type = room.tiles[tile[0], tile[1]]
 
 def create_wandering_tunnel(x1, y1, x2, y2):
     current_x = x1
@@ -190,11 +210,15 @@ def create_v_tunnel(y1, y2, x):
         main.dungeon_map[x][y].tile_type = 'stone floor'
 
 
-def scatter_reeds(room):
-    for y in range(room.w - 1):
-        for x in range(room.h - 1):
-            if libtcod.random_get_int(0, 0, 3) == 0 and not main.dungeon_map[x + room.x1][y + room.y1].blocks:
-                create_reed(room.x1 + x, room.y1 + y)
+def scatter_reeds(tiles):
+    for tile in tiles:
+        if libtcod.random_get_int(0, 0, 3) == 0 and not main.dungeon_map[tile[0]][tile[1]].blocks:
+            create_reed(tile[0], tile[1])
+
+    #for y in range(room.w - 1):
+    #    for x in range(room.h - 1):
+    #        if libtcod.random_get_int(0, 0, 3) == 0 and not main.dungeon_map[x + room.x1][y + room.y1].blocks:
+    #            create_reed(room.x1 + x, room.y1 + y)
 
 
 def create_reed(x, y):
@@ -224,29 +248,23 @@ def make_map():
 
         room_array = create_room_random()
         dimensions = room_array.bounds
-        #dimensions = len(room_array), len(room_array[0])
 
-        #w = libtcod.random_get_int(0, consts.MG_ROOM_MIN_SIZE, consts.MG_ROOM_MAX_SIZE)
-        #h = libtcod.random_get_int(0, consts.MG_ROOM_MIN_SIZE, consts.MG_ROOM_MAX_SIZE)
-        #x = libtcod.random_get_int(0, 0, consts.MAP_WIDTH - w - 1)
-        #y = libtcod.random_get_int(0, 0, consts.MAP_HEIGHT - h - 1)
         x = libtcod.random_get_int(0, 1, consts.MAP_WIDTH - dimensions[0] - 1)
         y = libtcod.random_get_int(0, 1, consts.MAP_HEIGHT - dimensions[1] - 1)
 
-
-        #new_room = Rect(x, y, w, h)
-        new_room = Rect(x, y, dimensions[0], dimensions[1])
+        room_bounds = Rect(x, y, dimensions[0], dimensions[1])
 
         failed = False
         for other_room in rooms:
-            if new_room.intersect(other_room):
+            if room_bounds.intersect(other_room):
                 failed = True
                 break
 
         if not failed:
             #create_room(new_room)
-            apply_room(room_array, new_room.x1, new_room.y1)
-            (new_x, new_y) = new_room.center()
+            room_array.set_pos(room_bounds.x1, room_bounds.y1)
+            apply_room(room_array)
+            (new_x, new_y) = room_array.center()
 
             if num_rooms == 0:
                 main.player.x = new_x
@@ -260,10 +278,10 @@ def make_map():
                 #else:
                 #    create_v_tunnel(prev_y, new_y, prev_x)
                 #    create_h_tunnel(prev_x, new_x, new_y)
-            main.place_objects(new_room)
+            main.place_objects(room_array.tiles.keys())
             if libtcod.random_get_int(0, 0, 5) == 0:
-                scatter_reeds(new_room)
-            rooms.append(new_room)
+                scatter_reeds(room_array.tiles.keys())
+            rooms.append(room_bounds)
             num_rooms += 1
 
     # Generate every-floor random features
@@ -273,7 +291,7 @@ def make_map():
     main.objects.append(main.stairs)
     main.stairs.send_to_back()
     x, y = sample[1].center()
-    level_shrine = main.GameObject(x, y, '=', 'shrine of power', libtcod.white, always_visible=True, interact=main.level_up)
+    level_shrine = main.GameObject(x, y, '=', 'shrine of power', libtcod.white, always_visible=True, interact=None)
     main.objects.append(level_shrine)
     level_shrine.send_to_back()
     boss = main.check_boss(main.get_dungeon_level())

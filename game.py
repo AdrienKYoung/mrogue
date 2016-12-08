@@ -319,6 +319,12 @@ class Fighter:
                 return True
         return False
 
+    def remove_status(self, name):
+        for effect in self.status_effects:
+            if effect.name == name:
+                self.status_effects.remove(effect)
+                return
+
     @property
     def accuracy(self):
         return self.base_accuracy
@@ -820,6 +826,12 @@ class Tile:
 # General Functions
 #############################################
 
+def pick_up_xp(xp, obj):
+    if obj is player:
+        player.fighter.xp += 50
+        check_level_up()
+        xp.destroy()
+
 def step_on_reed(reed, obj):
     reed.destroy()
 
@@ -960,6 +972,13 @@ def random_choice_index(chances):
         if dice <= running_sum:
             return choice
         choice += 1
+
+
+def check_level_up():
+    next = consts.LEVEL_UP_BASE + player.level * consts.LEVEL_UP_FACTOR
+    if player.fighter.xp >= next:
+        level_up()
+        player.fighter.xp = 0
 
 
 def level_up(altar = None):
@@ -1549,11 +1568,13 @@ def create_fire(x,y,temp):
         obj.destroy()
 
 def fire_tick(object=None):
-    if object is None or object.fighter is None:
-        return
+    if object is None or object.fighter is None or \
+                    dungeon_map[object.x][object.y].tile_type == 'shallow water' or \
+                    dungeon_map[object.x][object.y].tile_type == 'deep water':
+        object.fighter.remove_status('burning')
     object.fighter.take_damage(5)
 
-def place_objects(room):
+def place_objects(tiles):
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
     item_chances = {'potion_healing':70, 'scroll_lightning':10, 'scroll_confusion':10, 'scroll_fireball':10 }
     item_chances['equipment_longsword'] = 25
@@ -1564,18 +1585,34 @@ def place_objects(room):
         spawns = get_room_spawns(table[random_choice_index([e['weight'] for e in table])])
         for s in spawns:
             for n in range(0,s[1]):
-                x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
-                y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
-                spawn_monster(s[0], x, y)
+                random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
+                #x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
+                #y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
+                spawn_monster(s[0], random_pos[0], random_pos[1])
+                tiles.remove(random_pos)
+                if len(tiles) == 0:
+                    return
             
     num_items = libtcod.random_get_int(0, 0, max_items)
     for i in range(num_items):
-        x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
-        y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
+        #x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
+        #y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
+        random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
         
-        if not is_blocked(x, y):
+        if not is_blocked(random_pos[0], random_pos[1]):
             choice = random_choice(item_chances)
-            spawn_item(choice, x, y)
+            spawn_item(choice, random_pos[0], random_pos[1])
+            tiles.remove(random_pos)
+            if len(tiles) == 0:
+                return
+
+    for i in range(5):
+        random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
+        objects.append(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
+                                  description='xp', on_step=pick_up_xp))
+        tiles.remove(random_pos)
+        if len(tiles) == 0:
+            return
 
 
 def check_boss(level):
