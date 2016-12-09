@@ -70,11 +70,12 @@ class ConfusedMonster:
 
 
 class Item:
-    def __init__(self, category, use_function=None, learn_spell=None, type='item'):
+    def __init__(self, category, use_function=None, learn_spell=None, type='item', ability=None):
         self.category = category
         self.use_function = use_function
         self.type = type
         self.learn_spell = learn_spell
+        self.ability = ability
         
     def pick_up(self):
         if self.type == 'item':
@@ -111,6 +112,7 @@ class Item:
             spell = spells.spell_library[self.learn_spell]
             if spell in player.known_spells:
                 message('You already know this spell.', libtcod.light_blue)
+                return 'cancelled'
             else:
                 player.known_spells.append(spell)
                 message('You have mastered ' + spell.name + '!', libtcod.light_blue)
@@ -1531,7 +1533,11 @@ def spawn_monster_inventory(proto):
 
 def create_item(name):
     p = loot.proto[name]
-    item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], learn_spell=p.get('learn_spell'))
+    ability = None
+    if p.get('ability') is not None and p.get('ability') in abilities.data:
+        a = abilities.data[p['ability']]
+        ability = abilities.Ability(a['name'], a['description'], a['function'], a['cooldown'])
+    item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], learn_spell=p.get('learn_spell'), ability=ability)
     equipment_component = None
     if p['category'] == 'weapon' or p['category'] == 'armor':
         equipment_component = Equipment(
@@ -1545,8 +1551,11 @@ def create_item(name):
             stamina_cost=p.get('stamina_cost', 0),
             str_requirement=p.get('str_requirement', 0)
         )
-    return GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
+    go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))
+    if ability is not None:
+        go.item.ability = ability
+    return go
 
 def spawn_item(name, x, y):
         item = create_item(name)
@@ -1721,6 +1730,18 @@ def do_queued_action(action):
         message('You have finished meditating. You were unable to gain any more power than you already have.', libtcod.dark_cyan)
         return
 
+def show_ability_screen():
+    opts = []
+    for a in abilities.default_abilities:
+        opts.append(a)
+    for i in inventory:
+        if i.item.ability is not None:
+            opts.append(i.item.ability)
+    index = menu('Abilities',[opt.name for opt in opts],80)
+    if index is not None:
+        choice = opts[index]
+        if choice is not None:
+            choice.use()
 
 def handle_keys():
  
@@ -1820,6 +1841,8 @@ def handle_keys():
                 target_next_monster()
             if key_char == 'm':
                 return meditate()
+            if key_char == 'a':
+                show_ability_screen()
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
@@ -2335,6 +2358,7 @@ def new_game():
     spawn_item('tome_manabolt', player.x, player.y)
     spawn_item('tome_mend', player.x, player.y)
     spawn_item('scroll_fireball', player.x, player.y)
+    spawn_item('equipment_spear', player.x, player.y)
 
     spawn_monster('monster_blastcap', player.x, player.y - 1)
 
@@ -2435,6 +2459,7 @@ import loot
 import monsters
 import dungeon
 import mapgen
+import abilities
 
 in_game = False
 libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GRAYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)

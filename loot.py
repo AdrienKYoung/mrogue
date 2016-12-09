@@ -1,5 +1,6 @@
 import libtcodpy
 import spells
+import abilities
 
 item_categories = {
     'weapon' : { 'plural' : 'weapons' },
@@ -114,6 +115,19 @@ proto = {
         'description': 'A small double-edged knife',
         'stamina_cost': 3,
         'str_requirement': 3
+    },
+    'equipment_spear': {
+        'name': 'Spear',
+        'category': 'weapon',
+        'char': libtcodpy.CHAR_ARROW_N,
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'attack_damage_bonus': 9,
+        'slot':'right hand',
+        'description': 'A light thrusting spear',
+        'stamina_cost': 10,
+        'str_requirement': 12,
+        'ability': 'thrust'
     },
 
     #ARMOR
