@@ -492,8 +492,8 @@ class AI_Reeker:
                 if libtcod.random_get_int(0, 0, 10) < 3:
                     # create puff
                     position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
-                    puff_pos = (clamp(monster.x + position[0], 0, consts.MAP_WIDTH),
-                                clamp(monster.y + position[1], 0, consts.MAP_HEIGHT))
+                    puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
+                                clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
                     if not dungeon_map[puff_pos[0]][puff_pos[1]].blocks and object_at_tile(puff_pos[0], puff_pos[1], 'reeker gas') is None:
                         puff = GameObject(monster.x + position[0], monster.y + position[1], libtcod.CHAR_BLOCK3,
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
@@ -2360,7 +2360,7 @@ def new_game():
     spawn_item('scroll_fireball', player.x, player.y)
     spawn_item('equipment_spear', player.x, player.y)
 
-    spawn_monster('monster_blastcap', player.x, player.y - 1)
+    #spawn_monster('monster_blastcap', player.x, player.y - 1)
 
     selected_monster = None
 
@@ -2379,7 +2379,7 @@ def initialize_fov():
         for x in range(consts.MAP_WIDTH):
             sight_blockers = get_objects(x, y, lambda o: o.blocks_sight)
             libtcod.map_set_properties(fov_map, x, y, len(sight_blockers) == 0 and not dungeon_map[x][y].blocks_sight, not dungeon_map[x][y].blocks)
-            # dungeon_map[x][y].explored = True
+            #dungeon_map[x][y].explored = True
 
 
 def save_game():

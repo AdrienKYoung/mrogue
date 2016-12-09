@@ -5,7 +5,7 @@ import abilities
 item_categories = {
     'weapon' : { 'plural' : 'weapons' },
     'armor' : { 'plural' : 'armor' },
-    'spell' : { 'plural' : 'spells' },
+    'scroll' : { 'plural' : 'scrolls' },
     'potion' : { 'plural' : 'potions' },
     'book' : { 'plural' : 'books' }
 }
@@ -30,7 +30,7 @@ proto = {
 
     'scroll_fireball': {
         'name': 'Scroll of Fireball',
-        'category': 'spell',
+        'category': 'scroll',
         'char': '#',
         'on_use': spells.cast_fireball,
         'color': libtcodpy.yellow,
