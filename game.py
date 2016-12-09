@@ -1575,6 +1575,8 @@ def fire_tick(object=None):
     object.fighter.take_damage(5)
 
 def place_objects(tiles):
+    if len(tiles) == 0:
+        return
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
     item_chances = {'potion_healing':70, 'scroll_lightning':10, 'scroll_confusion':10, 'scroll_fireball':10 }
     item_chances['equipment_longsword'] = 25
@@ -2353,6 +2355,7 @@ def initialize_fov():
         for x in range(consts.MAP_WIDTH):
             sight_blockers = get_objects(x, y, lambda o: o.blocks_sight)
             libtcod.map_set_properties(fov_map, x, y, len(sight_blockers) == 0 and not dungeon_map[x][y].blocks_sight, not dungeon_map[x][y].blocks)
+            # dungeon_map[x][y].explored = True
 
 
 def save_game():

@@ -3,7 +3,7 @@ import consts
 import libtcodpy as libtcod
 import random
 import math
-
+import terrain
 
 class Room:
     def __init__(self):
@@ -40,6 +40,13 @@ class Room:
         if self.max_y is None or self.max_y < y:
             self.max_y = y
         self.tiles[(x, y)] = tile_type
+
+    def get_open_tiles(self):
+        return_tiles = []
+        for tile in self.tiles.keys():
+            if not terrain.data[self.tiles[tile]].blocks:
+                return_tiles.append(tile)
+        return return_tiles
 
     @property
     def bounds(self):
@@ -109,6 +116,8 @@ def create_room_random():
         return create_room_circle()
     elif choice == 2:
         return create_room_cloud()
+    elif choice == 3:
+        return create_room_cellular_automata(10, 10)
     else:
         # Default
         return create_room_rectangle()
@@ -122,6 +131,47 @@ def random_terrain():
         return 'grass floor'
     else:
         return 'stone floor'
+
+def create_room_cellular_automata(width, height):
+    room = Room()
+    #Step 1: fill room with random walls/floor
+    for y in range(height):
+        for x in range(width):
+            if libtcod.random_get_int(0, 0, 10) < 7:
+                room.set_tile(x, y, 'stone floor')
+
+            else:
+                room.set_tile(x, y, 'stone wall')
+    #Step 2 iterate over each tile in the room using the 4-5 rule:
+    # For each tile, if it is a wall and four or more of its neighbors are walls, it is a wall, else it becomes a floor
+    # if it is not a wall and five or more of its neighbors are walls, it becomes a wall, else it stays floor
+    for i in range(2):  # 2 iterations
+        for tile in room.tiles.keys():
+            wall_count = get_adjacent_walls(room, tile[0], tile[1])
+            if room.tiles[tile] == 'stone wall':
+                if wall_count >= 4:
+                    continue
+                else:
+                    room.tiles[tile] = 'stone floor'
+            else:
+                if wall_count >= 5:
+                    room.tiles[tile] = 'stone wall'
+                else:
+                    continue
+    return room
+
+def get_adjacent_walls(room, x, y):
+    wall_count = 0
+    startx = x - 1
+    starty = y - 1
+    endx = x + 1
+    endy = y + 1
+    bounds = room.bounds
+    for i_y in range(starty, endy + 1):
+        for i_x in range(startx, endx + 1):
+            if i_x < 0 or i_x >= bounds[0] or i_y < 0 or i_y >= bounds[1] or room.tiles[(i_x, i_y)] == 'stone wall':
+                wall_count += 1
+    return wall_count
 
 def create_room_rectangle():
     room = Room()
@@ -278,19 +328,22 @@ def make_map():
                 #else:
                 #    create_v_tunnel(prev_y, new_y, prev_x)
                 #    create_h_tunnel(prev_x, new_x, new_y)
-            main.place_objects(room_array.tiles.keys())
+            main.place_objects(room_array.get_open_tiles())
             if libtcod.random_get_int(0, 0, 5) == 0:
-                scatter_reeds(room_array.tiles.keys())
+                scatter_reeds(room_array.get_open_tiles())
             rooms.append(room_bounds)
             num_rooms += 1
 
     # Generate every-floor random features
-    sample = random.sample(rooms, 2)
+    if len(rooms) > 1:
+        sample = random.sample(rooms, 2)
+    else:
+        sample = random.sample(rooms, 1)
     x, y = sample[0].center()
     main.stairs = main.GameObject(x, y, '<', 'stairs downward', libtcod.white, always_visible=True)
     main.objects.append(main.stairs)
     main.stairs.send_to_back()
-    x, y = sample[1].center()
+    x, y = sample[len(sample) - 1].center()
     level_shrine = main.GameObject(x, y, '=', 'shrine of power', libtcod.white, always_visible=True, interact=None)
     main.objects.append(level_shrine)
     level_shrine.send_to_back()
