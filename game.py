@@ -1737,7 +1737,7 @@ def show_ability_screen():
     for i in inventory:
         if i.item.ability is not None:
             opts.append(i.item.ability)
-    index = menu('Abilities',[opt.name for opt in opts],80)
+    index = menu('Abilities',[opt.name for opt in opts],20)
     if index is not None:
         choice = opts[index]
         if choice is not None:
@@ -2380,7 +2380,7 @@ def initialize_fov():
         for x in range(consts.MAP_WIDTH):
             sight_blockers = get_objects(x, y, lambda o: o.blocks_sight)
             libtcod.map_set_properties(fov_map, x, y, len(sight_blockers) == 0 and not dungeon_map[x][y].blocks_sight, not dungeon_map[x][y].blocks)
-            #dungeon_map[x][y].explored = True
+            dungeon_map[x][y].explored = True
 
 
 def save_game():

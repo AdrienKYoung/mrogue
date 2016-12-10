@@ -365,6 +365,25 @@ def create_reed(x, y):
                            , blocks_sight=True, on_step=main.step_on_reed, burns=True)
     main.objects.append(reed)
 
+
+def create_feature_from_file(filename, x, y):
+    feature_file = open(filename, 'r')
+    feature_lines = []
+    for line in feature_file:
+        feature_lines.append(line)
+    for i_y in range(len(feature_lines)):
+        for i_x in range(len(feature_lines[i_y])):
+            pos = x + i_x, y + i_y
+            if pos[0] < 0 or pos[1] < 0 or pos[0] >= consts.MAP_WIDTH or pos[1] >= consts.MAP_HEIGHT:
+                continue
+            type = None
+            if feature_lines[i_y][i_x] == '.':
+                type = 'stone floor'
+            elif feature_lines[i_y][i_x] == '#':
+                type = 'stone wall'
+            if type is not None:
+                main.dungeon_map[pos[0]][pos[1]].tile_type = type
+
 def make_rooms_and_corridors():
 
     rooms = []
@@ -450,6 +469,9 @@ def make_one_big_room():
     for i in range(blastcap_count):
         tile = choose_random_tile(open_tiles)
         main.spawn_monster('monster_blastcap', tile[0], tile[1])
+
+    #tile = choose_random_tile(open_tiles)
+    #create_feature_from_file('features.txt', tile[0], tile[1])
 
     player_tile = choose_random_tile(open_tiles)
 

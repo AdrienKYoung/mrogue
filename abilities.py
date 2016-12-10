@@ -16,6 +16,7 @@ class Ability:
             self.current_cd = self.cooldown
         else:
             main.message('{} is on cooldown'.format(self.name), libtcod.red)
+            result = 'didnt-take-turn'
         return result
 
     def on_tick(self):
