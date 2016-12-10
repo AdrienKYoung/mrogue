@@ -228,11 +228,10 @@ class Fighter:
         stamina_cost = 0
         if self.owner is player:
             stamina_cost = consts.UNARMED_STAMINA_COST / (self.owner.player_stats.str / consts.UNARMED_STAMINA_COST)
-            if get_equipped_in_slot(self.inventory, 'right hand') is not None and self.owner is player:
-                stamina_cost = int((float(get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) / (
-                float(self.owner.player_stats.str) / float(
-                    get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
-        self.attack_ex(target, stamina_cost, self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
+            if get_equipped_in_slot(self.inventory, 'right hand') is not None:
+                stamina_cost = int((float(get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) /
+                                    (float(self.owner.player_stats.str) / float(get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
+        return self.attack_ex(target, stamina_cost, self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
                        'attacks')
 
 
@@ -530,6 +529,7 @@ class AI_Verman:
                     if len(summon_tiles) > 0:
                         pos = summon_tiles[libtcod.random_get_int(0, 0, len(summon_tiles) - 1)]
                         spawn = spawn_monster(monsters.verman_summons[summon_choice]['monster'], pos[0], pos[1])
+                        message('A ' + spawn.name + " crawls from beneath the verman's cloak.", monster.color)
                         spawn.fighter.loot_table = None
                         self.summons.append(spawn)
                         summon_tiles.remove(pos)
@@ -1741,7 +1741,8 @@ def show_ability_screen():
     if index is not None:
         choice = opts[index]
         if choice is not None:
-            choice.use()
+            return choice.use()
+    return 'didnt-take-turn'
 
 def handle_keys():
  
@@ -1842,7 +1843,7 @@ def handle_keys():
             if key_char == 'm':
                 return meditate()
             if key_char == 'a':
-                show_ability_screen()
+                return show_ability_screen()
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'

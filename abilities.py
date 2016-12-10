@@ -12,10 +12,11 @@ class Ability:
 
     def use(self):
         if self.current_cd < 1:
-            self.function()
+            result = self.function()
             self.current_cd = self.cooldown
         else:
             main.message('{} is on cooldown'.format(self.name), libtcod.red)
+        return result
 
     def on_tick(self):
         if self.current_cd > 0:
@@ -30,7 +31,10 @@ def ability_attack():
             target = object
             break
     if target is not None:
-        main.player.fighter.attack(target)
+        result = main.player.fighter.attack(target)
+        if result != 'failed':
+            return result
+    return 'didnt-take-turn'
 
 def ability_attack_reach():
     x, y = main.target_tile(max_range=2)
@@ -40,7 +44,10 @@ def ability_attack_reach():
             target = object
             break
     if target is not None:
-        main.player.fighter.attack(target)
+        result = main.player.fighter.attack(target)
+        if result != 'failed':
+            return result
+    return 'didnt-take-turn'
 
 def ability_bash_attack():
     x,y = main.target_tile(max_range=1)
@@ -50,7 +57,11 @@ def ability_bash_attack():
             target = object
             break
     if target is not None:
-        main.player_bash_attack(target)
+        result = main.player_bash_attack(target)
+        if result != 'failed':
+            return result
+    return 'didnt-take-turn'
+
 
 #data = {
 #    'thrust':Ability('Thrust','Thrust at an enemy up to 2 spaces away',ability_attack_reach,0)
