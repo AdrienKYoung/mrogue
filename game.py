@@ -9,17 +9,6 @@ import terrain
 # Classes
 #############################################
 
-
-class StatusEffect:
-    def __init__(self, name, time_limit=None, color=libtcod.white, on_apply=None, on_end=None, on_tick=None):
-        self.name = name
-        self.time_limit = time_limit
-        self.color = color
-        self.on_apply = on_apply
-        self.on_end = on_end
-        self.on_tick = on_tick
-
-
 class Equipment:
     def __init__(self, slot, category, power_bonus=0, defense_bonus=0, max_hp_bonus=0, attack_damage_bonus=0, armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0):
         self.power_bonus = power_bonus
@@ -289,7 +278,7 @@ class Fighter:
                 effect.on_tick(object=self.owner)
             if effect.time_limit is not None:
                 effect.time_limit -= 1
-                if effect.time_limit <= 0:
+                if effect.time_limit == 0:
                     removed_effects.append(effect)
         for effect in removed_effects:
             if effect.on_end is not None:
@@ -312,6 +301,8 @@ class Fighter:
         self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
             new_effect.on_apply(self.owner)
+        if new_effect.message is not None and self.owner is player:
+            message(new_effect.message,new_effect.color)
         return True
 
     def has_status(self, name):
@@ -474,7 +465,7 @@ class FireBehavior:
         else:
             for obj in objects:
                 if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
-                    obj.fighter.apply_status_effect(StatusEffect('burning', 8, libtcod.red, on_tick=fire_tick))
+                    obj.fighter.apply_status_effect(effects.burning())
             # Spread to adjacent tiles
             if self.temperature < 9: # don't spread on the first turn
                 for tile in adjacent_tiles_diagonal(self.owner.x, self.owner.y):
@@ -609,7 +600,7 @@ class AI_General:
     def take_turn(self):
         self.turn_ticker += self.speed
         while self.turn_ticker > 1.0:
-            if not (self.owner.fighter and self.owner.fighter.has_status('stunned')):
+            if not (self.owner.fighter and self.owner.fighter.has_status('stunned') and self.owner.fighter.has_status('frozen')):
                 self.behavior.act()
             self.turn_ticker -= 1.0
 
@@ -676,6 +667,8 @@ class GameObject:
     def move(self, dx, dy):
         if not is_blocked(self.x + dx, self.y + dy):
             if self.fighter is not None:
+                if self.fighter.has_status('immobilized'):
+                    return True
                 web = object_at_tile(self.x, self.y, 'spiderweb')
                 if web is not None and not self.name == 'tunnel spider':
                     message('The ' + self.name + ' struggles against the web.')
@@ -1049,7 +1042,7 @@ def bomb_beetle_corpse_tick(object=None):
             if monster is not None:
                 monster.fighter.take_damage(consts.BOMB_BEETLE_DAMAGE)
                 if monster.fighter is not None:
-                    monster.fighter.apply_status_effect(StatusEffect('burning', 8, libtcod.red, on_tick=fire_tick))
+                    monster.fighter.apply_status_effect(effects.burning())
         objects.remove(object)
 
 def bomb_beetle_death(beetle):
@@ -1575,13 +1568,6 @@ def create_fire(x,y,temp):
         dungeon_map[x][y] = Tile('scorched floor')
     for obj in get_objects(x, y, condition=lambda o: o.burns):
         obj.destroy()
-
-def fire_tick(object=None):
-    if object is None or object.fighter is None or \
-                    dungeon_map[object.x][object.y].tile_type == 'shallow water' or \
-                    dungeon_map[object.x][object.y].tile_type == 'deep water':
-        object.fighter.remove_status('burning')
-    object.fighter.take_damage(5)
 
 def place_objects(tiles):
     if len(tiles) == 0:
@@ -2461,6 +2447,7 @@ import monsters
 import dungeon
 import mapgen
 import abilities
+import effects
 
 in_game = False
 libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GRAYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
