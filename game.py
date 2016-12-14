@@ -863,7 +863,7 @@ def blastcap_explode(blastcap):
     message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
     for obj in objects:
         if obj.fighter and is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
-            if obj.fighter.apply_status_effect(StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
+            if obj.fighter.apply_status_effect(effects.StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
                 message('The ' + obj.name + ' is stunned!', libtcod.gold)
 
     if selected_monster is blastcap:
@@ -874,7 +874,7 @@ def blastcap_explode(blastcap):
     return
 
 def centipede_on_hit(attacker, target):
-    target.fighter.apply_status_effect(StatusEffect('stung', consts.CENTIPEDE_STING_DURATION, libtcod.flame))
+    target.fighter.apply_status_effect(effects.StatusEffect('stung', consts.CENTIPEDE_STING_DURATION, libtcod.flame))
 
 def clamp(value, min_value, max_value):
     if value < min_value:
@@ -1295,7 +1295,8 @@ def inventory_menu(header):
         libtcod.console_print(window, 1, 3, 'Inventory is empty.')
     else:
         for item in inventory:
-            item_categories.append(item.item.category)
+            if not item.item.category in item_categories:
+                item_categories.append(item.item.category)
         height = 4 + len(item_categories) + len(inventory)
         draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
 
@@ -1676,7 +1677,7 @@ def player_bash_attack(target):
 
         if stun:
             #  stun the target
-            if target.fighter.apply_status_effect(StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
+            if target.fighter.apply_status_effect(effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
                 message('The ' + target.name + ' collides with the ' + against + ', stunning it!', libtcod.gold)
         else:
             message('The ' + target.name + ' is knocked backwards.', libtcod.gray)
@@ -1830,10 +1831,139 @@ def handle_keys():
                 return meditate()
             if key_char == 'a':
                 return show_ability_screen()
+            if key_char == 'l': # TEMPORARY
+                skill_menu()
+                return 'didnt-take-turn'
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
 
+
+def skill_menu():
+    global key, mouse
+
+    scroll_height = 0
+    selected_index = 1
+
+    libtcod.console_clear(window)
+    render_all()
+    libtcod.console_flush()
+
+    skill_categories = []
+    menu_lines = []
+
+    for skill in abilities.skill_list:
+        if not skill.category in skill_categories:
+            skill_categories.append(skill.category)
+            menu_lines.append(None)
+        menu_lines.append(skill)
+    sub_height = len(skill_categories) + len(abilities.skill_list)
+
+    sub_window = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, sub_height)
+    libtcod.console_set_key_color(sub_window, libtcod.magenta)
+
+    while True:
+        # Check for input
+        libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE,key,mouse)
+        # Reset 'window' console
+        libtcod.console_set_default_background(window, libtcod.black)
+        libtcod.console_clear(window)
+        # Reset 'sub_window' console (magenta backgrounds are ignored when blitting)
+        libtcod.console_set_default_background(sub_window, libtcod.magenta)
+        libtcod.console_clear(sub_window)
+        libtcod.console_set_default_background(sub_window, libtcod.black)
+
+        # RENDER
+
+        # Print header and borders
+        libtcod.console_set_default_foreground(window, libtcod.white)
+        libtcod.console_print(window, 1, 1, 'Your skills have increased. Choose a skill to learn:')
+        y = 0
+        draw_border(window, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 5)
+        draw_border(window, 0, consts.MAP_VIEWPORT_HEIGHT - 6, consts.MAP_VIEWPORT_WIDTH, 6)
+
+        # Draw scrollable menu
+        for skill_category in skill_categories:
+            # Draw category dividers
+            libtcod.console_set_default_foreground(sub_window, libtcod.gray)
+            for i in range(consts.MAP_VIEWPORT_WIDTH):
+                libtcod.console_put_char_ex(sub_window, i, y, libtcod.CHAR_HLINE, libtcod.gray, libtcod.black)
+            libtcod.console_put_char_ex(sub_window, 0, y, 199, libtcod.gray, libtcod.black)
+            libtcod.console_put_char_ex(sub_window, consts.MAP_VIEWPORT_WIDTH - 1, y, 182, libtcod.gray, libtcod.black)
+            libtcod.console_print_ex(sub_window, 3, y, libtcod.black, libtcod.LEFT, skill_category.title())
+            y += 1
+            # Draw all skills in category
+            for i in range(len(abilities.skill_list)):
+                skill = abilities.skill_list[i]
+                if skill.category == skill_category:
+
+                    if y == selected_index:
+                        libtcod.console_set_default_background(sub_window, libtcod.white)
+                        libtcod.console_set_default_foreground(sub_window, libtcod.black)
+                        for j in range(1, consts.MAP_VIEWPORT_WIDTH - 1):
+                            libtcod.console_put_char_ex(sub_window, j, y, ' ', libtcod.black, libtcod.white)
+                    else:
+                        libtcod.console_set_default_background(sub_window, libtcod.black)
+                        libtcod.console_set_default_foreground(sub_window, libtcod.white)
+
+                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, skill.name.capitalize())
+                    y += 1
+        # Blit sub_window to window. Select based on scroll height
+        libtcod.console_blit(sub_window, 0, scroll_height, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 10, window, 0, 4, 1.0, 1.0)
+
+        # print description
+        libtcod.console_set_default_foreground(window, libtcod.white)
+        libtcod.console_print_rect(window, 1, consts.MAP_VIEWPORT_HEIGHT - 5, consts.MAP_VIEWPORT_WIDTH - 2, 5, menu_lines[selected_index].description)
+
+        # Blit to main screen and flush
+        libtcod.console_blit(window, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0,
+                             consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 1.0, 1.0)
+        libtcod.console_flush()
+
+        # HANDLE INPUT
+
+        # Mouse select
+        if mouse.lbutton_pressed:
+            mouse_item = mouse.cy - consts.MAP_VIEWPORT_Y - 4 + scroll_height
+            if 0 <= mouse_item < len(menu_lines) and menu_lines[mouse_item] is not None:
+                selected_index = mouse_item
+        # ESC back
+        if key.vk == libtcod.KEY_ESCAPE:
+            return None
+        # Enter select
+        elif key.vk == libtcod.KEY_ENTER:
+            return menu_lines[selected_index] # returns a Perk object
+        # Down arrow increments selection index
+        elif key.vk == libtcod.KEY_DOWN:
+            #selected_index = min(selected_index + 1, len(menu_lines) - 1)
+            new_index = None
+            while new_index is None:
+                selected_index += 1
+                if selected_index >= len(menu_lines):
+                    selected_index = 0
+                new_index = menu_lines[selected_index]
+            if selected_index < scroll_height + 1:
+                scroll_height = selected_index - 1
+            elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
+                scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
+        # Up arrow decrements selection index
+        elif key.vk == libtcod.KEY_UP:
+            #selected_index = max(selected_index - 1, 0)
+            new_index = None
+            while new_index is None:
+                selected_index -= 1
+                if selected_index < 0:
+                    selected_index = len(menu_lines) - 1
+                new_index = menu_lines[selected_index]
+            if selected_index < scroll_height + 1:
+                scroll_height = selected_index - 1
+            elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
+                scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
+        # Scroll wheel & pageup/pagedown adjust scroll height
+        elif key.vk == libtcod.KEY_PAGEDOWN or mouse.wheel_down:
+            scroll_height = min(scroll_height + 1, sub_height - (consts.MAP_VIEWPORT_HEIGHT - 10))
+        elif key.vk == libtcod.KEY_PAGEUP or mouse.wheel_up:
+            scroll_height = max(scroll_height - 1, 0)
 
 def cast_spell_new():
     if len(player.known_spells) <= 0:
@@ -2264,11 +2394,11 @@ def draw_border(console, x0, y0, width, height, foreground=libtcod.gray, backgro
     libtcod.console_set_default_foreground(console, foreground)
     libtcod.console_set_default_background(console, background)
     for x in range(1, width - 1):
-        libtcod.console_put_char(console, x, y0, libtcod.CHAR_DHLINE)
-        libtcod.console_put_char(console, x, y0 + height - 1, libtcod.CHAR_DHLINE)
+        libtcod.console_put_char(console, x0 + x, y0, libtcod.CHAR_DHLINE)
+        libtcod.console_put_char(console, x0 + x, y0 + height - 1, libtcod.CHAR_DHLINE)
     for y in range(1, height - 1):
-        libtcod.console_put_char(console, x0, y, libtcod.CHAR_DVLINE)
-        libtcod.console_put_char(console, x0 + width - 1, y, libtcod.CHAR_DVLINE)
+        libtcod.console_put_char(console, x0, y0 + y, libtcod.CHAR_DVLINE)
+        libtcod.console_put_char(console, x0 + width - 1, y0 + y, libtcod.CHAR_DVLINE)
     libtcod.console_put_char(console, x0, y0, 4)
     libtcod.console_put_char(console, x0 + width - 1, y0, 4)
     libtcod.console_put_char(console, x0 + width - 1, y0 + height - 1, 4)
@@ -2366,7 +2496,7 @@ def initialize_fov():
         for x in range(consts.MAP_WIDTH):
             sight_blockers = get_objects(x, y, lambda o: o.blocks_sight)
             libtcod.map_set_properties(fov_map, x, y, len(sight_blockers) == 0 and not dungeon_map[x][y].blocks_sight, not dungeon_map[x][y].blocks)
-            dungeon_map[x][y].explored = True
+            #dungeon_map[x][y].explored = True
 
 
 def save_game():

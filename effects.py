@@ -76,5 +76,5 @@ def rot_end(object=None):
         object.fighter.max_hp += 20
 
 def berserk_end(object=None):
-    if  object is not None or object.fighter is not None:
+    if object is not None or object.fighter is not None:
         object.fighter.apply_status_effect(exhausted())
