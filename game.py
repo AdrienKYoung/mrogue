@@ -76,7 +76,7 @@ class Item:
                 message('Your inventory is too full to pick up ' + self.owner.name)
             else:
                 player.fighter.inventory.append(self.owner)
-                objects.remove(self.owner)
+                self.owner.destroy()
                 message('You picked up a ' + self.owner.name + '!', libtcod.light_grey)
                 equipment = self.owner.equipment
                 if equipment and get_equipped_in_slot(player.fighter.inventory,equipment.slot) is None:
@@ -86,7 +86,7 @@ class Item:
                 message('You cannot hold any more spells in your memory!', libtcod.purple)
             else:
                 memory.append(self.owner)
-                objects.remove(self.owner)
+                self.owner.destroy()
                 message(str(self.owner.name) + ' has been added to your memory.', libtcod.purple)
             
     def use(self):
@@ -475,7 +475,7 @@ class ReekerGasBehavior:
         elif self.ticks == consts.REEKER_PUFF_DURATION / 3:
             self.owner.char = libtcod.CHAR_BLOCK1
         elif self.ticks <= 0:
-            objects.remove(self.owner)
+            self.owner.destroy()
             return
         #self.owner.char = str(self.ticks)
         for obj in objects:
@@ -697,6 +697,8 @@ class GameObject:
             libtcod.map_set_properties(fov_map, self.x, self.y, not self.blocks_sight, True)
 
     def set_position(self, x, y):
+        global changed_tiles
+        changed_tiles.append((self.x, self.y))
         if self.blocks_sight:
             libtcod.map_set_properties(fov_map, self.x, self.y, not dungeon_map[self.x][self.y].blocks_sight, True)
             libtcod.map_set_properties(fov_map, x, y, False, True)
@@ -716,7 +718,7 @@ class GameObject:
                 web = object_at_tile(self.x, self.y, 'spiderweb')
                 if web is not None and not self.name == 'tunnel spider':
                     message('The ' + self.name + ' struggles against the web.')
-                    objects.remove(web)
+                    web.destroy()
                     return True
                 cost = dungeon_map[self.x][self.y].stamina_cost
                 if cost > 0 and self is player: # only the player cares about stamina costs (at least for now. I kind of like it this way) -T
@@ -731,20 +733,34 @@ class GameObject:
             self.set_position(self.x + dx, self.y + dy)
             return True
 
-    def draw(self):
+    # Unused
+    def draw_old(self):
         offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
         if libtcod.map_is_in_fov(fov_map, self.x, self.y):
             if selected_monster is self:
-                libtcod.console_put_char_ex(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.black, self.color)
+                libtcod.console_put_char_ex(map_con, self.x - offsetx, self.y - offsety, self.char, libtcod.black, self.color)
             else:
-                libtcod.console_set_default_foreground(mapCon, self.color)
-                libtcod.console_put_char(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
+                libtcod.console_set_default_foreground(map_con, self.color)
+                libtcod.console_put_char(map_con, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
         elif self.always_visible and dungeon_map[self.x][self.y].explored:
             shaded_color = libtcod.Color(self.color[0], self.color[1], self.color[2])
             libtcod.color_scale_HSV(shaded_color, 0.1, 0.4)
-            libtcod.console_set_default_foreground(mapCon, shaded_color)
-            libtcod.console_put_char(mapCon, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
-        
+            libtcod.console_set_default_foreground(map_con, shaded_color)
+            libtcod.console_put_char(map_con, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
+
+    def draw(self, console):
+        if libtcod.map_is_in_fov(fov_map, self.x, self.y):
+            if selected_monster is self:
+                libtcod.console_put_char_ex(console, self.x, self.y, self.char, libtcod.black, self.color)
+            else:
+                libtcod.console_set_default_foreground(console, self.color)
+                libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
+        elif self.always_visible and dungeon_map[self.x][self.y].explored:
+            shaded_color = libtcod.Color(self.color[0], self.color[1], self.color[2])
+            libtcod.color_scale_HSV(shaded_color, 0.1, 0.4)
+            libtcod.console_set_default_foreground(console, shaded_color)
+            libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
+
     def move_towards(self, target_x, target_y):
         dx = target_x - self.x
         dy = target_y - self.y
@@ -808,9 +824,11 @@ class GameObject:
             self.misc.on_tick(object)
 
     def destroy(self):
+        global changed_tiles
         if self.blocks_sight:
             libtcod.map_set_properties(fov_map, self.x, self.y, not dungeon_map[self.x][self.y].blocks_sight, True)
             fov_recompute_fn()
+        changed_tiles.append((self.x, self.y))
         objects.remove(self)
 
 
@@ -914,7 +932,7 @@ def blastcap_explode(blastcap):
         selected_monster = None
         auto_target_monster()
 
-    objects.remove(blastcap)
+    blastcap.destroy()
     return
 
 def centipede_on_hit(attacker, target):
@@ -1046,16 +1064,20 @@ def level_up(altar = None):
         player.player_stats.wiz += 1
 
     if altar:
-        objects.remove(altar)
+        altar.destroy()
 
 
 def next_level():
-    global dungeon_level
+    global dungeon_level, changed_tiles
 
     message('You descend...', libtcod.white)
     dungeon_level += 1
     generate_level()
     initialize_fov()
+
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            changed_tiles.append((x, y))
 
 
 def player_death(player):
@@ -1087,7 +1109,7 @@ def bomb_beetle_corpse_tick(object=None):
                 monster.fighter.take_damage(consts.BOMB_BEETLE_DAMAGE)
                 if monster.fighter is not None:
                     monster.fighter.apply_status_effect(effects.burning())
-        objects.remove(object)
+        object.destroy()
 
 def bomb_beetle_death(beetle):
     global selected_monster
@@ -1115,7 +1137,7 @@ def bomb_beetle_death(beetle):
 
 
 def monster_death(monster):
-    global selected_monster
+    global selected_monster, changed_tiles
 
     if monster.fighter.loot_table is not None:
         drop = get_loot(monster.fighter)
@@ -1141,6 +1163,7 @@ def monster_death(monster):
     monster.send_to_back()
 
     if selected_monster is monster:
+        changed_tiles.append((monster.x, monster.y))
         selected_monster = None
         auto_target_monster()
 
@@ -1447,7 +1470,10 @@ def auto_target_monster():
 
 
 def target_next_monster():
-    global selected_monster
+    global selected_monster, changed_tiles
+
+    if selected_monster is not None:
+        changed_tiles.append((selected_monster.x, selected_monster.y))
 
     nearby = []
     for obj in objects:
@@ -2159,7 +2185,7 @@ def jump():
     web = object_at_tile(player.x, player.y, 'spiderweb')
     if web is not None:
         message('You struggle against the web.')
-        objects.remove(web)
+        web.destroy()
         return 'webbed'
 
     if player.fighter.stamina < consts.JUMP_STAMINA_COST:
@@ -2237,15 +2263,60 @@ def cast_spell():
 
 
 def clear_map():
-    libtcod.console_set_default_background(mapCon, libtcod.black)
-    libtcod.console_set_default_foreground(mapCon, libtcod.black)
-    libtcod.console_clear(mapCon)
+    libtcod.console_set_default_background(map_con, libtcod.black)
+    libtcod.console_set_default_foreground(map_con, libtcod.black)
+    libtcod.console_clear(map_con)
 
 
 def render_map():
+    global changed_tiles, fov_recompute
+
+    if fov_recompute:
+        fov_recompute = False
+        old_map = libtcod.map_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
+        libtcod.map_copy(fov_map, old_map)
+        libtcod.map_compute_fov(fov_map, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS,
+                                consts.FOV_ALGO)
+        for y in range(consts.MAP_HEIGHT):
+            for x in range(consts.MAP_WIDTH):
+                if libtcod.map_is_in_fov(old_map, x, y) != libtcod.map_is_in_fov(fov_map, x, y):
+                    changed_tiles.append((x, y))
+
+    for tile in changed_tiles:
+        x = tile[0]
+        y = tile[1]
+        visible = libtcod.map_is_in_fov(fov_map, x, y)
+        color_fg = libtcod.Color(dungeon_map[x][y].color_fg[0], dungeon_map[x][y].color_fg[1],
+                                 dungeon_map[x][y].color_fg[2])
+        color_bg = libtcod.Color(dungeon_map[x][y].color_bg[0], dungeon_map[x][y].color_bg[1],
+                                 dungeon_map[x][y].color_bg[2])
+        if not visible:
+            if dungeon_map[x][y].explored:
+                libtcod.color_scale_HSV(color_fg, 0.1, 0.4)
+                libtcod.color_scale_HSV(color_bg, 0.1, 0.4)
+                libtcod.console_put_char_ex(map_con, x, y, dungeon_map[x][y].tile_char, color_fg, color_bg)
+            else:
+                libtcod.console_put_char_ex(map_con, x, y, ' ', libtcod.black, libtcod.black)
+        else:
+            libtcod.console_put_char_ex(map_con, x, y, dungeon_map[x][y].tile_char, color_fg, color_bg)
+            dungeon_map[x][y].explored = True
+    changed_tiles = []
+
+    for obj in objects:
+        if obj is not player:
+            obj.draw(map_con)
+    player.draw(map_con)
+
+    libtcod.console_blit(map_con, player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2,
+                consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y)
+    draw_border(0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
+
+# No longer used, but I'm not willing to delete it from the code base just yet in case problems arise with the new system
+def render_map_old():
+
     global fov_recompute
 
-    libtcod.console_set_default_foreground(mapCon, libtcod.white)
+    libtcod.console_set_default_foreground(map_con, libtcod.white)
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
 
     if fov_recompute:
@@ -2269,22 +2340,22 @@ def render_map():
                 if dungeon_map[x][y].explored:
                     libtcod.color_scale_HSV(color_fg, 0.1, 0.4)
                     libtcod.color_scale_HSV(color_bg, 0.1, 0.4)
-                    libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg,
+                    libtcod.console_put_char_ex(map_con, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg,
                                                 color_bg)
             else:
-                libtcod.console_put_char_ex(mapCon, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg,
+                libtcod.console_put_char_ex(map_con, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg,
                                             color_bg)
                 dungeon_map[x][y].explored = True
 
     # draw all objects in the list
     for object in objects:
         if object != player:
-            object.draw()
-    player.draw()
+            object.draw_old()
+    player.draw_old()
 
-    draw_border(mapCon, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
+    draw_border(map_con, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
 
-    libtcod.console_blit(mapCon, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X,
+    libtcod.console_blit(map_con, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X,
                          consts.MAP_VIEWPORT_Y)
 
 
@@ -2296,9 +2367,8 @@ def render_side_panel(acc_mod=1.0):
     render_bar(2, 2, consts.BAR_WIDTH, 'HP', player.fighter.hp, player.fighter.max_hp,
                libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)
     # Display armor/shred
-    armor_string = 'AR: ' + str(player.fighter.armor)
+    armor_string = 'AR:' + str(player.fighter.armor)
     if player.fighter.shred > 0:
-        armor_string += '(' + str(player.fighter.armor + player.fighter.shred) + ')'
         libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
     libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, 2, libtcod.BKGND_DEFAULT, libtcod.RIGHT, armor_string)
 
@@ -2392,9 +2462,8 @@ def render_side_panel(acc_mod=1.0):
         render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
                    libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)
         libtcod.console_set_default_foreground(side_panel, libtcod.white)
-        armor_string = 'AR: ' + str(selected_monster.fighter.armor)
+        armor_string = 'AR:' + str(selected_monster.fighter.armor)
         if selected_monster.fighter.shred > 0:
-            armor_string += '(' + str(selected_monster.fighter.armor + selected_monster.fighter.shred) + ')'
             libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
         libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, drawHeight, libtcod.BKGND_DEFAULT, libtcod.RIGHT,
                                      armor_string)
@@ -2468,6 +2537,9 @@ def render_all():
     if not in_game:
         return
 
+    libtcod.console_set_default_background(0, libtcod.black)
+    libtcod.console_clear(0)
+
     render_map()
 
     render_side_panel()
@@ -2482,15 +2554,15 @@ def draw_border(console, x0, y0, width, height, foreground=libtcod.gray, backgro
     libtcod.console_set_default_foreground(console, foreground)
     libtcod.console_set_default_background(console, background)
     for x in range(1, width - 1):
-        libtcod.console_put_char(console, x0 + x, y0, libtcod.CHAR_DHLINE)
-        libtcod.console_put_char(console, x0 + x, y0 + height - 1, libtcod.CHAR_DHLINE)
+        libtcod.console_put_char(console, x0 + x, y0, libtcod.CHAR_DHLINE, libtcod.BKGND_SET)
+        libtcod.console_put_char(console, x0 + x, y0 + height - 1, libtcod.CHAR_DHLINE, libtcod.BKGND_SET)
     for y in range(1, height - 1):
-        libtcod.console_put_char(console, x0, y0 + y, libtcod.CHAR_DVLINE)
-        libtcod.console_put_char(console, x0 + width - 1, y0 + y, libtcod.CHAR_DVLINE)
-    libtcod.console_put_char(console, x0, y0, 4)
-    libtcod.console_put_char(console, x0 + width - 1, y0, 4)
-    libtcod.console_put_char(console, x0 + width - 1, y0 + height - 1, 4)
-    libtcod.console_put_char(console, x0, y0 + height - 1, 4)
+        libtcod.console_put_char(console, x0, y0 + y, libtcod.CHAR_DVLINE, libtcod.BKGND_SET)
+        libtcod.console_put_char(console, x0 + width - 1, y0 + y, libtcod.CHAR_DVLINE, libtcod.BKGND_SET)
+    libtcod.console_put_char(console, x0, y0, 4, libtcod.BKGND_SET)
+    libtcod.console_put_char(console, x0 + width - 1, y0, 4, libtcod.BKGND_SET)
+    libtcod.console_put_char(console, x0 + width - 1, y0 + height - 1, 4, libtcod.BKGND_SET)
+    libtcod.console_put_char(console, x0, y0 + height - 1, 4, libtcod.BKGND_SET)
 
 
 def generate_level():
@@ -2531,7 +2603,7 @@ def main_menu():
     
 
 def new_game():
-    global player, game_msgs, game_state, dungeon_level, memory, in_game, selected_monster
+    global player, game_msgs, game_state, dungeon_level, memory, in_game, selected_monster, changed_tiles
 
     in_game = True
 
@@ -2578,6 +2650,10 @@ def new_game():
     selected_monster = None
 
     message('Welcome to the dungeon...', libtcod.gold)
+
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            changed_tiles.append((x, y))
 
 
 def initialize_fov():
@@ -2627,6 +2703,10 @@ def load_game():
     
     initialize_fov()
 
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            changed_tiles.append((x, y))
+
 
 def play_game():
     global key, mouse, game_state, in_game
@@ -2642,7 +2722,7 @@ def play_game():
         libtcod.console_flush()
     
         # erase the map so it can be redrawn next frame
-        clear_map()
+        #clear_map()
 
         # handle keys and exit game if needed
         player_action = handle_keys()
@@ -2679,7 +2759,9 @@ libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'Magic Rogu
 libtcod.sys_set_fps(consts.LIMIT_FPS)
 con = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
-mapCon = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
+#map_con = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
+map_con = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
 ui = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 panel = libtcod.console_new(consts.PANEL_WIDTH, consts.PANEL_HEIGHT)
 side_panel = libtcod.console_new(consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
+changed_tiles = []

@@ -25,7 +25,7 @@ proto = {
         'char': 'r',
         'color': libtcod.dark_red,
         'hp': 1,
-        'attack_damage': 2,
+        'attack_damage': 3,
         'armor': 0,
         'evasion': 0,
         'accuracy': 0.85,
@@ -35,7 +35,8 @@ proto = {
         'on_create': None,
         'ai': main.AI_Default,
         'description': 'An irritating, crawling insect. Easily defeated, but a nuisance nonetheless.',
-        'resistances': []
+        'resistances': [],
+        'shred': 1
     },
     'monster_centipede': {
         'name': 'centipede',
