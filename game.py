@@ -10,7 +10,9 @@ import terrain
 #############################################
 
 class Equipment:
-    def __init__(self, slot, category, power_bonus=0, defense_bonus=0, max_hp_bonus=0, attack_damage_bonus=0, armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0):
+    def __init__(self, slot, category, power_bonus=0, defense_bonus=0, max_hp_bonus=0, attack_damage_bonus=0,
+                 armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
+                 guaranteed_shred_bonus=0, pierce=0):
         self.power_bonus = power_bonus
         self.defense_bonus = defense_bonus
         self.max_hp_bonus = max_hp_bonus
@@ -23,6 +25,9 @@ class Equipment:
         self.spell_power_bonus = spell_power_bonus
         self.stamina_cost = stamina_cost
         self.str_requirement = str_requirement
+        self.shred_bonus=shred_bonus
+        self.guaranteed_shred_bonus=guaranteed_shred_bonus
+        self.pierce_bonus = pierce
         
     def toggle(self):
         if self.is_equipped:
@@ -31,8 +36,7 @@ class Equipment:
             self.equip()
             
     def equip(self):
-        global inventory
-        old_equipment = get_equipped_in_slot(inventory,self.slot)
+        old_equipment = get_equipped_in_slot(player.fighter.inventory, self.slot)
         if old_equipment is not None:
             old_equipment.dequip()
         self.is_equipped = True
@@ -68,14 +72,14 @@ class Item:
         
     def pick_up(self):
         if self.type == 'item':
-            if len(inventory) >= 26:
+            if len(player.fighter.inventory) >= 26:
                 message('Your inventory is too full to pick up ' + self.owner.name)
             else:
-                inventory.append(self.owner)
+                player.fighter.inventory.append(self.owner)
                 objects.remove(self.owner)
                 message('You picked up a ' + self.owner.name + '!', libtcod.light_grey)
                 equipment = self.owner.equipment
-                if equipment and get_equipped_in_slot(inventory,equipment.slot) is None:
+                if equipment and get_equipped_in_slot(player.fighter.inventory,equipment.slot) is None:
                     equipment.equip()
         elif self.type == 'spell':
             if len(memory) >= player.player_stats.max_memory:
@@ -92,7 +96,7 @@ class Item:
         if self.use_function is not None:
             if self.use_function() != 'cancelled':
                 if self.type == 'item':
-                    inventory.remove(self.owner)
+                    player.fighter.inventory.remove(self.owner)
                 elif self.type == 'spell':
                     memory.remove(self.owner)
             else:
@@ -105,7 +109,7 @@ class Item:
             else:
                 player.known_spells.append(spell)
                 message('You have mastered ' + spell.name + '!', libtcod.light_blue)
-                inventory.remove(self.owner)
+                player.fighter.inventory.remove(self.owner)
         else:
             message('The ' + self.owner.name + ' cannot be used.')
 
@@ -114,7 +118,7 @@ class Item:
         if self.owner.equipment:
             self.owner.equipment.dequip();
         objects.append(self.owner)
-        inventory.remove(self.owner)
+        player.fighter.inventory.remove(self.owner)
         self.owner.x = player.x
         self.owner.y = player.y
         message('You dropped a ' + self.owner.name + '.', libtcod.white)
@@ -169,7 +173,8 @@ class Fighter:
 
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=1.0, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, loot_table=None, breath=6,
-                 can_breath_underwater=False, resistances=[], inventory=[], on_hit=None):
+                 can_breath_underwater=False, resistances=[], inventory=[], on_hit=None, base_shred=0,
+                 base_guaranteed_shred=0, base_pierce=0):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -190,8 +195,13 @@ class Fighter:
         self.can_breath_underwater = can_breath_underwater
         self.resistances = list(resistances)
         self.inventory = list(inventory)
+        self.base_shred = base_shred
+        self.base_guaranteed_shred = base_guaranteed_shred
+        self.base_pierce = base_pierce
         self.status_effects = []
         self.on_hit = on_hit
+        self.shred = 0
+        self.time_since_last_damaged = 0
 
     def adjust_stamina(self, amount):
         self.stamina += amount
@@ -212,6 +222,7 @@ class Fighter:
                     function(self.owner)
                 if self.owner != player:
                     player.fighter.xp += self.xp
+            self.time_since_last_damaged = 0
             
     def attack(self, target):
         stamina_cost = 0
@@ -221,10 +232,9 @@ class Fighter:
                 stamina_cost = int((float(get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) /
                                     (float(self.owner.player_stats.str) / float(get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
         return self.attack_ex(target, stamina_cost, self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
-                       'attacks')
+                       'attacks', self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
 
-
-    def attack_ex(self, target, stamina_cost, accuracy, attack_damage, damage_variance, on_hit, verb):
+    def attack_ex(self, target, stamina_cost, accuracy, attack_damage, damage_variance, on_hit, verb, shred, guaranteed_shred, pierce):
         # check stamina
         if self.owner.name == 'player':
             if self.stamina < stamina_cost:
@@ -236,12 +246,36 @@ class Fighter:
         if roll_to_hit(target, accuracy):
             # Target was hit
             damage = attack_damage * (1.0 - damage_variance + libtcod.random_get_float(0, 0, 2 * damage_variance))
-            damage *= (consts.ARMOR_FACTOR / (consts.ARMOR_FACTOR + target.fighter.armor))
-            damage = math.ceil(damage)
-            damage = int(damage)
+            # calculate damage reduction
+            effective_armor = target.fighter.armor - pierce
+            # without armor, targets receive no damage reduction!
+            if effective_armor > 0:
+                # Damage is reduced by 25% + 5% for every point of armor up to 5 armor (50% reduction)
+                reduction_factor = consts.ARMOR_REDUCTION_BASE + consts.ARMOR_REDUCTION_STEP * min(effective_armor, consts.ARMOR_REDUCTION_DROPOFF)
+                # For every point of armor after 5, damage is further reduced by 2.5%
+                if effective_armor > consts.ARMOR_REDUCTION_DROPOFF:
+                    reduction_factor += 0.5 * consts.ARMOR_REDUCTION_STEP * (effective_armor - consts.ARMOR_REDUCTION_DROPOFF)
+                # Apply damage reduction
+                damage = int(math.ceil(damage * reduction_factor))
+                # After reduction, apply a flat reduction that is a random amount from 0 to the target's armor value
+                damage = max(0, damage - libtcod.random_get_int(0, 0, effective_armor))
+            else:
+                damage = int(math.ceil(damage))
+
+            #damage *= (consts.ARMOR_FACTOR / (consts.ARMOR_FACTOR + target.fighter.armor))
+            #damage = math.ceil(damage)
+            #damage = int(damage)
             if damage > 0:
+                # Trigger on-hit effects
                 if on_hit is not None:
                     on_hit(self.owner, target)
+                # Shred armor
+                if target.fighter.shred < target.fighter.armor:
+                    for i in range(shred):
+                        if libtcod.random_get_int(0, 0, 2) == 0:
+                            target.fighter.shred += 1
+                    target.fighter.shred += guaranteed_shred
+                # Take damage
                 message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ' for ' + str(damage) + ' damage!', libtcod.grey)
                 target.fighter.take_damage(damage)
                 return 'hit'
@@ -258,6 +292,13 @@ class Fighter:
             self.hp = self.max_hp
 
     def on_tick(self, object=None):
+        # Track time since damaged (for repairing shred)
+        self.time_since_last_damaged += 1
+        if self.time_since_last_damaged >= 20 and self.shred > 0:
+            self.shred = 0
+            if self.owner is player:
+                message('You repair your armor')
+
         # Manage breath/drowning
         if dungeon_map[self.owner.x][self.owner.y].tile_type == 'deep water':
             if not (self.can_breath_underwater or self.has_status('waterbreathing')):
@@ -336,7 +377,22 @@ class Fighter:
     @property
     def armor(self):
         bonus = sum(equipment.armor_bonus for equipment in get_all_equipped(self.inventory))
-        return self.base_armor + bonus
+        return self.base_armor + bonus - self.shred
+
+    @property
+    def attack_shred(self):
+        bonus = sum(equipment.shred_bonus for equipment in get_all_equipped(self.inventory))
+        return self.base_shred + bonus
+
+    @property
+    def attack_guaranteed_shred(self):
+        bonus = sum(equipment.guaranteed_shred_bonus for equipment in get_all_equipped(self.inventory))
+        return self.base_guaranteed_shred + bonus
+
+    @property
+    def attack_pierce(self):
+        bonus = sum(equipment.pierce_bonus for equipment in get_all_equipped(self.inventory))
+        return self.base_pierce + bonus
 
     @property
     def evasion(self):
@@ -354,16 +410,6 @@ class Fighter:
         else:
             return self.base_spell_power + bonus
 
-    @property
-    def power(self):
-        bonus = sum(equipment.power_bonus for equipment in get_all_equipped(self.inventory))
-        return self.base_power + bonus
-        
-    @property
-    def defense(self):
-        bonus = sum(equipment.defense_bonus for equipment in get_all_equipped(self.inventory))
-        return self.base_defense + bonus
-        
     @property
     def max_hp(self):
         bonus = sum(equipment.max_hp_bonus for equipment in get_all_equipped(self.inventory))
@@ -538,8 +584,6 @@ class AI_Verman:
                 (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
             monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
 
-
-
 class AI_TunnelSpider:
 
     def __init__(self):
@@ -600,7 +644,7 @@ class AI_General:
     def take_turn(self):
         self.turn_ticker += self.speed
         while self.turn_ticker > 1.0:
-            if not (self.owner.fighter and self.owner.fighter.has_status('stunned') and self.owner.fighter.has_status('frozen')):
+            if not (self.owner.fighter and (self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen'))):
                 self.behavior.act()
             self.turn_ticker -= 1.0
 
@@ -1288,16 +1332,16 @@ def inventory_menu(header):
     menu_items = []
     item_categories = []
 
-    if len(inventory) == 0:
+    if len(player.fighter.inventory) == 0:
         height = 5
         draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
         libtcod.console_set_default_foreground(window, libtcod.dark_grey)
         libtcod.console_print(window, 1, 3, 'Inventory is empty.')
     else:
-        for item in inventory:
+        for item in player.fighter.inventory:
             if not item.item.category in item_categories:
                 item_categories.append(item.item.category)
-        height = 4 + len(item_categories) + len(inventory)
+        height = 4 + len(item_categories) + len(player.fighter.inventory)
         draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
 
         for item_category in loot.item_categories:
@@ -1311,7 +1355,7 @@ def inventory_menu(header):
             libtcod.console_print_ex(window, consts.INVENTORY_WIDTH / 2, y, libtcod.BKGND_DEFAULT, libtcod.CENTER,
                                      loot.item_categories[item_category]['plural'].capitalize())
             y += 1
-            for item in inventory:
+            for item in player.fighter.inventory:
                 if item.item.category == item_category:
                     menu_items.append(item)
 
@@ -1334,7 +1378,7 @@ def inventory_menu(header):
 
     key = libtcod.console_wait_for_keypress(True)
     index = key.c - ord('a')
-    if 0 <= index < len(inventory):
+    if 0 <= index < len(player.fighter.inventory):
         return menu_items[index].item
     return None
 
@@ -1467,7 +1511,7 @@ def message(new_msg, color = libtcod.white):
         game_msgs.append((line, color))
 
 
-def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
+def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, align=libtcod.CENTER):
     bar_width = int(float(value) / maximum * total_width)
     
     libtcod.console_set_default_background(side_panel, back_color)
@@ -1478,7 +1522,14 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color):
         libtcod.console_rect(side_panel, x, y, bar_width, 1, False, libtcod.BKGND_SCREEN)
         
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
-    libtcod.console_print_ex(side_panel, x + total_width / 2, y, libtcod.BKGND_NONE, libtcod.CENTER,
+    pos = x + 1
+    if align == libtcod.LEFT:
+        pos = x + 1
+    elif align == libtcod.CENTER:
+        pos = x + total_width / 2
+    elif align == libtcod.RIGHT:
+        pos = x + total_width - 1
+    libtcod.console_print_ex(side_panel, pos, y, libtcod.BKGND_NONE, align,
                              name + ': ' + str(value) + '/' + str(maximum))
 
 
@@ -1506,7 +1557,11 @@ def spawn_monster(name, x, y):
         fighter_component = Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'],
                                     evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
                                     death_function=death, loot_table=loot.table[p.get('loot', 'default')],
-                                    can_breath_underwater=True, resistances=p['resistances'], inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'))
+                                    can_breath_underwater=True, resistances=p['resistances'],
+                                    inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
+                                    base_shred=p.get('shred', 0),
+                                    base_guaranteed_shred=p.get('guaranteed_shred', 0),
+                                    base_pierce=p.get('pierce', 0))
         ai = None
         if p.get('ai'):
             ai = p.get('ai')()
@@ -1543,7 +1598,10 @@ def create_item(name):
             evasion_bonus=p.get('evasion_bonus', 0),
             spell_power_bonus=p.get('spell_power_bonus', 0),
             stamina_cost=p.get('stamina_cost', 0),
-            str_requirement=p.get('str_requirement', 0)
+            str_requirement=p.get('str_requirement', 0),
+            shred_bonus=p.get('shred', 0),
+            guaranteed_shred_bonus=p.get('guaranteed_shred', 0),
+            pierce=p.get('pierce', 0)
         )
     go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))
@@ -1659,7 +1717,8 @@ def player_move_or_attack(dx, dy, bash=False):
 def player_bash_attack(target):
     result = player.fighter.attack_ex(target, consts.BASH_STAMINA_COST, player.fighter.accuracy * consts.BASH_ACC_MOD,
                              player.fighter.attack_damage * consts.BASH_DMG_MOD, player.fighter.damage_variance,
-                             None, 'bashes')
+                             None, 'bashes', player.fighter.attack_shred + 1, player.fighter.attack_guaranteed_shred,
+                             player.fighter.attack_pierce)
     if result == 'hit' and target.fighter:
         # knock the target back one space. Stun it if it cannot move.
         direction = target.x - player.x, target.y - player.y  # assumes the player is adjacent
@@ -1721,7 +1780,7 @@ def show_ability_screen():
     opts = []
     for a in abilities.default_abilities:
         opts.append(a)
-    for i in inventory:
+    for i in player.fighter.inventory:
         if i.item.ability is not None:
             opts.append(i.item.ability)
     index = menu('Abilities',[opt.name for opt in opts],20)
@@ -1858,6 +1917,7 @@ def skill_menu():
             menu_lines.append(None)
         menu_lines.append(skill)
     sub_height = len(skill_categories) + len(abilities.skill_list)
+    scroll_limit = sub_height - (consts.MAP_VIEWPORT_HEIGHT - 10)
 
     sub_window = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, sub_height)
     libtcod.console_set_key_color(sub_window, libtcod.magenta)
@@ -1915,6 +1975,18 @@ def skill_menu():
         libtcod.console_set_default_foreground(window, libtcod.white)
         libtcod.console_print_rect(window, 1, consts.MAP_VIEWPORT_HEIGHT - 5, consts.MAP_VIEWPORT_WIDTH - 2, 5, menu_lines[selected_index].description)
 
+        # print scroll bar
+        libtcod.console_set_default_foreground(window, libtcod.gray)
+        libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, 4, 30)
+        libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, consts.MAP_VIEWPORT_HEIGHT - 7, 31)
+        for i in range(consts.MAP_VIEWPORT_HEIGHT - 12):
+            libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, 5 + i, libtcod.CHAR_VLINE)
+        bar_height = int(float((consts.MAP_VIEWPORT_HEIGHT - 12) ** 2) / float(sub_height))
+        bar_height = clamp(bar_height, 1, consts.MAP_VIEWPORT_HEIGHT - 12)
+        bar_y = int(float(consts.MAP_VIEWPORT_HEIGHT - 12 - bar_height) * (float(scroll_height) / float(scroll_limit)))
+        for i in range(bar_height):
+            libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, bar_y + 5 + i, 219)
+
         # Blit to main screen and flush
         libtcod.console_blit(window, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0,
                              consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 1.0, 1.0)
@@ -1961,9 +2033,9 @@ def skill_menu():
                 scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
         # Scroll wheel & pageup/pagedown adjust scroll height
         elif key.vk == libtcod.KEY_PAGEDOWN or mouse.wheel_down:
-            scroll_height = min(scroll_height + 1, sub_height - (consts.MAP_VIEWPORT_HEIGHT - 10))
+            scroll_height = min(scroll_height + 3, scroll_limit)
         elif key.vk == libtcod.KEY_PAGEUP or mouse.wheel_up:
-            scroll_height = max(scroll_height - 1, 0)
+            scroll_height = max(scroll_height - 3, 0)
 
 def cast_spell_new():
     if len(player.known_spells) <= 0:
@@ -2119,7 +2191,9 @@ def jump():
 
                     player.fighter.attack_ex(jump_attack_target, 0, player.fighter.accuracy * consts.JUMP_ATTACK_ACC_MOD,
                                              player.fighter.attack_damage * consts.JUMP_ATTACK_DMG_MOD,
-                                             player.fighter.damage_variance, player.fighter.on_hit, 'jump-attacks')
+                                             player.fighter.damage_variance, player.fighter.on_hit, 'jump-attacks',
+                                             player.fighter.attack_shred, player.fighter.attack_guaranteed_shred,
+                                             player.fighter.attack_pierce)
 
                     return 'jump-attacked'
                 else:
@@ -2220,7 +2294,13 @@ def render_side_panel(acc_mod=1.0):
     libtcod.console_clear(side_panel)
 
     render_bar(2, 2, consts.BAR_WIDTH, 'HP', player.fighter.hp, player.fighter.max_hp,
-               libtcod.dark_red, libtcod.darker_red)
+               libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)
+    # Display armor/shred
+    armor_string = 'AR: ' + str(player.fighter.armor)
+    if player.fighter.shred > 0:
+        armor_string += '(' + str(player.fighter.armor + player.fighter.shred) + ')'
+        libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
+    libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, 2, libtcod.BKGND_DEFAULT, libtcod.RIGHT, armor_string)
 
     render_bar(2, 3, consts.BAR_WIDTH, 'Stamina', player.fighter.stamina, player.fighter.max_stamina,
                libtcod.dark_green, libtcod.darker_green)
@@ -2310,7 +2390,15 @@ def render_side_panel(acc_mod=1.0):
         libtcod.console_print(side_panel, 2, drawHeight, selected_monster.name)
         drawHeight += 2
         render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
-                   libtcod.dark_red, libtcod.darker_red)
+                   libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)
+        libtcod.console_set_default_foreground(side_panel, libtcod.white)
+        armor_string = 'AR: ' + str(selected_monster.fighter.armor)
+        if selected_monster.fighter.shred > 0:
+            armor_string += '(' + str(selected_monster.fighter.armor + selected_monster.fighter.shred) + ')'
+            libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
+        libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, drawHeight, libtcod.BKGND_DEFAULT, libtcod.RIGHT,
+                                     armor_string)
+
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
         s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(selected_monster, player.fighter.accuracy * acc_mod))
@@ -2417,6 +2505,8 @@ def main_menu():
     img = libtcod.image_load('menu_background.png')
     
     while not libtcod.console_is_window_closed():
+        libtcod.console_set_default_background(0, libtcod.black)
+        libtcod.console_clear(0)
         libtcod.image_blit_2x(img, 0, 0, 0)
         libtcod.console_set_default_foreground(0, libtcod.light_yellow)
         libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT /2 - 8, libtcod.BKGND_NONE, libtcod.CENTER,
@@ -2441,13 +2531,12 @@ def main_menu():
     
 
 def new_game():
-    global player, inventory, game_msgs, game_state, dungeon_level, memory, in_game, selected_monster
+    global player, game_msgs, game_state, dungeon_level, memory, in_game, selected_monster
 
     in_game = True
 
     #create object representing the player
-    inventory = []
-    fighter_component = Fighter(hp=100, xp=0, stamina=100, death_function=player_death, inventory=inventory)
+    fighter_component = Fighter(hp=100, xp=0, stamina=100, death_function=player_death)
     player = GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component, player_stats=PlayerStats(), description='You, the fearless adventurer!')
     player.level = 1
     
@@ -2477,6 +2566,13 @@ def new_game():
     spawn_item('scroll_fireball', player.x, player.y)
     spawn_item('equipment_spear', player.x, player.y)
 
+    leather_armor = create_item('equipment_leather_armor')
+    player.fighter.inventory.append(leather_armor)
+    leather_armor.equipment.equip()
+    dagger = create_item('equipment_dagger')
+    player.fighter.inventory.append(dagger)
+    dagger.equipment.equip()
+
     #spawn_monster('monster_blastcap', player.x, player.y - 1)
 
     selected_monster = None
@@ -2505,7 +2601,6 @@ def save_game():
     file['objects'] = objects
     file['player_index'] = objects.index(player)
     file['stairs_index'] = objects.index(stairs)
-    file['inventory'] = inventory
     file['memory'] = memory
     file['game_msgs'] = game_msgs
     file['game_state'] = game_state
@@ -2514,7 +2609,7 @@ def save_game():
 
 
 def load_game():
-    global dungeon_map, objects, player, inventory, memory, game_msgs, game_state, dungeon_level, stairs, in_game, selected_monster
+    global dungeon_map, objects, player, memory, game_msgs, game_state, dungeon_level, stairs, in_game, selected_monster
 
     in_game = True
 
@@ -2523,7 +2618,6 @@ def load_game():
     objects = file['objects']
     player = objects[file['player_index']]
     stairs = objects[file['stairs_index']]
-    inventory = file['inventory']
     memory = file['memory']
     game_msgs = file['game_msgs']
     game_state = file['game_state']

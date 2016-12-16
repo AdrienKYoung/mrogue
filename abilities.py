@@ -39,7 +39,7 @@ def ability_attack():
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break
-    if target is not None:
+    if target is not None and target is not main.player:
         result = main.player.fighter.attack(target)
         if result != 'failed':
             return result
@@ -52,7 +52,7 @@ def ability_attack_reach():
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break
-    if target is not None:
+    if target is not None and target is not main.player:
         result = main.player.fighter.attack(target)
         if result != 'failed':
             return result
@@ -65,7 +65,7 @@ def ability_bash_attack():
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break
-    if target is not None:
+    if target is not None and target is not main.player:
         result = main.player_bash_attack(target)
         if result != 'failed':
             return result
