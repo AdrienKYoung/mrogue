@@ -2,22 +2,22 @@ import game as main
 import consts
 import libtcodpy as libtcod
 import effects
+import spells
+import monsters
 
 class Ability:
-    def __init__(self, name, description, function, cooldown, targeting = None, range = None, type = None):
+    def __init__(self, name, description, function, cooldown):
         self.name = name
         self.function = function
         self.description = description
         self.cooldown = cooldown
         self.current_cd = 0
-        self.targeting = targeting #self, single, burst
-        self.range = range
-        self.type = type #attack, support, summoning
 
     def use(self, actor = None):
         if self.current_cd < 1:
             result = self.function(actor)
-            self.current_cd = self.cooldown
+            if result != 'didnt-take-turn':
+                self.current_cd = self.cooldown
         else:
             if actor is main.player:
                 main.message('{} is on cooldown'.format(self.name), libtcod.red)
@@ -82,8 +82,48 @@ def ability_berserk_self(actor = None):
             actor.fighter.apply_status_effect(effects.berserk())
             if actor is not main.player:
                 main.message("{} roars!!".format(actor.name),libtcod.red)
-        elif actor is main.player:
-            main.message("You can't berserk right now.", libtcod.yellow)
+        else:
+            if actor is main.player:
+                main.message("You can't berserk right now.", libtcod.yellow)
+            return 'didnt-take-turn'
+
+def ability_spawn_vermin(actor = None):
+    #Filthy hackery to add some state
+    if not hasattr(actor, 'summons'):
+        actor.summons = []
+
+    for s in actor.summons:  # clear dead things from summoned list
+        if not s.fighter:
+            actor.summons.remove(s)
+
+    if len(actor.summons) < consts.VERMAN_MAX_SUMMONS:
+        summon_choice = main.random_choice_index([e['weight'] for e in monsters.verman_summons])
+        summon_tiles = []
+        for y in range(5):
+            for x in range(5):
+                pos = actor.x - 2 + x, actor.y - 2 + y
+                if not main.is_blocked(pos[0], pos[1]):
+                    summon_tiles.append(pos)
+        for i in range(monsters.verman_summons[summon_choice]['count']):
+            if len(summon_tiles) > 0:
+                pos = summon_tiles[libtcod.random_get_int(0, 0, len(summon_tiles) - 1)]
+                spawn = main.spawn_monster(monsters.verman_summons[summon_choice]['monster'], pos[0], pos[1])
+                main.message('A ' + spawn.name + " crawls from beneath the verman's cloak.", actor.color)
+                spawn.fighter.loot_table = None
+                actor.summons.append(spawn)
+                summon_tiles.remove(pos)
+
+def ability_grapel(actor = None):
+    #Blame the Bleshib
+    player = main.player
+    if actor.distance_to(player) <= consts.FROG_TONGUE_RANGE:
+        if main.player.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, player.x, player.y) == (player.x, player.y):
+            spells.cast_frog_tongue(actor, player)
+            return
+        else:
+            return 'didnt-take-turn'
+    else:
+        return 'didnt-take-turn'
 
 data = {
     #item abilities
@@ -98,10 +138,20 @@ data = {
     'ability_berserk': {
         'name': 'Berserk',
         'function': ability_berserk_self,
-        'cooldown': 30,
-        'targeting': 'self',
-        'type': 'support'
+        'cooldown': 30
     },
+
+    'ability_summon_vermin': {
+        'name': 'Summon Vermin',
+        'function': ability_spawn_vermin,
+        'cooldown': consts.VERMAN_MAX_COOLDOWN
+    },
+
+    'ability_grapel': {
+        'name': 'Grapel',
+        'function': ability_grapel,
+        'cooldown': consts.FROG_TONGUE_COOLDOWN
+    }
 }
 
 default_abilities = [

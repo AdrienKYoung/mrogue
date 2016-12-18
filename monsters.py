@@ -107,10 +107,11 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_GiantFrog,
+        'ai': main.AI_Default,
         'description': 'Unusually large amphibian that dwells in lakes and ponds. '
                        'Can grab unwary adventurers with its sticky tongue.',
         'resistances': [],
+        'attributes':['ability_grapel'],
         'mana': [(10, 'water'), (10, 'life')]
     },
     'monster_verman': {
@@ -126,10 +127,11 @@ proto = {
         'difficulty': 2,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Verman,
+        'ai': main.AI_Default,
         'description': "A filthy rat-faced humanoid clad with ragged scraps of leather. "
                        "The vermin of the dungeon are drawn to his stench.",
         'resistances': [],
+        'attributes':['ability_summon_vermin'],
         'shred': 1,
         'mana': [(10, 'earth')]
     },

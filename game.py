@@ -431,36 +431,6 @@ class Fighter:
         bonus = sum(equipment.max_hp_bonus for equipment in get_all_equipped(self.inventory))
         return self.base_max_hp + bonus
 
-
-class AI_GiantFrog:
-
-    def __init__(self):
-        self.last_seen_position = None
-        self.tongue_cooldown = 0
-
-    def act(self):
-        self.last_seen_position = (player.x, player.y)
-        monster = self.owner
-        if self.tongue_cooldown > 0:
-            self.tongue_cooldown -= 1
-        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
-            if is_adjacent_diagonal(monster.x, monster.y, player.x, player.y):
-                if player.fighter.hp > 0:
-                    monster.fighter.attack(player)
-                return
-            elif monster.distance_to(player) <= consts.FROG_TONGUE_RANGE and self.tongue_cooldown == 0:
-                if player.fighter.hp > 0 and beam_interrupt(monster.x, monster.y, player.x, player.y) == (player.x, player.y):
-                    spells.cast_frog_tongue(monster, player)
-                    self.tongue_cooldown = libtcod.random_get_int(0, 1, consts.FROG_TONGUE_COOLDOWN)
-                    return
-
-            monster.move_astar(player.x, player.y)
-
-        elif self.last_seen_position is not None and not \
-                (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
-            monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
-
-
 class AI_Default:
 
     def __init__(self):
@@ -562,54 +532,6 @@ class AI_Reeker:
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())
                         objects.append(puff)
-
-
-class AI_Verman:
-    def __init__(self):
-        self.summons = []
-        self.summon_cooldown = 0
-        self.last_seen_position = None
-
-    def act(self):
-        monster = self.owner
-        if self.summon_cooldown > 0:
-            self.summon_cooldown -= 1
-        for s in self.summons: #  clear dead things from 'summoned' list
-            if not s.fighter:
-                self.summons.remove(s)
-        if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
-
-            self.last_seen_position = (player.x, player.y)
-            if self.summon_cooldown == 0 and len(self.summons) < consts.VERMAN_MAX_SUMMONS:
-                # summon vermin
-                summon_choice = random_choice_index([e['weight'] for e in monsters.verman_summons])
-                summon_tiles = []
-                for y in range(5):
-                    for x in range(5):
-                        pos = monster.x - 2 + x, monster.y - 2 + y
-                        if not is_blocked(pos[0], pos[1]):
-                            summon_tiles.append(pos)
-                for i in range(monsters.verman_summons[summon_choice]['count']):
-                    if len(summon_tiles) > 0:
-                        pos = summon_tiles[libtcod.random_get_int(0, 0, len(summon_tiles) - 1)]
-                        spawn = spawn_monster(monsters.verman_summons[summon_choice]['monster'], pos[0], pos[1])
-                        message('A ' + spawn.name + " crawls from beneath the verman's cloak.", monster.color)
-                        spawn.fighter.loot_table = None
-                        self.summons.append(spawn)
-                        summon_tiles.remove(pos)
-                self.summon_cooldown = consts.VERMAN_MIN_COOLDOWN + libtcod.random_get_int(0, 0, consts.VERMAN_MAX_COOLDOWN - consts.VERMAN_MIN_COOLDOWN)
-                return
-
-            if is_adjacent_diagonal(monster.x, monster.y, player.x, player.y):
-                if player.fighter.hp > 0:
-                    monster.fighter.attack(player)
-                return
-
-            monster.move_astar(player.x, player.y)
-
-        elif self.last_seen_position is not None and not \
-                (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
-            monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
 
 class AI_TunnelSpider:
 

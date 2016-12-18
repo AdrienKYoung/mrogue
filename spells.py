@@ -95,7 +95,6 @@ def cast_heal():
 def cast_waterbreathing():
     main.player.fighter.apply_status_effect(main.StatusEffect('waterbreathing', 31, libtcod.light_azure))
 
-
 def cast_frog_tongue(frog, target):
 
     if main.roll_to_hit(target, consts.FROG_TONGUE_ACC):
