@@ -36,7 +36,7 @@ proto = {
         'ai': main.AI_Default,
         'description': 'An irritating, crawling insect. Easily defeated, but a nuisance nonetheless.',
         'resistances': [],
-        'shred': 1
+        'shred': 1,
     },
     'monster_centipede': {
         'name': 'centipede',
@@ -91,7 +91,8 @@ proto = {
         'death_function' : main.bomb_beetle_death,
         'ai': main.AI_Default,
         'description': 'A round brown beetle. A warm glow emanates from beneath its carapace.',
-        'resistances': []
+        'resistances': [],
+        'mana': [(50, 'fire')]
     },
     'monster_giant_frog': {
         'name': 'giant frog',
@@ -109,7 +110,8 @@ proto = {
         'ai': main.AI_GiantFrog,
         'description': 'Unusually large amphibian that dwells in lakes and ponds. '
                        'Can grab unwary adventurers with its sticky tongue.',
-        'resistances': []
+        'resistances': [],
+        'mana': [(10, 'water'), (10, 'life')]
     },
     'monster_verman': {
         'name': 'verman',
@@ -128,7 +130,8 @@ proto = {
         'description': "A filthy rat-faced humanoid clad with ragged scraps of leather. "
                        "The vermin of the dungeon are drawn to his stench.",
         'resistances': [],
-        'shred': 1
+        'shred': 1,
+        'mana': [(10, 'earth')]
     },
     'monster_reeker': {
         'name': 'reeker',
@@ -145,7 +148,8 @@ proto = {
         'on_create': None,
         'ai': main.AI_Reeker,
         'description': 'A short, stocky fungus that emits puffs of foul-smelling gas.',
-        'resistances': ['confusion', 'stunned']
+        'resistances': ['confusion', 'stunned'],
+        'mana': [(65, 'life')]
     },
     'monster_blastcap': {
         'name': 'blastcap',
@@ -181,7 +185,8 @@ proto = {
         'ai': main.AI_Default,
         'description': 'Large stone golem, animated by magic. Slow but very strong.',
         'resistances': [],
-        'shred': 2
+        'shred': 2,
+        'mana': [(70, 'earth')]
     },
     'monster_bear': {
         'name': 'cave bear',
@@ -237,7 +242,8 @@ proto = {
         'attributes': {'perk_flying', 'ability_warp_weapon', 'ability_blink'},
         'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.',
         'resistances': [],
-        'shred': 3
+        'shred': 3,
+        'mana': [(15, 'fire')]
     }
 }
 

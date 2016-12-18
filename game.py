@@ -218,13 +218,29 @@ class Fighter:
         if damage > 0:
             self.hp -= damage
             if self.hp <= 0:
+                self.drop_mana()
                 function = self.death_function
                 if function is not None:
                     function(self.owner)
                 if self.owner != player:
                     player.fighter.xp += self.xp
             self.time_since_last_damaged = 0
-            
+
+    def drop_mana(self):
+        if hasattr(self.owner, 'mana') and self is not player:
+            roll = libtcod.random_get_int(0, 1, 100)
+            total = 0
+            for m in self.owner.mana:
+                total += m[0]
+                if roll < total:
+                    mana_pickup = GameObject(self.owner.x, self.owner.y, '*', 'mote of ' + m[1] + ' mana',
+                                             spells.mana_colors[m[1]],
+                                             description='A colored orb that glows with magical potential.',
+                                             on_step=pick_up_mana, on_tick=expire_out_of_vision)
+                    mana_pickup.mana_type = m[1]
+                    objects.append(mana_pickup)
+                    return
+
     def attack(self, target):
         stamina_cost = 0
         if self.owner is player:
@@ -558,7 +574,7 @@ class AI_Verman:
         if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
 
             self.last_seen_position = (player.x, player.y)
-            if self.summon_cooldown == 0 and len(self.summons) < 8:
+            if self.summon_cooldown == 0 and len(self.summons) < consts.VERMAN_MAX_SUMMONS:
                 # summon vermin
                 summon_choice = random_choice_index([e['weight'] for e in monsters.verman_summons])
                 summon_tiles = []
@@ -658,7 +674,7 @@ class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
-                 update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False):
+                 update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None):
         self.x = x
         self.y = y
         self.char = char
@@ -696,6 +712,7 @@ class GameObject:
         self.blocks_sight = blocks_sight
         self.on_step = on_step
         self.burns = burns
+        self.on_tick_specified = on_tick
 
     def on_create(self):
         if self.blocks_sight:
@@ -823,6 +840,8 @@ class GameObject:
         objects.insert(0, self)
 
     def on_tick(self, object=None):
+        if self.on_tick_specified:
+            self.on_tick_specified(object)
         if self.fighter:
             self.fighter.on_tick()
         if self.misc and hasattr(self.misc, 'on_tick'):
@@ -888,9 +907,20 @@ class Tile:
 # General Functions
 #############################################
 
+def expire_out_of_vision(obj):
+    if not libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
+        obj.destroy()
+
+def pick_up_mana(mana, obj):
+    if obj is player and len(player.mana) < player.player_stats.max_mana:
+        player.mana.append(mana.mana_type)
+        message('You are infused with magical power.', mana.color)
+        mana.destroy()
+
 def pick_up_xp(xp, obj):
     if obj is player:
-        player.fighter.xp += 50
+        player.fighter.xp += consts.XP_ORB_AMOUNT_MIN + \
+                             libtcod.random_get_int(0, 0, consts.XP_ORB_AMOUNT_MAX - consts.XP_ORB_AMOUNT_MIN)
         check_level_up()
         xp.destroy()
 
@@ -1040,7 +1070,7 @@ def check_level_up():
     next = consts.LEVEL_UP_BASE + player.level * consts.LEVEL_UP_FACTOR
     if player.fighter.xp >= next:
         level_up()
-        player.fighter.xp = 0
+        player.fighter.xp = player.fighter.xp - next
 
 
 def level_up(altar = None):
@@ -1600,6 +1630,8 @@ def spawn_monster(name, x, y):
             ai = p.get('ai')()
         monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
                              ai=ai, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'])
+        if p.get('mana'):
+            monster.mana = p.get('mana')
         objects.append(monster)
         return monster
     return None
@@ -1656,6 +1688,8 @@ def spawn_item(name, x, y):
         item.send_to_back()
 
 def create_fire(x,y,temp):
+    global changed_tiles
+
     if dungeon_map[x][y].tile_type == 'shallow water' or \
                     dungeon_map[x][y].tile_type == 'deep water' or is_blocked(x, y):
         return
@@ -1666,6 +1700,7 @@ def create_fire(x,y,temp):
         dungeon_map[x][y] = Tile('scorched floor')
     for obj in get_objects(x, y, condition=lambda o: o.burns):
         obj.destroy()
+    changed_tiles.append((x, y))
 
 def place_objects(tiles):
     if len(tiles) == 0:
@@ -1701,7 +1736,7 @@ def place_objects(tiles):
             if len(tiles) == 0:
                 return
 
-    for i in range(5):
+    for i in range(2):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
         objects.append(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
                                   description='xp', on_step=pick_up_xp))
@@ -1728,7 +1763,7 @@ def get_dungeon_level():
 
 
 def player_move_or_attack(dx, dy, bash=False):
-    global selected_monster
+    global selected_monster, changed_tiles
 
     x = player.x + dx
     y = player.y + dy
@@ -1744,7 +1779,8 @@ def player_move_or_attack(dx, dy, bash=False):
             success = player_bash_attack(target) != 'failed'
         else:
             success = player.fighter.attack(target) != 'failed'
-        if success and target.fighter:
+        if success and target.fighter and target is not selected_monster:
+            changed_tiles.append((target.x, target.y))
             selected_monster = target
         return success
     else:
@@ -1798,8 +1834,8 @@ def get_loot(monster):
 def do_queued_action(action):
     if action == 'finish-meditate':
         manatype = 'normal'
-        if dungeon_map[player.x][player.y].tile_type == 'grass floor':  # Temporary - used for testing
-            manatype = 'life'
+        #if dungeon_map[player.x][player.y].tile_type == 'grass floor':  # Temporary - used for testing
+        #    manatype = 'life'
 
 
         if len(player.mana) < player.player_stats.max_mana:

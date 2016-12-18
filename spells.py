@@ -144,5 +144,10 @@ spell_library = {
 
 mana_colors = {
     'normal' : libtcod.gray,
-    'life' : libtcod.green
+    'life' : libtcod.green,
+    'fire' : libtcod.flame,
+    'earth' : libtcod.sepia,
+    'dark' : libtcod.dark_purple,
+    'water' : libtcod.azure,
+    'air' : libtcod.light_sky
 }

@@ -384,6 +384,8 @@ def create_feature_from_file(filename, x, y):
             if type is not None:
                 main.dungeon_map[pos[0]][pos[1]].tile_type = type
 
+
+
 def make_rooms_and_corridors():
 
     rooms = []
