@@ -477,7 +477,7 @@ def make_one_big_room():
 
     main.player.x = player_tile[0]
     main.player.y = player_tile[1]
-    for i in range(10):
+    for i in range(7):
         main.place_objects(open_tiles)
     stair_tile = choose_random_tile(open_tiles)
     main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white, always_visible=True)

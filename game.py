@@ -270,11 +270,10 @@ class Fighter:
                 if on_hit is not None:
                     on_hit(self.owner, target)
                 # Shred armor
-                if target.fighter.shred < target.fighter.armor:
-                    for i in range(shred):
-                        if libtcod.random_get_int(0, 0, 2) == 0:
-                            target.fighter.shred += 1
-                    target.fighter.shred += guaranteed_shred
+                for i in range(shred):
+                    if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.shred < target.fighter.armor:
+                        target.fighter.shred += 1
+                target.fighter.shred = min(target.fighter.shred + guaranteed_shred, target.fighter.armor)
                 # Take damage
                 message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ' for ' + str(damage) + ' damage!', libtcod.grey)
                 target.fighter.take_damage(damage)
