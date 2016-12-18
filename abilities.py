@@ -1,21 +1,26 @@
 import game as main
 import consts
 import libtcodpy as libtcod
+import effects
 
 class Ability:
-    def __init__(self, name, description, function, cooldown):
+    def __init__(self, name, description, function, cooldown, targeting = None, range = None, type = None):
         self.name = name
         self.function = function
         self.description = description
         self.cooldown = cooldown
         self.current_cd = 0
+        self.targeting = targeting #self, single, burst
+        self.range = range
+        self.type = type #attack, support, summoning
 
-    def use(self):
+    def use(self, actor = None):
         if self.current_cd < 1:
-            result = self.function()
+            result = self.function(actor)
             self.current_cd = self.cooldown
         else:
-            main.message('{} is on cooldown'.format(self.name), libtcod.red)
+            if actor is main.player:
+                main.message('{} is on cooldown'.format(self.name), libtcod.red)
             result = 'didnt-take-turn'
         return result
 
@@ -32,7 +37,7 @@ class Perk:
         self.category = category
 
 
-def ability_attack():
+def ability_attack(actor = None):
     x,y = main.target_tile(max_range=1)
     target = None
     for object in main.objects:
@@ -45,7 +50,7 @@ def ability_attack():
             return result
     return 'didnt-take-turn'
 
-def ability_attack_reach():
+def ability_attack_reach(actor = None):
     x, y = main.target_tile(max_range=2)
     target = None
     for object in main.objects:
@@ -58,7 +63,7 @@ def ability_attack_reach():
             return result
     return 'didnt-take-turn'
 
-def ability_bash_attack():
+def ability_bash_attack(actor = None):
     x,y = main.target_tile(max_range=1)
     target = None
     for object in main.objects:
@@ -71,18 +76,32 @@ def ability_bash_attack():
             return result
     return 'didnt-take-turn'
 
-
-#data = {
-#    'thrust':Ability('Thrust','Thrust at an enemy up to 2 spaces away',ability_attack_reach,0)
-#}
+def ability_berserk_self(actor = None):
+    if actor is not None and actor.fighter is not None:
+        if not actor.fighter.has_status('berserk') and not actor.fighter.has_status('exhausted'):
+            actor.fighter.apply_status_effect(effects.berserk())
+            if actor is not main.player:
+                main.message("{} roars!!".format(actor.name),libtcod.red)
+        elif actor is main.player:
+            main.message("You can't berserk right now.", libtcod.yellow)
 
 data = {
-    'thrust' : {
-        'name' : 'Thrust',
-        'description' : 'Thrust at an enemy up to 2 spaces away',
-        'function' : ability_attack_reach,
-        'cooldown' : 0
-    }
+    #item abilities
+    'thrust': {
+        'name': 'Thrust',
+        'description': 'Thrust at an enemy up to 2 spaces away',
+        'function': ability_attack_reach,
+        'cooldown': 0
+    },
+
+    #monster abilities
+    'berserk': {
+        'name': 'Berserk',
+        'function': ability_berserk_self,
+        'cooldown': 30,
+        'targeting': 'self',
+        'type': 'support'
+    },
 }
 
 default_abilities = [
