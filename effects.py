@@ -75,6 +75,11 @@ def rot_end(object=None):
     if object is not None or object.fighter is not None:
         object.fighter.max_hp += 20
 
+def berserk_start(object=None):
+    if object is not None or object.fighter is not None:
+        object.fighter.base_attack_damage += 20
+
 def berserk_end(object=None):
     if object is not None or object.fighter is not None:
         object.fighter.apply_status_effect(exhausted())
+        object.fighter.base_attack_damage -= 20

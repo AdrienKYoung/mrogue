@@ -183,6 +183,25 @@ proto = {
         'resistances': [],
         'shred': 2
     },
+    'monster_bear': {
+        'name': 'cave bear',
+        'char': 'B',
+        'color': libtcod.sepia,
+        'hp': 50,
+        'attack_damage': 30,
+        'armor': 2,
+        'evasion': 5,
+        'accuracy': 0.65,
+        'speed': 0.65,
+        'difficulty': 3,
+        'loot': 'default',
+        'on_create': None,
+        'ai': main.AI_Default,
+        'description': 'A rudely awakened cave bear',
+        'resistances': ['ice','freeze'],
+        'attributes': ['ability_berserk'],
+        'shred': 2
+    },
     'monster_tunnel_spider': {
         'name': 'tunnel spider',
         'char': 's',
@@ -215,7 +234,7 @@ proto = {
         'loot': 'default',#'boss_undead',
         'on_create': None,
         'ai': main.AI_Default,
-        'attributes': {'flying': 'always', 'spell_warp_weapon': 20, 'spell_blink': 10},
+        'attributes': {'perk_flying', 'ability_warp_weapon', 'ability_blink'},
         'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.',
         'resistances': [],
         'shred': 3

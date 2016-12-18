@@ -174,7 +174,7 @@ class Fighter:
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=1.0, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, loot_table=None, breath=6,
                  can_breath_underwater=False, resistances=[], inventory=[], on_hit=None, base_shred=0,
-                 base_guaranteed_shred=0, base_pierce=0):
+                 base_guaranteed_shred=0, base_pierce=0, abilities=[]):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -202,6 +202,7 @@ class Fighter:
         self.on_hit = on_hit
         self.shred = 0
         self.time_since_last_damaged = 0
+        self.abilities = abilities
 
     def adjust_stamina(self, amount):
         self.stamina += amount
@@ -452,9 +453,14 @@ class AI_Default:
     def act(self):
         monster = self.owner
         if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
+
+            #Handle default ability use behavior
+
+            #Handle moving
             if not is_adjacent_diagonal(monster.x, monster.y, player.x, player.y):
                 monster.move_astar(player.x, player.y)
 
+            #Handle attacking
             elif player.fighter.hp > 0:
                 monster.fighter.attack(player)
             self.last_seen_position = (player.x, player.y)
@@ -1587,6 +1593,8 @@ def spawn_monster(name, x, y):
                                     base_shred=p.get('shred', 0),
                                     base_guaranteed_shred=p.get('guaranteed_shred', 0),
                                     base_pierce=p.get('pierce', 0))
+        #if p.get('attributes'):
+        #    fighter_component.abilities = [a for a in p['attributes'] if a.startswith('ability_')]
         ai = None
         if p.get('ai'):
             ai = p.get('ai')()
@@ -1605,12 +1613,18 @@ def spawn_monster_inventory(proto):
                 result.append(create_item(equip))
     return result
 
+def create_ability(name):
+    if name in abilities.data:
+        a = abilities.data[name]
+        return abilities.Ability(a['name'], a['description'], a['function'], a['cooldown'])
+    else:
+        return None
+
 def create_item(name):
     p = loot.proto[name]
     ability = None
     if p.get('ability') is not None and p.get('ability') in abilities.data:
-        a = abilities.data[p['ability']]
-        ability = abilities.Ability(a['name'], a['description'], a['function'], a['cooldown'])
+        ability = create_ability(p.get('ability'))
     item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], learn_spell=p.get('learn_spell'), ability=ability)
     equipment_component = None
     if p['category'] == 'weapon' or p['category'] == 'armor':
@@ -1812,7 +1826,7 @@ def show_ability_screen():
     if index is not None:
         choice = opts[index]
         if choice is not None:
-            return choice.use()
+            return choice.use(player)
     return 'didnt-take-turn'
 
 def handle_keys():
