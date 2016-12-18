@@ -129,7 +129,7 @@ proto = {
         'description'        : 'A light thrusting spear',
         'stamina_cost'       : 10,
         'str_requirement'    : 12,
-        'ability'            : 'thrust',
+        'ability'            : 'ability_thrust',
         'pierce'             : 1,
         'shred'              : 1
     },
