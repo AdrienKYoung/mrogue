@@ -456,6 +456,12 @@ class AI_Default:
         if libtcod.map_is_in_fov(fov_map, monster.x, monster.y):
 
             #Handle default ability use behavior
+            for a in self.owner.fighter.abilities:
+                if a.current_cd <= 0:
+                    #Use abilities when they're up
+                    a.use(self.owner)
+                    return
+
 
             #Handle moving
             if not is_adjacent_diagonal(monster.x, monster.y, player.x, player.y):
@@ -1594,8 +1600,8 @@ def spawn_monster(name, x, y):
                                     base_shred=p.get('shred', 0),
                                     base_guaranteed_shred=p.get('guaranteed_shred', 0),
                                     base_pierce=p.get('pierce', 0))
-        #if p.get('attributes'):
-        #    fighter_component.abilities = [a for a in p['attributes'] if a.startswith('ability_')]
+        if p.get('attributes'):
+            fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
         ai = None
         if p.get('ai'):
             ai = p.get('ai')()
@@ -1617,7 +1623,7 @@ def spawn_monster_inventory(proto):
 def create_ability(name):
     if name in abilities.data:
         a = abilities.data[name]
-        return abilities.Ability(a['name'], a['description'], a['function'], a['cooldown'])
+        return abilities.Ability(a.get('name'), a.get('description'), a['function'], a.get('cooldown'))
     else:
         return None
 

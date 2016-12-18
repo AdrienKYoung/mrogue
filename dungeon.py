@@ -13,6 +13,7 @@ table = {
             { 'weight': 30, 'spawns': {'monster_goblin_warrior': [1,1]}},
             { 'weight': 5, 'spawns': {'monster_goblin': [2,3]}},
             { 'weight': 5, 'spawns': {'monster_bomb_beetle': [1,1]}},
+            { 'weight': 10, 'spawns': {'monster_bear':[1,1]} }
         ]
     },
     'dungeon_2': {
@@ -21,7 +22,8 @@ table = {
             { 'weight': 55, 'spawns': {'monster_goblin': [0,2]}},
             { 'weight': 15, 'spawns': {'monster_goblin': [3,5]}},
             { 'weight': 10, 'spawns': {'monster_golem': [1,1]}},
-            { 'weight': 25, 'spawns': {'monster_verman': [1,1]}}
+            { 'weight': 25, 'spawns': {'monster_verman': [1,1]}},
+            { 'weight': 10, 'spawns': {'monster_bear':[1,1]} }
         ]
     },
     'dungeon_3': {

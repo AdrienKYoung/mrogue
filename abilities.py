@@ -87,7 +87,7 @@ def ability_berserk_self(actor = None):
 
 data = {
     #item abilities
-    'thrust': {
+    'ability_thrust': {
         'name': 'Thrust',
         'description': 'Thrust at an enemy up to 2 spaces away',
         'function': ability_attack_reach,
@@ -95,7 +95,7 @@ data = {
     },
 
     #monster abilities
-    'berserk': {
+    'ability_berserk': {
         'name': 'Berserk',
         'function': ability_berserk_self,
         'cooldown': 30,
