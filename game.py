@@ -425,6 +425,10 @@ class Fighter:
                 effect.on_end(self.owner)
             self.status_effects.remove(effect)
 
+        # Manage ability cooldowns
+        for ability in self.abilities:
+            ability.on_tick()
+
     def apply_status_effect(self, new_effect):
         # check for immunity
         for resist in self.resistances:
@@ -527,8 +531,8 @@ class AI_Default:
             for a in self.owner.fighter.abilities:
                 if a.current_cd <= 0:
                     #Use abilities when they're up
-                    a.use(self.owner)
-                    return
+                    if a.use(self.owner) != 'didnt-take-turn':
+                        return
 
 
             #Handle moving
