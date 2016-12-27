@@ -102,7 +102,7 @@ proto = {
         'slot'               :'right hand',
         'description'        : 'A hand-and-a-half cruciform sword',
         'stamina_cost'       : 10,
-        'str_requirement'    : 10,
+        'str_requirement'    : 14,
         'shred'              : 2
     },
     'equipment_dagger': {
@@ -114,8 +114,8 @@ proto = {
         'attack_damage_bonus': 3,
         'slot'               :'right hand',
         'description'        : 'A small double-edged knife',
-        'stamina_cost'       : 3,
-        'str_requirement'    : 3,
+        'stamina_cost'       : 6,
+        'str_requirement'    : 10,
         'shred'              : 1
     },
     'equipment_spear': {

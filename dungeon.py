@@ -8,7 +8,7 @@ table = {
             { 'weight': 10, 'spawns': {'monster_cockroach': [4,7]}},
             { 'weight': 20, 'spawns': {'monster_tunnel_spider': [1,1]}},
             { 'weight': 30, 'spawns': {'monster_reeker': [1,1]}},
-            { 'weight': 1500, 'spawns': {'monster_giant_frog': [1,1]}},
+            { 'weight': 15, 'spawns': {'monster_giant_frog': [1,1]}},
             { 'weight': 15, 'spawns': {'monster_centipede': [1,1]}},
             { 'weight': 30, 'spawns': {'monster_goblin_warrior': [1,1]}},
             { 'weight': 5, 'spawns': {'monster_goblin': [2,3]}},

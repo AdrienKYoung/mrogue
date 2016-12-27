@@ -10,11 +10,9 @@ import terrain
 #############################################
 
 class Equipment:
-    def __init__(self, slot, category, power_bonus=0, defense_bonus=0, max_hp_bonus=0, attack_damage_bonus=0,
+    def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0):
-        self.power_bonus = power_bonus
-        self.defense_bonus = defense_bonus
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -46,6 +44,45 @@ class Equipment:
         self.is_equipped = False
         message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
 
+    def print_description(self, console, x, y, width):
+        print_height = 1
+        if self.str_requirement != 0:
+            if player.player_stats.str < self.str_requirement:
+                libtcod.console_set_default_foreground(console, libtcod.red)
+            else:
+                libtcod.console_set_default_foreground(console, libtcod.green)
+            libtcod.console_print(console, x, y + print_height, 'Strength Required: ' + str(self.str_requirement))
+            print_height += 1
+            libtcod.console_set_default_foreground(console, libtcod.white)
+        libtcod.console_print(console, x, y + print_height, 'Slot: ' + self.slot)
+        print_height += 1
+        if self.armor_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Armor: ' + str(self.armor_bonus))
+            print_height += 1
+        if self.attack_damage_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(self.attack_damage_bonus))
+            print_height += 1
+        if self.evasion_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Evade: ' + str(self.evasion_bonus))
+            print_height += 1
+        if self.guaranteed_shred_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Auto-shred: ' + str(self.guaranteed_shred_bonus))
+            print_height += 1
+        if self.max_hp_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Bonus HP: ' + str(self.max_hp_bonus))
+            print_height += 1
+        if self.pierce_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Pierce: ' + str(self.pierce_bonus))
+            print_height += 1
+        if self.shred_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Shred: ' + str(self.shred_bonus))
+            print_height += 1
+        if self.spell_power_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Spell Power: ' + str(self.spell_power_bonus))
+            print_height += 1
+
+
+        return print_height
 
 class ConfusedMonster:
     def __init__(self, old_ai, num_turns=consts.CONFUSE_NUM_TURNS):
@@ -135,6 +172,15 @@ class Item:
         options.append('Drop')
         return options
 
+    def print_description(self, console, x, y, width):
+        print_height = 0
+
+        if self.owner.equipment:
+            print_height += self.owner.equipment.print_description(console, x, y + print_height, width)
+
+        return print_height
+
+
 
 class PlayerStats:
 
@@ -203,6 +249,43 @@ class Fighter:
         self.shred = 0
         self.time_since_last_damaged = 0
         self.abilities = abilities
+
+
+    def print_description(self, console, x, y, width):
+        print_height = 1
+        #print_height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, 'This is a fighter description')
+        #libtcod.console_print_rect(console, x, y, width, consts.SCREEN_HEIGHT, 'This is a fighter description')
+        # Print health
+        libtcod.console_set_default_foreground(console, libtcod.dark_red)
+        libtcod.console_print(console, x, y + print_height, 'HP: %d/%d' % (self.hp, self.max_hp))
+        print_height += 1
+        # Print armor
+        if self.shred > 0:
+            libtcod.console_set_default_foreground(console, libtcod.yellow)
+        else:
+            libtcod.console_set_default_foreground(console, libtcod.white)
+        libtcod.console_print(console, x, y + print_height, 'Armor: %d' % self.armor)
+        if self.shred > 0:
+            libtcod.console_print(window, x + 10, y + print_height, '(%d)' % (self.armor + self.shred))
+        print_height += 1
+        # Print accuracy
+        libtcod.console_set_default_foreground(console, libtcod.white)
+        s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(self.owner, player.fighter.accuracy))
+        s += '%'
+        libtcod.console_print(console, x, y + print_height, s)
+        print_height += 1
+        s = 'Its Accuracy: %d%%' % int(100.0 * get_chance_to_hit(player, self.accuracy))
+        s += '%'
+        libtcod.console_print(console, x, y + print_height, s)
+        print_height += 1
+
+        for effect in self.status_effects:
+            libtcod.console_set_default_foreground(console, effect.color)
+            libtcod.console_print(console, x, y + print_height, 'It is ' + effect.name)
+            print_height += 1
+        libtcod.console_set_default_foreground(console, libtcod.white)
+
+        return print_height
 
     def adjust_stamina(self, amount):
         self.stamina += amount
@@ -641,6 +724,23 @@ class GameObject:
         self.on_step = on_step
         self.burns = burns
         self.on_tick_specified = on_tick
+
+    def print_description(self, console, x, y, width):
+        height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
+        draw_height = y
+        #libtcod.console_print(console, x, draw_height, self.name.capitalize())
+        #draw_height += 2
+        libtcod.console_print_rect(console, x, draw_height, width, height, self.description)
+        draw_height += height
+        if self.item:
+            h = self.item.print_description(console, x, draw_height, width)
+            draw_height += h
+            height += h
+        if self.fighter:
+            h = self.fighter.print_description(console, x, draw_height, width)
+            draw_height += h
+            height += h
+        return height
 
     def on_create(self):
         if self.blocks_sight:
@@ -1373,16 +1473,20 @@ def msgbox(text, width=50):
     menu(text, [], width)
 
 
-def menu(header, options, width, x_center=None):
+def menu(header, options, width, x_center=None, render_func=None):
     global window
 
     if len(options) > 26: raise ValueError('Cannot have a menu with more than 26 options.')
-    
+
+    no_header = False
     header_height = libtcod.console_get_height_rect(con, 0, 0, width - 2, consts.SCREEN_HEIGHT, header)
     if header == '':
         header_height = 0
+        no_header = True
 
     height = len(options) + header_height + 2
+    if not no_header:
+        height += 1
     width += 2
 
     libtcod.console_clear(window)
@@ -1392,7 +1496,17 @@ def menu(header, options, width, x_center=None):
 
     libtcod.console_set_default_foreground(window, libtcod.white)
     libtcod.console_print_rect_ex(window, 1, 1, width - 2, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
+
     y = header_height + 1
+    if not no_header:
+        y += 1
+
+    if render_func is not None:
+        h = render_func(window, 1, y, width)
+        y += h + 1
+        height += h + 1
+
+
     letter_index = ord('a')
     
     for option_text in options:
@@ -2104,7 +2218,7 @@ def inspect_inventory():
     chosen_item = inventory_menu('Select which item?')
     if chosen_item is not None:
         options = chosen_item.get_options_list()
-        menu_choice = menu(chosen_item.owner.name + '\n\n' + chosen_item.owner.description + '\n', options, 30)
+        menu_choice = menu(chosen_item.owner.name, options, 30, render_func=chosen_item.owner.print_description)
         if menu_choice is not None:
             if options[menu_choice] == 'Use':
                 chosen_item.use()
@@ -2143,13 +2257,13 @@ def examine():
         obj = object_at_coords(x, y)
         desc = ""
         if obj is not None:
-            desc = obj.name.capitalize() + '\n' + get_description(obj)
+            desc = obj.name.capitalize()# + '\n' + get_description(obj)
             if hasattr(obj, 'fighter') and obj.fighter is not None and \
                     hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
                 desc = desc + '\nInventory: '
                 for item in obj.fighter.inventory:
                     desc = desc + item.name + ', '
-            menu(desc, ['back'], 50)
+            menu(desc, ['back'], 50, render_func=obj.print_description)
 
 
 def jump():
@@ -2452,7 +2566,7 @@ def render_side_panel(acc_mod=1.0):
         libtcod.console_print(side_panel, 2, drawHeight, s)
         drawHeight += 1
         if selected_monster.fighter.accuracy > 0:
-            s = "It's Accuracy : %d%%" % int(100.0 * get_chance_to_hit(player, selected_monster.fighter.accuracy))
+            s = "Its Accuracy : %d%%" % int(100.0 * get_chance_to_hit(player, selected_monster.fighter.accuracy))
             s += '%'
             libtcod.console_print(side_panel, 2, drawHeight, s)
         else:
