@@ -191,7 +191,7 @@ class Item:
 
 class PlayerStats:
 
-    def __init__(self, int=10, wiz=10, str=10, agi=12):
+    def __init__(self, int=10, wiz=10, str=10, agi=10):
         self.base_int = int
         self.base_wiz = wiz
         self.base_str = str
