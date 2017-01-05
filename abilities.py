@@ -30,14 +30,26 @@ class Ability:
 
 
 class Perk:
-    def __init__(self, name, description, requirement=None, category=None):
+    def __init__(self, name, description, category=None, on_tick=None, requirements_fnc=None, requirements_str='No Requirements'):
         self.name = name
         self.description = description
-        self.requirement = requirement
         self.category = category
+        self.on_tick = on_tick
+        self.requirements_fnc = requirements_fnc
+        self.requirements_str = requirements_str
+
+    def on_tick(self):
+        if self.on_tick:
+            self.on_tick()
+
+    def meets_requirements(self):
+        if self.requirements_fnc:
+            return self.requirements_fnc
+        else:
+            return True  # Default to True if no requirements
 
 
-def ability_attack(actor = None):
+def ability_attack(actor=None):
     x,y = main.target_tile(max_range=1)
     target = None
     for object in main.objects:
@@ -50,7 +62,7 @@ def ability_attack(actor = None):
             return result
     return 'didnt-take-turn'
 
-def ability_attack_reach(actor = None):
+def ability_attack_reach(actor=None):
     x, y = main.target_tile(max_range=2)
     target = None
     for object in main.objects:
@@ -63,7 +75,7 @@ def ability_attack_reach(actor = None):
             return result
     return 'didnt-take-turn'
 
-def ability_bash_attack(actor = None):
+def ability_bash_attack(actor=None):
     x,y = main.target_tile(max_range=1)
     target = None
     for object in main.objects:
@@ -76,7 +88,7 @@ def ability_bash_attack(actor = None):
             return result
     return 'didnt-take-turn'
 
-def ability_berserk_self(actor = None):
+def ability_berserk_self(actor=None):
     if actor is not None and actor.fighter is not None:
         if not actor.fighter.has_status('berserk') and not actor.fighter.has_status('exhausted'):
             actor.fighter.apply_status_effect(effects.berserk())
@@ -87,7 +99,7 @@ def ability_berserk_self(actor = None):
                 main.message("You can't berserk right now.", libtcod.yellow)
             return 'didnt-take-turn'
 
-def ability_spawn_vermin(actor = None):
+def ability_spawn_vermin(actor=None):
     #Filthy hackery to add some state
     if not hasattr(actor, 'summons'):
         actor.summons = []
@@ -113,7 +125,7 @@ def ability_spawn_vermin(actor = None):
                 actor.summons.append(spawn)
                 summon_tiles.remove(pos)
 
-def ability_grapel(actor = None):
+def ability_grapel(actor=None):
     #Blame the Bleshib
     player = main.player
     if actor.distance_to(player) <= consts.FROG_TONGUE_RANGE:
@@ -161,17 +173,17 @@ default_abilities = [
 ]
 
 skill_list = [
-    Perk('Iron Skin', 'You gain 3 armor while not wearing armor', category='unarmed'),
-    Perk('Test0', 'Test0 Description', category='unarmed'),
-    Perk('Test1', 'Test1 Description', category='unarmed'),
-    Perk('Test2', 'Test2 Description', category='unarmed'),
-    Perk('Test3', 'Test3 Description', category='unarmed'),
-    Perk('Test4', 'Test4 Description', category='unarmed'),
-    Perk('Test5', 'Test5 Description', category='unarmed'),
-    Perk('Test6', 'Test6 Description', category='unarmed'),
-    Perk('Test7', 'Test7 Description', category='unarmed'),
-    Perk('Test8', 'Test8 Description', category='unarmed'),
-    Perk('Test9', 'Test9 Description', category='unarmed'),
+    Perk('Iron Skin', 'You gain 3 armor while not wearing armor', category='unarmed', requirements_str='Level 2'),
+    #Perk('Test0', 'Test0 Description', category='unarmed'),
+    #Perk('Test1', 'Test1 Description', category='unarmed'),
+    #Perk('Test2', 'Test2 Description', category='unarmed'),
+    #Perk('Test3', 'Test3 Description', category='unarmed'),
+    #Perk('Test4', 'Test4 Description', category='unarmed'),
+    #Perk('Test5', 'Test5 Description', category='unarmed'),
+    #Perk('Test6', 'Test6 Description', category='unarmed'),
+    #Perk('Test7', 'Test7 Description', category='unarmed'),
+    #Perk('Test8', 'Test8 Description', category='unarmed'),
+    #Perk('Test9', 'Test9 Description', category='unarmed'),
     Perk('Armored Champion', 'Gain armor for every adjacent enemy if you are wearing armor.', category='armor'),
     Perk('Shield Bash', 'Blocking attacks with a shield has a chance to stun the attacker.', category='shields'),
     Perk('Heavy Blows', 'Your attacks with maces have a chance to shred (doubled for jump attacks)', category='maces'),
@@ -189,7 +201,7 @@ skill_list = [
     Perk('Grip of the Depths','Chance to gain water mana whenever an enemy drowns.', category='water magic'),
     Perk('Lichform', 'Sacrifice 50%% of your max HP. Gain immunity to status effects, resistance to all elements, and immunity to dark magic.', category='dark magic'),
     Perk('Judgemental', 'Enemies that cast non-radiant spells within 2 spaces of you take heavy radiant damage.', category='radiant magic'),
-    Perk('Endtest1', 'Endtest1 Description', category='radiant magic'),
-    Perk('Endtest2', 'Endtest2 Description', category='radiant magic'),
-    Perk('Endtest3', 'Endtest3 Description', category='radiant magic'),
+    #Perk('Endtest1', 'Endtest1 Description', category='radiant magic'),
+    #Perk('Endtest2', 'Endtest2 Description', category='radiant magic'),
+    #Perk('Endtest3', 'Endtest3 Description', category='radiant magic'),
 ]

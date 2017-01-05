@@ -12,7 +12,7 @@ import terrain
 class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
-                 guaranteed_shred_bonus=0, pierce=0):
+                 guaranteed_shred_bonus=0, pierce=0, accuracy=0):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -26,6 +26,7 @@ class Equipment:
         self.shred_bonus=shred_bonus
         self.guaranteed_shred_bonus=guaranteed_shred_bonus
         self.pierce_bonus = pierce
+        self.accuracy_bonus = accuracy
         
     def toggle(self):
         if self.is_equipped:
@@ -61,6 +62,12 @@ class Equipment:
             print_height += 1
         if self.attack_damage_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(self.attack_damage_bonus))
+            print_height += 1
+        if self.accuracy_bonus != 0:
+            acc_str = 'Accuracy: '
+            if self.accuracy_bonus > 0:
+                acc_str += '+'
+            libtcod.console_print(console, x, y + print_height, acc_str + str(self.accuracy_bonus))
             print_height += 1
         if self.evasion_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Evade: ' + str(self.evasion_bonus))
@@ -184,7 +191,7 @@ class Item:
 
 class PlayerStats:
 
-    def __init__(self, int=10, wiz=10, str=10, agi=10):
+    def __init__(self, int=10, wiz=10, str=10, agi=12):
         self.base_int = int
         self.base_wiz = wiz
         self.base_str = str
@@ -217,7 +224,7 @@ class PlayerStats:
 
 class Fighter:
 
-    def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=1.0, attack_damage=1,
+    def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=25, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, loot_table=None, breath=6,
                  can_breath_underwater=False, resistances=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[]):
@@ -310,7 +317,7 @@ class Fighter:
             self.time_since_last_damaged = 0
 
     def drop_mana(self):
-        if hasattr(self.owner, 'mana') and self is not player:
+        if hasattr(self.owner, 'mana') and self.owner is not player:
             roll = libtcod.random_get_int(0, 1, 100)
             total = 0
             for m in self.owner.mana:
@@ -324,14 +331,18 @@ class Fighter:
                     objects.append(mana_pickup)
                     return
 
-    def attack(self, target):
+    def calculate_attack_stamina_cost(self):
         stamina_cost = 0
         if self.owner is player:
             stamina_cost = consts.UNARMED_STAMINA_COST / (self.owner.player_stats.str / consts.UNARMED_STAMINA_COST)
             if get_equipped_in_slot(self.inventory, 'right hand') is not None:
                 stamina_cost = int((float(get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) /
-                                    (float(self.owner.player_stats.str) / float(get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
-        return self.attack_ex(target, stamina_cost, self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
+                                    (float(self.owner.player_stats.str) / float(
+                                        get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
+        return stamina_cost
+
+    def attack(self, target):
+        return self.attack_ex(target, self.calculate_attack_stamina_cost(), self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
                        'attacks', self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
 
     def attack_ex(self, target, stamina_cost, accuracy, attack_damage, damage_variance, on_hit, verb, shred, guaranteed_shred, pierce):
@@ -352,7 +363,7 @@ class Fighter:
             if effective_armor > 0:
                 # Damage is reduced by 25% + 5% for every point of armor up to 5 armor (50% reduction)
                 reduction_factor = consts.ARMOR_REDUCTION_BASE + consts.ARMOR_REDUCTION_STEP * min(effective_armor, consts.ARMOR_REDUCTION_DROPOFF)
-                # For every point of armor after 5, damage is further reduced by 2.5%
+                # For every point of armor after 5, damage is further reduced by 2.5% (15+ armor = 100% reduction!)
                 if effective_armor > consts.ARMOR_REDUCTION_DROPOFF:
                     reduction_factor += 0.5 * consts.ARMOR_REDUCTION_STEP * (effective_armor - consts.ARMOR_REDUCTION_DROPOFF)
                 # Apply damage reduction
@@ -371,9 +382,9 @@ class Fighter:
                     on_hit(self.owner, target)
                 # Shred armor
                 for i in range(shred):
-                    if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.shred < target.fighter.armor:
+                    if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
                         target.fighter.shred += 1
-                target.fighter.shred = min(target.fighter.shred + guaranteed_shred, target.fighter.armor)
+                target.fighter.shred += min(guaranteed_shred, target.fighter.armor)
                 # Take damage
                 message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ' for ' + str(damage) + ' damage!', libtcod.grey)
                 target.fighter.take_damage(damage)
@@ -427,7 +438,8 @@ class Fighter:
 
         # Manage ability cooldowns
         for ability in self.abilities:
-            ability.on_tick()
+            if ability.on_tick:
+                ability.on_tick()
 
     def apply_status_effect(self, new_effect):
         # check for immunity
@@ -463,7 +475,11 @@ class Fighter:
 
     @property
     def accuracy(self):
-        return self.base_accuracy
+        bonus = sum(equipment.accuracy_bonus for equipment in get_all_equipped(self.inventory))
+        if self.owner.player_stats and get_equipped_in_slot(self.inventory, 'right hand'):
+            bonus -= 5 * max(get_equipped_in_slot(self.inventory, 'right hand').str_requirement - self.owner.player_stats.str, 0)
+
+        return self.base_accuracy + bonus
 
     @property
     def damage_variance(self):
@@ -480,6 +496,14 @@ class Fighter:
     @property
     def armor(self):
         bonus = sum(equipment.armor_bonus for equipment in get_all_equipped(self.inventory))
+        if self.owner is player and has_skill('Iron Skin'):
+            has_armor = False
+            for item in get_all_equipped(self.inventory):
+                if item.owner.item.category == 'armor':
+                    has_armor = True
+                    break
+            if not has_armor:
+                bonus += 3
         return self.base_armor + bonus - self.shred
 
     @property
@@ -615,7 +639,7 @@ class AI_Reeker:
                     puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
                                 clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
                     if not dungeon_map[puff_pos[0]][puff_pos[1]].blocks and object_at_tile(puff_pos[0], puff_pos[1], 'reeker gas') is None:
-                        puff = GameObject(monster.x + position[0], monster.y + position[1], libtcod.CHAR_BLOCK3,
+                        puff = GameObject(puff_pos[0], puff_pos[1], libtcod.CHAR_BLOCK3,
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())
                         objects.append(puff)
@@ -939,6 +963,14 @@ class Tile:
 # General Functions
 #############################################
 
+def has_skill(name):
+    if name == 'Adrien':
+        return False  # OOH, BURN!
+    for skill in learned_skills:
+        if skill.name == name:
+            return True
+    return False
+
 def expire_out_of_vision(obj):
     if not libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
         obj.destroy()
@@ -1025,12 +1057,15 @@ def roll_to_hit(target,  accuracy):
 def get_chance_to_hit(target, accuracy):
     if target.fighter.has_status('stunned'):
         return 1.0
-    return max(min((consts.EVADE_FACTOR / (consts.EVADE_FACTOR + target.fighter.evasion)) * accuracy, 1.0), 0)
+
+    return 1.0 - float(min(target.fighter.evasion, accuracy - 1.0)) / float(max(accuracy, 0.0))
+
+    #return max(min((consts.EVADE_FACTOR / (consts.EVADE_FACTOR + target.fighter.evasion)) * accuracy, 1.0), 0)
 
 def random_position_in_circle(radius):
     r = libtcod.random_get_float(0, 0.0, float(radius))
     theta = libtcod.random_get_float(0, 0.0, 2.0 * math.pi)
-    return (int(round(r * math.cos(theta))), int(round(r * math.sin(theta))))
+    return int(round(r * math.cos(theta))), int(round(r * math.sin(theta)))
 
 def object_at_tile(x, y, name):
     for obj in objects:
@@ -1106,6 +1141,8 @@ def check_level_up():
 
 
 def level_up(altar = None):
+    global learned_skills
+
     player.level += 1
     message('You grow stronger! You have reached level ' + str(player.level) + '!', libtcod.green)
     choice = None
@@ -1129,6 +1166,11 @@ def level_up(altar = None):
         player.player_stats.int += 1
     elif choice == 4:
         player.player_stats.wiz += 1
+
+    if player.level % 3 == 0:
+        skill = skill_menu(add_skill=True)
+        if skill is not None and skill not in learned_skills:
+            learned_skills.append(skill)
 
     if altar:
         altar.destroy()
@@ -1698,7 +1740,7 @@ def create_ability(name):
     else:
         return None
 
-def create_item(name):
+def create_item(name, material=None, quality=None):
     p = loot.proto[name]
     ability = None
     if p.get('ability') is not None and p.get('ability') in abilities.data:
@@ -1718,16 +1760,63 @@ def create_item(name):
             str_requirement=p.get('str_requirement', 0),
             shred_bonus=p.get('shred', 0),
             guaranteed_shred_bonus=p.get('guaranteed_shred', 0),
-            pierce=p.get('pierce', 0)
+            pierce=p.get('pierce', 0),
+            accuracy=p.get('accuracy', 0)
         )
+        if equipment_component.category == 'weapon':
+            # Material/Quality
+            if material is None:
+                material = random_choice(
+                    {
+                        'wooden' : 10,
+                        'bronze' : 15,
+                        'iron' : 65,
+                        'steel' : 10,
+                        'crystal' : 15,
+                        'meteor' : 10,
+                        'blightstone' : 10,
+                     }
+                )
+            equipment_component.material = material
+            equipment_component.attack_damage_bonus += loot.weapon_materials[material]['dmg']
+            equipment_component.accuracy_bonus += loot.weapon_materials[material]['acc']
+            equipment_component.shred_bonus += loot.weapon_materials[material].get('shred', 0)
+            equipment_component.pierce_bonus += loot.weapon_materials[material].get('pierce', 0)
+            equipment_component.guaranteed_shred_bonus += loot.weapon_materials[material].get('autoshred', 0)
+            equipment_component.break_chance = loot.weapon_materials[material].get('break', 0.0)
+            if quality is None:
+                quality = random_choice(
+                    {
+                        'broken' : 5,
+                        'crude' : 5,
+                        '' : 75,
+                        'military' : 10,
+                        'fine' : 10,
+                        'masterwork' : 10,
+                        'artifact' : 5,
+                     }
+                )
+            equipment_component.quality = quality
+            equipment_component.attack_damage_bonus += loot.weapon_qualities[quality]['dmg']
+            equipment_component.accuracy_bonus += loot.weapon_qualities[quality]['acc']
+            equipment_component.shred_bonus += loot.weapon_qualities[quality].get('shred', 0)
+            equipment_component.pierce_bonus += loot.weapon_qualities[quality].get('pierce', 0)
+            equipment_component.guaranteed_shred_bonus += loot.weapon_qualities[quality].get('autoshred', 0)
+            equipment_component.break_chance = loot.weapon_qualities[quality].get('break', 0.0)
+
     go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))
     if ability is not None:
         go.item.ability = ability
+    if hasattr(equipment_component, 'material'):
+        go.name = equipment_component.material + ' ' + go.name
+    if hasattr(equipment_component, 'quality') and equipment_component.quality != '':
+        go.name = equipment_component.quality + ' ' + go.name
+    go.name = go.name.title()
     return go
 
-def spawn_item(name, x, y):
-        item = create_item(name)
+def spawn_item(name, x, y, material=None, quality=None):
+        item = create_item(name, material, quality)
         item.x = x
         item.y = y
         objects.append(item)
@@ -1827,12 +1916,21 @@ def player_move_or_attack(dx, dy, bash=False):
             success = player.fighter.attack(target) != 'failed'
         if success and target.fighter and target is not selected_monster:
             changed_tiles.append((target.x, target.y))
+            changed_tiles.append((selected_monster.x, selected_monster.y))
             selected_monster = target
         return success
     else:
         value = player.move(dx, dy)
         fov_recompute_fn()
         return value
+
+def player_reach_attack(dx, dy):
+    target_space = player.x + 2 * dx, player.y + 2 * dy
+    target = get_monster_at_tile(target_space[0], target_space[1])
+    if target is not None:
+        result = player.fighter.attack_ex(target, player.fighter.calculate_attack_stamina_cost(), player.fighter.accuracy,
+                             player.fighter.attack_damage * 1.5, player.fighter.damage_variance, None, 'reach-attacks',
+                             player.fighter.attack_shred, player.fighter.attack_guaranteed_shred, player.fighter.attack_pierce)
 
 
 def player_bash_attack(target):
@@ -1883,7 +1981,6 @@ def do_queued_action(action):
         #if dungeon_map[player.x][player.y].tile_type == 'grass floor':  # Temporary - used for testing
         #    manatype = 'life'
 
-
         if len(player.mana) < player.player_stats.max_mana:
             player.mana.append(manatype)
             message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
@@ -1896,6 +1993,7 @@ def do_queued_action(action):
                     return
         message('You have finished meditating. You were unable to gain any more power than you already have.', libtcod.dark_cyan)
         return
+
 
 def show_ability_screen():
     opts = []
@@ -1910,6 +2008,7 @@ def show_ability_screen():
         if choice is not None:
             return choice.use(player)
     return 'didnt-take-turn'
+
 
 def handle_keys():
  
@@ -1986,8 +2085,7 @@ def handle_keys():
                     next_level()
             if key_char == 'c':
                 msgbox('Character Information\n\nLevel: ' + str(player.level) + '\n\nMaximum HP: ' +
-                       str(player.fighter.max_hp) + '\nAttack: ' + str(player.fighter.power) + '\nDefense: ' +
-                       str(player.fighter.defense),
+                       str(player.fighter.max_hp),
                        consts.CHARACTER_SCREEN_WIDTH)
             if key_char == 'z':
                 return cast_spell_new()
@@ -2019,8 +2117,8 @@ def handle_keys():
             return 'didnt-take-turn'
 
 
-def skill_menu():
-    global key, mouse
+def skill_menu(add_skill=False):
+    global key, mouse, learned_skills
 
     scroll_height = 0
     selected_index = 1
@@ -2058,7 +2156,11 @@ def skill_menu():
 
         # Print header and borders
         libtcod.console_set_default_foreground(window, libtcod.white)
-        libtcod.console_print(window, 1, 1, 'Your skills have increased. Choose a skill to learn:')
+        if add_skill:
+            title_text = 'Your skills have increased. Choose a skill to learn:'
+        else:
+            title_text = 'Browsing skills...'
+        libtcod.console_print(window, 1, 1, title_text)
         y = 0
         draw_border(window, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 5)
         draw_border(window, 0, consts.MAP_VIEWPORT_HEIGHT - 6, consts.MAP_VIEWPORT_WIDTH, 6)
@@ -2085,9 +2187,17 @@ def skill_menu():
                             libtcod.console_put_char_ex(sub_window, j, y, ' ', libtcod.black, libtcod.white)
                     else:
                         libtcod.console_set_default_background(sub_window, libtcod.black)
-                        libtcod.console_set_default_foreground(sub_window, libtcod.white)
+                        if skill.meets_requirements():
+                            libtcod.console_set_default_foreground(sub_window, libtcod.white)
+                        else:
+                            libtcod.console_set_default_foreground(sub_window, libtcod.gray)
 
                     libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, skill.name.capitalize())
+                    for s in learned_skills:
+                        if s.name == skill.name:
+                            libtcod.console_set_default_foreground(sub_window, libtcod.dark_blue)
+                            libtcod.console_print_ex(sub_window, 6 + len(skill.name), y, libtcod.BKGND_SET, libtcod.LEFT, ' [LEARNED]')
+                            break
                     y += 1
         # Blit sub_window to window. Select based on scroll height
         libtcod.console_blit(sub_window, 0, scroll_height, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 10, window, 0, 4, 1.0, 1.0)
@@ -2124,10 +2234,11 @@ def skill_menu():
         if key.vk == libtcod.KEY_ESCAPE:
             return None
         # Enter select
-        elif key.vk == libtcod.KEY_ENTER:
-            return menu_lines[selected_index] # returns a Perk object
+        elif key.vk == libtcod.KEY_ENTER and add_skill:
+            if menu_lines[selected_index].meets_requirements() and menu_lines[selected_index] not in learned_skills:
+                return menu_lines[selected_index] # returns a Perk object
         # Down arrow increments selection index
-        elif key.vk == libtcod.KEY_DOWN:
+        elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_KP2 or key.vk == libtcod.KEY_KP6:
             #selected_index = min(selected_index + 1, len(menu_lines) - 1)
             new_index = None
             while new_index is None:
@@ -2140,7 +2251,7 @@ def skill_menu():
             elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
                 scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
         # Up arrow decrements selection index
-        elif key.vk == libtcod.KEY_UP:
+        elif key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_KP8 or key.vk == libtcod.KEY_KP4:
             #selected_index = max(selected_index - 1, 0)
             new_index = None
             while new_index is None:
@@ -2698,7 +2809,7 @@ def main_menu():
     
 
 def new_game():
-    global player, game_msgs, game_state, dungeon_level, memory, in_game, selected_monster, changed_tiles
+    global player, game_msgs, game_state, dungeon_level, memory, in_game, selected_monster, changed_tiles, learned_skills
 
     in_game = True
 
@@ -2721,6 +2832,7 @@ def new_game():
     memory = []
     player.mana = []
     player.known_spells = [] #[spells.cast_manabolt]
+    learned_skills = []
     player.action_queue = []
     # spell = GameObject(0, 0, '?', 'mystery spell', libtcod.yellow, item=Item(use_function=spells.cast_lightning, type="spell"))
     # memory.append(spell)
@@ -2731,12 +2843,12 @@ def new_game():
     spawn_item('tome_manabolt', player.x, player.y)
     spawn_item('tome_mend', player.x, player.y)
     spawn_item('scroll_fireball', player.x, player.y)
-    spawn_item('equipment_spear', player.x, player.y)
+    spawn_item('equipment_spear', player.x, player.y, material='iron', quality='')
 
     leather_armor = create_item('equipment_leather_armor')
     player.fighter.inventory.append(leather_armor)
     leather_armor.equipment.equip()
-    dagger = create_item('equipment_dagger')
+    dagger = create_item('equipment_dagger', material='iron', quality='')
     player.fighter.inventory.append(dagger)
     dagger.equipment.equip()
 
@@ -2776,11 +2888,12 @@ def save_game():
     file['game_msgs'] = game_msgs
     file['game_state'] = game_state
     file['dungeon_level'] = dungeon_level
+    file['learned_skills'] = learned_skills
     file.close()
 
 
 def load_game():
-    global dungeon_map, objects, player, memory, game_msgs, game_state, dungeon_level, stairs, in_game, selected_monster
+    global dungeon_map, objects, player, memory, game_msgs, game_state, dungeon_level, stairs, in_game, selected_monster, learned_skills
 
     in_game = True
 
@@ -2794,6 +2907,7 @@ def load_game():
     game_state = file['game_state']
     dungeon_level = file['dungeon_level']
     selected_monster = None
+    learned_skills = file['learned_skills']
     file.close()
     
     initialize_fov()

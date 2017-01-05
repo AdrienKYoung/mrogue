@@ -15,6 +15,88 @@ table = {
     'none': [None]
 }
 
+weapon_qualities = {
+    'broken' : { #5
+        'dmg' : -3,
+        'acc' : -3,
+        'shred' : -1
+    },
+    'crude' : { #5
+        'dmg' : -2,
+        'acc' : -1,
+        'break' : 5.0
+    },
+    '' : { # standard 75
+        'dmg' : 0,
+        'acc' : 0
+    },
+    'military' : { #10
+        'dmg' : 1,
+        'acc' : 1,
+    },
+    'fine' : { #10
+        'dmg' : 2,
+        'acc' : 2,
+        'break' : -1.0
+    },
+    'masterwork' : { #10
+        'dmg' : 3,
+        'acc' : 3,
+        'shred' : 1,
+        'break' : -10.0
+    },
+    'artifact' : { #5
+        'dmg' : 5,
+        'acc' : 5,
+        'shred' : 1,
+        'peirce' : 1,
+        'break' : -1000.0
+    },
+}
+
+weapon_materials = {
+    'wooden' : { # 10
+        'dmg' : -2,
+        'acc' : 1,
+        'break' : 1.0
+    },
+    'bronze' : { # 15
+        'dmg' : 0,
+        'acc' : 0,
+        'break' : 0.25
+    },
+    'iron' : { # 65
+        'dmg' : 0,
+        'acc' : 0,
+        'shred' : 1
+    },
+    'steel' : { # 10
+        'dmg' : 1,
+        'acc' : 1,
+        'shred' : 2
+    },
+    'crystal' : { # 15
+        'dmg' : 3,
+        'acc' : -2,
+        'pierce' : 1
+    },
+    'meteor' : { # 10
+        'dmg' : 5,
+        'acc' : -2,
+        'shred' : 1
+    },
+    'aetherwood' : { # 10
+        'dmg' : 2,
+        'acc' : 3,
+        'shred' : 1
+    },
+    'blightstone' : { # 10
+        'dmg' : 0,
+        'acc' : 0,
+        'autoshred' : 1
+    },
+}
+
 proto = {
 
     #SCROLLS
@@ -93,7 +175,7 @@ proto = {
 
     #WEAPONS
     'equipment_longsword': {
-        'name'               : 'Longsword',
+        'name'               : 'longsword',
         'category'           : 'weapon',
         'char'               : '/',
         'color'              : libtcodpy.yellow,
@@ -103,10 +185,11 @@ proto = {
         'description'        : 'A hand-and-a-half cruciform sword',
         'stamina_cost'       : 10,
         'str_requirement'    : 14,
-        'shred'              : 2
+        'shred'              : 1,
+        'accuracy'           : 1
     },
     'equipment_dagger': {
-        'name'               : 'Dagger',
+        'name'               : 'dagger',
         'category'           : 'weapon',
         'char'               : '-',
         'color'              : libtcodpy.yellow,
@@ -116,22 +199,24 @@ proto = {
         'description'        : 'A small double-edged knife',
         'stamina_cost'       : 6,
         'str_requirement'    : 10,
-        'shred'              : 1
+        'shred'              : 0,
+        'accuracy'           : 5
     },
     'equipment_spear': {
-        'name'               : 'Spear',
+        'name'               : 'spear',
         'category'           : 'weapon',
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 9,
+        'attack_damage_bonus': 8,
         'slot'               :'right hand',
         'description'        : 'A light thrusting spear',
         'stamina_cost'       : 10,
         'str_requirement'    : 12,
         'ability'            : 'ability_thrust',
         'pierce'             : 1,
-        'shred'              : 1
+        'shred'              : 0,
+        'accuracy'           : 1
     },
 
     #ARMOR
@@ -143,7 +228,9 @@ proto = {
         'type'          : 'item',
         'armor_bonus'   : 1,
         'slot'          : 'left hand',
-        'description'   : 'An iron kite shield.'
+        'description'   : 'An iron kite shield.',
+        'evasion_bonus' : -2
+
     },
 
     'equipment_leather_armor': {
@@ -154,6 +241,7 @@ proto = {
         'type'          : 'item',
         'armor_bonus'   : 1,
         'slot'          : 'body',
-        'description'   : 'A hardened leather coat.'
+        'description'   : 'A hardened leather coat.',
+        'evasion_bonus' : -1
     }
 }

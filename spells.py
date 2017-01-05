@@ -1,6 +1,7 @@
 import game as main
 import consts
 import libtcodpy as libtcod
+import effects
 
 class Spell:
     def __init__(self, name, mana_cost, function, cost_string):
@@ -63,7 +64,7 @@ def cast_confuse():
     monster = main.target_monster(consts.CONFUSE_RANGE)
     if monster is None or monster.ai is None: return 'cancelled'
     else:
-        if monster.fighter.apply_status_effect(main.StatusEffect('confusion', consts.CONFUSE_NUM_TURNS, color=libtcod.pink, on_apply=set_confused_behavior)):
+        if monster.fighter.apply_status_effect(effects.StatusEffect('confusion', consts.CONFUSE_NUM_TURNS, color=libtcod.pink, on_apply=set_confused_behavior)):
             main.message('The ' + monster.name + ' is confused!', libtcod.light_blue)
 
 def set_confused_behavior(object):
