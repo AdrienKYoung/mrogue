@@ -1485,7 +1485,7 @@ def inventory_menu(header):
             libtcod.console_put_char(window, 0, y, 199)
             libtcod.console_put_char(window, consts.INVENTORY_WIDTH - 1, y, 182)
             libtcod.console_print_ex(window, consts.INVENTORY_WIDTH / 2, y, libtcod.BKGND_DEFAULT, libtcod.CENTER,
-                                     loot.item_categories[item_category]['plural'].capitalize())
+                                     loot.item_categories[item_category]['plural'].title())
             y += 1
             for item in player.fighter.inventory:
                 if item.item.category == item_category:
@@ -1494,7 +1494,7 @@ def inventory_menu(header):
                     libtcod.console_set_default_foreground(window, libtcod.white)
                     libtcod.console_print(window, 1, y, '(' + chr(letter_index) + ') ')
                     libtcod.console_put_char_ex(window, 5, y, item.char, item.color, libtcod.black)
-                    libtcod.console_print(window, 7, y, item.name.capitalize())
+                    libtcod.console_print(window, 7, y, item.name.title())
 
                     if item.equipment and item.equipment.is_equipped:
                         libtcod.console_set_default_foreground(window, libtcod.orange)
@@ -1841,9 +1841,10 @@ def place_objects(tiles):
     if len(tiles) == 0:
         return
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
-    item_chances = {'potion_healing':70, 'scroll_lightning':10, 'scroll_confusion':10, 'scroll_fireball':10 }
-    item_chances['equipment_longsword'] = 25
-    item_chances['equipment_shield'] = 25
+    item_chances = {'potion_healing':65, 'scroll_lightning':10, 'scroll_confusion':10, 'scroll_fireball':10, 'scroll_forge':5 }
+    item_chances['equipment_longsword'] = 15
+    item_chances['equipment_shield'] = 20
+    item_chances['equipment_spear'] = 15
 
     table = dungeon.table[get_dungeon_level()]['versions']
     for i in range(libtcod.random_get_int(0, 0, 4)):  # temporary line to spawn multiple monster groups in a room
@@ -2851,8 +2852,6 @@ def new_game():
     dagger = create_item('equipment_dagger', material='iron', quality='')
     player.fighter.inventory.append(dagger)
     dagger.equipment.equip()
-
-    #spawn_monster('monster_blastcap', player.x, player.y - 1)
 
     selected_monster = None
 

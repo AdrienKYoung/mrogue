@@ -130,6 +130,16 @@ proto = {
         'description'   : 'Inflicts confusion on an enemy, causing them to move about erratically.'
     },
 
+    'scroll_forge': {
+        'name' : 'Scroll of Forging',
+        'category' : 'scroll',
+        'char' : '#',
+        'color': libtcodpy.yellow,
+        'on_use' : spells.cast_forge,
+        'type' : 'item',
+        'description' : 'Upgrades the quality of your held weapon.'
+    },
+
     #POTIONS
     'potion_healing': {
         'name'          : 'Potion of Healing',

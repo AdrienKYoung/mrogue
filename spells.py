@@ -136,6 +136,61 @@ def cast_mend():
         main.message('You have no need of mending.', libtcod.light_blue)
         return False
 
+def cast_forge():
+    weapon = main.get_equipped_in_slot(main.player.fighter.inventory, 'right hand')
+    if weapon is not None and weapon.owner.item.category == 'weapon':
+        if weapon.quality == 'artifact':
+            main.message('Your ' + weapon.owner.name + ' shimmers briefly. It cannot be improved further by this magic.', libtcod.orange)
+        else:
+            main.message('Your ' + weapon.owner.name + ' glows bright orange!', libtcod.orange)
+            # strip away the modifiers to the name
+            words = weapon.owner.name.split()
+            new_name = ''
+            if weapon.quality == '':
+                start = 1
+            else:
+                start = 2
+            for i in range(start, len(words)):
+                if i != start: new_name += ' '
+                new_name += words[i]
+
+            if weapon.quality == 'broken':
+                weapon.quality = 'crude'
+                weapon.attack_damage_bonus += 1
+                weapon.accuracy_bonus += 2
+            elif weapon.quality == 'crude':
+                weapon.quality = ''
+                weapon.attack_damage_bonus += 2
+                weapon.accuracy_bonus += 1
+            elif weapon.quality == '':
+                weapon.quality = 'military'
+                weapon.attack_damage_bonus += 1
+                weapon.accuracy_bonus += 1
+            elif weapon.quality == 'military':
+                weapon.quality = 'fine'
+                weapon.attack_damage_bonus += 1
+                weapon.accuracy_bonus += 1
+            elif weapon.quality == 'fine':
+                weapon.quality = 'masterwork'
+                weapon.attack_damage_bonus += 1
+                weapon.accuracy_bonus += 1
+                weapon.shred_bonus += 1
+            elif weapon.quality == 'masterwork':
+                weapon.quality = 'artifact'
+                weapon.attack_damage_bonus += 2
+                weapon.accuracy_bonus += 2
+                weapon.pierce_bonus += 1
+            new_name = weapon.material + ' ' + new_name
+            if weapon.quality != '':
+                new_name = weapon.quality + ' ' + new_name
+            weapon.owner.name = new_name.title()
+            main.message('It is now a ' + weapon.owner.name + '.', libtcod.orange)
+    elif weapon is not None and weapon.owner.item.category != 'weapon':
+        main.message('Your ' + weapon.owner.name + ' emits a dull glow. This magic was only intended for weapons!', libtcod.orange)
+    else:
+        main.message('Your hands tingle briefly. This magic was only intended for weapons!', libtcod.orange)
+    return True
+
 spell_library = {
     'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]'),
     'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]')
