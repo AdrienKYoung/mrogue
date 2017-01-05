@@ -2381,7 +2381,7 @@ def examine():
             menu(desc, ['back'], 50, render_func=obj.print_description)
 
 
-def jump():
+def jump(actor=None):
     global player
 
     if not dungeon_map[player.x][player.y].jumpable:
