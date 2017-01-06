@@ -3,6 +3,122 @@ import spells
 import game as main
 import abilities
 
+def item_from_table(loot_level = 0):
+    category = choose_category()
+
+    item_id = ''
+    material = None
+    quality = None
+    if category == 'consumable':
+        item_id = choose_consumable(loot_level)
+    elif category == 'weapon':
+        item_id = choose_weapon(loot_level)
+        material = choose_material(loot_level)
+        quality = choose_quality(loot_level)
+    elif category == 'armor':
+        item_id = choose_armor(loot_level)
+    elif category == 'book':
+        item_id = choose_book(loot_level)
+
+    return main.create_item(item_id, material, quality)
+
+def choose_category():
+    return main.random_choice({'consumable' : 45, 'weapon' : 25, 'armor' : 20, 'book': 10})
+
+
+def choose_weapon(loot_level=0):
+    roll = libtcodpy.random_get_int(0, 0, min(50 + loot_level, 70))
+    if roll < 5:
+        return choose_weapon(loot_level + 5)
+    elif roll < 20:
+        return 'equipment_dagger'
+    elif roll < 35:
+        return 'equipment_spear'
+    elif roll < 50:
+        return 'equipment_longsword'
+    else:
+        return 'equipment_pickaxe'
+
+
+def choose_armor(loot_level=0):
+    roll = libtcodpy.random_get_int(0, 0, min(50 + loot_level, 70))
+    if roll < 5:
+        return choose_armor(loot_level + 5)
+    elif roll < 35:
+        return 'equipment_leather_armor'
+    else:
+        return 'equipment_shield'
+
+
+def choose_book(loot_level=0):
+    roll = libtcodpy.random_get_int(0, 0, min(50 + loot_level, 70))
+    if roll < 5:
+        return choose_book(loot_level + 5)
+    elif roll < 40:
+        return 'tome_manabolt'
+    else:
+        return 'tome_mend'
+
+
+def choose_consumable(loot_level=0):
+    roll = libtcodpy.random_get_int(0, 0, min(50 + loot_level, 65))
+    if roll < 5:
+        return choose_consumable(loot_level + 5)
+    elif roll < 20:
+        return 'potion_healing'
+    elif roll < 30:
+        return 'potion_waterbreathing'
+    elif roll < 35:
+        return 'scroll_lightning'
+    elif roll < 40:
+        return 'scroll_fireball'
+    elif roll < 45:
+        return 'scroll_confusion'
+    else:
+        return 'scroll_forge'
+
+
+def choose_material(loot_level=0):
+    roll = libtcodpy.random_get_int(0, 0, min(100 + 2 * loot_level, 150))
+    if roll < 5:
+        return choose_material(loot_level + 5)
+    elif roll < 15:
+        return 'wooden'
+    elif roll < 30:
+        return 'bronze'
+    elif roll < 95:
+        return 'iron'
+    elif roll < 105:
+        return 'steel'
+    elif roll < 120:
+        return 'crystal'
+    elif roll < 130:
+        return 'meteor'
+    elif roll < 140:
+        return 'aetherwood'
+    else:
+        return 'blightstone'
+
+
+def choose_quality(loot_level=0):
+    roll = libtcodpy.random_get_int(0, 0, min(100 + 2 * loot_level, 130))
+    if roll < 5:
+        return choose_quality(loot_level + 5)
+    elif roll < 10:
+        return 'broken'
+    elif roll < 20:
+        return 'crude'
+    elif roll < 90:
+        return ''
+    elif roll < 100:
+        return 'military'
+    elif roll < 110:
+        return 'fine'
+    elif roll < 120:
+        return 'masterwork'
+    else:
+        return 'artifact'
+
 item_categories = {
     'weapon' : { 'plural' : 'weapons' },
     'armor' : { 'plural' : 'armor' },

@@ -1940,10 +1940,10 @@ def place_objects(tiles):
     if len(tiles) == 0:
         return
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
-    item_chances = {'potion_healing':65, 'scroll_lightning':10, 'scroll_confusion':10, 'scroll_fireball':10, 'scroll_forge':5 }
-    item_chances['equipment_longsword'] = 15
-    item_chances['equipment_shield'] = 20
-    item_chances['equipment_spear'] = 15
+    #item_chances = {'potion_healing':65, 'scroll_lightning':10, 'scroll_confusion':10, 'scroll_fireball':10, 'scroll_forge':5 }
+    #item_chances['equipment_longsword'] = 15
+    #item_chances['equipment_shield'] = 20
+    #item_chances['equipment_spear'] = 15
 
     table = dungeon.table[get_dungeon_level()]['versions']
     for i in range(libtcod.random_get_int(0, 0, 4)):  # temporary line to spawn multiple monster groups in a room
@@ -1965,8 +1965,13 @@ def place_objects(tiles):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
         
         if not is_blocked(random_pos[0], random_pos[1]):
-            choice = random_choice(item_chances)
-            spawn_item(choice, random_pos[0], random_pos[1])
+            #choice = random_choice(item_chances)
+            #spawn_item(choice, random_pos[0], random_pos[1])
+            item = loot.item_from_table(dungeon_level * 5)
+            item.x = random_pos[0]
+            item.y = random_pos[1]
+            objects.append(item)
+            item.send_to_back()
             tiles.remove(random_pos)
             if len(tiles) == 0:
                 return
@@ -2984,10 +2989,10 @@ def new_game():
     #Welcome message
     game_msgs = []
 
-    spawn_item('tome_manabolt', player.x, player.y)
-    spawn_item('tome_mend', player.x, player.y)
-    spawn_item('scroll_fireball', player.x, player.y)
-    spawn_item('equipment_pickaxe', player.x, player.y, material='iron', quality='')
+    #spawn_item('tome_manabolt', player.x, player.y)
+    #spawn_item('tome_mend', player.x, player.y)
+    #spawn_item('scroll_fireball', player.x, player.y)
+    #spawn_item('equipment_pickaxe', player.x, player.y, material='iron', quality='')
 
     leather_armor = create_item('equipment_leather_armor')
     player.fighter.inventory.append(leather_armor)
@@ -2995,10 +3000,6 @@ def new_game():
     dagger = create_item('equipment_dagger', material='iron', quality='')
     player.fighter.inventory.append(dagger)
     dagger.equipment.equip()
-
-    for i in range(10):
-        forge = create_item('scroll_forge')
-        player.fighter.inventory.append(forge)
 
     selected_monster = None
 

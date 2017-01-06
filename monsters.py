@@ -52,7 +52,7 @@ proto = {
         'loot': 'default',
         'on_create': None,
         'ai': main.AI_Default,
-        'description': 'Many-legged arthropod with a stinging bite that amplifies damage.',
+        'description': 'Many-legged arthropod with a stinging bite that amplifies damage taken.',
         'resistances': [],
         'on_hit': main.centipede_on_hit,
         'shred': 2
