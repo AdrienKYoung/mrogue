@@ -12,7 +12,7 @@ import terrain
 class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
-                 guaranteed_shred_bonus=0, pierce=0, accuracy=0):
+                 guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, break_chance=0.0):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -27,6 +27,8 @@ class Equipment:
         self.guaranteed_shred_bonus=guaranteed_shred_bonus
         self.pierce_bonus = pierce
         self.accuracy_bonus = accuracy
+        self.ctrl_attack = ctrl_attack
+        self.break_chance = break_chance
         
     def toggle(self):
         if self.is_equipped:
@@ -87,9 +89,13 @@ class Equipment:
         if self.spell_power_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Spell Power: ' + str(self.spell_power_bonus))
             print_height += 1
+        if self.break_chance > 0:
+            libtcod.console_print(console, x, y + print_height, 'It has a ' + str(self.break_chance) + '%%' + ' chance to break when used.')
+            print_height += 1
 
 
         return print_height
+
 
 class ConfusedMonster:
     def __init__(self, old_ai, num_turns=consts.CONFUSE_NUM_TURNS):
@@ -186,7 +192,6 @@ class Item:
             print_height += self.owner.equipment.print_description(console, x, y + print_height, width)
 
         return print_height
-
 
 
 class PlayerStats:
@@ -388,9 +393,15 @@ class Fighter:
                 # Take damage
                 message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ' for ' + str(damage) + ' damage!', libtcod.grey)
                 target.fighter.take_damage(damage)
+                weapon = get_equipped_in_slot(self.inventory, 'right hand')
+                if weapon:
+                    check_breakage(weapon)
                 return 'hit'
             else:
                 message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ', but the attack is deflected!', libtcod.grey)
+                weapon = get_equipped_in_slot(self.inventory, 'right hand')
+                if weapon:
+                    check_breakage(weapon)
                 return 'blocked'
         else:
             message(self.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
@@ -479,7 +490,7 @@ class Fighter:
         if self.owner.player_stats and get_equipped_in_slot(self.inventory, 'right hand'):
             bonus -= 5 * max(get_equipped_in_slot(self.inventory, 'right hand').str_requirement - self.owner.player_stats.str, 0)
 
-        return self.base_accuracy + bonus
+        return max(self.base_accuracy + bonus, 1)
 
     @property
     def damage_variance(self):
@@ -542,6 +553,7 @@ class Fighter:
         bonus = sum(equipment.max_hp_bonus for equipment in get_all_equipped(self.inventory))
         return self.base_max_hp + bonus
 
+
 class AI_Default:
 
     def __init__(self):
@@ -597,6 +609,7 @@ class ReekerGasBehavior:
                         if libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
                             message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
 
+
 class FireBehavior:
     def __init__(self,temp):
         self.temperature = temp
@@ -627,6 +640,7 @@ class FireBehavior:
                         if libtcod.random_get_int(0, 0, 8) == 0:
                             create_fire(tile[0], tile[1], 10)
 
+
 class AI_Reeker:
 
     def act(self):
@@ -643,6 +657,7 @@ class AI_Reeker:
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())
                         objects.append(puff)
+
 
 class AI_TunnelSpider:
 
@@ -787,6 +802,8 @@ class GameObject:
         if len(stepped_on) > 0:
             for obj in stepped_on:
                 obj.on_step(obj, self)
+        if self is player:
+            fov_recompute_fn()
 
     def move(self, dx, dy):
         if not is_blocked(self.x + dx, self.y + dy):
@@ -958,6 +975,10 @@ class Tile:
     def flammable(self):
         return terrain.data[self.tile_type].flammable
 
+    @property
+    def diggable(self):
+        return terrain.data[self.tile_type].diggable
+
                 
 #############################################
 # General Functions
@@ -971,15 +992,18 @@ def has_skill(name):
             return True
     return False
 
+
 def expire_out_of_vision(obj):
     if not libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
         obj.destroy()
+
 
 def pick_up_mana(mana, obj):
     if obj is player and len(player.mana) < player.player_stats.max_mana:
         player.mana.append(mana.mana_type)
         message('You are infused with magical power.', mana.color)
         mana.destroy()
+
 
 def pick_up_xp(xp, obj):
     if obj is player:
@@ -988,8 +1012,10 @@ def pick_up_xp(xp, obj):
         check_level_up()
         xp.destroy()
 
+
 def step_on_reed(reed, obj):
     reed.destroy()
+
 
 def adjacent_tiles_orthogonal(x, y):
     adjacent = []
@@ -1003,6 +1029,7 @@ def adjacent_tiles_orthogonal(x, y):
         adjacent.append((x, y + 1))
     return adjacent
 
+
 def adjacent_tiles_diagonal(x, y):
     adjacent = []
     for i_y in range(y - 1, y + 2):
@@ -1011,14 +1038,17 @@ def adjacent_tiles_diagonal(x, y):
                 adjacent.append((i_x, i_y))
     return adjacent
 
+
 def is_adjacent_orthogonal(a_x, a_y, b_x, b_y):
     return (abs(a_x - b_x) <= 1 and a_y == b_y) or (abs(a_y - b_y) <= 1 and a_x == b_x)
+
 
 def is_adjacent_diagonal(a_x, a_y, b_x, b_y):
     return abs(a_x - b_x) <= 1 and abs(a_y - b_y) <= 1
 
+
 def blastcap_explode(blastcap):
-    global selected_monster
+    global selected_monster, changed_tiles
 
     blastcap.fighter = None
     message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
@@ -1028,14 +1058,17 @@ def blastcap_explode(blastcap):
                 message('The ' + obj.name + ' is stunned!', libtcod.gold)
 
     if selected_monster is blastcap:
+        changed_tiles.append((blastcap.x, blastcap.y))
         selected_monster = None
         auto_target_monster()
 
     blastcap.destroy()
     return
 
+
 def centipede_on_hit(attacker, target):
     target.fighter.apply_status_effect(effects.StatusEffect('stung', consts.CENTIPEDE_STING_DURATION, libtcod.flame))
+
 
 def clamp(value, min_value, max_value):
     if value < min_value:
@@ -1043,6 +1076,7 @@ def clamp(value, min_value, max_value):
     if value > max_value:
         value = max_value
     return value
+
 
 # This function exists so files outside game.py can modify this global variable.
 # Hopefully there's a better way to do this    -T
@@ -1054,18 +1088,19 @@ def fov_recompute_fn():
 def roll_to_hit(target,  accuracy):
     return libtcod.random_get_float(0, 0, 1) < get_chance_to_hit(target, accuracy)
 
+
 def get_chance_to_hit(target, accuracy):
     if target.fighter.has_status('stunned'):
         return 1.0
 
-    return 1.0 - float(min(target.fighter.evasion, accuracy - 1.0)) / float(max(accuracy, 0.0))
+    return 1.0 - float(target.fighter.evasion) / float(max(accuracy, target.fighter.evasion + 1))
 
-    #return max(min((consts.EVADE_FACTOR / (consts.EVADE_FACTOR + target.fighter.evasion)) * accuracy, 1.0), 0)
 
 def random_position_in_circle(radius):
     r = libtcod.random_get_float(0, 0.0, float(radius))
     theta = libtcod.random_get_float(0, 0.0, 2.0 * math.pi)
     return int(round(r * math.cos(theta))), int(round(r * math.sin(theta)))
+
 
 def object_at_tile(x, y, name):
     for obj in objects:
@@ -1220,6 +1255,7 @@ def bomb_beetle_corpse_tick(object=None):
                     monster.fighter.apply_status_effect(effects.burning())
         object.destroy()
 
+
 def bomb_beetle_death(beetle):
     global selected_monster
 
@@ -1241,6 +1277,7 @@ def bomb_beetle_death(beetle):
     beetle.on_tick = bomb_beetle_corpse_tick
 
     if selected_monster is beetle:
+        changed_tiles.append((beetle.x, beetle.y))
         selected_monster = None
         auto_target_monster()
 
@@ -1388,7 +1425,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
 
         monster_at_tile = get_monster_at_tile(cursor_x, cursor_y)
         if monster_at_tile is not None:
-            selected_monster = monster_at_tile
+            select_monster(monster_at_tile)
 
         selected_x = cursor_x
         selected_y = cursor_y
@@ -1582,13 +1619,14 @@ def menu(header, options, width, x_center=None, render_func=None):
 
 
 def auto_target_monster():
-    global selected_monster
+    global selected_monster, changed_tiles
 
     if selected_monster is None:
         monster = closest_monster(consts.TORCH_RADIUS)
         if monster is not None:
-            selected_monster = monster
+            select_monster(monster)
     elif not libtcod.map_is_in_fov(fov_map, selected_monster.x, selected_monster.y):
+        changed_tiles.append((selected_monster.x, selected_monster.y))
         selected_monster = None
 
 
@@ -1612,15 +1650,25 @@ def target_next_monster():
         while nearby[i][1] is not selected_monster:
             i += 1
         if i + 1 == len(nearby):
-            selected_monster = nearby[0][1]
+            select_monster(nearby[0][1])
             return
         else:
-            selected_monster = nearby[i + 1][1]
+            select_monster(nearby[i + 1][1])
             return
+
+
+def select_monster(monster):
+    global selected_monster, changed_tiles
+
+    if libtcod.map_is_in_fov(fov_map, monster.x, monster.y) and monster is not selected_monster:
+        changed_tiles.append((monster.x, monster.y))
+        if selected_monster is not None:
+            changed_tiles.append((selected_monster.x, selected_monster.y))
+        selected_monster = monster
 
 
 def mouse_select_monster():
-    global mouse, selected_monster
+    global mouse, selected_monster, changed_tiles
 
     if mouse.lbutton_pressed:
         offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2 - consts.MAP_VIEWPORT_X, \
@@ -1633,12 +1681,12 @@ def mouse_select_monster():
                 if hasattr(obj, 'fighter') and obj.fighter and not obj is player:
                     monster = obj
                     break
-        selected_monster = monster
+        select_monster(monster)
 
 
 def get_names_under_mouse():
 
-    global mouse, selected_monster
+    global mouse
 
     offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2 - consts.MAP_VIEWPORT_X,\
                        player.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
@@ -1724,6 +1772,7 @@ def spawn_monster(name, x, y):
         return monster
     return None
 
+
 def spawn_monster_inventory(proto):
     result = []
     if proto:
@@ -1733,12 +1782,14 @@ def spawn_monster_inventory(proto):
                 result.append(create_item(equip))
     return result
 
+
 def create_ability(name):
     if name in abilities.data:
         a = abilities.data[name]
         return abilities.Ability(a.get('name'), a.get('description'), a['function'], a.get('cooldown'))
     else:
         return None
+
 
 def create_item(name, material=None, quality=None):
     p = loot.proto[name]
@@ -1761,9 +1812,12 @@ def create_item(name, material=None, quality=None):
             shred_bonus=p.get('shred', 0),
             guaranteed_shred_bonus=p.get('guaranteed_shred', 0),
             pierce=p.get('pierce', 0),
-            accuracy=p.get('accuracy', 0)
+            accuracy=p.get('accuracy', 0),
+            ctrl_attack=p.get('ctrl_attack'),
+            break_chance=p.get('break', 0)
         )
         if equipment_component.category == 'weapon':
+            equipment_component.base_id = name
             # Material/Quality
             if material is None:
                 material = random_choice(
@@ -1783,7 +1837,7 @@ def create_item(name, material=None, quality=None):
             equipment_component.shred_bonus += loot.weapon_materials[material].get('shred', 0)
             equipment_component.pierce_bonus += loot.weapon_materials[material].get('pierce', 0)
             equipment_component.guaranteed_shred_bonus += loot.weapon_materials[material].get('autoshred', 0)
-            equipment_component.break_chance = loot.weapon_materials[material].get('break', 0.0)
+            equipment_component.break_chance += loot.weapon_materials[material].get('break', 0.0)
             if quality is None:
                 quality = random_choice(
                     {
@@ -1802,7 +1856,7 @@ def create_item(name, material=None, quality=None):
             equipment_component.shred_bonus += loot.weapon_qualities[quality].get('shred', 0)
             equipment_component.pierce_bonus += loot.weapon_qualities[quality].get('pierce', 0)
             equipment_component.guaranteed_shred_bonus += loot.weapon_qualities[quality].get('autoshred', 0)
-            equipment_component.break_chance = loot.weapon_qualities[quality].get('break', 0.0)
+            equipment_component.break_chance += loot.weapon_qualities[quality].get('break', 0.0)
 
     go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))
@@ -1815,12 +1869,56 @@ def create_item(name, material=None, quality=None):
     go.name = go.name.title()
     return go
 
+
 def spawn_item(name, x, y, material=None, quality=None):
         item = create_item(name, material, quality)
         item.x = x
         item.y = y
         objects.append(item)
         item.send_to_back()
+
+
+def set_quality(equipment, quality):
+    # set to default
+    p = loot.proto[equipment.base_id]
+    equipment.attack_damage_bonus = p.get('attack_damage_bonus', 0)
+    equipment.accuracy_bonus = p.get('accuracy', 0)
+    equipment.shred_bonus = p.get('shred', 0)
+    equipment.pierce_bonus = p.get('pierce', 0)
+    equipment.guaranteed_shred_bonus = p.get('guaranteed_shred', 0)
+    equipment.break_chance = p.get('break', 0)
+    equipment.owner.name = p['name']
+    # assign quality
+    equipment.quality = quality
+    equipment.attack_damage_bonus += loot.weapon_qualities[quality]['dmg']
+    equipment.accuracy_bonus += loot.weapon_qualities[quality]['acc']
+    equipment.shred_bonus += loot.weapon_qualities[quality].get('shred', 0)
+    equipment.pierce_bonus += loot.weapon_qualities[quality].get('pierce', 0)
+    equipment.guaranteed_shred_bonus += loot.weapon_qualities[quality].get('autoshred', 0)
+    equipment.break_chance = loot.weapon_qualities[quality].get('break', 0.0)
+    # update name
+    go = equipment.owner
+    if hasattr(equipment, 'material'):
+        go.name = equipment.material + ' ' + go.name
+    if hasattr(equipment, 'quality') and equipment.quality != '':
+        go.name = equipment.quality + ' ' + go.name
+    go.name = go.name.title()
+
+
+def check_breakage(equipment):
+    if equipment.break_chance and equipment.break_chance > 0.0:
+        roll = libtcod.random_get_double(0, 0, 1.0)
+        roll *= 100.0
+        if roll < equipment.break_chance:
+            # broken!
+            message('The ' + equipment.owner.name + ' breaks!', libtcod.white)
+            set_quality(equipment, 'broken')
+            return True
+        else:
+            return False
+    else:
+        return False
+
 
 def create_fire(x,y,temp):
     global changed_tiles
@@ -1836,6 +1934,7 @@ def create_fire(x,y,temp):
     for obj in get_objects(x, y, condition=lambda o: o.burns):
         obj.destroy()
     changed_tiles.append((x, y))
+
 
 def place_objects(tiles):
     if len(tiles) == 0:
@@ -1898,73 +1997,112 @@ def get_dungeon_level():
     return "dungeon_{}".format(dungeon_level)
 
 
-def player_move_or_attack(dx, dy, bash=False):
-    global selected_monster, changed_tiles
+def player_move_or_attack(dx, dy, ctrl=False):
 
-    x = player.x + dx
-    y = player.y + dy
-    
-    target = None
-    for object in objects:
-        if object.x == x and object.y == y and object.fighter is not None:
-            target = object
-            break
-            
-    if target is not None:
-        if bash:
-            success = player_bash_attack(target) != 'failed'
+    if ctrl:
+        weapon = get_equipped_in_slot(player.fighter.inventory, 'right hand')
+        if weapon and weapon.ctrl_attack:
+            if weapon.quality != 'broken':
+                success = weapon.ctrl_attack(dx, dy) != 'failed'
+            else:
+                message('Your ' + weapon.owner.name + ' cannot do that in its current state!')
+                return False
         else:
-            success = player.fighter.attack(target) != 'failed'
-        if success and target.fighter and target is not selected_monster:
-            changed_tiles.append((target.x, target.y))
-            changed_tiles.append((selected_monster.x, selected_monster.y))
-            selected_monster = target
-        return success
+            success = player_bash_attack(dx, dy) != 'failed'
     else:
-        value = player.move(dx, dy)
+        target = get_monster_at_tile(player.x + dx, player.y + dy)
+        if target is not None:
+            success = player.fighter.attack(target) != 'failed'
+            if success and target.fighter:
+                select_monster(target)
+        else:
+            value = player.move(dx, dy)
+            return value
+
+    return success
+
+
+def player_dig(dx, dy):
+    global changed_tiles
+
+    dig_x = player.x + dx
+    dig_y = player.y + dy
+    if dungeon_map[dig_x][dig_y].diggable:
+        dungeon_map[dig_x][dig_y].tile_type = 'stone floor'
+        changed_tiles.append((dig_x, dig_y))
+        libtcod.map_set_properties(fov_map, dig_x, dig_y, True, True)
         fov_recompute_fn()
-        return value
+        check_breakage(get_equipped_in_slot(player.fighter.inventory, 'right hand'))
+        return 'success'
+    else:
+        message('You cannot dig there.', libtcod.lightest_gray)
+        return 'failed'
+
 
 def player_reach_attack(dx, dy):
+
     target_space = player.x + 2 * dx, player.y + 2 * dy
     target = get_monster_at_tile(target_space[0], target_space[1])
     if target is not None:
         result = player.fighter.attack_ex(target, player.fighter.calculate_attack_stamina_cost(), player.fighter.accuracy,
                              player.fighter.attack_damage * 1.5, player.fighter.damage_variance, None, 'reach-attacks',
                              player.fighter.attack_shred, player.fighter.attack_guaranteed_shred, player.fighter.attack_pierce)
-
-
-def player_bash_attack(target):
-    result = player.fighter.attack_ex(target, consts.BASH_STAMINA_COST, player.fighter.accuracy * consts.BASH_ACC_MOD,
-                             player.fighter.attack_damage * consts.BASH_DMG_MOD, player.fighter.damage_variance,
-                             None, 'bashes', player.fighter.attack_shred + 1, player.fighter.attack_guaranteed_shred,
-                             player.fighter.attack_pierce)
-    if result == 'hit' and target.fighter:
-        # knock the target back one space. Stun it if it cannot move.
-        direction = target.x - player.x, target.y - player.y  # assumes the player is adjacent
-        stun = False
-        against = ''
-        if dungeon_map[target.x + direction[0]][target.y + direction[1]].blocks:
-            stun = True
-            against = dungeon_map[target.x + direction[0]][target.y + direction[1]].name
+        if result != 'failed' and target.fighter:
+            select_monster(target)
+        return result
+    else:
+        target = get_monster_at_tile(player.x + dx, player.y + dy)
+        if target is not None:
+            result = player.fighter.attack(target)
+            if result != 'failed' and target.fighter:
+                select_monster(target)
         else:
-            for obj in objects:
-                if obj.x == target.x + direction[0] and obj.y == target.y + direction[1] and obj.blocks:
-                    stun = True
-                    against = obj.name
-                    break
+            value = player.move(dx, dy)
+            if value:
+                return 'moved'
+    return 'failed'
 
-        if stun:
-            #  stun the target
-            if target.fighter.apply_status_effect(effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
-                message('The ' + target.name + ' collides with the ' + against + ', stunning it!', libtcod.gold)
-        else:
-            message('The ' + target.name + ' is knocked backwards.', libtcod.gray)
-            target.set_position(target.x + direction[0], target.y + direction[1])
-            render_map()
-            libtcod.console_flush()
 
-    return result
+def player_bash_attack(dx, dy):
+
+    target = get_monster_at_tile(player.x + dx, player.y + dy)
+    if target is not None:
+        result = player.fighter.attack_ex(target, consts.BASH_STAMINA_COST, player.fighter.accuracy * consts.BASH_ACC_MOD,
+                                 player.fighter.attack_damage * consts.BASH_DMG_MOD, player.fighter.damage_variance,
+                                 None, 'bashes', player.fighter.attack_shred + 1, player.fighter.attack_guaranteed_shred,
+                                 player.fighter.attack_pierce)
+        if result == 'hit' and target.fighter:
+            select_monster(target)
+            # knock the target back one space. Stun it if it cannot move.
+            direction = target.x - player.x, target.y - player.y  # assumes the player is adjacent
+            stun = False
+            against = ''
+            if dungeon_map[target.x + direction[0]][target.y + direction[1]].blocks:
+                stun = True
+                against = dungeon_map[target.x + direction[0]][target.y + direction[1]].name
+            else:
+                for obj in objects:
+                    if obj.x == target.x + direction[0] and obj.y == target.y + direction[1] and obj.blocks:
+                        stun = True
+                        against = obj.name
+                        break
+
+            if stun:
+                #  stun the target
+                if target.fighter.apply_status_effect(effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
+                    message('The ' + target.name + ' collides with the ' + against + ', stunning it!', libtcod.gold)
+            else:
+                message('The ' + target.name + ' is knocked backwards.', libtcod.gray)
+                target.set_position(target.x + direction[0], target.y + direction[1])
+                render_map()
+                libtcod.console_flush()
+
+        return result
+    else:
+        value = player.move(dx, dy)
+        if value:
+            return 'moved'
+    return 'failed'
 
 
 def get_loot(monster):
@@ -2013,7 +2151,7 @@ def show_ability_screen():
 
 def handle_keys():
  
-    global game_state, stairs, selected_monster
+    global game_state, stairs
     global key
     
     # key = libtcod.console_check_for_keypress()  #real-time
@@ -2270,6 +2408,7 @@ def skill_menu(add_skill=False):
         elif key.vk == libtcod.KEY_PAGEUP or mouse.wheel_up:
             scroll_height = max(scroll_height - 3, 0)
 
+
 def cast_spell_new():
     if len(player.known_spells) <= 0:
         message("You don't know any spells.", libtcod.light_blue)
@@ -2334,7 +2473,7 @@ def inspect_inventory():
     chosen_item = inventory_menu('Select which item?')
     if chosen_item is not None:
         options = chosen_item.get_options_list()
-        menu_choice = menu(chosen_item.owner.name, options, 30, render_func=chosen_item.owner.print_description)
+        menu_choice = menu(chosen_item.owner.name, options, 50, render_func=chosen_item.owner.print_description)
         if menu_choice is not None:
             if options[menu_choice] == 'Use':
                 chosen_item.use()
@@ -2371,15 +2510,18 @@ def examine():
     x, y = target_tile()
     if x is not None and y is not None:
         obj = object_at_coords(x, y)
-        desc = ""
         if obj is not None:
-            desc = obj.name.capitalize()# + '\n' + get_description(obj)
-            if hasattr(obj, 'fighter') and obj.fighter is not None and \
-                    hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
-                desc = desc + '\nInventory: '
-                for item in obj.fighter.inventory:
-                    desc = desc + item.name + ', '
-            menu(desc, ['back'], 50, render_func=obj.print_description)
+            if isinstance(obj, GameObject):
+                desc = obj.name.capitalize()# + '\n' + get_description(obj)
+                if hasattr(obj, 'fighter') and obj.fighter is not None and \
+                        hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
+                    desc = desc + '\nInventory: '
+                    for item in obj.fighter.inventory:
+                        desc = desc + item.name + ', '
+                menu(desc, ['back'], 50, render_func=obj.print_description)
+            else:
+                desc = obj.name.capitalize() + '\n' + get_description(obj)
+                menu(desc, ['back'], 50)
 
 
 def jump(actor=None):
@@ -2517,6 +2659,7 @@ def render_map():
     libtcod.console_blit(map_con, player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2,
                 consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y)
     draw_border(0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
+
 
 # No longer used, but I'm not willing to delete it from the code base just yet in case problems arise with the new system
 def render_map_old():
@@ -2662,7 +2805,7 @@ def render_side_panel(acc_mod=1.0):
     #    y += 1
 
     # Selected Monster
-    if selected_monster is not None:
+    if selected_monster is not None and selected_monster.fighter is not None:
         drawHeight = consts.SIDE_PANEL_HEIGHT - 16
         libtcod.console_print(side_panel, 2, drawHeight, selected_monster.name)
         drawHeight += 2
@@ -2844,7 +2987,7 @@ def new_game():
     spawn_item('tome_manabolt', player.x, player.y)
     spawn_item('tome_mend', player.x, player.y)
     spawn_item('scroll_fireball', player.x, player.y)
-    spawn_item('equipment_spear', player.x, player.y, material='iron', quality='')
+    spawn_item('equipment_pickaxe', player.x, player.y, material='iron', quality='')
 
     leather_armor = create_item('equipment_leather_armor')
     player.fighter.inventory.append(leather_armor)
@@ -2852,6 +2995,10 @@ def new_game():
     dagger = create_item('equipment_dagger', material='iron', quality='')
     player.fighter.inventory.append(dagger)
     dagger.equipment.equip()
+
+    for i in range(10):
+        forge = create_item('scroll_forge')
+        player.fighter.inventory.append(forge)
 
     selected_monster = None
 

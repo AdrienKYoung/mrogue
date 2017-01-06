@@ -1,5 +1,6 @@
 import libtcodpy
 import spells
+import game as main
 import abilities
 
 item_categories = {
@@ -37,7 +38,7 @@ weapon_qualities = {
     'fine' : { #10
         'dmg' : 2,
         'acc' : 2,
-        'break' : -1.0
+        'break' : -1.5
     },
     'masterwork' : { #10
         'dmg' : 3,
@@ -58,12 +59,12 @@ weapon_materials = {
     'wooden' : { # 10
         'dmg' : -2,
         'acc' : 1,
-        'break' : 1.0
+        'break' : 5.0
     },
     'bronze' : { # 15
         'dmg' : 0,
         'acc' : 0,
-        'break' : 0.25
+        'break' : 1.5
     },
     'iron' : { # 65
         'dmg' : 0,
@@ -73,27 +74,32 @@ weapon_materials = {
     'steel' : { # 10
         'dmg' : 1,
         'acc' : 1,
-        'shred' : 2
+        'shred' : 2,
+        'break' : -5.0
     },
     'crystal' : { # 15
         'dmg' : 3,
         'acc' : -2,
-        'pierce' : 1
+        'pierce' : 1,
+        'break' : -1000.0
     },
     'meteor' : { # 10
         'dmg' : 5,
         'acc' : -2,
-        'shred' : 1
+        'shred' : 1,
+        'break' : -5.0
     },
     'aetherwood' : { # 10
         'dmg' : 2,
         'acc' : 3,
-        'shred' : 1
+        'shred' : 1,
+        'break' : -15.0
     },
     'blightstone' : { # 10
         'dmg' : 0,
         'acc' : 0,
-        'autoshred' : 1
+        'autoshred' : 1,
+        'break' : -5.0
     },
 }
 
@@ -194,7 +200,7 @@ proto = {
         'slot'               :'right hand',
         'description'        : 'A hand-and-a-half cruciform sword',
         'stamina_cost'       : 10,
-        'str_requirement'    : 14,
+        'str_requirement'    : 12,
         'shred'              : 1,
         'accuracy'           : 1
     },
@@ -226,7 +232,26 @@ proto = {
         'ability'            : 'ability_thrust',
         'pierce'             : 1,
         'shred'              : 0,
-        'accuracy'           : 1
+        'accuracy'           : 1,
+        'ctrl_attack'        : main.player_reach_attack
+    },
+    'equipment_pickaxe': {
+        'name'               : 'pickaxe',
+        'category'           : 'weapon',
+        'char'               : 'T',
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'attack_damage_bonus': 5,
+        'slot'               :'right hand',
+        'description'        : 'A heavy digging implement used by miners. Can be used to dig through the walls '
+                               'of the dungeon',
+        'stamina_cost'       : 18,
+        'str_requirement'    : 14,
+        'pierce'             : 1,
+        'shred'              : 1,
+        'accuracy'           : -3,
+        'ctrl_attack'        : main.player_dig,
+        'break'              : 5.0
     },
 
     #ARMOR

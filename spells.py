@@ -143,47 +143,21 @@ def cast_forge():
             main.message('Your ' + weapon.owner.name + ' shimmers briefly. It cannot be improved further by this magic.', libtcod.orange)
         else:
             main.message('Your ' + weapon.owner.name + ' glows bright orange!', libtcod.orange)
-            # strip away the modifiers to the name
-            words = weapon.owner.name.split()
-            new_name = ''
-            if weapon.quality == '':
-                start = 1
-            else:
-                start = 2
-            for i in range(start, len(words)):
-                if i != start: new_name += ' '
-                new_name += words[i]
 
+            new_quality = ''
             if weapon.quality == 'broken':
-                weapon.quality = 'crude'
-                weapon.attack_damage_bonus += 1
-                weapon.accuracy_bonus += 2
+                new_quality = 'crude'
             elif weapon.quality == 'crude':
-                weapon.quality = ''
-                weapon.attack_damage_bonus += 2
-                weapon.accuracy_bonus += 1
+                new_quality = ''
             elif weapon.quality == '':
-                weapon.quality = 'military'
-                weapon.attack_damage_bonus += 1
-                weapon.accuracy_bonus += 1
+                new_quality = 'military'
             elif weapon.quality == 'military':
-                weapon.quality = 'fine'
-                weapon.attack_damage_bonus += 1
-                weapon.accuracy_bonus += 1
+                new_quality = 'fine'
             elif weapon.quality == 'fine':
-                weapon.quality = 'masterwork'
-                weapon.attack_damage_bonus += 1
-                weapon.accuracy_bonus += 1
-                weapon.shred_bonus += 1
+                new_quality = 'masterwork'
             elif weapon.quality == 'masterwork':
-                weapon.quality = 'artifact'
-                weapon.attack_damage_bonus += 2
-                weapon.accuracy_bonus += 2
-                weapon.pierce_bonus += 1
-            new_name = weapon.material + ' ' + new_name
-            if weapon.quality != '':
-                new_name = weapon.quality + ' ' + new_name
-            weapon.owner.name = new_name.title()
+                new_quality = 'artifact'
+            main.set_quality(weapon, new_quality)
             main.message('It is now a ' + weapon.owner.name + '.', libtcod.orange)
     elif weapon is not None and weapon.owner.item.category != 'weapon':
         main.message('Your ' + weapon.owner.name + ' emits a dull glow. This magic was only intended for weapons!', libtcod.orange)

@@ -510,3 +510,12 @@ def make_map():
         make_rooms_and_corridors()
     else:
         make_one_big_room()
+
+    # make sure the edges are undiggable walls
+    for i in range(consts.MAP_WIDTH):
+        main.dungeon_map[i][0].tile_type = 'hard stone wall'
+        main.dungeon_map[i][consts.MAP_HEIGHT - 1].tile_type = 'hard stone wall'
+    for i in range(consts.MAP_HEIGHT):
+        main.dungeon_map[0][i].tile_type = 'hard stone wall'
+        main.dungeon_map[consts.MAP_WIDTH - 1][i].tile_type = 'hard stone wall'
+
