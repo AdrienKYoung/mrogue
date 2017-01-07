@@ -12,7 +12,8 @@ import terrain
 class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
-                 guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, break_chance=0.0):
+                 guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
+                 break_chance=0.0):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -29,6 +30,7 @@ class Equipment:
         self.accuracy_bonus = accuracy
         self.ctrl_attack = ctrl_attack
         self.break_chance = break_chance
+        self.ctrl_attack_desc = ctrl_attack_desc
         
     def toggle(self):
         if self.is_equipped:
@@ -92,6 +94,13 @@ class Equipment:
         if self.break_chance > 0:
             libtcod.console_print(console, x, y + print_height, 'It has a ' + str(self.break_chance) + '%%' + ' chance to break when used.')
             print_height += 1
+        if self.ctrl_attack_desc:
+            libtcod.console_set_default_foreground(console, libtcod.azure)
+            text = 'Ctrl+attack: ' + self.ctrl_attack_desc
+            h = libtcod.console_get_height_rect(console, x, y + print_height, width, consts.SCREEN_HEIGHT, text)
+            libtcod.console_print_rect(console, x, y + print_height + 1, width, h, text)
+            print_height += h + 1
+            libtcod.console_set_default_foreground(console, libtcod.white)
 
 
         return print_height
@@ -362,6 +371,11 @@ class Fighter:
         if roll_to_hit(target, accuracy):
             # Target was hit
             damage = attack_damage * (1.0 - damage_variance + libtcod.random_get_float(0, 0, 2 * damage_variance))
+            # Daggers deal x3 damage to stunned targets
+            weapon = get_equipped_in_slot(self.inventory, 'right hand')
+            if weapon and weapon.base_id and weapon.base_id == 'equipment_dagger' and target.fighter.has_status('stunned'):
+                damage *= 3
+
             # calculate damage reduction
             effective_armor = target.fighter.armor - pierce
             # without armor, targets receive no damage reduction!
@@ -515,6 +529,8 @@ class Fighter:
                     break
             if not has_armor:
                 bonus += 3
+        if self.has_status('shielded'):
+            bonus += 2
         return self.base_armor + bonus - self.shred
 
     @property
@@ -1814,7 +1830,8 @@ def create_item(name, material=None, quality=None):
             pierce=p.get('pierce', 0),
             accuracy=p.get('accuracy', 0),
             ctrl_attack=p.get('ctrl_attack'),
-            break_chance=p.get('break', 0)
+            ctrl_attack_desc=p.get('ctrl_attack_desc'),
+            break_chance=p.get('break', 0),
         )
         if equipment_component.category == 'weapon':
             equipment_component.base_id = name
@@ -2065,6 +2082,29 @@ def player_reach_attack(dx, dy):
             value = player.move(dx, dy)
             if value:
                 return 'moved'
+    return 'failed'
+
+
+def player_cleave_attack(dx, dy):
+    # attack all adjacent creatures
+    adjacent = adjacent_tiles_diagonal(player.x, player.y)
+    if adjacent and len(adjacent) > 0:
+        stamina_cost = player.fighter.calculate_attack_stamina_cost() * 2
+        if player.fighter.stamina < stamina_cost:
+            message("You don't have the stamina to perform a cleave attack!", libtcod.light_yellow)
+            return 'failed'
+        player.fighter.adjust_stamina(-stamina_cost)
+        for tile in adjacent:
+            target = get_monster_at_tile(tile[0], tile[1])
+            if target and target.fighter:
+                player.fighter.attack_ex(target, 0, player.fighter.accuracy, player.fighter.attack_damage,
+                                 player.fighter.damage_variance, None, 'cleaves', player.fighter.attack_shred,
+                                 player.fighter.attack_guaranteed_shred + 1, player.fighter.attack_pierce)
+        return 'cleaved'
+    else:
+        value = player.move(dx, dy)
+        if value:
+            return 'moved'
     return 'failed'
 
 
@@ -3000,6 +3040,10 @@ def new_game():
     dagger = create_item('equipment_dagger', material='iron', quality='')
     player.fighter.inventory.append(dagger)
     dagger.equipment.equip()
+
+    #test = create_item('equipment_hatchet')
+    #player.fighter.inventory.append(test)
+    #test.equipment.equip()
 
     selected_monster = None
 

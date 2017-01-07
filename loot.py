@@ -32,8 +32,10 @@ def choose_weapon(loot_level=0):
         return choose_weapon(loot_level + 5)
     elif roll < 20:
         return 'equipment_dagger'
-    elif roll < 35:
+    elif roll < 30:
         return 'equipment_spear'
+    elif roll < 40:
+        return 'equipment_hatchet'
     elif roll < 50:
         return 'equipment_longsword'
     else:
@@ -69,10 +71,12 @@ def choose_consumable(loot_level=0):
     elif roll < 30:
         return 'potion_waterbreathing'
     elif roll < 35:
-        return 'scroll_lightning'
+        return 'potion_shielding'
     elif roll < 40:
-        return 'scroll_fireball'
+        return 'scroll_lightning'
     elif roll < 45:
+        return 'scroll_fireball'
+    elif roll < 50:
         return 'scroll_confusion'
     else:
         return 'scroll_forge'
@@ -109,7 +113,7 @@ def choose_quality(loot_level=0):
     elif roll < 20:
         return 'crude'
     elif roll < 90:
-        return ''
+        return '' # standard
     elif roll < 100:
         return 'military'
     elif roll < 110:
@@ -133,36 +137,36 @@ table = {
 }
 
 weapon_qualities = {
-    'broken' : { #5
+    'broken' : {
         'dmg' : -3,
         'acc' : -3,
         'shred' : -1
     },
-    'crude' : { #5
+    'crude' : {
         'dmg' : -2,
         'acc' : -1,
         'break' : 5.0
     },
-    '' : { # standard 75
+    '' : { # standard
         'dmg' : 0,
         'acc' : 0
     },
-    'military' : { #10
+    'military' : {
         'dmg' : 1,
         'acc' : 1,
     },
-    'fine' : { #10
+    'fine' : {
         'dmg' : 2,
         'acc' : 2,
         'break' : -1.5
     },
-    'masterwork' : { #10
+    'masterwork' : {
         'dmg' : 3,
         'acc' : 3,
         'shred' : 1,
         'break' : -10.0
     },
-    'artifact' : { #5
+    'artifact' : {
         'dmg' : 5,
         'acc' : 5,
         'shred' : 1,
@@ -172,46 +176,46 @@ weapon_qualities = {
 }
 
 weapon_materials = {
-    'wooden' : { # 10
+    'wooden' : {
         'dmg' : -2,
         'acc' : 1,
         'break' : 5.0
     },
-    'bronze' : { # 15
+    'bronze' : {
         'dmg' : 0,
         'acc' : 0,
         'break' : 1.5
     },
-    'iron' : { # 65
+    'iron' : {
         'dmg' : 0,
         'acc' : 0,
         'shred' : 1
     },
-    'steel' : { # 10
+    'steel' : {
         'dmg' : 1,
         'acc' : 1,
         'shred' : 2,
         'break' : -5.0
     },
-    'crystal' : { # 15
+    'crystal' : {
         'dmg' : 3,
         'acc' : -2,
         'pierce' : 1,
         'break' : -1000.0
     },
-    'meteor' : { # 10
+    'meteor' : {
         'dmg' : 5,
         'acc' : -2,
         'shred' : 1,
         'break' : -5.0
     },
-    'aetherwood' : { # 10
+    'aetherwood' : {
         'dmg' : 2,
         'acc' : 3,
         'shred' : 1,
         'break' : -15.0
     },
-    'blightstone' : { # 10
+    'blightstone' : {
         'dmg' : 0,
         'acc' : 0,
         'autoshred' : 1,
@@ -284,6 +288,17 @@ proto = {
                           "her to breath water like a fish."
     },
 
+    'potion_shielding': {
+        'name'          : 'Potion of Shielding',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : spells.cast_shielding,
+        'type'          : 'item',
+        'description'   : 'This oily metallic potion bolsters the defenses of anyone who drinks it, repairing shreded'
+                          ' armor and temporarily enhancing its effectiveness'
+    },
+
     #TOMES
     'tome_manabolt': {
         'name'          : 'Tome of Manabolt',
@@ -328,7 +343,7 @@ proto = {
         'type'               : 'item',
         'attack_damage_bonus': 3,
         'slot'               :'right hand',
-        'description'        : 'A small double-edged knife',
+        'description'        : 'A small double-edged knife. Deals triple damage to incapacitated targets',
         'stamina_cost'       : 6,
         'str_requirement'    : 10,
         'shred'              : 0,
@@ -340,7 +355,7 @@ proto = {
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 8,
+        'attack_damage_bonus': 6,
         'slot'               :'right hand',
         'description'        : 'A light thrusting spear',
         'stamina_cost'       : 10,
@@ -349,7 +364,9 @@ proto = {
         'pierce'             : 1,
         'shred'              : 0,
         'accuracy'           : 1,
-        'ctrl_attack'        : main.player_reach_attack
+        'ctrl_attack'        : main.player_reach_attack,
+        'ctrl_attack_desc'   : 'Reach-Attack - attack an enemy up to 2 spaces away in this direction. Deals 50% more '
+                               'damage to enemies exactly 2 spaces away.'
     },
     'equipment_pickaxe': {
         'name'               : 'pickaxe',
@@ -367,7 +384,24 @@ proto = {
         'shred'              : 1,
         'accuracy'           : -3,
         'ctrl_attack'        : main.player_dig,
+        'ctrl_attack_desc'   : 'Dig - dig through walls in this direction.',
         'break'              : 5.0
+    },
+    'equipment_hatchet': {
+        'name'               : 'hatchet',
+        'category'           : 'weapon',
+        'char'               : 'p',
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'attack_damage_bonus': 7,
+        'slot'               : 'right hand',
+        'description'        : 'A one-handed axe made for cutting wood.',
+        'stamina_cost'       : 9,
+        'str_requirement'    : 10,
+        'shred'              : 1,
+        'accuracy'           : 3,
+        'ctrl_attack'        : main.player_cleave_attack,
+        'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.'
     },
 
     #ARMOR

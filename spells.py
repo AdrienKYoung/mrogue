@@ -94,7 +94,11 @@ def cast_heal():
 
 
 def cast_waterbreathing():
-    main.player.fighter.apply_status_effect(main.StatusEffect('waterbreathing', 31, libtcod.light_azure))
+    main.player.fighter.apply_status_effect(effects.StatusEffect('waterbreathing', 31, libtcod.light_azure))
+
+def cast_shielding():
+    main.player.fighter.shred = 0
+    main.player.fighter.apply_status_effect(effects.StatusEffect('shielded', 21, libtcod.dark_blue))
 
 def cast_frog_tongue(frog, target):
 
