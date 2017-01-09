@@ -4,24 +4,54 @@ import libtcodpy as libtcod
 import random
 import math
 import terrain
+import loot
 import Queue
+
+angles = [0,
+          0.5 * math.pi,
+          math.pi,
+          1.5 * math.pi]
+
+NOROTATE = 1
+NOREFLECT = 2
+NOSPAWNS = 4
+
+# It's not a bug, it's a
+class Feature:
+    def __init__(self):
+        self.room = None
+        self.flags = 0
+        self.scripts = []
+
+    def set_flag(self, flag):
+        self.flags = self.flags | flag
+
+    def has_flag(self, flag):
+        return self.flags & flag != 0
 
 class Room:
     def __init__(self):
         self.tiles = {}
+        self.data = {}
         self.min_x = None
         self.max_x = None
         self.min_y = None
         self.max_y = None
         self.pos = 0, 0
+        self.no_overwrite = False
 
     # define the world-space position of the upper-left-hand corner of this room. Adjust all tile positions
     def set_pos(self, x, y):
+        if self.pos[0] == x and self.pos[1] == y:
+            return  # No translation
         new_tiles = {}
+        new_data = {}
         for tile in self.tiles.keys():
-            new_x = tile[0] - self.pos[0] + x - self.min_x
-            new_y = tile[1] - self.pos[1] + y - self.min_y
-            new_tiles[new_x, new_y] = self.tiles[(tile[0], tile[1])]
+            new_x = tile[0] + x - self.min_x
+            new_y = tile[1] + y - self.min_y
+            new_tiles[new_x, new_y] = self.tiles[tile]
+            if tile in self.data.keys():
+                new_data[new_x, new_y] = self.data[tile]
         w = self.bounds[0] - 1
         h = self.bounds[1] - 1
         self.min_x = x
@@ -29,7 +59,61 @@ class Room:
         self.max_x = self.min_x + w
         self.max_y = self.min_y + h
         self.tiles = new_tiles
+        self.data = new_data
         self.pos = x, y
+
+    # Orient to the origin, then rotate about the top-left corner, then reorient to the origin again.
+    def rotate(self, angle):
+        if angle == 0.0 or angle == 2 * math.pi:
+            return  # No rotation
+        self.set_pos(0, 0)
+        self.min_x = None
+        self.min_y = None
+        self.max_x = None
+        self.max_y = None
+        new_tiles = {}
+        new_data = {}
+        for tile in self.tiles.keys():
+            new_x = int(round(float(tile[0]) * math.cos(angle) - float(tile[1]) * math.sin(angle)))
+            new_y = int(round(float(tile[0]) * math.sin(angle) + float(tile[1]) * math.cos(angle)))
+            new_tiles[new_x, new_y] = self.tiles[tile]
+            if tile in self.data.keys():
+                new_data[new_x, new_y] = self.data[tile]
+            if self.min_x is None or new_x < self.min_x:
+                self.min_x = new_x
+            if self.min_y is None or new_y < self.min_y:
+                self.min_y = new_y
+            if self.max_x is None or new_x > self.max_x:
+                self.max_x = new_x
+            if self.max_y is None or new_y > self.max_y:
+                self.max_y = new_y
+        self.tiles = new_tiles
+        self.data = new_data
+        self.pos = self.min_x, self.min_y
+        self.set_pos(0, 0)
+
+    # Orient to the origin, then reflect across one or both axes
+    def reflect(self, reflect_x=False, reflect_y=False):
+        if not reflect_x and not reflect_y:
+            return  # No reflection
+        self.set_pos(0, 0)
+        new_tiles = {}
+        new_data = {}
+        for tile in self.tiles.keys():
+            if reflect_x:
+                new_x = -tile[0] + self.max_x
+            else:
+                new_x = tile[0]
+            if reflect_y:
+                new_y = -tile[1] + self.max_y
+            else:
+                new_y = tile[1]
+            new_tiles[(new_x, new_y)] = self.tiles[tile]
+            if tile in self.data.keys():
+                new_data[new_x, new_y] = self.data[tile]
+        self.tiles = new_tiles
+        self.data = new_data
+
 
     def set_tile(self, x, y, tile_type):
         if self.min_x is None or self.min_x > x:
@@ -42,10 +126,18 @@ class Room:
             self.max_y = y
         self.tiles[(x, y)] = tile_type
 
+
     def get_open_tiles(self):
         return_tiles = []
         for tile in self.tiles.keys():
-            if not terrain.data[self.tiles[tile]].blocks:
+            if not terrain.data[self.tiles[tile]].blocks and tile not in self.data.keys():
+                return_tiles.append(tile)
+        return return_tiles
+
+    def get_blocked_tiles(self):
+        return_tiles = []
+        for tile in self.tiles.keys():
+            if terrain.data[self.tiles[tile]].blocks or tile in self.data.keys():
                 return_tiles.append(tile)
         return return_tiles
 
@@ -265,9 +357,68 @@ def create_room(room):
                 main.dungeon_map[x][y].tile_type = 'stone floor'
 
 
-def apply_room(room):
+def apply_room(room, clear_objects=False):
     for tile in room.tiles.keys():
-        main.dungeon_map[tile[0]][tile[1]].tile_type = room.tiles[tile[0], tile[1]]
+
+        if tile[0] < 0 or tile[1] < 0 or tile[0] >= consts.MAP_WIDTH or tile[1] >= consts.MAP_HEIGHT:
+            raise IndexError('Tile index out of range: ' + str(tile[0]) + ', ' + str(tile[1]))
+
+        if not main.dungeon_map[tile[0]][tile[1]].no_overwrite:
+            main.dungeon_map[tile[0]][tile[1]].tile_type = room.tiles[tile[0], tile[1]]
+            main.dungeon_map[tile[0]][tile[1]].no_overwrite = room.no_overwrite
+            if clear_objects or main.dungeon_map[tile[0]][tile[1]].blocks:
+                for o in main.objects:
+                    if o.x == tile[0] and o.y == tile[1] and o is not main.player:
+                        o.destroy()
+            if tile in room.data.keys():
+                line = room.data[tile]
+                if len(line) == 0:
+                    pass
+                elif line[0] == '$':
+                    apply_item(tile[0], tile[1], line)
+                elif line[0].isdigit():
+                    apply_monster(tile[0], tile[1], line)
+
+def apply_monster(x, y, data):
+    monster_id = None
+    for i in range(1, len(data)):
+        if data[i] == 'MONSTER_ID':
+            monster_id = data[i + 1]
+            i += 1
+    if monster_id is not None:
+        main.spawn_monster(monster_id, x, y)
+
+def apply_item(x, y, data):
+    loot_level = main.dungeon_level * 5
+    category = None
+    item_id = None
+    quality = None
+    material = None
+    if len(data) > 1:
+        for i in range(1, len(data)):
+            if data[i] == 'LOOT_LEVEL':
+                loot_level = int(data[i + 1])
+                i += 1
+            elif data[i] == 'CATEGORY':
+                category = data[i + 1]
+                i += 1
+            elif data[i] == 'ITEM_ID':
+                item_id = data[i + 1]
+                i += 1
+            elif data[i] == 'QUALITY':
+                quality = data[i + 1]
+                i += 1
+            elif data[i] == 'MATERIAL':
+                material = data[i + 1]
+                i += 1
+    if item_id:
+        main.spawn_item(item_id, x, y, material=material, quality=quality)
+    else:
+        item = loot.item_from_table(loot_level=loot_level, category=category)
+        item.x = x
+        item.y = y
+        main.objects.append(item)
+        item.send_to_back()
 
 def create_wandering_tunnel(x1, y1, x2, y2):
     current_x = x1
@@ -355,6 +506,9 @@ def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400):
 
 
 def create_reed(x, y):
+    obj = main.get_objects(x, y)
+    if len(obj) > 0:
+        return  # object in the way
     type_here = main.dungeon_map[x][y].tile_type
     if type_here == 'deep water':
         main.dungeon_map[x][y].tile_type = 'shallow water'
@@ -366,25 +520,142 @@ def create_reed(x, y):
     main.objects.append(reed)
 
 
-def create_feature_from_file(filename, x, y):
+def load_features_from_file(filename):
+    global file_features
+    file_features = []
     feature_file = open(filename, 'r')
-    feature_lines = []
-    for line in feature_file:
-        feature_lines.append(line)
-    for i_y in range(len(feature_lines)):
-        for i_x in range(len(feature_lines[i_y])):
-            pos = x + i_x, y + i_y
-            if pos[0] < 0 or pos[1] < 0 or pos[0] >= consts.MAP_WIDTH or pos[1] >= consts.MAP_HEIGHT:
-                continue
-            type = None
-            if feature_lines[i_y][i_x] == '.':
-                type = 'stone floor'
-            elif feature_lines[i_y][i_x] == '#':
-                type = 'stone wall'
-            if type is not None:
-                main.dungeon_map[pos[0]][pos[1]].tile_type = type
+    lines = feature_file.read().split('\n')
+    while len(lines) > 0:
+        current_line = lines[0]
+        lines.remove(lines[0])
+        if current_line.startswith('//'):
+            continue
+        if current_line == 'FEATURE':
+            #do stuff
+            feature_lines = []
+            while lines[0] != 'ENDFEATURE':
+                if not lines[0].startswith('//'):
+                    feature_lines.append(lines[0])
+                lines.remove(lines[0])
+            load_feature(feature_lines)
 
 
+file_key = {
+    ' ' : None,
+    '.' : 'stone floor',
+    ',' : 'grass floor',
+    '#' : 'stone wall',
+    '-' : 'shallow water',
+    '~' : 'deep water',
+    ':' : 'chasm',
+}
+def load_feature(lines=[]):
+    global file_features
+    try:
+        #stuff
+        new_feature = Feature()
+        feature_room = Room()
+        feature_room.no_overwrite = True
+        default_ground = '.'
+        loot_string = '$'
+        monster_strings = {}
+        script_strings = []
+        for i_y in range(len(lines)):
+            if lines[i_y].startswith('FLAGS'):
+                f = lines[i_y].split(' ')
+                for flag in f[1:]:
+                    if flag == 'NOROTATE':
+                        new_feature.set_flag(NOROTATE)
+                    elif flag == 'NOREFLECT':
+                        new_feature.set_flag(NOREFLECT)
+                    elif flag == 'NOSPAWNS':
+                        new_feature.set_flag(NOSPAWNS)
+            elif lines[i_y].startswith('DEFAULT'):
+                default_ground = lines[i_y].split(' ')[1]
+            elif lines[i_y].startswith('DEFINE'):
+                line = lines[i_y].split(' ')[1:]
+                if line[0] == '$':
+                    loot_string = line
+                elif line[0].isdigit():
+                    digit = int(line[0])
+                    monster_strings[digit] = line
+            elif lines[i_y].startswith('SCRIPT'):
+                for script in lines[i_y].split(' ')[1:]:
+                    script_strings.append(script)
+            else:
+                for i_x in range(len(lines[i_y])):
+                    c = lines[i_y][i_x]
+                    try:
+                        type = file_key[c]
+                    except KeyError:
+                        type = file_key[default_ground]
+
+                    if type is not None:
+                        feature_room.set_tile(i_x, i_y, type)
+
+                    if c == '$':
+                        feature_room.data[(i_x, i_y)] = loot_string
+                    elif c.isdigit():
+                        feature_room.data[(i_x, i_y)] = monster_strings[int(c)]
+
+        new_feature.room = feature_room
+        for script in script_strings:
+            new_feature.scripts.append(script)
+        file_features.append(new_feature)
+    except:
+        raise IOError('Input could not be parsed.')
+
+
+def create_feature(x, y, open_tiles=None, index=None):
+    global file_features, feature_rects
+    if len(file_features) == 0:
+        return 'no features loaded'
+    else:
+        if index is None:
+            index = libtcod.random_get_int(0, 0, len(file_features) - 1)
+        template = file_features[index].room
+        if not file_features[index].has_flag(NOREFLECT):
+            template.reflect(reflect_x=libtcod.random_get_int(0, 0, 1) == 1, reflect_y=libtcod.random_get_int(0, 0, 1) == 1)
+        if not file_features[index].has_flag(NOROTATE):
+            template.rotate(angles[libtcod.random_get_int(0, 0, 3)])
+        if template.bounds[0] + x > consts.MAP_WIDTH - 1:
+            x = consts.MAP_WIDTH - 1 - template.bounds[0]
+        if template.bounds[1] + y > consts.MAP_HEIGHT - 1:
+            y = consts.MAP_HEIGHT - 1 - template.bounds[1]
+        template.set_pos(x, y)
+
+        # Check to see if our new feature collides with any existing features
+        new_rect = Rect(template.pos[0], template.pos[1], template.bounds[0], template.bounds[1])
+        for rect in feature_rects:
+            if rect.intersect(new_rect):
+                return 'failed'
+
+        feature_rects.append(new_rect)
+        apply_room(template, file_features[index].has_flag(NOSPAWNS))
+
+        if open_tiles is not None:
+            # If feature has NOSPAWNS flag, remove all tiles from 'open_tiles' list
+            if file_features[index].has_flag(NOSPAWNS):
+                for tile in template.tiles.keys():
+                    if tile in open_tiles:
+                        open_tiles.remove(tile)
+            else:  # Otherwise remvove only the tiles that are now blocking and add the tiles that are now open
+                for tile in template.get_blocked_tiles():
+                    if tile in open_tiles:
+                        open_tiles.remove(tile)
+                for tile in template.get_open_tiles():
+                    if tile not in open_tiles:
+                        open_tiles.append(tile)
+
+        apply_scripts(file_features[index])
+        return 'success'
+
+def apply_scripts(feature):
+    for script in feature.scripts:
+        if script == 'scatter_reeds':
+            scatter_reeds(feature.room.get_open_tiles())
+        elif script == 'your script here':
+            pass
 
 def make_rooms_and_corridors():
 
@@ -472,8 +743,13 @@ def make_one_big_room():
         tile = choose_random_tile(open_tiles)
         main.spawn_monster('monster_blastcap', tile[0], tile[1])
 
-    #tile = choose_random_tile(open_tiles)
-    #create_feature_from_file('features.txt', tile[0], tile[1])
+    # Uncomment to test last feature in features.txt
+    # create_feature(tile[0], tile[1], open_tiles, index=len(file_features)-1)
+
+    feature_count = libtcod.random_get_int(0, 0, 10)
+    for i in range(feature_count):
+        tile = choose_random_tile(open_tiles)
+        create_feature(tile[0], tile[1], open_tiles)
 
     player_tile = choose_random_tile(open_tiles)
 
@@ -497,6 +773,9 @@ def choose_random_tile(tile_list, exclusive=True):
     return chosen_tile
 
 def make_map():
+    global feature_rects
+
+    feature_rects = []
 
     main.objects = [main.player]
 

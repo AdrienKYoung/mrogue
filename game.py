@@ -463,7 +463,7 @@ class Fighter:
 
         # Manage ability cooldowns
         for ability in self.abilities:
-            if ability.on_tick:
+            if ability is not None and ability.on_tick is not None:
                 ability.on_tick()
 
     def apply_status_effect(self, new_effect):
@@ -514,9 +514,9 @@ class Fighter:
     def attack_damage(self):
         bonus = sum(equipment.attack_damage_bonus for equipment in get_all_equipped(self.inventory))
         if self.owner.player_stats:
-            return self.base_attack_damage + self.owner.player_stats.str + bonus
+            return max(self.base_attack_damage + self.owner.player_stats.str + bonus, 0)
         else:
-            return self.base_attack_damage + bonus
+            return max(self.base_attack_damage + bonus, 0)
 
     @property
     def armor(self):
@@ -531,30 +531,30 @@ class Fighter:
                 bonus += 3
         if self.has_status('shielded'):
             bonus += 2
-        return self.base_armor + bonus - self.shred
+        return max(self.base_armor + bonus - self.shred, 0)
 
     @property
     def attack_shred(self):
         bonus = sum(equipment.shred_bonus for equipment in get_all_equipped(self.inventory))
-        return self.base_shred + bonus
+        return max(self.base_shred + bonus, 0)
 
     @property
     def attack_guaranteed_shred(self):
         bonus = sum(equipment.guaranteed_shred_bonus for equipment in get_all_equipped(self.inventory))
-        return self.base_guaranteed_shred + bonus
+        return max(self.base_guaranteed_shred + bonus, 0)
 
     @property
     def attack_pierce(self):
         bonus = sum(equipment.pierce_bonus for equipment in get_all_equipped(self.inventory))
-        return self.base_pierce + bonus
+        return max(self.base_pierce + bonus, 0)
 
     @property
     def evasion(self):
         bonus = sum(equipment.evasion_bonus for equipment in get_all_equipped(self.inventory))
         if self.owner.player_stats:
-            return self.base_evasion + self.owner.player_stats.agi + bonus
+            return max(self.base_evasion + self.owner.player_stats.agi + bonus, 0)
         else:
-            return self.base_evasion + bonus
+            return max(self.base_evasion + bonus, 0)
 
     @property
     def spell_power(self):
@@ -616,7 +616,7 @@ class ReekerGasBehavior:
         #self.owner.char = str(self.ticks)
         for obj in objects:
             if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
-                if obj.name != 'reeker':
+                if obj.name != 'reeker' and obj.name != 'blastcap':
                     if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
                         if libtcod.map_is_in_fov(fov_map, obj.x, obj.y):
                             message('A foul-smelling cloud of gas begins to form around the ' + obj.name, libtcod.fuchsia)
@@ -938,7 +938,7 @@ class GameObject:
 
     def destroy(self):
         global changed_tiles
-        if self.blocks_sight:
+        if self.blocks_sight and fov_map is not None:
             libtcod.map_set_properties(fov_map, self.x, self.y, not dungeon_map[self.x][self.y].blocks_sight, True)
             fov_recompute_fn()
         changed_tiles.append((self.x, self.y))
@@ -950,6 +950,7 @@ class Tile:
     def __init__(self, tile_type='stone floor'):
         self.explored = False
         self.tile_type = tile_type
+        self.no_overwrite = False
 
     @property
     def name(self):
@@ -1434,7 +1435,10 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
             y += 1
 
         if oldMouseX != mouse.cx or oldMouseY != mouse.cy:
-            x, y = mouse.cx + offsetx - consts.MAP_VIEWPORT_X, mouse.cy + offsety - consts.MAP_VIEWPORT_Y
+            mouse_pos =  mouse.cx + offsetx - consts.MAP_VIEWPORT_X, mouse.cy + offsety - consts.MAP_VIEWPORT_Y
+            if in_bounds(mouse_pos[0], mouse_pos[1]):
+                x = mouse_pos[0]
+                y = mouse_pos[1]
 
         cursor_x = x
         cursor_y = y
@@ -1697,7 +1701,8 @@ def mouse_select_monster():
                 if hasattr(obj, 'fighter') and obj.fighter and not obj is player:
                     monster = obj
                     break
-        select_monster(monster)
+        if monster is not None:
+            select_monster(monster)
 
 
 def get_names_under_mouse():
@@ -1744,6 +1749,10 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, a
         pos = x + total_width - 1
     libtcod.console_print_ex(side_panel, pos, y, libtcod.BKGND_NONE, align,
                              name + ': ' + str(value) + '/' + str(maximum))
+
+
+def in_bounds(x, y):
+    return x >= 0 and y >= 0 and x < consts.MAP_WIDTH and y < consts.MAP_HEIGHT
 
 
 def is_blocked(x, y):
@@ -1795,7 +1804,7 @@ def spawn_monster_inventory(proto):
         for slot in proto:
             equip = random_choice(slot)
             if equip != 'none':
-                result.append(create_item(equip))
+                result.append(create_item(equip, material=loot.choose_material(-10), quality=loot.choose_quality(-10)))
     return result
 
 
@@ -1843,9 +1852,9 @@ def create_item(name, material=None, quality=None):
                         'bronze' : 15,
                         'iron' : 65,
                         'steel' : 10,
-                        'crystal' : 15,
-                        'meteor' : 10,
-                        'blightstone' : 10,
+                        'crystal' : 1,
+                        'meteor' : 1,
+                        'blightstone' : 1,
                      }
                 )
             equipment_component.material = material
@@ -1863,8 +1872,8 @@ def create_item(name, material=None, quality=None):
                         '' : 75,
                         'military' : 10,
                         'fine' : 10,
-                        'masterwork' : 10,
-                        'artifact' : 5,
+                        'masterwork' : 5,
+                        'artifact' : 1,
                      }
                 )
             equipment_component.quality = quality
@@ -2197,7 +2206,7 @@ def show_ability_screen():
 def handle_keys():
  
     global game_state, stairs
-    global key
+    global key, mouse
     
     # key = libtcod.console_check_for_keypress()  #real-time
     # key = libtcod.console_wait_for_keypress(True)  #turn-based
@@ -2296,6 +2305,11 @@ def handle_keys():
             if key_char == 'l': # TEMPORARY
                 skill_menu()
                 return 'didnt-take-turn'
+            if mouse.rbutton_pressed:
+                offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
+                mouse_pos = mouse.cx + offsetx - consts.MAP_VIEWPORT_X, mouse.cy + offsety - consts.MAP_VIEWPORT_Y
+                if in_bounds(mouse_pos[0], mouse_pos[1]):
+                    examine(mouse_pos[0], mouse_pos[1])
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
@@ -2551,8 +2565,9 @@ def get_description(obj):
         return ""
 
 
-def examine():
-    x, y = target_tile()
+def examine(x=None, y=None):
+    if x is None or y is None:
+        x, y = target_tile()
     if x is not None and y is not None:
         obj = object_at_coords(x, y)
         if obj is not None:
@@ -2969,6 +2984,7 @@ def generate_level():
 #############################################
 
 def main_menu():
+    mapgen.load_features_from_file('features.txt')
     img = libtcod.image_load('menu_background.png')
     
     while not libtcod.console_is_window_closed():
@@ -3066,7 +3082,7 @@ def initialize_fov():
         for x in range(consts.MAP_WIDTH):
             sight_blockers = get_objects(x, y, lambda o: o.blocks_sight)
             libtcod.map_set_properties(fov_map, x, y, len(sight_blockers) == 0 and not dungeon_map[x][y].blocks_sight, not dungeon_map[x][y].blocks)
-            #dungeon_map[x][y].explored = True
+            dungeon_map[x][y].explored = True
 
 
 def save_game():
@@ -3153,6 +3169,7 @@ import mapgen
 import abilities
 import effects
 
+fov_map = None
 in_game = False
 libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GRAYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
 libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'Magic Roguelike', False)

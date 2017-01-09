@@ -114,7 +114,7 @@ def ability_spawn_vermin(actor=None):
         for y in range(5):
             for x in range(5):
                 pos = actor.x - 2 + x, actor.y - 2 + y
-                if not main.is_blocked(pos[0], pos[1]):
+                if main.in_bounds(pos[0], pos[1]) and not main.is_blocked(pos[0], pos[1]):
                     summon_tiles.append(pos)
         for i in range(monsters.verman_summons[summon_choice]['count']):
             if len(summon_tiles) > 0:

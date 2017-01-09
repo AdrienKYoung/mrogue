@@ -3,8 +3,9 @@ import spells
 import game as main
 import abilities
 
-def item_from_table(loot_level = 0):
-    category = choose_category()
+def item_from_table(loot_level=0, category=None):
+    if category is None:
+        category = choose_category()
 
     item_id = ''
     material = None
