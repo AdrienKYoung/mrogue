@@ -131,6 +131,25 @@ def cast_manabolt():
         return True
     return False
 
+def cast_ignite():
+    target = main.target_tile(consts.IGNITE_RANGE)
+    if target[0] is not None and target[1] is not None:
+        tile = main.dungeon_map[target[0]][target[1]]
+        if tile.blocks:
+            main.message('The ' + tile.name + ' is in the way.', libtcod.gray)
+            return False
+        elif tile.tile_type == 'shallow water' or tile.tile_type == 'deep water':
+            main.message('You cannot ignite water.', libtcod.gray)
+            return False
+        obj = main.get_objects(target[0], target[1], lambda o: o.blocks)
+        if len(obj) > 0:
+            main.message('The ' + obj[0].name + ' is in the way.', libtcod.gray)
+            return False
+        main.message('You conjure a spark of flame, igniting the ' + tile.name + '!', libtcod.flame)
+        main.create_fire(target[0], target[1], 10)
+        return True
+    return False
+
 def cast_mend():
     if main.player.fighter.hp < main.player.fighter.max_hp:
         main.player.fighter.heal(consts.MEND_HEAL)
@@ -171,8 +190,8 @@ def cast_forge():
 
 spell_library = {
     'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]'),
-    'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]')
-
+    'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]'),
+    'ignite' : Spell('ignite', { 'fire' : 1 }, cast_ignite, '[1 fire]'),
 }
 
 mana_colors = {

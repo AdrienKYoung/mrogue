@@ -57,10 +57,12 @@ def choose_book(loot_level=0):
     roll = libtcodpy.random_get_int(0, 0, min(50 + loot_level, 70))
     if roll < 5:
         return choose_book(loot_level + 5)
-    elif roll < 40:
+    elif roll < 25:
         return 'tome_manabolt'
-    else:
+    elif roll < 40:
         return 'tome_mend'
+    else:
+        return 'tome_ignite'
 
 
 def choose_consumable(loot_level=0):
@@ -319,6 +321,16 @@ proto = {
         'learn_spell'   : 'mend',
         'type'          : 'item',
         'description'   : "A weathered book that holds the secrets of Mend."
+    },
+
+    'tome_ignite': {
+        'name'          : 'Tome of Ignite',
+        'category'      : 'book',
+        'char'          : '=',
+        'color'         : libtcodpy.yellow,
+        'learn_spell'   : 'ignite',
+        'type'          : 'item',
+        'description'   : "A weathered book that holds the secrets of Ignite."
     },
 
     #WEAPONS

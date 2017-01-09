@@ -1949,14 +1949,14 @@ def check_breakage(equipment):
 def create_fire(x,y,temp):
     global changed_tiles
 
-    if dungeon_map[x][y].tile_type == 'shallow water' or \
-                    dungeon_map[x][y].tile_type == 'deep water' or is_blocked(x, y):
+    tile = dungeon_map[x][y]
+    if tile.tile_type == 'shallow water' or tile.tile_type == 'deep water' or tile.blocks:
         return
     component = FireBehavior(temp)
     obj = GameObject(x,y,'^','Fire',libtcod.red,misc=component)
     objects.append(obj)
     if temp > 4:
-        dungeon_map[x][y] = Tile('scorched floor')
+        dungeon_map[x][y].tile_type = 'scorched floor'
     for obj in get_objects(x, y, condition=lambda o: o.burns):
         obj.destroy()
     changed_tiles.append((x, y))
@@ -3057,9 +3057,8 @@ def new_game():
     player.fighter.inventory.append(dagger)
     dagger.equipment.equip()
 
-    #test = create_item('equipment_hatchet')
+    #test = create_item('tome_ignite')
     #player.fighter.inventory.append(test)
-    #test.equipment.equip()
 
     selected_monster = None
 
