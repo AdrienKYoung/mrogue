@@ -2509,17 +2509,17 @@ def pick_up_item():
                 items_here[selection - 1].item.pick_up()
             return 'picked-up-item'
     else:
-        interactable_here = get_objects(player.x, player.y, condition=lambda o:o.interact)
+        interactable_here = get_objects(player.x, player.y, condition=lambda o:o.interact, distance=1) #get stuff that's adjacent too
         if len(interactable_here) > 0:
             interactable_here[0].interact(interactable_here[0])
             return 'interacted'
     return 'didnt-take-turn'
 
 
-def get_objects(x, y, condition=None):
+def get_objects(x, y, condition=None, distance=0):
     found = []
     for obj in objects:
-        if obj.x == x and obj.y == y:
+        if max(abs(obj.x - x), abs(obj.y - y)) <= distance:
             if condition is not None:
                 if condition(obj):
                     found.append(obj)
