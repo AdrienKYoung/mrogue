@@ -83,7 +83,7 @@ def ability_bash_attack(actor=None):
             target = object
             break
     if target is not None and target is not main.player:
-        result = main.player_bash_attack(target)
+        result = main.player_bash_attack(target.x - actor.x,target.y - actor.y)
         if result != 'failed':
             return result
     return 'didnt-take-turn'
