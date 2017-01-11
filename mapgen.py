@@ -16,6 +16,7 @@ NOROTATE = 1
 NOREFLECT = 2
 NOSPAWNS = 4
 
+
 # It's not a bug, it's a
 class Feature:
     def __init__(self):
@@ -130,14 +131,14 @@ class Room:
     def get_open_tiles(self):
         return_tiles = []
         for tile in self.tiles.keys():
-            if not terrain.data[self.tiles[tile]].blocks and tile not in self.data.keys():
+            if self.tiles[tile] == 'default ground' or (not terrain.data[self.tiles[tile]].blocks and tile not in self.data.keys()):
                 return_tiles.append(tile)
         return return_tiles
 
     def get_blocked_tiles(self):
         return_tiles = []
         for tile in self.tiles.keys():
-            if terrain.data[self.tiles[tile]].blocks or tile in self.data.keys():
+            if not self.tiles[tile] == 'default ground' and (terrain.data[self.tiles[tile]].blocks or tile in self.data.keys()):
                 return_tiles.append(tile)
         return return_tiles
 
@@ -363,10 +364,17 @@ def apply_room(room, clear_objects=False):
         if tile[0] < 0 or tile[1] < 0 or tile[0] >= consts.MAP_WIDTH or tile[1] >= consts.MAP_HEIGHT:
             raise IndexError('Tile index out of range: ' + str(tile[0]) + ', ' + str(tile[1]))
 
-        if not main.dungeon_map[tile[0]][tile[1]].no_overwrite:
-            main.dungeon_map[tile[0]][tile[1]].tile_type = room.tiles[tile[0], tile[1]]
-            main.dungeon_map[tile[0]][tile[1]].no_overwrite = room.no_overwrite
-            if clear_objects or main.dungeon_map[tile[0]][tile[1]].blocks:
+        old_tile = main.dungeon_map[tile[0]][tile[1]]
+
+        if not old_tile.no_overwrite:
+
+            if room.tiles[tile[0], tile[1]] == 'default ground':
+                if old_tile.blocks:
+                    old_tile.tile_type = 'stone floor'
+            else:
+                old_tile.tile_type = room.tiles[tile[0], tile[1]]
+            old_tile.no_overwrite = room.no_overwrite
+            if clear_objects or old_tile.blocks:
                 for o in main.objects:
                     if o.x == tile[0] and o.y == tile[1] and o is not main.player:
                         o.destroy()
@@ -377,16 +385,46 @@ def apply_room(room, clear_objects=False):
                 elif line[0] == '$':
                     apply_item(tile[0], tile[1], line)
                 elif line[0].isdigit():
-                    apply_monster(tile[0], tile[1], line)
+                    apply_data(tile[0], tile[1], line)
 
-def apply_monster(x, y, data):
+def apply_data(x, y, data):
     monster_id = None
+    go_name = None
+    go_description = None
+    go_blocks = None
+    go_char = None
+    go_color= None
     for i in range(1, len(data)):
         if data[i] == 'MONSTER_ID':
             monster_id = data[i + 1]
             i += 1
+        elif data[i] == 'GO_NAME':
+            go_name = data[i + 1]
+            i += 1
+        elif data[i] == 'GO_BLOCKS':
+            go_blocks = data[i + 1]
+            i += 1
+        elif data[i] == 'GO_CHAR':
+            go_char = data[i + 1]
+            i += 1
+        elif data[i] == 'GO_COLOR':
+            r = int(data[i + 1])
+            g = int(data[i + 2])
+            b = int(data[i + 3])
+            go_color = libtcod.Color(r, g, b)
+            i += 3
+        elif data[i] == 'GO_DESCRIPTION':
+            i += 1
+            go_description = ''
+            while not data[i].startswith('GO_'):
+                go_description += data[i] + ' '
+                i += 1
+
     if monster_id is not None:
         main.spawn_monster(monster_id, x, y)
+    elif go_name is not None:
+        new_obj = main.GameObject(x, y, go_char, go_name, go_color, blocks=go_blocks, description=go_description)
+        main.objects.append(new_obj)
 
 def apply_item(x, y, data):
     loot_level = main.dungeon_level * 5
@@ -548,6 +586,7 @@ file_key = {
     '-' : 'shallow water',
     '~' : 'deep water',
     ':' : 'chasm',
+    '_' : 'default ground'
 }
 def load_feature(lines=[]):
     global file_features
@@ -558,7 +597,7 @@ def load_feature(lines=[]):
         feature_room.no_overwrite = True
         default_ground = '.'
         loot_string = '$'
-        monster_strings = {}
+        data_strings = {}
         script_strings = []
         for i_y in range(len(lines)):
             if lines[i_y].startswith('FLAGS'):
@@ -578,7 +617,7 @@ def load_feature(lines=[]):
                     loot_string = line
                 elif line[0].isdigit():
                     digit = int(line[0])
-                    monster_strings[digit] = line
+                    data_strings[digit] = line
             elif lines[i_y].startswith('SCRIPT'):
                 for script in lines[i_y].split(' ')[1:]:
                     script_strings.append(script)
@@ -596,7 +635,7 @@ def load_feature(lines=[]):
                     if c == '$':
                         feature_room.data[(i_x, i_y)] = loot_string
                     elif c.isdigit():
-                        feature_room.data[(i_x, i_y)] = monster_strings[int(c)]
+                        feature_room.data[(i_x, i_y)] = data_strings[int(c)]
 
         new_feature.room = feature_room
         for script in script_strings:

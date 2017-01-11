@@ -17,6 +17,8 @@
 //       - : shallow water
 //       ~ : deep water
 //       : : chasm
+//       _ : default ground (only replace solid
+//           tiles)
 //	 $ : loot*
 //     0-9 : monster*
 //   FLAGS : indicates the rest of the line
@@ -50,56 +52,64 @@
 //                  is set)
 //     QUALITY    : set quality (only if ITEM_ID
 //                  is set)
-// 1-9 : Set properties for monster
+// 1-9 : Set properties for monster / game object
 //     MONSTER_ID : ID of the monster to spawn
 //                  (e.g. monster_goblin)
+//     GO_NAME    : Name of the game object
+// GO_DESCRIPTION : Description of the game object
+//      GO_BLOCKS : Whether the game object blocks
+//                  movement
+//        GO_CHAR : The game object's character
+//       GO_COLOR : The game object's color. The
+//                  next 3 tokens represent RGB
+//                  color values.
 
 //***************
 //  Pillar Room
 //***************
 FEATURE
 FLAGS NOREFLECT
-  .....  
- ..###.. 
-..##.##..
-.##...##.
-....#....
-.##...##.
-..##.##..
- ..###.. 
-  .....  
+  _____  
+ __###__ 
+__##.##__
+_##...##_
+_...#..._
+_##...##_
+__##.##__
+ __###__ 
+  _____  
 ENDFEATURE
 //***************
 //  Tiny Pond
 //***************
 FEATURE
- ..    
-.--..  
-.-~~--.
-.-~~~-.
-..-~-..
-..----.
- ..... 
+ __    
+_--__  
+_-~~--_
+_-~~~-_
+__-~-__
+__----_
+ _____ 
 ENDFEATURE
 //***************
 //  Round Maze
 //***************
 FEATURE
-    .......    
-  ..#.#####..  
- .####...#.##. 
- .#######.###. 
-.##...####..##.
-...###.##..###.
-.######..#####.
-.##..##.#.###..
-.#.##..####..#.
-.####.####.###.
-.###.#.##.####.
- .##.##..#.... 
- .##.########. 
-  ..#######..  
-    .......    
+   _________    
+ ___#.#####___  
+ _####...#.##_ 
+__#######.###__ 
+_##...####..##_
+_..###.##..###_
+_######..#####_
+_##..##.#.###._
+_#.##..####..#_
+_####.####.###_
+_###.#.##.####_
+__##.##..#...__
+ _##.########_ 
+ ___#######___ 
+   _________   
 ENDFEATURE
 //***************
 //     Brook
@@ -137,28 +147,28 @@ FEATURE
 FLAGS NOSPAWNS
 DEFINE $ LOOT_LEVEL 5 CATEGORY consumable
 DEFINE 1 MONSTER_ID monster_verman
-,,,,,,,
-,#####,
-,#$..#,
-,#$1..,
-,#$..#,
-,#####,
-,,,,,,,
+_______
+_#####_
+_#$..#_
+_#$1.._
+_#$..#_
+_#####_
+_______
 ENDFEATURE
 //***************
 //   Platform
 //***************
 FEATURE
 DEFAULT ,
-  .......
- .::::::..
-..::,,:::.
-.::,,,,,:.,
-.::$,,,,,,.,
-..:,,,,,:.,
- .:::,,::.
- ..:::::.
-  ......
+  _______
+ _::::::__
+__::,,:::_
+_::,,,,,:.,
+_::$,,,,,,.,
+__:,,,,,:.,
+ _:::,,::_
+ __:::::__
+  _______
 ENDFEATURE
 //***************
 //   Frog pond
@@ -214,4 +224,18 @@ DEFINE 1 MONSTER_ID monster_blastcap
 1 ,,,,,,1
  ,1,,,1, 
    ,1,  
+ENDFEATURE
+//***************
+//Goblin Campfire
+//***************
+FEATURE
+DEFINE 1 MONSTER_ID monster_goblin
+DEFINE 2 GO_NAME campfire GO_DESCRIPTION a small firepit, burning low GO_CHAR ^ GO_COLOR 255 63 0 GO_BLOCKS True
+  ___
+ _____
+___1___
+__121__
+___1___
+ _____
+  ___
 ENDFEATURE
