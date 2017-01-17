@@ -17,6 +17,7 @@
 //       - : shallow water
 //       ~ : deep water
 //       : : chasm
+//	 / : ramp
 //       _ : default ground (only replace solid
 //           tiles)
 //	 $ : loot*
@@ -64,9 +65,9 @@
 //                  next 3 tokens represent RGB
 //                  color values.
 
-//***************
-//  Pillar Room
-//***************
+//*******************
+//0   Pillar Room
+//*******************
 FEATURE
 FLAGS NOREFLECT
   _____  
@@ -79,9 +80,9 @@ __##.##__
  __###__ 
   _____  
 ENDFEATURE
-//***************
-//  Tiny Pond
-//***************
+//*******************
+//1   Tiny Pond
+//*******************
 FEATURE
  __    
 _--__  
@@ -91,9 +92,9 @@ __-~-__
 __----_
  _____ 
 ENDFEATURE
-//***************
-//  Round Maze
-//***************
+//*******************
+//2   Round Maze
+//*******************
 FEATURE
    _________    
  ___#.#####___  
@@ -111,9 +112,9 @@ __##.##..#...__
  ___#######___ 
    _________   
 ENDFEATURE
-//***************
-//     Brook
-//***************
+//*******************
+//3      Brook
+//*******************
 FEATURE
 ###
 #---
@@ -129,9 +130,9 @@ FEATURE
               ,-------
                   ---
 ENDFEATURE
-//***************
-//   Fissure
-//***************
+//*******************
+//4    Fissure
+//*******************
 FEATURE
  ...
 :::..
@@ -140,9 +141,9 @@ FEATURE
    .....::.
        ..::
 ENDFEATURE
-//***************
-//  Verman Hut
-//***************
+//*******************
+//5   Verman Hut
+//*******************
 FEATURE
 FLAGS NOSPAWNS
 DEFINE $ LOOT_LEVEL 5 CATEGORY consumable
@@ -155,9 +156,9 @@ _#$..#_
 _#####_
 _______
 ENDFEATURE
-//***************
-//   Platform
-//***************
+//*******************
+//6    Platform
+//*******************
 FEATURE
 DEFAULT ,
   _______
@@ -170,9 +171,9 @@ __:,,,,,:.,
  __:::::__
   _______
 ENDFEATURE
-//***************
-//   Frog pond
-//***************
+//*******************
+//7    Frog pond
+//*******************
 FEATURE
 DEFAULT ,
 DEFINE $ LOOT_LEVEL 15
@@ -195,9 +196,9 @@ SCRIPT scatter_reeds
  ,,---------,,,
   ,,,,,,,,,,,
 ENDFEATURE
-//***************
-// Reeker Field
-//***************
+//*******************
+//8  Reeker Field
+//*******************
 FEATURE
 DEFAULT ,
 DEFINE 1 MONSTER_ID monster_reeker
@@ -210,9 +211,9 @@ DEFINE 1 MONSTER_ID monster_reeker
  ,,,, , 
    1,,  
 ENDFEATURE
-//***************
-//  Fairy Ring
-//***************
+//*******************
+//9   Fairy Ring
+//*******************
 FEATURE
 DEFAULT ,
 DEFINE 1 MONSTER_ID monster_blastcap
@@ -225,9 +226,9 @@ DEFINE 1 MONSTER_ID monster_blastcap
  ,1,,,1, 
    ,1,  
 ENDFEATURE
-//***************
-//Goblin Campfire
-//***************
+//*******************
+//10 Goblin Campfire
+//*******************
 FEATURE
 DEFINE 1 MONSTER_ID monster_goblin
 DEFINE 2 GO_NAME campfire GO_DESCRIPTION a small firepit, burning low GO_CHAR ^ GO_COLOR 255 63 0 GO_BLOCKS True
@@ -238,4 +239,23 @@ __121__
 ___1___
  _____
   ___
+ENDFEATURE
+FEATURE
+FLAGS NOSPAWNS NOROTATE NOREFLECT
+.......
+.     .
+.     .
+.     .
+.     .
+.     .
+.......
+HEIGHT 1
+       
+ ///// 
+ /.../ 
+ /.../ 
+ /.../ 
+ /.../ 
+       
+ENDHEIGHT
 ENDFEATURE

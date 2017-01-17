@@ -36,4 +36,6 @@ data = {
                              'a stone floor covered with cave grass', flammable=True),
     'scorched floor': TileData(False, False, 'scorched floor', '.', (94, 55, 55), (30, 30, 30),
                              'still-warm floor scorched by fire'),
+    'ramp': TileData(False, False, 'ramp', '/', (128, 96, 0), (64, 48, 0),
+                             'a ramp'),
 }

@@ -6,6 +6,7 @@ import math
 import terrain
 import loot
 import Queue
+import pathfinding
 
 angles = [0,
           0.5 * math.pi,
@@ -116,7 +117,7 @@ class Room:
         self.data = new_data
 
 
-    def set_tile(self, x, y, tile_type):
+    def set_tile(self, x, y, tile_type, elevation=0):
         if self.min_x is None or self.min_x > x:
             self.min_x = x
         if self.max_x is None or self.max_x < x:
@@ -126,6 +127,15 @@ class Room:
         if self.max_y is None or self.max_y < y:
             self.max_y = y
         self.tiles[(x, y)] = tile_type
+        if elevation != 0:
+            self.data[(x, y)] = []
+            self.data[(x, y)].append('ELEVATION')
+            self.data[(x, y)].append(str(elevation))
+            #ele_str = 'ELEVATION ' + str(elevation)
+            #if (x, y) not in self.data.keys():
+            #    self.data[(x, y)] = ele_str
+            #else:
+            #    self.data[(x, y)] += (' ' + ele_str)
 
 
     def get_open_tiles(self):
@@ -382,12 +392,28 @@ def apply_room(room, clear_objects=False):
                 line = room.data[tile]
                 if len(line) == 0:
                     pass
-                elif line[0] == '$':
-                    apply_item(tile[0], tile[1], line)
-                elif line[0].isdigit():
+                else:
                     apply_data(tile[0], tile[1], line)
+                #elif line[0] == '$':
+                #    apply_item(tile[0], tile[1], line)
+                #elif line[0].isdigit():
+                #    apply_data(tile[0], tile[1], line)
+
 
 def apply_data(x, y, data):
+
+    if data[0] == '$':
+        apply_item(x, y, data)
+    elif data[0].isdigit():
+        apply_object(x, y, data)
+
+    for i in range(len(data)):
+        if data[i] == 'ELEVATION':
+            main.dungeon_map[x][y].elevation = int(data[i + 1])
+            i += 1
+
+
+def apply_object(x, y, data):
     monster_id = None
     go_name = None
     go_description = None
@@ -419,6 +445,9 @@ def apply_data(x, y, data):
             while not data[i].startswith('GO_'):
                 go_description += data[i] + ' '
                 i += 1
+        elif data[i] == 'ELEVATION':
+            main.dungeon_map[x][y].elevation = data[i + 1]
+            i += 1
 
     if monster_id is not None:
         main.spawn_monster(monster_id, x, y)
@@ -586,7 +615,8 @@ file_key = {
     '-' : 'shallow water',
     '~' : 'deep water',
     ':' : 'chasm',
-    '_' : 'default ground'
+    '_' : 'default ground',
+    '/' : 'ramp',
 }
 def load_feature(lines=[]):
     global file_features
@@ -599,6 +629,8 @@ def load_feature(lines=[]):
         loot_string = '$'
         data_strings = {}
         script_strings = []
+        height = 0
+        y_index = 0
         for i_y in range(len(lines)):
             if lines[i_y].startswith('FLAGS'):
                 f = lines[i_y].split(' ')
@@ -621,6 +653,11 @@ def load_feature(lines=[]):
             elif lines[i_y].startswith('SCRIPT'):
                 for script in lines[i_y].split(' ')[1:]:
                     script_strings.append(script)
+            elif lines[i_y].startswith('HEIGHT'):
+                height = int(lines[i_y].split(' ')[1])
+                y_index = 0
+            elif lines[i_y].startswith('ENDHEIGHT'):
+                height = 0
             else:
                 for i_x in range(len(lines[i_y])):
                     c = lines[i_y][i_x]
@@ -630,12 +667,13 @@ def load_feature(lines=[]):
                         type = file_key[default_ground]
 
                     if type is not None:
-                        feature_room.set_tile(i_x, i_y, type)
+                        feature_room.set_tile(i_x, y_index, type, height)
 
                     if c == '$':
-                        feature_room.data[(i_x, i_y)] = loot_string
+                        feature_room.data[(i_x, y_index)] = loot_string
                     elif c.isdigit():
-                        feature_room.data[(i_x, i_y)] = data_strings[int(c)]
+                        feature_room.data[(i_x, y_index)] = data_strings[int(c)]
+                y_index += 1
 
         new_feature.room = feature_room
         for script in script_strings:
@@ -695,6 +733,14 @@ def apply_scripts(feature):
             scatter_reeds(feature.room.get_open_tiles())
         elif script == 'your script here':
             pass
+
+
+def choose_random_tile(tile_list, exclusive=True):
+    chosen_tile = tile_list[libtcod.random_get_int(0, 0, len(tile_list) - 1)]
+    if exclusive:
+        tile_list.remove(chosen_tile)
+    return chosen_tile
+
 
 def make_rooms_and_corridors():
 
@@ -782,8 +828,10 @@ def make_one_big_room():
         tile = choose_random_tile(open_tiles)
         main.spawn_monster('monster_blastcap', tile[0], tile[1])
 
-    # Uncomment to test last feature in features.txt
-    # create_feature(tile[0], tile[1], open_tiles, index=len(file_features)-1)
+    # test last feature in features.txt by forcing it to spawn first
+    if consts.DEBUG_TEST_FEATURE:
+        tile = choose_random_tile(open_tiles)
+        create_feature(tile[0], tile[1], open_tiles, index=len(file_features)-1)
 
     feature_count = libtcod.random_get_int(0, 0, 10)
     for i in range(feature_count):
@@ -805,11 +853,27 @@ def make_one_big_room():
         boss_tile = choose_random_tile(open_tiles)
         main.spawn_monster(boss, boss_tile[0], boss_tile[1])
 
-def choose_random_tile(tile_list, exclusive=True):
-    chosen_tile = tile_list[libtcod.random_get_int(0, 0, len(tile_list) - 1)]
-    if exclusive:
-        tile_list.remove(chosen_tile)
-    return chosen_tile
+
+def make_test_space():
+    for y in range(2, consts.MAP_HEIGHT - 2):
+        for x in range(2, consts.MAP_WIDTH - 2):
+            main.dungeon_map[x][y].tile_type = 'stone floor'
+
+    player_tile = (consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2)
+
+    create_feature(player_tile[0] - 3, player_tile[1] - 16, None, 11)
+
+    main.player.x = player_tile[0]
+    main.player.y = player_tile[1]
+
+    main.spawn_monster('monster_goblin', player_tile[0], player_tile[1] - 20)
+
+    stair_tile = (player_tile[0], player_tile[1] + 3)
+    main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,
+                                  always_visible=True)
+    main.objects.append(main.stairs)
+    main.stairs.send_to_back()
+
 
 def make_map():
     global feature_rects
@@ -824,10 +888,12 @@ def make_map():
     main.spawned_bosses = {}
 
     # choose generation type
-    if libtcod.random_get_int(0, 0, 1) == 0 and False:
-        make_rooms_and_corridors()
+    if consts.DEBUG_TEST_MAP:
+        make_test_space()
     else:
+        # make_rooms_and_corridors()
         make_one_big_room()
+
 
     # make sure the edges are undiggable walls
     for i in range(consts.MAP_WIDTH):
@@ -836,4 +902,7 @@ def make_map():
     for i in range(consts.MAP_HEIGHT):
         main.dungeon_map[0][i].tile_type = 'hard stone wall'
         main.dungeon_map[consts.MAP_WIDTH - 1][i].tile_type = 'hard stone wall'
+
+    pathfinding.map.initialize(main.dungeon_map)
+    main.initialize_fov()
 
