@@ -240,8 +240,10 @@ ___1___
  _____
   ___
 ENDFEATURE
+//*******************
+//11   Small Hill
+//*******************
 FEATURE
-FLAGS NOSPAWNS NOROTATE NOREFLECT
 .......
 .     .
 .     .

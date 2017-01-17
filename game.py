@@ -598,7 +598,9 @@ class AI_Default:
             self.last_seen_position = (player.x, player.y)
         elif self.last_seen_position is not None and not\
                 (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
-            monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
+            result = monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
+            if result == 'failure':
+                self.last_seen_position = None
 
 
 class ReekerGasBehavior:
@@ -910,10 +912,11 @@ class GameObject:
 
     def move_astar(self, target_x, target_y):
         if self.x == target_x and self.y == target_y:
-            return
+            return 'already here'
 
         if not pathfinding.map:
             self.move_astar_old(target_x, target_y)
+            return 'no map'
         else:
             if not pathfinding.map.is_accessible((target_x, target_y)):
                 closest_adjacent = None
@@ -927,7 +930,7 @@ class GameObject:
                         closest_adjacent = adj
                 if closest_adjacent is None:
                     self.move_towards(target_x, target_y)
-                    return
+                    return 'no adjacent'
                 else:
                     target_x = closest_adjacent[0]
                     target_y = closest_adjacent[1]
@@ -945,6 +948,7 @@ class GameObject:
             else:
                 # Use the old(er) function instead
                 self.move_towards(target_x, target_y)
+                return 'failure'
 
     def move_astar_old(self, target_x, target_y):
 
@@ -1619,7 +1623,7 @@ def beam_interrupt(sourcex, sourcey, destx, desty):
     libtcod.line_init(sourcex, sourcey, destx, desty)
     line_x, line_y = libtcod.line_step()
     while line_x is not None:
-        if is_blocked(line_x, line_y):  # beam interrupt scans until it hits something
+        if is_blocked(line_x, line_y, dungeon_map[sourcex][sourcey].elevation):  # beam interrupt scans until it hits something
             return line_x, line_y
         line_x, line_y = libtcod.line_step()
     return destx, desty
@@ -1929,6 +1933,7 @@ def spawn_monster(name, x, y):
                              ai=ai, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'])
         if p.get('mana'):
             monster.mana = p.get('mana')
+        monster.elevation = dungeon_map[x][y].elevation
         objects.append(monster)
         return monster
     return None
@@ -3344,6 +3349,9 @@ def play_game():
             save_game()
             in_game = False
             break
+
+        render_all()
+        libtcod.console_flush()
 
         # Let monsters take their turn
         if game_state == 'playing' and player_action != 'didnt-take-turn':

@@ -402,15 +402,21 @@ def apply_room(room, clear_objects=False):
 
 def apply_data(x, y, data):
 
-    if data[0] == '$':
-        apply_item(x, y, data)
-    elif data[0].isdigit():
-        apply_object(x, y, data)
+    #if data[0] == '$':
+    #    apply_item(x, y, data)
+    #elif data[0].isdigit():
+    #    apply_object(x, y, data)
 
     for i in range(len(data)):
         if data[i] == 'ELEVATION':
             main.dungeon_map[x][y].elevation = int(data[i + 1])
             i += 1
+        elif data[i].isdigit():
+            apply_object(x, y, data[i:])
+            break
+        elif data[i] == '$':
+            apply_item(x, y, data[i:])
+            break
 
 
 def apply_object(x, y, data):
@@ -670,9 +676,17 @@ def load_feature(lines=[]):
                         feature_room.set_tile(i_x, y_index, type, height)
 
                     if c == '$':
-                        feature_room.data[(i_x, y_index)] = loot_string
+                        if (i_x, y_index) in feature_room.data.keys():
+                            for s in loot_string:
+                                feature_room.data[(i_x, y_index)].append(s)
+                        else:
+                            feature_room.data[(i_x, y_index)] = loot_string
                     elif c.isdigit():
-                        feature_room.data[(i_x, y_index)] = data_strings[int(c)]
+                        if (i_x, y_index) in feature_room.data.keys():
+                            for s in data_strings[int(c)]:
+                                feature_room.data[(i_x, y_index)].append(s)
+                        else:
+                            feature_room.data[(i_x, y_index)] = data_strings[int(c)]
                 y_index += 1
 
         new_feature.room = feature_room
@@ -861,12 +875,12 @@ def make_test_space():
 
     player_tile = (consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2)
 
-    create_feature(player_tile[0] - 3, player_tile[1] - 16, None, 11)
+    create_feature(player_tile[0] - 3, player_tile[1] - 16, None, 12)
 
     main.player.x = player_tile[0]
     main.player.y = player_tile[1]
 
-    main.spawn_monster('monster_goblin', player_tile[0], player_tile[1] - 20)
+    main.spawn_monster('monster_giant_frog', player_tile[0], player_tile[1] - 20)
 
     stair_tile = (player_tile[0], player_tile[1] + 3)
     main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,

@@ -128,7 +128,7 @@ def ability_spawn_vermin(actor=None):
 def ability_grapel(actor=None):
     #Blame the Bleshib
     player = main.player
-    if actor.distance_to(player) <= consts.FROG_TONGUE_RANGE:
+    if actor.distance_to(player) <= consts.FROG_TONGUE_RANGE and main.monster_can_see_object(actor, player):
         if main.player.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, player.x, player.y) == (player.x, player.y):
             spells.cast_frog_tongue(actor, player)
             return
