@@ -77,6 +77,25 @@ proto = {
         'equipment': [{'equipment_dagger':50,'equipment_longsword':50},{'none':50,'equipment_shield':50},{'none':50,'equipment_leather_armor':50}],
         'shred': 1
     },
+    'monster_goblin_chief': {
+        'name': 'goblin chief',
+        'char': 'g',
+        'color': libtcod.dark_yellow,
+        'hp': 30,
+        'attack_damage': 15,
+        'armor': 3,
+        'evasion': 10,
+        'accuracy': 23,
+        'speed': 0.8,
+        'difficulty': 1,
+        'loot': 'default',
+        'on_create': None,
+        'ai': main.AI_Default,
+        'description': 'Slightly larger, much more vicious humanoid that tells other goblins what to do.',
+        'resistances': [],
+        'equipment': [{'equipment_spear':50,'equipment_longsword':50},{'none':50,'equipment_shield':50},{'equipment_leather_armor':100}],
+        'shred': 1
+    },
     'monster_bomb_beetle': {
         'name': 'bomb beetle',
         'char': 'b',
