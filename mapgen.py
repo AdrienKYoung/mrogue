@@ -875,7 +875,7 @@ def make_test_space():
 
     player_tile = (consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2)
 
-    create_feature(player_tile[0] - 3, player_tile[1] - 16, None, 12)
+    create_feature(player_tile[0] - 3, player_tile[1] - 16, None, 11)
 
     main.player.x = player_tile[0]
     main.player.y = player_tile[1]

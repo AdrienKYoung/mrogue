@@ -4,12 +4,12 @@ import Queue
 import math
 import libtcodpy as libtcod
 
+MAX_EDGES_DISCOVERED = 100
+
 class Graph:
     def __init__(self):
         self.edges = {}
 
-    def neighbors(self, id):
-        return self.edges[id]
 
     def initialize(self, dungeon_map):
 
@@ -29,6 +29,8 @@ class Graph:
             if obj.blocks:
                 self.mark_impassable((obj.x, obj.y))
 
+
+    # add an edge from the source tile to the neighbor tile (checking elevation rules). Assumes that 'neighbor' is passable
     def add_edge(self, source, neighbor):
 
         source_tile = main.dungeon_map[source[0]][source[1]]
@@ -43,33 +45,32 @@ class Graph:
         else:
             self.edges[source] = [neighbor]
 
+
+    # for every adjacent tile, make sure that tile does not point to the now impassable tile
     def mark_impassable(self, coord):
         for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
             if tile in self.edges and coord in self.edges[tile]:
                 self.edges[tile].remove(coord)
-        #if coord in self.edges:
-        #    self.edges[coord] = []
 
+
+    # for every adjacent tile, make an edge to the now passable tile (if it follows elevation rules)
     def mark_passable(self, coord):
         for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
             self.add_edge(tile, coord)
 
-            #if coord in self.edges and tile not in self.edges[coord]:
-            #    self.add_edge(coord, tile)
 
-
+    # Returns true if there is at least one adjacent tile with an edge leading to this tile
     def is_accessible(self, coord):
         for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
-            if tile in self.edges:
-                edge = self.edges[tile]
-
             if tile in self.edges and coord in self.edges[tile]:
                 return True
         return False
 
+
     def a_star_search(self, start, goal):
+        discovered = 0
         closed_set = []
-        open_set = [start]
+        open_set = [start]  # TODO: Use Priority Queue
         came_from = {}
         g_score = {}
         f_score = {}
@@ -79,9 +80,12 @@ class Graph:
                 f_score[(x, y)] = float('inf')
 
         g_score[start] = 0
-        f_score[start] = heuristic(start, goal)
+        f_score[start] = Graph.heuristic(start, goal)
 
         while len(open_set) > 0:
+            discovered += 1
+            if discovered > MAX_EDGES_DISCOVERED:
+                break
             shortest = float('inf')
             for open in open_set:
                 if f_score[open] < shortest:
@@ -89,7 +93,7 @@ class Graph:
                     shortest = f_score[open]
 
             if current == goal:
-                return reconstruct_path(came_from, current)
+                return Graph.reconstruct_path(came_from, current)
 
             open_set.remove(current)
             closed_set.append(current)
@@ -98,7 +102,7 @@ class Graph:
                 for neighbor in self.edges[current]:
                     if neighbor in closed_set:
                         continue
-                    tentative_g_score = g_score[current] + dist_between(current, neighbor)
+                    tentative_g_score = g_score[current] + Graph.dist_between(current, neighbor)
                     if neighbor not in open_set:
                         open_set.append(neighbor)
                     elif tentative_g_score >= g_score[neighbor]:
@@ -106,28 +110,33 @@ class Graph:
 
                     came_from[neighbor] = current
                     g_score[neighbor] = tentative_g_score
-                    f_score[neighbor] = g_score[neighbor] + heuristic(neighbor, goal)
+                    f_score[neighbor] = g_score[neighbor] + Graph.heuristic(neighbor, goal)
 
         return 'failure'
 
-def reconstruct_path(came_from, current):
-    total_path = [current]
-    while current in came_from:
-        current = came_from[current]
-        total_path.append(current)
-    total_path.reverse()
-    return total_path
+    @staticmethod
+    def reconstruct_path(came_from, current):
+        total_path = [current]
+        while current in came_from:
+            current = came_from[current]
+            total_path.append(current)
+        total_path.reverse()
+        return total_path
 
-def dist_between(a, b):
-    (x1, y1) = a
-    (x2, y2) = b
-    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+    @staticmethod
+    def dist_between(a, b):
+        (x1, y1) = a
+        (x2, y2) = b
+        return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
-def heuristic(a, b):
-    (x1, y1) = a
-    (x2, y2) = b
-    return abs(x1 - x2) + abs(y1 - y2)
+    @staticmethod
+    def heuristic(a, b):
+        (x1, y1) = a
+        (x2, y2) = b
+        return abs(x1 - x2) + abs(y1 - y2)
 
+
+# Used for debugging (consts.DEBUG_DRAW_PATHS must be true)
 def draw_path(path):
     oldpaths = []
     for obj in main.objects:
@@ -141,4 +150,5 @@ def draw_path(path):
             main.objects.append(
                 main.GameObject(t[0], t[1], '*', 'path', libtcod.yellow, always_visible=True, description=''))
 
+# The pathfinding map object
 map = Graph()
