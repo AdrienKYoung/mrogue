@@ -1103,10 +1103,13 @@ def player_can_see(x, y):
     return libtcod.map_is_in_fov(fov_player, x, y)
 
 def monster_can_see_object(monster, target):
-    global player_fov_calculated
-
     if monster.elevation == target.elevation and target is player:
         return player_can_see(monster.x, monster.y)
+    else:
+        return monster_can_see_tile(monster, target.x, target.y)
+
+def monster_can_see_tile(monster, x, y):
+    global player_fov_calculated
 
     if monster.elevation in fov_height.keys():
         libtcod.map_compute_fov(fov_height[monster.elevation], monster.x, monster.y, consts.TORCH_RADIUS,
@@ -1114,7 +1117,7 @@ def monster_can_see_object(monster, target):
         player_fov_calculated = False
 
         fov_recompute_fn()
-        return libtcod.map_is_in_fov(fov_height[monster.elevation], target.x, target.y)
+        return libtcod.map_is_in_fov(fov_height[monster.elevation], x, y)
     else:
         return False  # TODO: alternative here
 
