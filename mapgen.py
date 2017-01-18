@@ -918,5 +918,4 @@ def make_map():
         main.dungeon_map[consts.MAP_WIDTH - 1][i].tile_type = 'hard stone wall'
 
     pathfinding.map.initialize(main.dungeon_map)
-    main.initialize_fov()
 

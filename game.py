@@ -117,7 +117,7 @@ class ConfusedMonster:
             self.num_turns -= 1
         else:
             self.owner.ai.behavior = self.old_ai
-            if player_can_see(self.owner.x, self.owner.y):
+            if fov.player_can_see(self.owner.x, self.owner.y):
                 message('The ' + self.owner.name + ' is no longer confused.', libtcod.light_grey)
 
 
@@ -470,7 +470,7 @@ class Fighter:
         # check for immunity
         for resist in self.resistances:
             if resist == new_effect.name:
-                if player_can_see(self.owner.x, self.owner.y):
+                if fov.player_can_see(self.owner.x, self.owner.y):
                     message('The ' + self.owner.name + ' resists.', libtcod.gray)
                 return False
         # check for existing matching effects
@@ -577,7 +577,7 @@ class AI_Default:
 
     def act(self):
         monster = self.owner
-        if monster_can_see_object(monster, player):
+        if fov.monster_can_see_object(monster, player):
 
             #Handle default ability use behavior
             for a in self.owner.fighter.abilities:
@@ -620,10 +620,10 @@ class ReekerGasBehavior:
             if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
                 if obj.name != 'reeker' and obj.name != 'blastcap':
                     if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
-                        if player_can_see(obj.x, obj.y):
+                        if fov.player_can_see(obj.x, obj.y):
                             message('A foul-smelling cloud of gas begins to form around the ' + obj.name, libtcod.fuchsia)
                     else:
-                        if player_can_see(obj.x, obj.y):
+                        if fov.player_can_see(obj.x, obj.y):
                             message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
                         obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
 
@@ -663,7 +663,7 @@ class AI_Reeker:
 
     def act(self):
         monster = self.owner
-        if player_can_see(monster.x, monster.y):
+        if fov.player_can_see(monster.x, monster.y):
             for i in range(consts.REEKER_PUFF_MAX):
                 if libtcod.random_get_int(0, 0, 10) < 3:
                     # create puff
@@ -687,7 +687,7 @@ class AI_TunnelSpider:
     def act(self):
         monster = self.owner
         if self.state == 'resting':
-            if monster_can_see_object(monster, player):
+            if fov.monster_can_see_object(monster, player):
                 self.state = 'hunting'
                 self.act()
             elif object_at_tile(monster.x, monster.y, 'spiderweb') is None:
@@ -710,7 +710,7 @@ class AI_TunnelSpider:
             if self.closest_web is not None and monster.distance_to(self.closest_web) > consts.TUNNEL_SPIDER_MAX_WEB_DIST:
                 self.state = 'retreating'
                 self.act()
-            elif monster_can_see_object(monster, player):
+            elif fov.monster_can_see_object(monster, player):
                     monster.move_astar(player.x, player.y)
                     self.last_seen_position = (player.x, player.y)
             elif self.last_seen_position is not None and not \
@@ -806,7 +806,7 @@ class GameObject:
 
     def on_create(self):
         if self.blocks_sight:
-            set_fov_properties(self.x, self.y, self.blocks_sight, self.elevation)
+            fov.set_fov_properties(self.x, self.y, self.blocks_sight, self.elevation)
 
     def set_position(self, x, y):
 
@@ -820,8 +820,8 @@ class GameObject:
 
         # Update fov maps (if this object affects fov)
         if self.blocks_sight:
-            set_fov_properties(self.x, self.y, dungeon_map[self.x][self.y].blocks_sight, self.elevation)
-            set_fov_properties(x, y, True, self.elevation)
+            fov.set_fov_properties(self.x, self.y, dungeon_map[self.x][self.y].blocks_sight, self.elevation)
+            fov.set_fov_properties(x, y, True, self.elevation)
 
         # Update the pathfinding map - mark our previous space as passable and our new space as impassable
         if pathfinding.map and self.blocks:
@@ -843,8 +843,8 @@ class GameObject:
         # If the player moved, recalculate field of view, checking for elevation changes
         if self is player:
             if old_elev != self.elevation:
-                set_view_elevation(self.elevation)
-            fov_recompute_fn()
+                fov.set_view_elevation(self.elevation)
+            fov.set_fov_recompute()
 
     def move(self, dx, dy):
 
@@ -874,23 +874,9 @@ class GameObject:
             self.set_position(self.x + dx, self.y + dy)
             return True
 
-    # Unused
-    def draw_old(self):
-        offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
-        if libtcod.map_is_in_fov(fov_player, self.x, self.y):
-            if selected_monster is self:
-                libtcod.console_put_char_ex(map_con, self.x - offsetx, self.y - offsety, self.char, libtcod.black, self.color)
-            else:
-                libtcod.console_set_default_foreground(map_con, self.color)
-                libtcod.console_put_char(map_con, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
-        elif self.always_visible and dungeon_map[self.x][self.y].explored:
-            shaded_color = libtcod.Color(self.color[0], self.color[1], self.color[2])
-            libtcod.color_scale_HSV(shaded_color, 0.1, 0.4)
-            libtcod.console_set_default_foreground(map_con, shaded_color)
-            libtcod.console_put_char(map_con, self.x - offsetx, self.y - offsety, self.char, libtcod.BKGND_NONE)
 
     def draw(self, console):
-        if player_can_see(self.x, self.y):
+        if fov.player_can_see(self.x, self.y):
             if selected_monster is self:
                 libtcod.console_put_char_ex(console, self.x, self.y, self.char, libtcod.black, self.color)
             else:
@@ -1015,7 +1001,7 @@ class GameObject:
     def destroy(self):
         global changed_tiles
         if self.blocks_sight:
-            set_fov_properties(self.x, self.y, dungeon_map[self.x][self.y].blocks_sight, self.elevation)
+            fov.set_fov_properties(self.x, self.y, dungeon_map[self.x][self.y].blocks_sight, self.elevation)
         if self.blocks and pathfinding.map:
             pathfinding.map.mark_passable((self.x, self.y))
         changed_tiles.append((self.x, self.y))
@@ -1079,57 +1065,6 @@ class Tile:
 # General Functions
 #############################################
 
-def set_fov_properties(x, y, blocks_sight, elevation=None):
-    global fov_height
-
-    if elevation is None:
-        for index in fov_height.keys():
-            libtcod.map_set_properties(fov_height[index], x, y, not blocks_sight, True)
-    else:
-        for index in fov_height.keys():
-            if index <= elevation:
-                libtcod.map_set_properties(fov_height[index], x, y, not blocks_sight, True)
-
-    fov_recompute_fn()
-
-
-def player_can_see(x, y):
-    global fov_recompute, player_fov_calculated
-
-    if not player_fov_calculated:
-        libtcod.map_compute_fov(fov_player, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS, consts.FOV_ALGO)
-        player_fov_calculated = True
-
-    return libtcod.map_is_in_fov(fov_player, x, y)
-
-def monster_can_see_object(monster, target):
-    if monster.elevation == target.elevation and target is player:
-        return player_can_see(monster.x, monster.y)
-    else:
-        return monster_can_see_tile(monster, target.x, target.y)
-
-def monster_can_see_tile(monster, x, y):
-    global player_fov_calculated
-
-    if monster.elevation in fov_height.keys():
-        libtcod.map_compute_fov(fov_height[monster.elevation], monster.x, monster.y, consts.TORCH_RADIUS,
-                                consts.FOV_LIGHT_WALLS, consts.FOV_ALGO)
-        player_fov_calculated = False
-
-        fov_recompute_fn()
-        return libtcod.map_is_in_fov(fov_height[monster.elevation], x, y)
-    else:
-        return False  # TODO: alternative here
-
-def set_view_elevation(elevation):
-    global fov_player, fov_recompute
-
-    if elevation in fov_height.keys():
-        fov_player = fov_height[elevation]
-    else:
-        pass  # TODO: alternative here
-    fov_recompute = True
-
 
 def has_skill(name):
     if name == 'Adrien':
@@ -1141,7 +1076,7 @@ def has_skill(name):
 
 
 def expire_out_of_vision(obj):
-    if not player_can_see(obj.x, obj.y):
+    if not fov.player_can_see(obj.x, obj.y):
         obj.destroy()
 
 
@@ -1223,13 +1158,6 @@ def clamp(value, min_value, max_value):
     if value > max_value:
         value = max_value
     return value
-
-
-# This function exists so files outside game.py can modify this global variable.
-# Hopefully there's a better way to do this    -T
-def fov_recompute_fn():
-    global fov_recompute
-    fov_recompute = True
 
 
 def roll_to_hit(target,  accuracy):
@@ -1589,7 +1517,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
             beam_values = beam(player.x, player.y, cursor_x, cursor_y)
             selected_x, selected_y = beam_values[len(beam_values) - 1]
 
-        if (mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and player_can_see(x, y):
+        if (mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and fov.player_can_see(x, y):
             if max_range is None or round((player.distance(x, y))) <= max_range:
                 if targeting_type == 'beam':
                     return beam_values
@@ -1632,7 +1560,7 @@ def closest_monster(max_range):
     closest_dist = max_range + 1
 
     for object in objects:
-        if object.fighter and not object == player and player_can_see(object.x, object.y):
+        if object.fighter and not object == player and fov.player_can_see(object.x, object.y):
             dist = player.distance_to(object)
             if dist < closest_dist:
                 closest_dist = dist
@@ -1777,7 +1705,7 @@ def auto_target_monster():
         monster = closest_monster(consts.TORCH_RADIUS)
         if monster is not None:
             select_monster(monster)
-    elif not player_can_see(selected_monster.x, selected_monster.y):
+    elif not fov.player_can_see(selected_monster.x, selected_monster.y):
         changed_tiles.append((selected_monster.x, selected_monster.y))
         selected_monster = None
 
@@ -1790,7 +1718,7 @@ def target_next_monster():
 
     nearby = []
     for obj in objects:
-        if player_can_see(obj.x, obj.y) and obj.fighter and obj is not player:
+        if fov.player_can_see(obj.x, obj.y) and obj.fighter and obj is not player:
             nearby.append((obj.distance_to(player), obj))
     nearby.sort(key=lambda m: m[0])
 
@@ -1812,7 +1740,7 @@ def target_next_monster():
 def select_monster(monster):
     global selected_monster, changed_tiles
 
-    if player_can_see(monster.x, monster.y) and monster is not selected_monster:
+    if fov.player_can_see(monster.x, monster.y) and monster is not selected_monster:
         changed_tiles.append((monster.x, monster.y))
         if selected_monster is not None:
             changed_tiles.append((selected_monster.x, selected_monster.y))
@@ -1829,7 +1757,7 @@ def mouse_select_monster():
 
         monster = None
         for obj in objects:
-            if obj.x == x and obj.y == y and (player_can_see(obj.x, obj.y) or (obj.always_visible and dungeon_map[obj.x][obj.y].explored)):
+            if obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y) or (obj.always_visible and dungeon_map[obj.x][obj.y].explored)):
                 if hasattr(obj, 'fighter') and obj.fighter and not obj is player:
                     monster = obj
                     break
@@ -1845,7 +1773,7 @@ def get_names_under_mouse():
                        player.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
     (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
-    names = [obj.name for obj in objects if (obj.x == x and obj.y == y and (player_can_see(obj.x, obj.y)
+    names = [obj.name for obj in objects if (obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y)
                             or (obj.always_visible and dungeon_map[obj.x][obj.y].explored)))]
     names = ', '.join(names)
 
@@ -2202,7 +2130,7 @@ def player_dig(dx, dy):
         changed_tiles.append((dig_x, dig_y))
         if pathfinding.map:
             pathfinding.map.mark_passable(dig_x, dig_y)
-        set_fov_properties(dig_x, dig_y, False, dungeon_map[dig_x][dig_y].elevation)
+        fov.set_fov_properties(dig_x, dig_y, False, dungeon_map[dig_x][dig_y].elevation)
         check_breakage(get_equipped_in_slot(player.fighter.inventory, 'right hand'))
         return 'success'
     else:
@@ -2729,7 +2657,6 @@ def examine(x=None, y=None):
 
 
 def jump(actor=None):
-    global player
 
     if not dungeon_map[player.x][player.y].jumpable:
         message('You cannot jump from this terrain!', libtcod.light_yellow)
@@ -2768,7 +2695,6 @@ def jump(actor=None):
                 land = land_next_to_target(jump_attack_target.x, jump_attack_target.y, player.x, player.y)
                 if land is not None:
                     player.set_position(land[0], land[1])
-                    fov_recompute_fn()
                     player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
 
                     player.fighter.attack_ex(jump_attack_target, 0, player.fighter.accuracy * consts.JUMP_ATTACK_ACC_MOD,
@@ -2784,7 +2710,6 @@ def jump(actor=None):
             else:
                 #jump to open space
                 player.set_position(x, y)
-                fov_recompute_fn()
                 player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
                 return 'jumped'
 
@@ -2825,27 +2750,16 @@ def clear_map():
 
 
 def render_map():
-    global changed_tiles, fov_recompute, visible_tiles, player_fov_calculated
+    global changed_tiles, visible_tiles
 
-    #if fov_recompute:
-    #    fov_recompute = False
-    #    old_map = libtcod.map_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
-    #    libtcod.map_copy(fov_player, old_map)
-    #    libtcod.map_compute_fov(fov_player, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS,
-    #                            consts.FOV_ALGO)
-    #    for y in range(consts.MAP_HEIGHT):
-    #        for x in range(consts.MAP_WIDTH):
-    #            if libtcod.map_is_in_fov(old_map, x, y) != libtcod.map_is_in_fov(fov_player, x, y):
-    #                changed_tiles.append((x, y))
-
-    if fov_recompute:
-        fov_recompute = False
-        libtcod.map_compute_fov(fov_player, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS, consts.FOV_ALGO)
-        player_fov_calculated = True
+    if fov.fov_recompute:
+        fov.fov_recompute = False
+        libtcod.map_compute_fov(fov.fov_player, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS, consts.FOV_ALGO)
+        fov.player_fov_calculated = True
         new_visible = []
         for y in range(consts.MAP_HEIGHT):
             for x in range(consts.MAP_WIDTH):
-                if libtcod.map_is_in_fov(fov_player, x, y):
+                if libtcod.map_is_in_fov(fov.fov_player, x, y):
                     new_visible.append((x, y))
         for tile in new_visible:
             if tile not in visible_tiles:
@@ -2858,7 +2772,7 @@ def render_map():
     for tile in changed_tiles:
         x = tile[0]
         y = tile[1]
-        visible = libtcod.map_is_in_fov(fov_player, x, y)
+        visible = libtcod.map_is_in_fov(fov.fov_player, x, y)
         color_fg = libtcod.Color(dungeon_map[x][y].color_fg[0], dungeon_map[x][y].color_fg[1],
                                  dungeon_map[x][y].color_fg[2])
         color_bg = libtcod.Color(dungeon_map[x][y].color_bg[0], dungeon_map[x][y].color_bg[1],
@@ -2887,54 +2801,6 @@ def render_map():
     libtcod.console_blit(map_con, player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2,
                 consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y)
     draw_border(0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
-
-
-# No longer used, but I'm not willing to delete it from the code base just yet in case problems arise with the new system
-def render_map_old():
-
-    global fov_recompute
-
-    libtcod.console_set_default_foreground(map_con, libtcod.white)
-    offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
-
-    if fov_recompute:
-        fov_recompute = False
-        libtcod.map_compute_fov(fov_player, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS,
-                                consts.FOV_ALGO)
-
-    for y in range(consts.MAP_HEIGHT):
-        for x in range(consts.MAP_WIDTH):
-            # culling
-            if x - offsetx < 0 or x - offsetx > consts.MAP_VIEWPORT_WIDTH or \
-                                    y - offsety < 0 or y - offsety > consts.MAP_VIEWPORT_HEIGHT:
-                continue
-
-            visible = libtcod.map_is_in_fov(fov_player, x, y)
-            color_fg = libtcod.Color(dungeon_map[x][y].color_fg[0], dungeon_map[x][y].color_fg[1],
-                                     dungeon_map[x][y].color_fg[2])
-            color_bg = libtcod.Color(dungeon_map[x][y].color_bg[0], dungeon_map[x][y].color_bg[1],
-                                     dungeon_map[x][y].color_bg[2])
-            if not visible:
-                if dungeon_map[x][y].explored:
-                    libtcod.color_scale_HSV(color_fg, 0.1, 0.4)
-                    libtcod.color_scale_HSV(color_bg, 0.1, 0.4)
-                    libtcod.console_put_char_ex(map_con, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg,
-                                                color_bg)
-            else:
-                libtcod.console_put_char_ex(map_con, x - offsetx, y - offsety, dungeon_map[x][y].tile_char, color_fg,
-                                            color_bg)
-                dungeon_map[x][y].explored = True
-
-    # draw all objects in the list
-    for object in objects:
-        if object != player:
-            object.draw_old()
-    player.draw_old()
-
-    draw_border(map_con, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
-
-    libtcod.console_blit(map_con, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X,
-                         consts.MAP_VIEWPORT_Y)
 
 
 def render_side_panel(acc_mod=1.0):
@@ -3022,15 +2888,6 @@ def render_side_panel(acc_mod=1.0):
     libtcod.console_print(side_panel, 4, drawHeight, dungeon_map[player.x][player.y].name)
     drawHeight += 2
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
-
-    # Spells in memory
-    #libtcod.console_print(side_panel, 2, drawHeight, 'Spells in memory:')
-    #drawHeight += 1
-    #y = 1
-    #for spell in memory:
-    #    libtcod.console_print(side_panel, 2, drawHeight, str(y) + ') ' + spell.name)
-    #    drawHeight += 1
-    #    y += 1
 
     # Selected Monster
     if selected_monster is not None and selected_monster.fighter is not None:
@@ -3146,7 +3003,9 @@ def draw_border(console, x0, y0, width, height, foreground=libtcod.gray, backgro
 def generate_level():
     global dungeon_map, objects, stairs, spawned_bosses
     mapgen.make_map()
- 
+    fov.initialize_fov()
+
+
 #############################################
 # Initialization & Main Loop
 #############################################
@@ -3237,40 +3096,6 @@ def new_game():
             changed_tiles.append((x, y))
 
 
-def initialize_fov():
-    global fov_recompute, fov_height, fov_player
-
-    fov_recompute = True
-
-    elevations = [0]
-    finished_elevations = []
-
-    while len(elevations) > 0:
-        elevation = elevations[0]
-        elevations.remove(elevation)
-        finished_elevations.append(elevation)
-
-        fov_height[elevation] = libtcod.map_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
-        for y in range(consts.MAP_HEIGHT):
-            for x in range(consts.MAP_WIDTH):
-                this_elevation = dungeon_map[x][y].elevation
-                if this_elevation != elevation:
-                    if this_elevation not in elevations and this_elevation not in finished_elevations:
-                        elevations.append(this_elevation)
-                    libtcod.map_set_properties(fov_height[elevation], x, y, this_elevation <= elevation and not dungeon_map[x][y].blocks_sight, True)
-                else:
-                    libtcod.map_set_properties(fov_height[elevation], x, y, not dungeon_map[x][y].blocks_sight, True)
-
-                if consts.DEBUG_ALL_EXPLORED:
-                    dungeon_map[x][y].explored = True
-
-    for obj in objects:
-        if obj.blocks_sight:
-            set_fov_properties(obj.x, obj.y, True, obj.elevation)
-
-    set_view_elevation(player.elevation)
-
-
 def save_game():
     file = shelve.open('savegame', 'n')
     file['map'] = dungeon_map
@@ -3304,7 +3129,7 @@ def load_game():
     file.close()
 
     pathfinding.map.initialize(dungeon_map)
-    initialize_fov()
+    fov.initialize_fov()
 
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
@@ -3360,10 +3185,8 @@ import mapgen
 import abilities
 import effects
 import pathfinding
+import fov
 
-player_fov_calculated = False
-fov_player = None
-fov_height = {}
 visible_tiles = []
 
 in_game = False

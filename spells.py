@@ -109,7 +109,6 @@ def cast_frog_tongue(frog, target):
         # target.x, target.y = beam[max(len(beam) - 3, 0)]
         pull_to = beam[max(len(beam) - 3, 0)]
         target.set_position(pull_to[0], pull_to[1])
-        main.fov_recompute_fn()
     else:
         main.message('The frog tries to grab you with its tongue, but misses!', libtcod.grey)
 
