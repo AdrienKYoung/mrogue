@@ -410,6 +410,8 @@ def apply_data(x, y, data):
     for i in range(len(data)):
         if data[i] == 'ELEVATION':
             main.dungeon_map[x][y].elevation = int(data[i + 1])
+            for obj in main.get_objects(x, y):
+                obj.elevation = int(data[i + 1])
             i += 1
         elif data[i].isdigit():
             apply_object(x, y, data[i:])

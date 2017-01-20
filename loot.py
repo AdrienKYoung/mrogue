@@ -340,13 +340,15 @@ proto = {
         'char'               : '/',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 10,
+        'attack_damage_bonus': 0, #10
         'slot'               :'right hand',
         'description'        : 'A hand-and-a-half cruciform sword',
         'stamina_cost'       : 10,
         'str_requirement'    : 12,
         'shred'              : 1,
-        'accuracy'           : 1
+        'accuracy'           : 1,
+        'weapon_dice'        : '2d6',
+        'str_dice'           : 2
     },
     'equipment_dagger': {
         'name'               : 'dagger',
@@ -354,13 +356,15 @@ proto = {
         'char'               : '-',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 3,
+        'attack_damage_bonus': 0, #3
         'slot'               :'right hand',
         'description'        : 'A small double-edged knife. Deals triple damage to incapacitated targets',
         'stamina_cost'       : 6,
         'str_requirement'    : 10,
         'shred'              : 0,
-        'accuracy'           : 5
+        'accuracy'           : 5,
+        'weapon_dice'        : '2d4',
+        'str_dice'           : 1
     },
     'equipment_spear': {
         'name'               : 'spear',
@@ -368,7 +372,7 @@ proto = {
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 6,
+        'attack_damage_bonus': 0, #6
         'slot'               :'right hand',
         'description'        : 'A light thrusting spear',
         'stamina_cost'       : 10,
@@ -379,7 +383,9 @@ proto = {
         'accuracy'           : 1,
         'ctrl_attack'        : main.player_reach_attack,
         'ctrl_attack_desc'   : 'Reach-Attack - attack an enemy up to 2 spaces away in this direction. Deals 50% more '
-                               'damage to enemies exactly 2 spaces away.'
+                               'damage to enemies exactly 2 spaces away.',
+        'weapon_dice'        : '2d5',
+        'str_dice'           : 1
     },
     'equipment_pickaxe': {
         'name'               : 'pickaxe',
@@ -387,7 +393,7 @@ proto = {
         'char'               : 'T',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 5,
+        'attack_damage_bonus': 0, #5
         'slot'               :'right hand',
         'description'        : 'A heavy digging implement used by miners. Can be used to dig through the walls '
                                'of the dungeon',
@@ -398,7 +404,9 @@ proto = {
         'accuracy'           : -3,
         'ctrl_attack'        : main.player_dig,
         'ctrl_attack_desc'   : 'Dig - dig through walls in this direction.',
-        'break'              : 5.0
+        'break'              : 5.0,
+        'weapon_dice'        : '1d4',
+        'str_dice'           : 3
     },
     'equipment_hatchet': {
         'name'               : 'hatchet',
@@ -406,7 +414,7 @@ proto = {
         'char'               : 'p',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 7,
+        'attack_damage_bonus': 0, #7
         'slot'               : 'right hand',
         'description'        : 'A one-handed axe made for cutting wood.',
         'stamina_cost'       : 9,
@@ -414,7 +422,9 @@ proto = {
         'shred'              : 1,
         'accuracy'           : 3,
         'ctrl_attack'        : main.player_cleave_attack,
-        'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.'
+        'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.',
+        'weapon_dice'        : '1d6',
+        'str_dice'           : 2
     },
 
     #ARMOR

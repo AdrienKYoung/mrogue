@@ -64,14 +64,14 @@ def ability_attack(actor=None):
     return 'didnt-take-turn'
 
 def ability_attack_reach(actor=None):
-    x, y = main.target_tile(max_range=2)
+    x, y = main.target_tile(max_range=1)
     target = None
     for object in main.objects:
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break
     if target is not None and target is not main.player:
-        result = main.player.fighter.attack(target)
+        result = main.player_reach_attack(target.x - actor.x, target.y - actor.y)
         if result != 'failed':
             return result
     return 'didnt-take-turn'

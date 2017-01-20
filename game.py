@@ -13,7 +13,7 @@ class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
-                 break_chance=0.0):
+                 break_chance=0.0, weapon_dice=None, str_dice=None):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -31,7 +31,9 @@ class Equipment:
         self.ctrl_attack = ctrl_attack
         self.break_chance = break_chance
         self.ctrl_attack_desc = ctrl_attack_desc
-        
+        self.weapon_dice = weapon_dice
+        self.str_dice = str_dice
+
     def toggle(self):
         if self.is_equipped:
             self.dequip()
@@ -355,6 +357,20 @@ class Fighter:
                                         get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
         return stamina_cost
 
+    def calculate_damage(self):
+        if self.inventory and len(self.inventory) > 0:
+            weapon = get_equipped_in_slot(self.inventory, 'right hand')
+            if weapon is not None:
+                total_damage = 0
+                if weapon.weapon_dice is not None:
+                    d = weapon.weapon_dice.split('d')
+                    for i in range(1, int(d[0]) + 1):
+                        total_damage += libtcod.random_get_int(0, 1, int(d[1]))
+                for i in range(weapon.str_dice):
+                    total_damage += libtcod.random_get_int(0, 1, self.attack_damage)
+                return total_damage
+        return self.attack_damage * (1.0 - self.damage_variance + libtcod.random_get_float(0, 0, 2 * self.damage_variance))
+
     def attack(self, target):
         return self.attack_ex(target, self.calculate_attack_stamina_cost(), self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
                        'attacks', self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
@@ -370,10 +386,10 @@ class Fighter:
 
         if roll_to_hit(target, accuracy):
             # Target was hit
-            damage = attack_damage * (1.0 - damage_variance + libtcod.random_get_float(0, 0, 2 * damage_variance))
+            damage = self.calculate_damage()
             # Daggers deal x3 damage to stunned targets
             weapon = get_equipped_in_slot(self.inventory, 'right hand')
-            if weapon and weapon.base_id and weapon.base_id == 'equipment_dagger' and target.fighter.has_status('stunned'):
+            if weapon and weapon.base_id and weapon.base_id == 'equipment_dagger' and target.fighter.has_status('stunned') and verb != 'bashes':
                 damage *= 3
 
             # calculate damage reduction
@@ -513,6 +529,7 @@ class Fighter:
     @property
     def attack_damage(self):
         bonus = sum(equipment.attack_damage_bonus for equipment in get_all_equipped(self.inventory))
+        bonus = 0
         if self.owner.player_stats:
             return max(self.base_attack_damage + self.owner.player_stats.str + bonus, 0)
         else:
@@ -746,7 +763,7 @@ class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
-                 update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None, elevation=0):
+                 update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None, elevation=None):
         self.x = x
         self.y = y
         self.char = char
@@ -785,7 +802,13 @@ class GameObject:
         self.on_step = on_step
         self.burns = burns
         self.on_tick_specified = on_tick
-        self.elevation = elevation
+        if elevation is None:
+            if dungeon_map is not None:
+                self.elevation = dungeon_map[self.x][self.y].elevation
+            else:
+                self.elevation = 0
+        else:
+            self.elevation = elevation
 
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
@@ -874,7 +897,6 @@ class GameObject:
             self.set_position(self.x + dx, self.y + dy)
             return True
 
-
     def draw(self, console):
         if fov.player_can_see(self.x, self.y):
             if selected_monster is self:
@@ -933,7 +955,10 @@ class GameObject:
                 # find the next coordinate in the computed full path
                 x, y = path[1]
                 if x or y:
-                    self.move_towards(x, y)
+                    if dungeon_map[x][y].blocks:
+                        pathfinding.map.mark_impassable((x, y))  # bandaid fix - hopefully paths will self-correct now
+                    else:
+                        self.move_towards(x, y)
             else:
                 # Use the old(er) function instead
                 self.move_towards(target_x, target_y)
@@ -1908,6 +1933,8 @@ def create_item(name, material=None, quality=None):
             ctrl_attack=p.get('ctrl_attack'),
             ctrl_attack_desc=p.get('ctrl_attack_desc'),
             break_chance=p.get('break', 0),
+            weapon_dice=p.get('weapon_dice'),
+            str_dice=p.get('str_dice', 0)
         )
         if equipment_component.category == 'weapon':
             equipment_component.base_id = name
@@ -2129,7 +2156,7 @@ def player_dig(dx, dy):
         dungeon_map[dig_x][dig_y].tile_type = 'stone floor'
         changed_tiles.append((dig_x, dig_y))
         if pathfinding.map:
-            pathfinding.map.mark_passable(dig_x, dig_y)
+            pathfinding.map.mark_passable((dig_x, dig_y))
         fov.set_fov_properties(dig_x, dig_y, False, dungeon_map[dig_x][dig_y].elevation)
         check_breakage(get_equipped_in_slot(player.fighter.inventory, 'right hand'))
         return 'success'
@@ -3187,17 +3214,27 @@ import effects
 import pathfinding
 import fov
 
-visible_tiles = []
+# Globals
 
-in_game = False
+# Libtcod initialization
 libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GRAYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
 libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'Magic Roguelike', False)
 libtcod.sys_set_fps(consts.LIMIT_FPS)
+
+# Consoles
 con = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
-#map_con = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
 map_con = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
 ui = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 panel = libtcod.console_new(consts.PANEL_WIDTH, consts.PANEL_HEIGHT)
 side_panel = libtcod.console_new(consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
+
+# Flags
+in_game = False
+
+# Graphics
 changed_tiles = []
+visible_tiles = []
+
+# Level
+dungeon_map = None

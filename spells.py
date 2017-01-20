@@ -96,14 +96,16 @@ def cast_heal():
 def cast_waterbreathing():
     main.player.fighter.apply_status_effect(effects.StatusEffect('waterbreathing', 31, libtcod.light_azure))
 
+
 def cast_shielding():
     main.player.fighter.shred = 0
     main.player.fighter.apply_status_effect(effects.StatusEffect('shielded', 21, libtcod.dark_blue))
 
+
 def cast_frog_tongue(frog, target):
 
     if main.roll_to_hit(target, consts.FROG_TONGUE_ACC):
-        main.message('The frog pulls you from a distance with its toungue!', libtcod.dark_green)
+        main.message('The frog pulls you from a distance with its tongue!', libtcod.dark_green)
         target.fighter.take_damage(consts.FROG_TONGUE_DMG)
         beam = main.beam(frog.x, frog.y, target.x, target.y)
         # target.x, target.y = beam[max(len(beam) - 3, 0)]
@@ -111,6 +113,7 @@ def cast_frog_tongue(frog, target):
         target.set_position(pull_to[0], pull_to[1])
     else:
         main.message('The frog tries to grab you with its tongue, but misses!', libtcod.grey)
+
 
 def cast_manabolt():
     default = None
@@ -129,6 +132,7 @@ def cast_manabolt():
             main.message('The manabolt hits the ' + main.dungeon_map[target[0]][target[1]].tile_type + '.', libtcod.light_blue)
         return True
     return False
+
 
 def cast_ignite():
     target = main.target_tile(consts.IGNITE_RANGE)
@@ -149,6 +153,7 @@ def cast_ignite():
         return True
     return False
 
+
 def cast_mend():
     if main.player.fighter.hp < main.player.fighter.max_hp:
         main.player.fighter.heal(consts.MEND_HEAL)
@@ -157,6 +162,7 @@ def cast_mend():
     else:
         main.message('You have no need of mending.', libtcod.light_blue)
         return False
+
 
 def cast_forge():
     weapon = main.get_equipped_in_slot(main.player.fighter.inventory, 'right hand')
@@ -187,11 +193,13 @@ def cast_forge():
         main.message('Your hands tingle briefly. This magic was only intended for weapons!', libtcod.orange)
     return True
 
+
 spell_library = {
     'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]'),
     'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]'),
     'ignite' : Spell('ignite', { 'fire' : 1 }, cast_ignite, '[1 fire]'),
 }
+
 
 mana_colors = {
     'normal' : libtcod.gray,
