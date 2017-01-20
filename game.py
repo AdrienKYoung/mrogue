@@ -3111,8 +3111,9 @@ def new_game():
     player.fighter.inventory.append(dagger)
     dagger.equipment.equip()
 
-    #test = create_item('tome_ignite')
-    #player.fighter.inventory.append(test)
+    if consts.DEBUG_STARTING_ITEM is not None:
+        test = create_item(consts.DEBUG_STARTING_ITEM)
+        player.fighter.inventory.append(test)
 
     selected_monster = None
 

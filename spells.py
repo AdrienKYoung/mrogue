@@ -121,6 +121,16 @@ def cast_manabolt():
         default = main.selected_monster.x, main.selected_monster.y
     target = main.target_tile(consts.MANABOLT_RANGE, 'beam_interrupt', acc_mod=consts.MANABOLT_ACC, default_target=default)
     if target[0] is not None:
+        #visual effect
+        bolt = main.GameObject(main.player.x, main.player.y, 7, 'bolt', color=libtcod.light_blue)
+        line = main.beam(main.player.x, main.player.y, target[0], target[1])
+        main.objects.append(bolt)
+        for p in line:
+            bolt.set_position(p[0], p[1])
+            main.render_map()
+            libtcod.console_flush()
+        bolt.destroy()
+        #game effect
         monster = main.get_monster_at_tile(target[0], target[1])
         if monster is not None:
             if main.roll_to_hit(monster, main.player.fighter.accuracy * consts.MANABOLT_ACC):
