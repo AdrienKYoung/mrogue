@@ -2699,10 +2699,14 @@ def render_side_panel(acc_mod=1.0):
     weapon = get_equipped_in_slot(player.fighter.inventory, 'right hand')
     if weapon is None:
         weapon_string = 'Fists'
+        weapon_color = libtcod.gray
     else:
         weapon_string = weapon.owner.name.title()
+        weapon_color = loot.weapon_qualities[weapon.quality]['color']
     weapon_string_height = libtcod.console_get_height_rect(side_panel, 2, drawHeight, consts.SIDE_PANEL_WIDTH - 3, 5, weapon_string)
+    libtcod.console_set_default_foreground(side_panel, weapon_color)
     libtcod.console_print_rect_ex(side_panel, 2, drawHeight, consts.SIDE_PANEL_WIDTH - 3, weapon_string_height, libtcod.BKGND_DEFAULT, libtcod.LEFT, weapon_string)
+    libtcod.console_set_default_foreground(side_panel, libtcod.white)
     drawHeight += weapon_string_height + 1
 
     seperator_height = drawHeight

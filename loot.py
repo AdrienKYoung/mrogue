@@ -143,38 +143,45 @@ weapon_qualities = {
     'broken' : {
         'dmg' : -3,
         'acc' : -3,
-        'shred' : -1
+        'shred' : -1,
+        'color' : libtcodpy.desaturated_red
     },
     'crude' : {
         'dmg' : -2,
         'acc' : -1,
-        'break' : 5.0
+        'break' : 5.0,
+        'color' : libtcodpy.dark_sepia
     },
     '' : { # standard
         'dmg' : 0,
-        'acc' : 0
+        'acc' : 0,
+        'color' : libtcodpy.light_gray
     },
     'military' : {
         'dmg' : 1,
         'acc' : 1,
+        'color' : libtcodpy.dark_orange
     },
     'fine' : {
         'dmg' : 2,
         'acc' : 2,
-        'break' : -1.5
+        'break' : -1.5,
+        'color' : libtcodpy.sea
     },
     'masterwork' : {
         'dmg' : 3,
         'acc' : 3,
         'shred' : 1,
-        'break' : -10.0
+        'break' : -10.0,
+        'color' : libtcodpy.green
     },
     'artifact' : {
         'dmg' : 5,
         'acc' : 5,
         'shred' : 1,
         'peirce' : 1,
-        'break' : -1000.0
+        'break' : -1000.0,
+        'color' : libtcodpy.yellow
     },
 }
 
