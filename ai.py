@@ -103,7 +103,8 @@ class AI_Reeker:
                     position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
                     puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
                                 clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
-                    if not dungeon_map[puff_pos[0]][puff_pos[1]].blocks and object_at_tile(puff_pos[0], puff_pos[1], 'reeker gas') is None:
+                    if not dungeon_map[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
+                                                        lambda o: o.name == 'reeker gas' or o.name == 'reeker')) == 0:
                         puff = GameObject(puff_pos[0], puff_pos[1], libtcod.CHAR_BLOCK3,
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())

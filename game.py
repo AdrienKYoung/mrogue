@@ -570,7 +570,6 @@ class Fighter:
         bonus = sum(equipment.max_hp_bonus for equipment in get_all_equipped(self.inventory))
         return self.base_max_hp + bonus
 
-
 class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None,
@@ -2692,7 +2691,22 @@ def render_side_panel(acc_mod=1.0):
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
     libtcod.console_put_char(side_panel, x, 15, ']')
 
-    drawHeight = 19
+    drawHeight = 17
+
+    # Weapon
+    libtcod.console_print(side_panel, 2, drawHeight, 'Weapon:')
+    drawHeight += 1
+    weapon = get_equipped_in_slot(player.fighter.inventory, 'right hand')
+    if weapon is None:
+        weapon_string = 'Fists'
+    else:
+        weapon_string = weapon.owner.name.title()
+    weapon_string_height = libtcod.console_get_height_rect(side_panel, 2, drawHeight, consts.SIDE_PANEL_WIDTH - 3, 5, weapon_string)
+    libtcod.console_print_rect_ex(side_panel, 2, drawHeight, consts.SIDE_PANEL_WIDTH - 3, weapon_string_height, libtcod.BKGND_DEFAULT, libtcod.LEFT, weapon_string)
+    drawHeight += weapon_string_height + 1
+
+    seperator_height = drawHeight
+    drawHeight += 2
 
     # Status effects
     if len(player.fighter.status_effects) > 0:
@@ -2763,9 +2777,9 @@ def render_side_panel(acc_mod=1.0):
 
     draw_border(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
     for x in range(1, consts.SIDE_PANEL_WIDTH - 1):
-        libtcod.console_put_char(side_panel, x, 17, libtcod.CHAR_HLINE)
-    libtcod.console_put_char(side_panel, 0, 17, 199)
-    libtcod.console_put_char(side_panel, consts.SIDE_PANEL_WIDTH - 1, 17, 182)
+        libtcod.console_put_char(side_panel, x, seperator_height, libtcod.CHAR_HLINE)
+    libtcod.console_put_char(side_panel, 0, seperator_height, 199)
+    libtcod.console_put_char(side_panel, consts.SIDE_PANEL_WIDTH - 1, seperator_height, 182)
 
     libtcod.console_blit(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT, 0, consts.SIDE_PANEL_X,
                          consts.SIDE_PANEL_Y)

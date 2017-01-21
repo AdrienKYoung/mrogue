@@ -882,7 +882,7 @@ def make_test_space():
     main.player.x = player_tile[0]
     main.player.y = player_tile[1]
 
-    main.spawn_monster('monster_giant_frog', player_tile[0], player_tile[1] - 20)
+    main.spawn_monster('monster_reeker', player_tile[0], player_tile[1] - 20)
 
     stair_tile = (player_tile[0], player_tile[1] + 3)
     main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,
