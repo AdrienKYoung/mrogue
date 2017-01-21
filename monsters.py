@@ -1,4 +1,5 @@
 import game as main
+import ai
 import libtcodpy as libtcod
 
 proto = {
@@ -15,7 +16,7 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': 'Small vicious humanoid. Dangerous in groups.',
         'resistances': [],
         'shred': 1
@@ -33,7 +34,7 @@ proto = {
         'difficulty': 0,
         'loot': 'none',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': 'An irritating, crawling insect. Easily defeated, but a nuisance nonetheless.',
         'resistances': [],
         'shred': 1,
@@ -51,7 +52,7 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': 'Many-legged arthropod with a stinging bite that amplifies damage taken.',
         'resistances': [],
         'on_hit': main.centipede_on_hit,
@@ -70,7 +71,7 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': 'Small vicious humanoid that scavenged some equipment.',
         'resistances': [],
         'equipment': [{'equipment_dagger':50,'equipment_longsword':50},{'none':50,'equipment_shield':50},{'none':50,'equipment_leather_armor':50}],
@@ -89,7 +90,7 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'death_function' : main.bomb_beetle_death,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': 'A round brown beetle. A warm glow emanates from beneath its carapace.',
         'resistances': [],
         'mana': [(50, 'fire')]
@@ -107,7 +108,7 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': 'Unusually large amphibian that dwells in lakes and ponds. '
                        'Can grab unwary adventurers with its sticky tongue.',
         'resistances': [],
@@ -127,7 +128,7 @@ proto = {
         'difficulty': 2,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': "A filthy rat-faced humanoid clad with ragged scraps of leather. "
                        "The vermin of the dungeon are drawn to his stench.",
         'resistances': [],
@@ -148,7 +149,7 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Reeker,
+        'ai': ai.AI_Reeker,
         'description': 'A short, stocky fungus that emits puffs of foul-smelling gas.',
         'resistances': ['confusion', 'stunned'],
         'mana': [(65, 'life')]
@@ -184,7 +185,7 @@ proto = {
         'difficulty': 3,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': 'Large stone golem, animated by magic. Slow but very strong.',
         'resistances': [],
         'shred': 2,
@@ -203,7 +204,7 @@ proto = {
         'difficulty': 3,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': 'A rudely awakened cave bear',
         'resistances': ['ice','freeze'],
         'attributes': ['ability_berserk'],
@@ -222,7 +223,7 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': main.tunnel_spider_spawn_web,
-        'ai': main.AI_TunnelSpider,
+        'ai': ai.AI_TunnelSpider,
         'description': 'An arachnid who hunts by trapping hapless prey in its webs. Fast, but fragile.',
         'resistances': [],
         'shred': 1
@@ -240,7 +241,7 @@ proto = {
         'difficulty': 12,
         'loot': 'default',#'boss_undead',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'attributes': {'perk_flying', 'ability_warp_weapon', 'ability_blink'},
         'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.',
         'resistances': [],

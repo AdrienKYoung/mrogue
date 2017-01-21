@@ -89,3 +89,10 @@ ENV/
 .ropeproject
 .idea/
 savegame
+include
+libexec
+libtcod-gui.dylib
+libtcod.dylib
+libtcodgui.dylib
+libtcodxx.dylib
+savegame.db
