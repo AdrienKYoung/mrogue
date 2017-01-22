@@ -250,6 +250,8 @@ def level_up():
         if skill is not None and skill not in learned_skills:
             learned_skills.append(skill)
 
+    instance.fighter.heal(instance.fighter.max_hp / 2)
+
 def on_death(instance):
     ui.message('You\'re dead, sucka.', libtcod.grey)
     main.game_state = 'dead'
