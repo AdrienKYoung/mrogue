@@ -570,10 +570,10 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
         oldMouseY = mouse.cy
 
 def inspect_inventory():
-    chosen_item = ui.inventory_menu('Select which item?')
+    chosen_item = inventory_menu('Select which item?')
     if chosen_item is not None:
         options = chosen_item.get_options_list()
-        menu_choice = ui.menu(chosen_item.owner.name, options, 50, render_func=chosen_item.owner.print_description)
+        menu_choice = menu(chosen_item.owner.name, options, 50, render_func=chosen_item.owner.print_description)
         if menu_choice is not None:
             if options[menu_choice] == 'Use':
                 chosen_item.use()
