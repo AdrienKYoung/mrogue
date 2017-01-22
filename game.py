@@ -1502,7 +1502,7 @@ def create_fire(x,y,temp):
     if tile.tile_type == 'shallow water' or tile.tile_type == 'deep water' or tile.blocks:
         return
     component = ai.FireBehavior(temp)
-    obj = GameObject(x,y,'^','Fire',libtcod.red,misc=component)
+    obj = GameObject(x,y,libtcod.CHAR_ARROW2_N,'Fire',libtcod.red,misc=component)
     current_cell.objects.append(obj)
     if temp > 4 and tile.tile_type != 'ramp':
         current_cell.map[x][y].tile_type = 'scorched floor'
