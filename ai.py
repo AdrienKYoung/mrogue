@@ -51,16 +51,15 @@ class ReekerGasBehavior:
             self.owner.destroy()
             return
         #self.owner.char = str(self.ticks)
-        for obj in game.objects:
-            if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
-                if obj.name != 'reeker' and obj.name != 'blastcap':
-                    if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
-                        if fov.player_can_see(obj.x, obj.y):
-                            ui.message('A foul-smelling cloud of gas begins to form around the ' + obj.name, libtcod.fuchsia)
-                    else:
-                        if fov.player_can_see(obj.x, obj.y):
-                            ui.message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
-                        obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
+        for obj in game.get_objects(self.owner.x, self.owner.y,
+                                    lambda o: o.fighter is not None and o.name != 'reeker' and obj.name != 'blastcap'):
+            if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
+                if fov.player_can_see(obj.x, obj.y):
+                    ui.message('A foul-smelling cloud of gas begins to form around the ' + obj.name, libtcod.fuchsia)
+            else:
+                if fov.player_can_see(obj.x, obj.y):
+                    ui.message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
+                obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
 
 
 class FireBehavior:
@@ -83,13 +82,12 @@ class FireBehavior:
         if self.temperature == 0:
             self.owner.destroy()
         else:
-            for obj in game.objects:
-                if obj.x == self.owner.x and obj.y == self.owner.y and obj.fighter:
-                    obj.fighter.apply_status_effect(effects.burning())
+            for obj in game.get_objects(self.owner.x, self.owner.y, lambda o: o.fighter is not None):
+                obj.fighter.apply_status_effect(effects.burning())
             # Spread to adjacent tiles
             if self.temperature < 9: # don't spread on the first turn
                 for tile in adjacent_tiles_diagonal(self.owner.x, self.owner.y):
-                    if game.dungeon_map[tile[0]][tile[1]].flammable:
+                    if game.current_cell.map[tile[0]][tile[1]].flammable:
                         if libtcod.random_get_int(0, 0, 8) == 0:
                             game.create_fire(tile[0], tile[1], 10)
 
@@ -105,12 +103,12 @@ class AI_Reeker:
                     position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
                     puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
                                 clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
-                    if not game.dungeon_map[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
+                    if not game.current_cell.map[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
                                                         lambda o: o.name == 'reeker gas' or o.name == 'reeker')) == 0:
                         puff = GameObject(puff_pos[0], puff_pos[1], libtcod.CHAR_BLOCK3,
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())
-                        game.objects.append(puff)
+                        game.current_cell.objects.append(puff)
 
 
 class AI_TunnelSpider:
@@ -156,7 +154,7 @@ class AI_TunnelSpider:
     def find_closest_web(self):
         closest_web = None
         closest_dist = consts.TUNNEL_SPIDER_MAX_WEB_DIST
-        for obj in game.objects:
+        for obj in game.current_cell.objects:
             if obj.name == 'spiderweb':
                 if closest_web is None or self.owner.distance_to(obj) < closest_dist:
                     closest_web = obj

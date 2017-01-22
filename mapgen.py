@@ -929,6 +929,8 @@ def make_map(world_cell):
         # make_rooms_and_corridors()
         make_one_big_room()
 
+    #for link in cell.links:
+
 
     # make sure the edges are undiggable walls
     for i in range(consts.MAP_WIDTH):
