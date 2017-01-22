@@ -90,7 +90,7 @@ proto = {
         'difficulty': 1,
         'loot': 'default',
         'on_create': None,
-        'ai': main.AI_Default,
+        'ai': ai.AI_Default,
         'description': 'Slightly larger, much more vicious humanoid that tells other goblins what to do.',
         'resistances': [],
         'equipment': [{'equipment_spear':50,'equipment_longsword':50},{'none':50,'equipment_shield':50},{'equipment_leather_armor':100}],
