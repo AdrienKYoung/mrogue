@@ -2,6 +2,7 @@ import libtcodpy
 import spells
 import game as main
 import abilities
+import player
 
 def item_from_table(loot_level=0, category=None):
     if category is None:
@@ -388,7 +389,7 @@ proto = {
         'pierce'             : 1,
         'shred'              : 0,
         'accuracy'           : 1,
-        'ctrl_attack'        : main.player_reach_attack,
+        'ctrl_attack'        : player.reach_attack,
         'ctrl_attack_desc'   : 'Reach-Attack - attack an enemy up to 2 spaces away in this direction. Deals 50% more '
                                'damage to enemies exactly 2 spaces away.',
         'weapon_dice'        : '2d5',
@@ -409,7 +410,7 @@ proto = {
         'pierce'             : 1,
         'shred'              : 1,
         'accuracy'           : -3,
-        'ctrl_attack'        : main.player_dig,
+        'ctrl_attack'        : player.dig,
         'ctrl_attack_desc'   : 'Dig - dig through walls in this direction.',
         'break'              : 5.0,
         'weapon_dice'        : '1d4',
@@ -428,7 +429,7 @@ proto = {
         'str_requirement'    : 10,
         'shred'              : 1,
         'accuracy'           : 3,
-        'ctrl_attack'        : main.player_cleave_attack,
+        'ctrl_attack'        : player.cleave_attack,
         'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.',
         'weapon_dice'        : '1d6',
         'str_dice'           : 2

@@ -6,6 +6,7 @@ import spells
 import monsters
 import fov
 import ui
+import player
 
 class Ability:
     def __init__(self, name, description, function, cooldown):
@@ -21,7 +22,7 @@ class Ability:
             if result != 'didnt-take-turn':
                 self.current_cd = self.cooldown
         else:
-            if actor is main.player:
+            if actor is player.instance.instance:
                 ui.message('{} is on cooldown'.format(self.name), libtcod.red)
             result = 'didnt-take-turn'
         return result
@@ -58,8 +59,8 @@ def ability_attack(actor=None):
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break
-    if target is not None and target is not main.player:
-        result = main.player.fighter.attack(target)
+    if target is not None and target is not player.instance:
+        result = player.instance.fighter.attack(target)
         if result != 'failed':
             return result
     return 'didnt-take-turn'
@@ -71,8 +72,8 @@ def ability_attack_reach(actor=None):
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break
-    if target is not None and target is not main.player:
-        result = main.player_reach_attack(target.x - actor.x, target.y - actor.y)
+    if target is not None and target is not player.instance:
+        result = player.reach_attack(target.x - actor.x, target.y - actor.y)
         if result != 'failed':
             return result
     return 'didnt-take-turn'
@@ -84,8 +85,8 @@ def ability_bash_attack(actor=None):
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break
-    if target is not None and target is not main.player:
-        result = main.player_bash_attack(target.x - actor.x,target.y - actor.y)
+    if target is not None and target is not player.instance:
+        result = player.bash_attack(target.x - actor.x,target.y - actor.y)
         if result != 'failed':
             return result
     return 'didnt-take-turn'
@@ -94,10 +95,10 @@ def ability_berserk_self(actor=None):
     if actor is not None and actor.fighter is not None:
         if not actor.fighter.has_status('berserk') and not actor.fighter.has_status('exhausted'):
             actor.fighter.apply_status_effect(effects.berserk())
-            if actor is not main.player:
+            if actor is not player.instance:
                 ui.message("{} roars!!".format(actor.name),libtcod.red)
         else:
-            if actor is main.player:
+            if actor is player.instance:
                 ui.message("You can't berserk right now.", libtcod.yellow)
             return 'didnt-take-turn'
 
@@ -129,10 +130,10 @@ def ability_spawn_vermin(actor=None):
 
 def ability_grapel(actor=None):
     #Blame the Bleshib
-    player = main.player
-    if actor.distance_to(player) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, player):
-        if main.player.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, player.x, player.y) == (player.x, player.y):
-            spells.cast_frog_tongue(actor, player)
+    if actor.distance_to(player.instance) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, player.instance):
+        if player.instance.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, player.instance.x, player.instance.y) == \
+                (player.instance.x, player.instance.y):
+            spells.cast_frog_tongue(actor, player.instance)
             return
         else:
             return 'didnt-take-turn'
@@ -171,7 +172,7 @@ data = {
 default_abilities = [
     Ability('Attack','Attack an enemy',ability_attack,0),
     Ability('Bash','Knock an enemy back',ability_bash_attack,0),
-    Ability('Jump','Jump to a tile',main.jump,0)
+    Ability('Jump','Jump to a tile',player.jump,0)
 ]
 
 skill_list = [

@@ -1,3 +1,5 @@
+import game as main
+
 class WorldCell:
     def __init__(self, branch, coord=None, depth=None):
         self.links = []
@@ -13,6 +15,11 @@ class WorldCell:
     def add_link(self, cell, direction):
         self.links.append((direction, cell))
         cell.links.append((opposite(direction), self))
+
+    def add_object(self, object):
+        if not isinstance(object, main.GameObject):
+            raise ValueError("{} is not a game object!".format(object))
+        self.objects.append(object)
 
 
 def opposite(direction):

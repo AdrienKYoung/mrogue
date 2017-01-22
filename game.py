@@ -41,7 +41,7 @@ class Equipment:
             self.equip()
             
     def equip(self):
-        old_equipment = get_equipped_in_slot(player.fighter.inventory, self.slot)
+        old_equipment = get_equipped_in_slot(player.instance.fighter.inventory, self.slot)
         if old_equipment is not None:
             old_equipment.dequip()
         self.is_equipped = True
@@ -54,7 +54,7 @@ class Equipment:
     def print_description(self, console, x, y, width):
         print_height = 1
         if self.str_requirement != 0:
-            if player.player_stats.str < self.str_requirement:
+            if player.instance.player_stats.str < self.str_requirement:
                 libtcod.console_set_default_foreground(console, libtcod.red)
             else:
                 libtcod.console_set_default_foreground(console, libtcod.green)
@@ -117,17 +117,17 @@ class Item:
         
     def pick_up(self):
         if self.type == 'item':
-            if len(player.fighter.inventory) >= 26:
+            if len(player.instance.fighter.inventory) >= 26:
                 ui.message('Your inventory is too full to pick up ' + self.owner.name)
             else:
-                player.fighter.inventory.append(self.owner)
+                player.instance.fighter.inventory.append(self.owner)
                 self.owner.destroy()
                 ui.message('You picked up a ' + self.owner.name + '!', libtcod.light_grey)
                 equipment = self.owner.equipment
-                if equipment and get_equipped_in_slot(player.fighter.inventory,equipment.slot) is None:
+                if equipment and get_equipped_in_slot(player.instance.fighter.inventory,equipment.slot) is None:
                     equipment.equip()
         elif self.type == 'spell':
-            if len(memory) >= player.player_stats.max_memory:
+            if len(memory) >= player.instance.player_stats.max_memory:
                 ui.message('You cannot hold any more spells in your memory!', libtcod.purple)
             else:
                 memory.append(self.owner)
@@ -141,20 +141,20 @@ class Item:
         if self.use_function is not None:
             if self.use_function() != 'cancelled':
                 if self.type == 'item':
-                    player.fighter.inventory.remove(self.owner)
+                    player.instance.fighter.inventory.remove(self.owner)
                 elif self.type == 'spell':
                     memory.remove(self.owner)
             else:
                 return 'cancelled'
         elif self.learn_spell is not None:
             spell = spells.spell_library[self.learn_spell]
-            if spell in player.known_spells:
+            if spell in player.instance.known_spells:
                 ui.message('You already know this spell.', libtcod.light_blue)
                 return 'cancelled'
             else:
-                player.known_spells.append(spell)
+                player.instance.known_spells.append(spell)
                 ui.message('You have mastered ' + spell.name + '!', libtcod.light_blue)
-                player.fighter.inventory.remove(self.owner)
+                player.instance.fighter.inventory.remove(self.owner)
         else:
             ui.message('The ' + self.owner.name + ' cannot be used.')
 
@@ -162,10 +162,10 @@ class Item:
     def drop(self):
         if self.owner.equipment:
             self.owner.equipment.dequip();
-        current_cell.objects.append(self.owner)
-        player.fighter.inventory.remove(self.owner)
-        self.owner.x = player.x
-        self.owner.y = player.y
+        current_cell.add_object(self.owner)
+        player.instance.fighter.inventory.remove(self.owner)
+        self.owner.x = player.instance.x
+        self.owner.y = player.instance.y
         ui.message('You dropped a ' + self.owner.name + '.', libtcod.white)
 
     def get_options_list(self):
@@ -187,40 +187,6 @@ class Item:
             print_height += self.owner.equipment.print_description(console, x, y + print_height, width)
 
         return print_height
-
-
-class PlayerStats:
-
-    def __init__(self, int=10, wiz=10, str=10, agi=10):
-        self.base_int = int
-        self.base_wiz = wiz
-        self.base_str = str
-        self.base_agi = agi
-
-    @property
-    def int(self):
-        return self.base_int
-
-    @property
-    def wiz(self):
-        return self.base_wiz
-
-    @property
-    def str(self):
-        return self.base_str
-
-    @property
-    def agi(self):
-        return self.base_agi
-
-    @property
-    def max_memory(self):
-        return 3 + int(math.floor(self.wiz / 4))
-
-    @property
-    def max_mana(self):
-        return 1 + int(math.floor(self.wiz / 4))
-
 
 class Fighter:
 
@@ -274,11 +240,11 @@ class Fighter:
         print_height += 1
         # Print accuracy
         libtcod.console_set_default_foreground(console, libtcod.white)
-        s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(self.owner, player.fighter.accuracy))
+        s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(self.owner, player.instance.fighter.accuracy))
         s += '%'
         libtcod.console_print(console, x, y + print_height, s)
         print_height += 1
-        s = 'Its Accuracy: %d%%' % int(100.0 * get_chance_to_hit(player, self.accuracy))
+        s = 'Its Accuracy: %d%%' % int(100.0 * get_chance_to_hit(player.instance, self.accuracy))
         s += '%'
         libtcod.console_print(console, x, y + print_height, s)
         print_height += 1
@@ -309,12 +275,12 @@ class Fighter:
                 function = self.death_function
                 if function is not None:
                     function(self.owner)
-                if self.owner != player:
-                    player.fighter.xp += self.xp
+                if self.owner != player.instance:
+                    player.instance.fighter.xp += self.xp
             self.time_since_last_damaged = 0
 
     def drop_mana(self):
-        if hasattr(self.owner, 'mana') and self.owner is not player:
+        if hasattr(self.owner, 'mana') and self.owner is not player.instance:
             roll = libtcod.random_get_int(0, 1, 100)
             total = 0
             for m in self.owner.mana:
@@ -323,14 +289,14 @@ class Fighter:
                     mana_pickup = GameObject(self.owner.x, self.owner.y, '*', 'mote of ' + m[1] + ' mana',
                                              spells.mana_colors[m[1]],
                                              description='A colored orb that glows with magical potential.',
-                                             on_step=pick_up_mana, on_tick=expire_out_of_vision)
+                                             on_step=player.instance.pick_up_mana, on_tick=expire_out_of_vision)
                     mana_pickup.mana_type = m[1]
-                    current_cell.objects.append(mana_pickup)
+                    current_cell.add_object(mana_pickup)
                     return
 
     def calculate_attack_stamina_cost(self):
         stamina_cost = 0
-        if self.owner is player:
+        if self.owner is player.instance:
             stamina_cost = consts.UNARMED_STAMINA_COST / (self.owner.player_stats.str / consts.UNARMED_STAMINA_COST)
             if get_equipped_in_slot(self.inventory, 'right hand') is not None:
                 stamina_cost = int((float(get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) /
@@ -425,7 +391,7 @@ class Fighter:
         self.time_since_last_damaged += 1
         if self.time_since_last_damaged >= 20 and self.shred > 0:
             self.shred = 0
-            if self.owner is player:
+            if self.owner is player.instance:
                 ui.message('You repair your armor')
 
         # Manage breath/drowning
@@ -476,7 +442,7 @@ class Fighter:
         self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
             new_effect.on_apply(self.owner)
-        if new_effect.message is not None and self.owner is player:
+        if new_effect.message is not None and self.owner is player.instance:
             ui.message(new_effect.message, new_effect.color)
         return True
 
@@ -516,7 +482,7 @@ class Fighter:
     @property
     def armor(self):
         bonus = sum(equipment.armor_bonus for equipment in get_all_equipped(self.inventory))
-        if self.owner is player and has_skill('Iron Skin'):
+        if self.owner is player.instance and has_skill('Iron Skin'):
             has_armor = False
             for item in get_all_equipped(self.inventory):
                 if item.owner.item.category == 'armor':
@@ -668,7 +634,7 @@ class GameObject:
                 obj.on_step(obj, self)
 
         # If the player moved, recalculate field of view, checking for elevation changes
-        if self is player:
+        if self is player.instance:
             if old_elev != self.elevation:
                 fov.set_view_elevation(self.elevation)
             fov.set_fov_recompute()
@@ -689,7 +655,7 @@ class GameObject:
                     web.destroy()
                     return True
                 cost = current_cell.map[self.x][self.y].stamina_cost
-                if cost > 0 and self is player: # only the player cares about stamina costs (at least for now. I kind of like it this way) -T
+                if cost > 0 and self is player.instance: # only the player cares about stamina costs (at least for now. I kind of like it this way) -T
                     if self.fighter.stamina >= cost:
                         self.fighter.adjust_stamina(-cost)
                     else:
@@ -908,22 +874,6 @@ def expire_out_of_vision(obj):
     if not fov.player_can_see(obj.x, obj.y):
         obj.destroy()
 
-
-def pick_up_mana(mana, obj):
-    if obj is player and len(player.mana) < player.player_stats.max_mana:
-        player.mana.append(mana.mana_type)
-        ui.message('You are infused with magical power.', mana.color)
-        mana.destroy()
-
-
-def pick_up_xp(xp, obj):
-    if obj is player:
-        player.fighter.xp += consts.XP_ORB_AMOUNT_MIN + \
-                             libtcod.random_get_int(0, 0, consts.XP_ORB_AMOUNT_MAX - consts.XP_ORB_AMOUNT_MIN)
-        check_level_up()
-        xp.destroy()
-
-
 def step_on_reed(reed, obj):
     reed.destroy()
 
@@ -1029,7 +979,7 @@ def make_spiderweb(x, y):
     web = GameObject(x, y, '*', 'spiderweb', libtcod.lightest_gray,
                      description='a web of spider silk. Stepping into a web will impede movement for a turn.',
                      burns=True)
-    current_cell.objects.append(web)
+    current_cell.add_object(web)
     web.send_to_back()
 
 
@@ -1071,50 +1021,6 @@ def random_choice_index(chances):
             return choice
         choice += 1
 
-
-def check_level_up():
-    next = consts.LEVEL_UP_BASE + player.level * consts.LEVEL_UP_FACTOR
-    if player.fighter.xp >= next:
-        level_up()
-        player.fighter.xp = player.fighter.xp - next
-
-
-def level_up(altar = None):
-    global learned_skills
-
-    player.level += 1
-    ui.message('You grow stronger! You have reached level ' + str(player.level) + '!', libtcod.green)
-    choice = None
-    while choice == None:
-        choice = ui.menu('Level up! Choose a stat to raise:\n',
-        ['Constitution (+20 HP, from ' + str(player.fighter.base_max_hp) + ')',
-            'Strength (+1 attack, from ' + str(player.fighter.base_power) + ')',
-            'Agility (+1 defense, from ' + str(player.fighter.base_defense) + ')',
-            'Intelligence (increases spell damage)',
-            'Wisdom (increases spell slots, spell utility)'
-         ], consts.LEVEL_SCREEN_WIDTH)
-
-    if choice == 0:
-        player.fighter.max_hp += 20
-        player.fighter.hp += 20
-    elif choice == 1:
-        player.player_stats.str += 1
-    elif choice == 2:
-        player.player_stats.agi += 1
-    elif choice == 3:
-        player.player_stats.int += 1
-    elif choice == 4:
-        player.player_stats.wiz += 1
-
-    if player.level % 3 == 0:
-        skill = ui.skill_menu(add_skill=True)
-        if skill is not None and skill not in learned_skills:
-            learned_skills.append(skill)
-
-    if altar:
-        altar.destroy()
-
-
 def next_level():
     global dungeon_level, changed_tiles
 
@@ -1126,15 +1032,6 @@ def next_level():
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
             changed_tiles.append((x, y))
-
-
-def player_death(player):
-    global game_state
-    ui.message('You\'re dead, sucka.', libtcod.grey)
-    game_state = 'dead'
-    player.char = '%'
-    player.color = libtcod.darker_red
-
 
 def bomb_beetle_corpse_tick(object=None):
     if object is None:
@@ -1165,7 +1062,7 @@ def bomb_beetle_death(beetle):
     if beetle.fighter.loot_table is not None:
         drop = get_loot(beetle.fighter)
         if drop:
-            current_cell.objects.append(drop)
+            current_cell.add_object(drop)
             drop.send_to_back()
 
     ui.message(beetle.name.capitalize() + ' is dead!', libtcod.red)
@@ -1191,14 +1088,14 @@ def monster_death(monster):
     if monster.fighter.loot_table is not None:
         drop = get_loot(monster.fighter)
         if drop:
-            current_cell.objects.append(drop)
+            current_cell.add_object(drop)
             drop.send_to_back()
 
     if hasattr(monster.fighter,'inventory') and len(monster.fighter.inventory) > 0:
         for item in monster.fighter.inventory:
             item.x = monster.x
             item.y = monster.y
-            current_cell.objects.append(item)
+            current_cell.add_object(item)
             item.send_to_back()
 
 
@@ -1225,14 +1122,14 @@ def target_monster(max_range=None):
         if x is None:
             return None
         for obj in current_cell.objects:
-            if obj.x == x and obj.y == y and obj.fighter and obj is not player:
+            if obj.x == x and obj.y == y and obj.fighter and obj is not player.instance:
                 return obj
         return None
 
 
 def get_monster_at_tile(x, y):
     for obj in current_cell.objects:
-        if obj.x == x and obj.y == y and obj.fighter and obj is not player:
+        if obj.x == x and obj.y == y and obj.fighter and obj is not player.instance:
             return obj
     return None
 
@@ -1282,8 +1179,8 @@ def closest_monster(max_range):
     closest_dist = max_range + 1
 
     for object in current_cell.objects:
-        if object.fighter and not object == player and fov.player_can_see(object.x, object.y):
-            dist = player.distance_to(object)
+        if object.fighter and not object == player.instance and fov.player_can_see(object.x, object.y):
+            dist = player.instance.distance_to(object)
             if dist < closest_dist:
                 closest_dist = dist
                 closest_enemy = object
@@ -1340,7 +1237,7 @@ def spawn_monster(name, x, y):
         if p.get('mana'):
             monster.mana = p.get('mana')
         monster.elevation = current_cell.map[x][y].elevation
-        current_cell.objects.append(monster)
+        current_cell.add_object(monster)
         return monster
     return None
 
@@ -1449,7 +1346,7 @@ def spawn_item(name, x, y, material=None, quality=None):
         item = create_item(name, material, quality)
         item.x = x
         item.y = y
-        current_cell.objects.append(item)
+        current_cell.add_object(item)
         item.send_to_back()
 
 
@@ -1503,7 +1400,7 @@ def create_fire(x,y,temp):
         return
     component = ai.FireBehavior(temp)
     obj = GameObject(x,y,libtcod.CHAR_ARROW2_N,'Fire',libtcod.red,misc=component)
-    current_cell.objects.append(obj)
+    current_cell.add_object(obj)
     if temp > 4 and tile.tile_type != 'ramp':
         current_cell.map[x][y].tile_type = 'scorched floor'
     for obj in get_objects(x, y, condition=lambda o: o.burns):
@@ -1535,7 +1432,7 @@ def place_objects(tiles):
             item = loot.item_from_table(dungeon_level * 5)
             item.x = random_pos[0]
             item.y = random_pos[1]
-            current_cell.objects.append(item)
+            current_cell.add_object(item)
             item.send_to_back()
             tiles.remove(random_pos)
             if len(tiles) == 0:
@@ -1543,8 +1440,8 @@ def place_objects(tiles):
 
     for i in range(2):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
-        current_cell.objects.append(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
-                                  description='xp', on_step=pick_up_xp))
+        current_cell.add_object(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
+                                  description='xp', on_step= player.pick_up_xp))
         tiles.remove(random_pos)
         if len(tiles) == 0:
             return
@@ -1566,143 +1463,6 @@ def get_dungeon_level():
     global dungeon_level
     return "dungeon_{}".format(dungeon_level)
 
-
-def player_move_or_attack(dx, dy, ctrl=False):
-
-    if ctrl:
-        weapon = get_equipped_in_slot(player.fighter.inventory, 'right hand')
-        if weapon and weapon.ctrl_attack:
-            if weapon.quality != 'broken':
-                success = weapon.ctrl_attack(dx, dy) != 'failed'
-            else:
-                ui.message('Your ' + weapon.owner.name + ' cannot do that in its current state!')
-                return False
-        else:
-            success = player_bash_attack(dx, dy) != 'failed'
-    else:
-        target = get_monster_at_tile(player.x + dx, player.y + dy)
-        if target is not None:
-            success = player.fighter.attack(target) != 'failed'
-            if success and target.fighter:
-                ui.select_monster(target)
-        else:
-            value = player.move(dx, dy)
-            return value
-
-    return success
-
-
-def player_dig(dx, dy):
-    global changed_tiles
-
-    dig_x = player.x + dx
-    dig_y = player.y + dy
-    if current_cell.map[dig_x][dig_y].diggable:
-        current_cell.map[dig_x][dig_y].tile_type = 'stone floor'
-        changed_tiles.append((dig_x, dig_y))
-        if pathfinding.map:
-            pathfinding.map.mark_passable((dig_x, dig_y))
-        fov.set_fov_properties(dig_x, dig_y, False, current_cell.map[dig_x][dig_y].elevation)
-        check_breakage(get_equipped_in_slot(player.fighter.inventory, 'right hand'))
-        return 'success'
-    else:
-        ui.message('You cannot dig there.', libtcod.lightest_gray)
-        return 'failed'
-
-
-def player_reach_attack(dx, dy):
-
-    target_space = player.x + 2 * dx, player.y + 2 * dy
-    target = get_monster_at_tile(target_space[0], target_space[1])
-    if target is not None:
-        result = player.fighter.attack_ex(target, player.fighter.calculate_attack_stamina_cost(), player.fighter.accuracy,
-                             player.fighter.attack_damage * 1.5, player.fighter.damage_variance, None, 'reach-attacks',
-                             player.fighter.attack_shred, player.fighter.attack_guaranteed_shred, player.fighter.attack_pierce)
-        if result != 'failed' and target.fighter:
-            ui.select_monster(target)
-        return result
-    else:
-        target = get_monster_at_tile(player.x + dx, player.y + dy)
-        if target is not None:
-            result = player.fighter.attack(target)
-            if result != 'failed' and target.fighter:
-                ui.select_monster(target)
-        else:
-            value = player.move(dx, dy)
-            if value:
-                return 'moved'
-    return 'failed'
-
-
-def player_cleave_attack(dx, dy):
-    # attack all adjacent creatures
-    adjacent = adjacent_tiles_diagonal(player.x, player.y)
-    if adjacent and len(adjacent) > 0:
-        stamina_cost = player.fighter.calculate_attack_stamina_cost() * 2
-        if player.fighter.stamina < stamina_cost:
-            ui.message("You don't have the stamina to perform a cleave attack!", libtcod.light_yellow)
-            return 'failed'
-        player.fighter.adjust_stamina(-stamina_cost)
-        for tile in adjacent:
-            target = get_monster_at_tile(tile[0], tile[1])
-            if target and target.fighter:
-                player.fighter.attack_ex(target, 0, player.fighter.accuracy, player.fighter.attack_damage,
-                                 player.fighter.damage_variance, None, 'cleaves', player.fighter.attack_shred,
-                                 player.fighter.attack_guaranteed_shred + 1, player.fighter.attack_pierce)
-        return 'cleaved'
-    else:
-        value = player.move(dx, dy)
-        if value:
-            return 'moved'
-    return 'failed'
-
-
-def player_bash_attack(dx, dy):
-
-    target = get_monster_at_tile(player.x + dx, player.y + dy)
-    if target is not None:
-        result = player.fighter.attack_ex(target, consts.BASH_STAMINA_COST, player.fighter.accuracy * consts.BASH_ACC_MOD,
-                                 player.fighter.attack_damage * consts.BASH_DMG_MOD, player.fighter.damage_variance,
-                                 None, 'bashes', player.fighter.attack_shred + 1, player.fighter.attack_guaranteed_shred,
-                                 player.fighter.attack_pierce)
-        if result == 'hit' and target.fighter:
-            ui.select_monster(target)
-            # knock the target back one space. Stun it if it cannot move.
-            direction = target.x - player.x, target.y - player.y  # assumes the player is adjacent
-            stun = False
-            against = ''
-            against_tile = current_cell.map[target.x + direction[0]][target.y + direction[1]]
-            if against_tile.blocks:
-                stun = True
-                against = current_cell.map[target.x + direction[0]][target.y + direction[1]].name
-            elif against_tile.elevation != target.elevation and against_tile.tile_type != 'ramp' and current_cell.map[target.x][target.y] != 'ramp':
-                stun = True
-                against = 'cliff'
-            else:
-                for obj in current_cell.objects:
-                    if obj.x == target.x + direction[0] and obj.y == target.y + direction[1] and obj.blocks:
-                        stun = True
-                        against = obj.name
-                        break
-
-            if stun:
-                #  stun the target
-                if target.fighter.apply_status_effect(effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
-                    ui.message('The ' + target.name + ' collides with the ' + against + ', stunning it!', libtcod.gold)
-            else:
-                ui.message('The ' + target.name + ' is knocked backwards.', libtcod.gray)
-                target.set_position(target.x + direction[0], target.y + direction[1])
-                render_map()
-                libtcod.console_flush()
-
-        return result
-    else:
-        value = player.move(dx, dy)
-        if value:
-            return 'moved'
-    return 'failed'
-
-
 def get_loot(monster):
     loot_table = monster.loot_table
     drop = loot_table[libtcod.random_get_int(0,0,len(loot_table) - 1)]
@@ -1710,186 +1470,6 @@ def get_loot(monster):
         proto = loot.proto[drop]
         item = Item(category=proto['category'], use_function=proto['on_use'], type=proto['type'])
         return GameObject(monster.owner.x, monster.owner.y, proto['char'], proto['name'], proto['color'], item=item)
-
-
-def do_queued_action(action):
-    if action == 'finish-meditate':
-        manatype = 'normal'
-
-        if len(player.mana) < player.player_stats.max_mana:
-            player.mana.append(manatype)
-            ui.message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
-            return
-        elif manatype != 'normal':
-            for i in range(len(player.mana)):
-                if player.mana[i] == 'normal':
-                    player.mana[i] = manatype
-                    ui.message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
-                    return
-        ui.message('You have finished meditating. You were unable to gain any more power than you already have.', libtcod.dark_cyan)
-        return
-
-
-def show_ability_screen():
-    opts = []
-    for a in abilities.default_abilities:
-        opts.append(a)
-    for i in player.fighter.inventory:
-        if i.item.ability is not None:
-            opts.append(i.item.ability)
-    index = ui.menu('Abilities',[opt.name for opt in opts],20)
-    if index is not None:
-        choice = opts[index]
-        if choice is not None:
-            return choice.use(player)
-    return 'didnt-take-turn'
-
-
-def handle_keys():
-
-    global game_state, stairs
-    global key, mouse
-
-    ui.mouse_select_monster()
-
-    if key.vk == libtcod.KEY_ENTER and key.lalt:
-        # Alt+Enter: toggle fullscreen
-        libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
-
-    elif key.vk == libtcod.KEY_ESCAPE:
-        return 'exit'  #exit game
-
-    if game_state == 'playing':
-
-        if player.fighter and player.fighter.has_status('stunned'):
-            return 'stunned'
-
-        if player.action_queue is not None and len(player.action_queue) > 0:
-            action = player.action_queue[0]
-            player.action_queue.remove(action)
-            do_queued_action(action)
-            return action
-
-        key_char = chr(key.c)
-        moved = False
-        ctrl = key.lctrl or key.rctrl
-        if key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_KP8:
-            moved = player_move_or_attack(0, -1, ctrl)
-        elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_KP2:
-            moved = player_move_or_attack(0, 1, ctrl)
-        elif key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4:
-            moved = player_move_or_attack(-1, 0, ctrl)
-        elif key.vk == libtcod.KEY_RIGHT or key.vk == libtcod.KEY_KP6:
-            moved = player_move_or_attack(1, 0, ctrl)
-        elif key.vk == libtcod.KEY_KP7:
-            moved = player_move_or_attack(-1, -1, ctrl)
-        elif key.vk == libtcod.KEY_KP9:
-            moved = player_move_or_attack(1, -1, ctrl)
-        elif key.vk == libtcod.KEY_KP1:
-            moved = player_move_or_attack(-1, 1, ctrl)
-        elif key.vk == libtcod.KEY_KP3:
-            moved = player_move_or_attack(1, 1, ctrl)
-        elif key.vk == libtcod.KEY_KP5 or key_char == 's':
-            player.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT) # gain stamina for standing still
-            moved = True  # so that this counts as a turn passing
-            pass
-        else:
-            if key_char == 'g':
-                return pick_up_item()
-            if key_char == 'i':
-                return ui.inspect_inventory()
-            if key_char == 'u':
-                chosen_item = ui.inventory_menu('Use which item?')
-                if chosen_item is not None:
-                    use_result = chosen_item.use()
-                    if use_result == 'cancelled':
-                       return 'didnt-take-turn'
-                    else:
-                       return 'used-item'
-            if key_char == 'd':
-                chosen_item = ui.inventory_menu('Drop which item?')
-                if chosen_item is not None:
-                    chosen_item.drop()
-                    return 'dropped-item'
-            if key_char == ',' and key.shift:
-                if stairs.x == player.x and stairs.y == player.y:
-                    next_level()
-            if key_char == 'c':
-                ui.msgbox('Character Information\n\nLevel: ' + str(player.level) + '\n\nMaximum HP: ' +
-                       str(player.fighter.max_hp),
-                       consts.CHARACTER_SCREEN_WIDTH)
-            if key_char == 'z':
-                return cast_spell_new()
-            if key_char == 'j':
-                return jump()
-            if key_char == 'e':
-                examine()
-            if key.vk == libtcod.KEY_TAB:
-                ui.target_next_monster()
-            if key_char == 'm':
-                return meditate()
-            if key_char == 'a':
-                return show_ability_screen()
-            if key_char == 'l': # TEMPORARY
-                ui.skill_menu()
-                return 'didnt-take-turn'
-            if mouse.rbutton_pressed:
-                offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
-                mouse_pos = mouse.cx + offsetx - consts.MAP_VIEWPORT_X, mouse.cy + offsety - consts.MAP_VIEWPORT_Y
-                if in_bounds(mouse_pos[0], mouse_pos[1]):
-                    examine(mouse_pos[0], mouse_pos[1])
-            return 'didnt-take-turn'
-        if not moved:
-            return 'didnt-take-turn'
-
-
-def cast_spell_new():
-    if len(player.known_spells) <= 0:
-        ui.message("You don't know any spells.", libtcod.light_blue)
-        return 'didnt-take-turn'
-    else:
-        names = []
-        for s in player.known_spells:
-            names.append(s.name + ' ' + s.cost_string)
-        selection = ui.menu('Cast which spell?', names, 30)
-        if selection is not None:
-            if player.known_spells[selection].check_mana():
-                if player.known_spells[selection].cast():
-                    return 'cast-spell'
-                else:
-                    return 'didnt-take-turn'
-            else:
-                ui.message("You don't have enough mana to cast that spell.", libtcod.light_blue)
-                return 'didnt-take-turn'
-    return 'didnt-take-turn'
-
-
-def pick_up_item():
-    items_here = get_objects(player.x, player.y, condition=lambda o: o.item)
-    if len(items_here) > 0:
-        if len(items_here) == 1:
-            items_here[0].item.pick_up()
-            return 'picked-up-item'
-        options = []
-        options.append('All')
-        for item in items_here:
-            options.append(item.name)
-
-        selection = ui.menu('Pick up which item?', options, 30)
-        if selection is not None:
-            if selection == 0:
-                for i in items_here:
-                    i.item.pick_up()
-            else:
-                items_here[selection - 1].item.pick_up()
-            return 'picked-up-item'
-    else:
-        interactable_here = get_objects(player.x, player.y, condition=lambda o:o.interact, distance=1) #get stuff that's adjacent too
-        if len(interactable_here) > 0:
-            interactable_here[0].interact(interactable_here[0])
-            return 'interacted'
-    return 'didnt-take-turn'
-
 
 def get_objects(x, y, condition=None, distance=0):
     found = []
@@ -1902,100 +1482,11 @@ def get_objects(x, y, condition=None, distance=0):
                 found.append(obj)
     return found
 
-def meditate():
-    ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)
-    for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
-        player.action_queue.append('channel-meditate')
-    player.action_queue.append('finish-meditate')
-    return 'start-meditate'
-
-
 def get_description(obj):
     if obj and hasattr(obj, 'description') and obj.description is not None:
         return obj.description
     else:
         return ""
-
-
-def examine(x=None, y=None):
-    if x is None or y is None:
-        x, y = ui.target_tile()
-    if x is not None and y is not None:
-        obj = object_at_coords(x, y)
-        if obj is not None:
-            if isinstance(obj, GameObject):
-                desc = obj.name.capitalize()
-                if hasattr(obj, 'fighter') and obj.fighter is not None and \
-                        hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
-                    desc = desc + '\nInventory: '
-                    for item in obj.fighter.inventory:
-                        desc = desc + item.name + ', '
-                ui.menu(desc, ['back'], 50, render_func=obj.print_description)
-            else:
-                desc = obj.name.capitalize() + '\n' + get_description(obj)
-                ui.menu(desc, ['back'], 50)
-
-
-def jump(actor=None):
-
-    if not current_cell.map[player.x][player.y].jumpable:
-        ui.message('You cannot jump from this terrain!', libtcod.light_yellow)
-        return 'didnt-take-turn'
-
-    web = object_at_tile(player.x, player.y, 'spiderweb')
-    if web is not None:
-        ui.message('You struggle against the web.')
-        web.destroy()
-        return 'webbed'
-
-    if player.fighter.stamina < consts.JUMP_STAMINA_COST:
-        ui.message("You don't have the stamina to jump!", libtcod.light_yellow)
-        return 'didnt-take-turn'
-
-    ui.message('Jump to where?', libtcod.white)
-
-    ui.render_message_panel()
-    libtcod.console_flush()
-    (x, y) = ui.target_tile(consts.BASE_JUMP_RANGE, 'pick', consts.JUMP_ATTACK_ACC_MOD)
-    if x is not None and y is not None:
-        if current_cell.map[x][y].blocks:
-            ui.message('There is something in the way.', libtcod.light_yellow)
-            return 'didnt-take-turn'
-        elif is_blocked(x, y, player.elevation) and current_cell.map[x][y].elevation > player.elevation:
-            ui.message("You can't jump that high!", libtcod.light_yellow)
-            return 'didnt-take-turn'
-        else:
-            jump_attack_target = None
-            for obj in current_cell.objects:
-                if obj.x == x and obj.y == y and obj.blocks:
-                    jump_attack_target = obj
-                    break
-            if jump_attack_target is not None:
-                # Jump attack
-                land = land_next_to_target(jump_attack_target.x, jump_attack_target.y, player.x, player.y)
-                if land is not None:
-                    player.set_position(land[0], land[1])
-                    player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
-
-                    player.fighter.attack_ex(jump_attack_target, 0, player.fighter.accuracy * consts.JUMP_ATTACK_ACC_MOD,
-                                             player.fighter.attack_damage * consts.JUMP_ATTACK_DMG_MOD,
-                                             player.fighter.damage_variance, player.fighter.on_hit, 'jump-attacks',
-                                             player.fighter.attack_shred, player.fighter.attack_guaranteed_shred,
-                                             player.fighter.attack_pierce)
-
-                    return 'jump-attacked'
-                else:
-                    ui.message('There is something in the way.', libtcod.white)
-                    return 'didnt-take-turn'
-            else:
-                # jump to open space
-                player.set_position(x, y)
-                player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
-                return 'jumped'
-
-
-    ui.message('Out of range.', libtcod.white)
-    return 'didnt-take-turn'
 
 
 def land_next_to_target(target_x, target_y, source_x, source_y):
@@ -2008,21 +1499,6 @@ def land_next_to_target(target_x, target_y, source_x, source_y):
         return land_x, land_y
     return None
 
-
-def cast_spell():
-    ui.message('Cast which spell?', libtcod.purple)
-
-    render_all()
-    libtcod.console_flush()
-
-    choice = libtcod.console_wait_for_keypress(True).c - 48
-
-    if 0 < choice < len(memory) + 1:
-        memory[choice - 1].item.use()
-    else:
-        ui.message('No such spell.', libtcod.purple)
-
-
 def clear_map():
     libtcod.console_set_default_background(map_con, libtcod.black)
     libtcod.console_set_default_foreground(map_con, libtcod.black)
@@ -2034,7 +1510,7 @@ def render_map():
 
     if fov.fov_recompute:
         fov.fov_recompute = False
-        libtcod.map_compute_fov(fov.fov_player, player.x, player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS, consts.FOV_ALGO)
+        libtcod.map_compute_fov(fov.fov_player, player.instance.x, player.instance.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS, consts.FOV_ALGO)
         fov.player_fov_calculated = True
         new_visible = []
         for y in range(consts.MAP_HEIGHT):
@@ -2074,11 +1550,11 @@ def render_map():
     changed_tiles = []
 
     for obj in current_cell.objects:
-        if obj is not player:
+        if obj is not player.instance:
             obj.draw(map_con)
-    player.draw(map_con)
+    player.instance.draw(map_con)
 
-    libtcod.console_blit(map_con, player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2,
+    libtcod.console_blit(map_con, player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2, player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2,
                 consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y)
     ui.draw_border(0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
 
@@ -2111,7 +1587,7 @@ def enter_world_cell(world_cell):
 
 
 def generate_level(world_cell):
-    global stairs, spawned_bosses
+    global spawned_bosses
     mapgen.make_map(world_cell)
 
 
@@ -2150,17 +1626,13 @@ def main_menu():
     
 
 def new_game():
-    global player, game_state, dungeon_level, memory, in_game, changed_tiles, learned_skills
+    global game_state, dungeon_level, memory, in_game, changed_tiles, learned_skills
 
     in_game = True
+    player.create()
 
     import world
     world.initialize_world()
-
-    # create object representing the player
-    fighter_component = Fighter(hp=100, xp=0, stamina=100, death_function=player_death)
-    player = GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component, player_stats=PlayerStats(), description='You, the fearless adventurer!')
-    player.level = 1
     
     # generate map
     dungeon_level = 1
@@ -2169,21 +1641,7 @@ def new_game():
     game_state = 'playing'
 
     memory = []
-    player.mana = []
-    player.known_spells = []
     learned_skills = []
-    player.action_queue = []
-
-    leather_armor = create_item('equipment_leather_armor')
-    player.fighter.inventory.append(leather_armor)
-    leather_armor.equipment.equip()
-    dagger = create_item('equipment_dagger', material='iron', quality='')
-    player.fighter.inventory.append(dagger)
-    dagger.equipment.equip()
-
-    if consts.DEBUG_STARTING_ITEM is not None:
-        test = create_item(consts.DEBUG_STARTING_ITEM)
-        player.fighter.inventory.append(test)
 
     ui.message('Welcome to the dungeon...', libtcod.gold)
 
@@ -2247,7 +1705,7 @@ def play_game():
         libtcod.console_flush()
 
         # handle keys and exit game if needed
-        player_action = handle_keys()
+        player_action = player.handle_keys()
         if player_action == 'exit':
             save_game()
             in_game = False
@@ -2259,11 +1717,11 @@ def play_game():
 
         # Let monsters take their turn
         if game_state == 'playing' and player_action != 'didnt-take-turn':
-            player.on_tick(object=player)
+            player.instance.on_tick(object=player.instance)
             for object in current_cell.objects:
                 if object.behavior:
                     object.behavior.take_turn()
-                if object is not player:
+                if object is not player.instance:
                     object.on_tick(object=object)
 
         # Handle auto-targeting
@@ -2282,6 +1740,7 @@ import pathfinding
 import fov
 import ui
 import ai
+import player
 
 # Globals
 

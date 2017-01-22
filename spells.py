@@ -4,6 +4,7 @@ import libtcodpy as libtcod
 import effects
 import ui
 import ai
+import player
 
 class Spell:
     def __init__(self, name, mana_cost, function, cost_string):
@@ -20,7 +21,7 @@ class Spell:
 
     def check_mana(self):
         pool = []
-        for m in main.player.mana:  # Create a mana pool that is a copy of the player's mana pool
+        for m in player.instance.mana:  # Create a mana pool that is a copy of the player's mana pool
             pool.append(m)
         for mana in self.mana_cost:
             if mana == 'normal':  # First check every mana cost other than 'normal'
@@ -41,13 +42,13 @@ class Spell:
             if mana == 'normal':
                 continue
             for i in range(self.mana_cost[mana]):
-                main.player.mana.remove(mana)
+                player.instance.mana.remove(mana)
         if 'normal' in self.mana_cost:  # Then remove normal mana
             for i in range(self.mana_cost['normal']):
-                if 'normal' in main.player.mana:  # First attempt to remove normal mana
-                    main.player.mana.remove('normal')
+                if 'normal' in player.instance.mana:  # First attempt to remove normal mana
+                    player.instance.mana.remove('normal')
                 else:
-                    main.player.mana.remove(main.player.mana[len(main.player.mana) - 1]) # Then use rightmost mana
+                    player.instance.mana.remove(player.instance.mana[len(player.instance.mana) - 1]) # Then use rightmost mana
 
 def cast_fireball():
     ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
@@ -87,21 +88,21 @@ def cast_lightning():
 
 
 def cast_heal():
-    if main.player.fighter.hp == main.player.fighter.max_hp:
+    if player.instance.fighter.hp == player.instance.fighter.max_hp:
         ui.message('You are already at full health.', libtcod.white)
         return 'cancelled'
         
     ui.message('You feel better.', libtcod.white)
-    main.player.fighter.heal(consts.HEAL_AMOUNT)
+    player.instance.fighter.heal(consts.HEAL_AMOUNT)
 
 
 def cast_waterbreathing():
-    main.player.fighter.apply_status_effect(effects.StatusEffect('waterbreathing', 31, libtcod.light_azure))
+    player.instance.fighter.apply_status_effect(effects.StatusEffect('waterbreathing', 31, libtcod.light_azure))
 
 
 def cast_shielding():
-    main.player.fighter.shred = 0
-    main.player.fighter.apply_status_effect(effects.StatusEffect('shielded', 21, libtcod.dark_blue))
+    player.instance.fighter.shred = 0
+    player.instance.fighter.apply_status_effect(effects.StatusEffect('shielded', 21, libtcod.dark_blue))
 
 
 def cast_frog_tongue(frog, target):
@@ -124,9 +125,9 @@ def cast_manabolt():
     target = ui.target_tile(consts.MANABOLT_RANGE, 'beam_interrupt', acc_mod=consts.MANABOLT_ACC, default_target=default)
     if target[0] is not None:
         #visual effect
-        bolt = main.GameObject(main.player.x, main.player.y, 7, 'bolt', color=libtcod.light_blue)
-        line = main.beam(main.player.x, main.player.y, target[0], target[1])
-        main.current_cell.objects.append(bolt)
+        bolt = main.GameObject(player.instance.x, player.instance.y, 7, 'bolt', color=libtcod.light_blue)
+        line = main.beam(player.instance.x, player.instance.y, target[0], target[1])
+        main.current_cell.add_object(bolt)
         for p in line:
             bolt.set_position(p[0], p[1])
             main.render_map()
@@ -135,7 +136,7 @@ def cast_manabolt():
         #game effect
         monster = main.get_monster_at_tile(target[0], target[1])
         if monster is not None:
-            if main.roll_to_hit(monster, main.player.fighter.accuracy * consts.MANABOLT_ACC):
+            if main.roll_to_hit(monster, player.instance.fighter.accuracy * consts.MANABOLT_ACC):
                 ui.message('The manabolt hits the ' + monster.name + ', dealing ' + str(consts.MANABOLT_DMG) + ' damage!', libtcod.light_blue)
                 monster.fighter.take_damage(consts.MANABOLT_DMG)
             else:
@@ -167,8 +168,8 @@ def cast_ignite():
 
 
 def cast_mend():
-    if main.player.fighter.hp < main.player.fighter.max_hp:
-        main.player.fighter.heal(consts.MEND_HEAL)
+    if player.instance.fighter.hp < player.instance.fighter.max_hp:
+        player.instance.fighter.heal(consts.MEND_HEAL)
         ui.message('A soft green glow passes over you as your wounds are healed.', libtcod.light_blue)
         return True
     else:
@@ -177,7 +178,7 @@ def cast_mend():
 
 
 def cast_forge():
-    weapon = main.get_equipped_in_slot(main.player.fighter.inventory, 'right hand')
+    weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
     if weapon is not None and weapon.owner.item.category == 'weapon':
         if weapon.quality == 'artifact':
             ui.message('Your ' + weapon.owner.name + ' shimmers briefly. It cannot be improved further by this magic.', libtcod.orange)

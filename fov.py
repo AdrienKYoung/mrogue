@@ -1,6 +1,7 @@
 import consts
 import libtcodpy as libtcod
 import game as main
+import player
 
 # FOV-related globals
 player_fov_calculated = False  # indicates whether the most recent fov_compute was with respect to the player
@@ -53,7 +54,7 @@ def initialize_fov():
             set_fov_properties(obj.x, obj.y, True, obj.elevation)
 
     # finally set the player's view elevation
-    set_view_elevation(main.player.elevation)
+    set_view_elevation(player.instance.elevation)
     set_fov_recompute()
 
 
@@ -79,7 +80,7 @@ def player_can_see(x, y):
     global fov_recompute, player_fov_calculated
 
     if not player_fov_calculated:
-        libtcod.map_compute_fov(fov_player, main.player.x, main.player.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS,
+        libtcod.map_compute_fov(fov_player, player.instance.x, player.instance.y, consts.TORCH_RADIUS, consts.FOV_LIGHT_WALLS,
                                 consts.FOV_ALGO)
         player_fov_calculated = True
 
@@ -89,7 +90,7 @@ def player_can_see(x, y):
 # Checks if the given monster can see the given target, where target is a GameObject. In the very common case of
 # checking vision of the player at the same elevation, defaults to checking player's vision to save time
 def monster_can_see_object(monster, target):
-    if monster.elevation == target.elevation and target is main.player:
+    if monster.elevation == target.elevation and target is player.instance:
         return player_can_see(monster.x, monster.y)
     else:
         return monster_can_see_tile(monster, target.x, target.y)

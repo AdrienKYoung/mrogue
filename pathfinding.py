@@ -147,7 +147,7 @@ def draw_path(path):
 
     if path != 'failure':
         for t in path:
-            main.current_cell.objects.append(
+            main.current_cell.add_object(
                 main.GameObject(t[0], t[1], '*', 'path', libtcod.yellow, always_visible=True, description=''))
 
 # The pathfinding map object

@@ -8,6 +8,7 @@ import loot
 import Queue
 import pathfinding
 import world
+import player
 
 angles = [0,
           0.5 * math.pi,
@@ -388,7 +389,7 @@ def apply_room(room, clear_objects=False):
             old_tile.no_overwrite = room.no_overwrite
             if clear_objects or old_tile.blocks:
                 for o in cell.objects:
-                    if o.x == tile[0] and o.y == tile[1] and o is not main.player:
+                    if o.x == tile[0] and o.y == tile[1] and o is not player.instance:
                         o.destroy()
             if tile in room.data.keys():
                 line = room.data[tile]
@@ -463,7 +464,7 @@ def apply_object(x, y, data):
         main.spawn_monster(monster_id, x, y)
     elif go_name is not None:
         new_obj = main.GameObject(x, y, go_char, go_name, go_color, blocks=go_blocks, description=go_description)
-        cell.objects.append(new_obj)
+        cell.add_object(new_obj)
 
 def apply_item(x, y, data):
     loot_level = main.dungeon_level * 5
@@ -494,7 +495,7 @@ def apply_item(x, y, data):
         item = loot.item_from_table(loot_level=loot_level, category=category)
         item.x = x
         item.y = y
-        cell.objects.append(item)
+        cell.add_object(item)
         item.send_to_back()
 
 def create_wandering_tunnel(x1, y1, x2, y2):
@@ -589,7 +590,7 @@ def create_reed(x, y):
     reed = main.GameObject(x, y, 244, 'reeds', libtcod.darker_green, always_visible=True, description='A thicket of '
                            'reeds so tall they obstruct your vision. They are easily crushed underfoot.'
                            , blocks_sight=True, on_step=main.step_on_reed, burns=True)
-    cell.objects.append(reed)
+    cell.add_object(reed)
 
 
 def load_features_from_file(filename):
@@ -798,8 +799,8 @@ def make_rooms_and_corridors():
             (new_x, new_y) = room_array.center()
 
             if num_rooms == 0:
-                main.player.x = new_x
-                main.player.y = new_y
+                player.instance.x = new_x
+                player.instance.y = new_y
             else:
                 (prev_x, prev_y) = rooms[num_rooms - 1].center()
                 create_wandering_tunnel(prev_x, prev_y, new_x, new_y)
@@ -823,7 +824,7 @@ def make_rooms_and_corridors():
     #main.stairs.send_to_back()
     x, y = sample[len(sample) - 1].center()
     level_shrine = main.GameObject(x, y, '=', 'shrine of power', libtcod.white, always_visible=True, interact=None)
-    cell.objects.append(level_shrine)
+    cell.add_object(level_shrine)
     level_shrine.send_to_back()
     boss = main.check_boss(main.get_dungeon_level())
     if boss is not None:
@@ -869,8 +870,8 @@ def make_one_big_room():
 
     player_tile = choose_random_tile(open_tiles)
 
-    main.player.x = player_tile[0]
-    main.player.y = player_tile[1]
+    player.instance.x = player_tile[0]
+    player.instance.y = player_tile[1]
     for i in range(7):
         main.place_objects(open_tiles)
     #stair_tile = choose_random_tile(open_tiles)
@@ -893,8 +894,8 @@ def make_test_space():
     if consts.DEBUG_TEST_FEATURE is not None:
         create_feature(player_tile[0] - 3, player_tile[1] - 16, consts.DEBUG_TEST_FEATURE, None)
 
-    main.player.x = player_tile[0]
-    main.player.y = player_tile[1]
+    player.instance.x = player_tile[0]
+    player.instance.y = player_tile[1]
 
     main.spawn_monster('monster_reeker', player_tile[0], player_tile[1] - 20)
 
@@ -911,7 +912,7 @@ def make_map(world_cell):
     feature_rects = []
     cell = world_cell
 
-    cell.objects = [main.player]
+    cell.objects = [player.instance]
 
     cell.map = [[main.Tile('stone wall')
                          for y in range(consts.MAP_HEIGHT)]

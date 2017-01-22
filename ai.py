@@ -4,6 +4,7 @@ import consts
 import game
 import ui
 import effects
+import player
 
 class AI_Default:
 
@@ -12,7 +13,7 @@ class AI_Default:
 
     def act(self):
         monster = self.owner
-        if fov.monster_can_see_object(monster, game.player):
+        if fov.monster_can_see_object(monster, player.instance):
 
             #Handle default ability use behavior
             for a in self.owner.fighter.abilities:
@@ -23,13 +24,13 @@ class AI_Default:
 
 
             #Handle moving
-            if not is_adjacent_diagonal(monster.x, monster.y, game.player.x, game.player.y):
-                monster.move_astar(game.player.x, game.player.y)
+            if not is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y):
+                monster.move_astar(player.instance.x, player.instance.y)
 
             #Handle attacking
-            elif game.player.fighter.hp > 0:
-                monster.fighter.attack(game.player)
-            self.last_seen_position = (game.player.x, game.player.y)
+            elif player.instance.fighter.hp > 0:
+                monster.fighter.attack(player.instance)
+            self.last_seen_position = (player.instance.x, player.instance.y)
         elif self.last_seen_position is not None and not\
                 (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
             result = monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
@@ -52,7 +53,7 @@ class ReekerGasBehavior:
             return
         #self.owner.char = str(self.ticks)
         for obj in game.get_objects(self.owner.x, self.owner.y,
-                                    lambda o: o.fighter is not None and o.name != 'reeker' and obj.name != 'blastcap'):
+                                    lambda o: o.fighter is not None and o.name != 'reeker' and o.name != 'blastcap'):
             if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
                 if fov.player_can_see(obj.x, obj.y):
                     ui.message('A foul-smelling cloud of gas begins to form around the ' + obj.name, libtcod.fuchsia)
@@ -108,7 +109,7 @@ class AI_Reeker:
                         puff = GameObject(puff_pos[0], puff_pos[1], libtcod.CHAR_BLOCK3,
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())
-                        game.current_cell.objects.append(puff)
+                        game.current_cell.add_object(puff)
 
 
 class AI_TunnelSpider:
@@ -121,7 +122,7 @@ class AI_TunnelSpider:
     def act(self):
         monster = self.owner
         if self.state == 'resting':
-            if fov.monster_can_see_object(monster, game.player):
+            if fov.monster_can_see_object(monster, player.instance):
                 self.state = 'hunting'
                 self.act()
             elif object_at_tile(monster.x, monster.y, 'spiderweb') is None:
@@ -137,16 +138,16 @@ class AI_TunnelSpider:
                 if object_at_tile(monster.x, monster.y, 'spiderweb') is not None:
                     self.state = 'resting'
         elif self.state == 'hunting':
-            if is_adjacent_diagonal(monster.x, monster.y, game.player.x, game.player.y) and game.player.fighter.hp > 0:
-                monster.fighter.attack(game.player)
+            if is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y) and player.instance.fighter.hp > 0:
+                monster.fighter.attack(player.instance)
                 return
             self.closest_web = self.find_closest_web()
             if self.closest_web is not None and monster.distance_to(self.closest_web) > consts.TUNNEL_SPIDER_MAX_WEB_DIST:
                 self.state = 'retreating'
                 self.act()
-            elif fov.monster_can_see_object(monster, game.player):
-                    monster.move_astar(game.player.x, game.player.y)
-                    self.last_seen_position = (game.player.x, game.player.y)
+            elif fov.monster_can_see_object(monster, player.instance):
+                    monster.move_astar(player.instance.x, player.instance.y)
+                    self.last_seen_position = (player.instance.x, player.instance.y)
             elif self.last_seen_position is not None and not \
                     (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
                 monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])

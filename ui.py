@@ -6,6 +6,7 @@ import fov
 import loot
 import spells
 import abilities
+import player
 
 def msgbox(text, width=50):
     menu(text, [], width)
@@ -71,8 +72,6 @@ def menu(header, options, width, x_center=None, render_func=None):
 
 def inventory_menu(header):
 
-    player = main.player
-
     libtcod.console_clear(window)
     main.render_all()
     libtcod.console_flush()
@@ -84,16 +83,16 @@ def inventory_menu(header):
     menu_items = []
     item_categories = []
 
-    if len(player.fighter.inventory) == 0:
+    if len(player.instance.fighter.inventory) == 0:
         height = 5
         draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
         libtcod.console_set_default_foreground(window, libtcod.dark_grey)
         libtcod.console_print(window, 1, 3, 'Inventory is empty.')
     else:
-        for item in player.fighter.inventory:
+        for item in player.instance.fighter.inventory:
             if not item.item.category in item_categories:
                 item_categories.append(item.item.category)
-        height = 4 + len(item_categories) + len(player.fighter.inventory)
+        height = 4 + len(item_categories) + len(player.instance.fighter.inventory)
         draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
 
         for item_category in loot.item_categories:
@@ -107,7 +106,7 @@ def inventory_menu(header):
             libtcod.console_print_ex(window, consts.INVENTORY_WIDTH / 2, y, libtcod.BKGND_DEFAULT, libtcod.CENTER,
                                      loot.item_categories[item_category]['plural'].title())
             y += 1
-            for item in player.fighter.inventory:
+            for item in player.instance.fighter.inventory:
                 if item.item.category == item_category:
                     menu_items.append(item)
 
@@ -130,7 +129,7 @@ def inventory_menu(header):
 
     key = libtcod.console_wait_for_keypress(True)
     index = key.c - ord('a')
-    if 0 <= index < len(player.fighter.inventory):
+    if 0 <= index < len(player.instance.fighter.inventory):
         return menu_items[index].item
     return None
 
@@ -155,8 +154,8 @@ def target_next_monster():
 
     nearby = []
     for obj in main.current_cell.objects:
-        if fov.player_can_see(obj.x, obj.y) and obj.fighter and obj is not main.player:
-            nearby.append((obj.distance_to(main.player), obj))
+        if fov.player_can_see(obj.x, obj.y) and obj.fighter and obj is not player.instance:
+            nearby.append((obj.distance_to(player.instance), obj))
     nearby.sort(key=lambda m: m[0])
 
     if len(nearby) == 0:
@@ -187,19 +186,18 @@ def select_monster(monster):
 def mouse_select_monster():
     global selected_monster
 
-    player = main.player
     mouse = main.mouse
 
     if mouse.lbutton_pressed:
-        offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2 - consts.MAP_VIEWPORT_X, \
-                           player.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
+        offsetx, offsety = player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2 - consts.MAP_VIEWPORT_X, \
+                           player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
         (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
         monster = None
         for obj in main.current_cell.objects:
             if obj.x == x and obj.y == y and (
                 fov.player_can_see(obj.x, obj.y) or (obj.always_visible and main.current_cell.map[obj.x][obj.y].explored)):
-                if hasattr(obj, 'fighter') and obj.fighter and not obj is player:
+                if hasattr(obj, 'fighter') and obj.fighter and not obj is player.instance:
                     monster = obj
                     break
         if monster is not None:
@@ -209,8 +207,8 @@ def mouse_select_monster():
 def get_names_under_mouse():
     mouse = main.mouse
 
-    offsetx, offsety = main.player.x - consts.MAP_VIEWPORT_WIDTH / 2 - consts.MAP_VIEWPORT_X, \
-                       main.player.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
+    offsetx, offsety = player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2 - consts.MAP_VIEWPORT_X, \
+                       player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
     (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
     names = [obj.name for obj in main.current_cell.objects if (obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y)
@@ -271,50 +269,48 @@ def draw_border(console, x0, y0, width, height, foreground=libtcod.gray, backgro
 def render_side_panel(acc_mod=1.0):
     global selected_monster
 
-    player = main.player
-
     libtcod.console_set_default_background(side_panel, libtcod.black)
     libtcod.console_clear(side_panel)
 
-    render_bar(2, 2, consts.BAR_WIDTH, 'HP', player.fighter.hp, player.fighter.max_hp,
+    render_bar(2, 2, consts.BAR_WIDTH, 'HP', player.instance.fighter.hp, player.instance.fighter.max_hp,
                libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)
     # Display armor/shred
-    armor_string = 'AR:' + str(player.fighter.armor)
-    if player.fighter.shred > 0:
+    armor_string = 'AR:' + str(player.instance.fighter.armor)
+    if player.instance.fighter.shred > 0:
         libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
     libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, 2, libtcod.BKGND_DEFAULT, libtcod.RIGHT, armor_string)
 
-    render_bar(2, 3, consts.BAR_WIDTH, 'Stamina', player.fighter.stamina, player.fighter.max_stamina,
+    render_bar(2, 3, consts.BAR_WIDTH, 'Stamina', player.instance.fighter.stamina, player.instance.fighter.max_stamina,
                libtcod.dark_green, libtcod.darker_green)
 
     # Breath
-    if player.fighter.breath < player.fighter.max_breath:
+    if player.instance.fighter.breath < player.instance.fighter.max_breath:
         breath_text = ''
-        for num in range(0, player.fighter.breath):
+        for num in range(0, player.instance.fighter.breath):
             breath_text += 'O '
         libtcod.console_set_default_foreground(side_panel, libtcod.dark_blue)
         libtcod.console_print(side_panel, 2, 4, breath_text)
         libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
     # Base stats
-    libtcod.console_print(side_panel, 2, 6, 'INT: ' + str(player.player_stats.int))
-    libtcod.console_print(side_panel, 2, 7, 'WIZ: ' + str(player.player_stats.wiz))
-    libtcod.console_print(side_panel, 2, 8, 'STR: ' + str(player.player_stats.str))
-    libtcod.console_print(side_panel, 2, 9, 'AGI: ' + str(player.player_stats.agi))
+    libtcod.console_print(side_panel, 2, 6, 'INT: ' + str(player.instance.player_stats.int))
+    libtcod.console_print(side_panel, 2, 7, 'WIZ: ' + str(player.instance.player_stats.wiz))
+    libtcod.console_print(side_panel, 2, 8, 'STR: ' + str(player.instance.player_stats.str))
+    libtcod.console_print(side_panel, 2, 9, 'AGI: ' + str(player.instance.player_stats.agi))
 
     # Level/XP
-    libtcod.console_print(side_panel, 2, 11, 'Lvl: ' + str(player.level))
-    libtcod.console_print(side_panel, 2, 12, 'XP:  ' + str(player.fighter.xp))
+    libtcod.console_print(side_panel, 2, 11, 'Lvl: ' + str(player.instance.level))
+    libtcod.console_print(side_panel, 2, 12, 'XP:  ' + str(player.instance.fighter.xp))
 
     # Mana
     libtcod.console_print(side_panel, 2, 14, 'Mana:')
     libtcod.console_put_char(side_panel, 2, 15, '[')
     x = 4
-    for m in range(len(player.mana)):
-        libtcod.console_set_default_foreground(side_panel, spells.mana_colors[player.mana[m]])
+    for m in range(len(player.instance.mana)):
+        libtcod.console_set_default_foreground(side_panel, spells.mana_colors[player.instance.mana[m]])
         libtcod.console_put_char(side_panel, x, 15, '*')
         x += 2
-    for m in range(player.player_stats.max_mana - len(player.mana)):
+    for m in range(player.instance.player_stats.max_mana - len(player.instance.mana)):
         libtcod.console_set_default_foreground(side_panel, libtcod.dark_grey)
         libtcod.console_put_char(side_panel, x, 15, '.')
         x += 2
@@ -326,7 +322,7 @@ def render_side_panel(acc_mod=1.0):
     # Weapon
     libtcod.console_print(side_panel, 2, drawHeight, 'Weapon:')
     drawHeight += 1
-    weapon = main.get_equipped_in_slot(player.fighter.inventory, 'right hand')
+    weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
     if weapon is None:
         weapon_string = 'Fists'
         weapon_color = libtcod.gray
@@ -343,8 +339,8 @@ def render_side_panel(acc_mod=1.0):
     drawHeight += 2
 
     # Status effects
-    if len(player.fighter.status_effects) > 0:
-        for effect in player.fighter.status_effects:
+    if len(player.instance.fighter.status_effects) > 0:
+        for effect in player.instance.fighter.status_effects:
             libtcod.console_set_default_foreground(side_panel, effect.color)
             libtcod.console_print(side_panel, 2, drawHeight, effect.name + ' (' + str(effect.time_limit) + ')')
             drawHeight += 1
@@ -354,7 +350,7 @@ def render_side_panel(acc_mod=1.0):
     # Objects here
     libtcod.console_print(side_panel, 2, drawHeight, 'Objects here:')
     drawHeight += 1
-    objects_here = main.get_objects(player.x, player.y, lambda o: o is not player)
+    objects_here = main.get_objects(player.instance.x, player.instance.y, lambda o: o is not player)
     if len(objects_here) > 0:
         end = min(len(objects_here), 7)
         if len(objects_here) == 8:
@@ -372,7 +368,7 @@ def render_side_panel(acc_mod=1.0):
         if end < len(objects_here) - 1:
             libtcod.console_print(side_panel, 4, drawHeight, '...' + str(len(objects_here) - 7) + ' more...')
             drawHeight += 1
-    libtcod.console_print(side_panel, 4, drawHeight, main.current_cell.map[player.x][player.y].name)
+    libtcod.console_print(side_panel, 4, drawHeight, main.current_cell.map[player.instance.x][player.instance.y].name)
     drawHeight += 2
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
@@ -392,12 +388,12 @@ def render_side_panel(acc_mod=1.0):
 
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
-        s = 'Your Accuracy: %d%%' % int(100.0 * main.get_chance_to_hit(selected_monster, player.fighter.accuracy * acc_mod))
+        s = 'Your Accuracy: %d%%' % int(100.0 * main.get_chance_to_hit(selected_monster, player.instance.fighter.accuracy * acc_mod))
         s += '%'  # Yeah I know I suck with string formatting. Whatever, this works.  -T
         libtcod.console_print(side_panel, 2, drawHeight, s)
         drawHeight += 1
         if selected_monster.fighter.accuracy > 0:
-            s = "Its Accuracy : %d%%" % int(100.0 * main.get_chance_to_hit(player, selected_monster.fighter.accuracy))
+            s = "Its Accuracy : %d%%" % int(100.0 * main.get_chance_to_hit(player.instance, selected_monster.fighter.accuracy))
             s += '%'
             libtcod.console_print(side_panel, 2, drawHeight, s)
         else:
@@ -458,14 +454,12 @@ def render_ui_overlay():
 
 def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_target=None):
     global selected_monster
-
-    player = main.player
     mouse = main.mouse
     key = main.key
 
     if default_target is None:
-        x = player.x
-        y = player.y
+        x = player.instance.x
+        y = player.instance.y
     else:
         x = default_target[0]
         y = default_target[1]
@@ -473,7 +467,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
     cursor_y = y
     oldMouseX = mouse.cx
     oldMouseY = mouse.cy
-    offsetx, offsety = player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2
+    offsetx, offsety = player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2, player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2
     selected_x = x
     selected_y = y
 
@@ -489,7 +483,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
         if max_range is not None:
             for draw_x in range(consts.MAP_WIDTH):
                 for draw_y in range(consts.MAP_HEIGHT):
-                    if round((player.distance(draw_x + offsetx, draw_y + offsety))) > max_range:
+                    if round((player.instance.distance(draw_x + offsetx, draw_y + offsety))) > max_range:
                         libtcod.console_put_char_ex(overlay, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.black)
                     else:
                         libtcod.console_put_char_ex(overlay, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.magenta)
@@ -555,7 +549,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
             selected_x, selected_y = beam_values[len(beam_values) - 1]
 
         if (mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and fov.player_can_see(x, y):
-            if max_range is None or round((player.distance(x, y))) <= max_range:
+            if max_range is None or round((player.instance.distance(x, y))) <= max_range:
                 if targeting_type == 'beam':
                     return beam_values
                 else:
@@ -745,6 +739,37 @@ def skill_menu(add_skill=False):
         elif key.vk == libtcod.KEY_PAGEUP or mouse.wheel_up:
             scroll_height = max(scroll_height - 3, 0)
 
+def examine(x=None, y=None):
+    if x is None or y is None:
+        x, y = target_tile()
+    if x is not None and y is not None:
+        obj = main.object_at_coords(x, y)
+        if obj is not None:
+            if isinstance(obj, main.GameObject):
+                desc = obj.name.capitalize()
+                if hasattr(obj, 'fighter') and obj.fighter is not None and \
+                        hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
+                    desc = desc + '\nInventory: '
+                    for item in obj.fighter.inventory:
+                        desc = desc + item.name + ', '
+                menu(desc, ['back'], 50, render_func=obj.print_description)
+            else:
+                desc = obj.name.capitalize() + '\n' + main.get_description(obj)
+                menu(desc, ['back'], 50)
+
+def show_ability_screen():
+    opts = []
+    for a in abilities.default_abilities:
+        opts.append(a)
+    for i in player.instance.fighter.inventory:
+        if i.item.ability is not None:
+            opts.append(i.item.ability)
+    index = menu('Abilities',[opt.name for opt in opts],20)
+    if index is not None:
+        choice = opts[index]
+        if choice is not None:
+            return choice.use(player.instance)
+    return 'didnt-take-turn'
 
 overlay = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 panel = libtcod.console_new(consts.PANEL_WIDTH, consts.PANEL_HEIGHT)
