@@ -438,7 +438,7 @@ proto = {
     'equipment_shield': {
         'name'          : 'Shield',
         'category'      : 'armor',
-        'char'          : '[',
+        'char'          : chr(233), #theta
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 1,
@@ -451,12 +451,96 @@ proto = {
     'equipment_leather_armor': {
         'name'          : 'Leather Armor',
         'category'      : 'armor',
-        'char'          : chr(6),
+        'char'          : chr(6), #spade
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 1,
         'slot'          : 'body',
-        'description'   : 'A hardened leather coat.',
+        'description'   : 'A hardened leather vest.',
         'evasion_bonus' : -1
-    }
+    },
+
+    'equipment_mail_armor': {
+        'name'          : 'Mail Armor',
+        'category'      : 'armor',
+        'char'          : chr(6), #spade
+        'color'         : libtcodpy.gray,
+        'type'          : 'item',
+        'armor_bonus'   : 3,
+        'evasion_bonus' : -3,
+        'slot'          : 'body',
+        'description'   : 'A coat of mail made of interlocking iron rings'
+    },
+
+    'equipment_brigandine': {
+        'name'          : 'Brigandine',
+        'category'      : 'armor',
+        'char'          : chr(6), #spade
+        'color'         : libtcodpy.red,
+        'type'          : 'item',
+        'armor_bonus'   : 5,
+        'evasion_bonus' : -5,
+        'slot'          : 'body',
+        'description'   : 'A vest of articulated steel plates'
+    },
+
+    'equipment_plate_armor': {
+        'name'          : 'Plate armor',
+        'category'      : 'armor',
+        'char'          : chr(6), #spade
+        'color'         : libtcodpy.light_blue,
+        'type'          : 'item',
+        'armor_bonus'   : 7,
+        'evasion_bonus' : -7,
+        'slot'          : 'body',
+        'description'   : 'A hardened steel breastplate'
+    },
+
+    'equipment_boob_plate': {
+        'name'          : 'Boob Plate',
+        'category'      : 'armor',
+        'char'          : chr(235), #infinity
+        'color'         : libtcodpy.gray,
+        'type'          : 'item',
+        'armor_bonus'   : 6,
+        'evasion_bonus' : -4,
+        'slot'          : 'body',
+        'description'   : 'A steel bra that deflects harm from the entire torso by an unknown mechanism'
+    },
+
+    'equipment_iron_helm': {
+        'name'          : 'Iron Helm',
+        'category'      : 'armor',
+        'char'          : chr(67),
+        'color'         : libtcodpy.gray,
+        'type'          : 'item',
+        'armor_bonus'   : 1,
+        'evasion_bonus' : -1,
+        'slot'          : 'head',
+        'description'   : 'A conical iron helm with a nose guard'
+    },
+
+    'equipment_great_helm': {
+        'name'          : 'Great Helm',
+        'category'      : 'armor',
+        'char'          : chr(67),
+        'color'         : libtcodpy.red,
+        'type'          : 'item',
+        'armor_bonus'   : 2,
+        'evasion_bonus' : -3,
+        'slot'          : 'head',
+        'description'   : 'A large cylindrical steel helm. Very heavy and cumbersome'
+    },
+
+    'equipment_armet_helm': {
+        'name'          : 'Armet Helm',
+        'category'      : 'armor',
+        'char'          : chr(67),
+        'color'         : libtcodpy.light_blue,
+        'type'          : 'item',
+        'armor_bonus'   : 2,
+        'evasion_bonus' : -1,
+        'slot'          : 'head',
+        'description'   : 'A crested steel helm with visor and bevor.'
+    },
 }
