@@ -2,6 +2,8 @@ import game as main
 import consts
 import libtcodpy as libtcod
 import effects
+import ui
+import ai
 
 class Spell:
     def __init__(self, name, mana_cost, function, cost_string):
@@ -48,48 +50,48 @@ class Spell:
                     main.player.mana.remove(main.player.mana[len(main.player.mana) - 1]) # Then use rightmost mana
 
 def cast_fireball():
-    main.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
-    (x, y) = main.target_tile()
+    ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+    (x, y) = ui.target_tile()
     if x is None: return 'cancelled'
-    main.message('The fireball explodes, burning everything within ' + str(consts.FIREBALL_RADIUS) + ' tiles!', libtcod.light_blue)
+    ui.message('The fireball explodes, burning everything within ' + str(consts.FIREBALL_RADIUS) + ' tiles!', libtcod.light_blue)
     main.create_fire(x,y,10)
     for obj in main.objects:
         if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
-            main.message('The ' + obj.name + ' gets burned for ' + str(consts.FIREBALL_DAMAGE) + ' damage!', libtcod.light_blue)
+            ui.message('The ' + obj.name + ' gets burned for ' + str(consts.FIREBALL_DAMAGE) + ' damage!', libtcod.light_blue)
             obj.fighter.take_damage(consts.FIREBALL_DAMAGE)
 
 
 def cast_confuse():
-    main.message('Choose a target with left-click, or right-click to cancel.', libtcod.white)
-    monster = main.target_monster(consts.CONFUSE_RANGE)
+    ui.message('Choose a target with left-click, or right-click to cancel.', libtcod.white)
+    monster = ui.target_monster(consts.CONFUSE_RANGE)
     if monster is None or monster.ai is None: return 'cancelled'
     else:
         if monster.fighter.apply_status_effect(effects.StatusEffect('confusion', consts.CONFUSE_NUM_TURNS, color=libtcod.pink, on_apply=set_confused_behavior)):
-            main.message('The ' + monster.name + ' is confused!', libtcod.light_blue)
+            ui.message('The ' + monster.name + ' is confused!', libtcod.light_blue)
 
 def set_confused_behavior(object):
     if object.ai is not None:
         old_ai = object.ai.behavior
-        object.ai.behavior = main.ConfusedMonster(old_ai)
+        object.ai.behavior = ai.ConfusedMonster(old_ai)
         object.ai.behavior.owner = object
 
 def cast_lightning():
     monster = main.closest_monster(consts.LIGHTNING_RANGE)
     if monster is None:
-        main.message('No targets in range', libtcod.white)
+        ui.message('No targets in range', libtcod.white)
         return 'cancelled'
     else:
         damage = consts.LIGHTNING_DAMAGE
-        main.message('A bolt of lightning strikes the ' + monster.name + '! It suffers ' + str(damage) + ' damage.', libtcod.light_blue)
+        ui.message('A bolt of lightning strikes the ' + monster.name + '! It suffers ' + str(damage) + ' damage.', libtcod.light_blue)
         monster.fighter.take_damage(damage)
 
 
 def cast_heal():
     if main.player.fighter.hp == main.player.fighter.max_hp:
-        main.message('You are already at full health.', libtcod.white)
+        ui.message('You are already at full health.', libtcod.white)
         return 'cancelled'
         
-    main.message('You feel better.', libtcod.white)
+    ui.message('You feel better.', libtcod.white)
     main.player.fighter.heal(consts.HEAL_AMOUNT)
 
 
@@ -105,21 +107,21 @@ def cast_shielding():
 def cast_frog_tongue(frog, target):
 
     if main.roll_to_hit(target, consts.FROG_TONGUE_ACC):
-        main.message('The frog pulls you from a distance with its tongue!', libtcod.dark_green)
+        ui.message('The frog pulls you from a distance with its tongue!', libtcod.dark_green)
         target.fighter.take_damage(consts.FROG_TONGUE_DMG)
         beam = main.beam(frog.x, frog.y, target.x, target.y)
         # target.x, target.y = beam[max(len(beam) - 3, 0)]
         pull_to = beam[max(len(beam) - 3, 0)]
         target.set_position(pull_to[0], pull_to[1])
     else:
-        main.message('The frog tries to grab you with its tongue, but misses!', libtcod.grey)
+        ui.message('The frog tries to grab you with its tongue, but misses!', libtcod.grey)
 
 
 def cast_manabolt():
     default = None
-    if main.selected_monster is not None:
-        default = main.selected_monster.x, main.selected_monster.y
-    target = main.target_tile(consts.MANABOLT_RANGE, 'beam_interrupt', acc_mod=consts.MANABOLT_ACC, default_target=default)
+    if ui.selected_monster is not None:
+        default = ui.selected_monster.x, ui.selected_monster.y
+    target = ui.target_tile(consts.MANABOLT_RANGE, 'beam_interrupt', acc_mod=consts.MANABOLT_ACC, default_target=default)
     if target[0] is not None:
         #visual effect
         bolt = main.GameObject(main.player.x, main.player.y, 7, 'bolt', color=libtcod.light_blue)
@@ -134,31 +136,31 @@ def cast_manabolt():
         monster = main.get_monster_at_tile(target[0], target[1])
         if monster is not None:
             if main.roll_to_hit(monster, main.player.fighter.accuracy * consts.MANABOLT_ACC):
-                main.message('The manabolt hits the ' + monster.name + ', dealing ' + str(consts.MANABOLT_DMG) + ' damage!', libtcod.light_blue)
+                ui.message('The manabolt hits the ' + monster.name + ', dealing ' + str(consts.MANABOLT_DMG) + ' damage!', libtcod.light_blue)
                 monster.fighter.take_damage(consts.MANABOLT_DMG)
             else:
-                main.message('The manabolt misses the ' + monster.name + '.', libtcod.gray)
+                ui.message('The manabolt misses the ' + monster.name + '.', libtcod.gray)
         else:
-            main.message('The manabolt hits the ' + main.dungeon_map[target[0]][target[1]].tile_type + '.', libtcod.light_blue)
+            ui.message('The manabolt hits the ' + main.dungeon_map[target[0]][target[1]].tile_type + '.', libtcod.light_blue)
         return True
     return False
 
 
 def cast_ignite():
-    target = main.target_tile(consts.IGNITE_RANGE)
+    target = ui.target_tile(consts.IGNITE_RANGE)
     if target[0] is not None and target[1] is not None:
         tile = main.dungeon_map[target[0]][target[1]]
         if tile.blocks:
-            main.message('The ' + tile.name + ' is in the way.', libtcod.gray)
+            ui.message('The ' + tile.name + ' is in the way.', libtcod.gray)
             return False
         elif tile.tile_type == 'shallow water' or tile.tile_type == 'deep water':
-            main.message('You cannot ignite water.', libtcod.gray)
+            ui.message('You cannot ignite water.', libtcod.gray)
             return False
         obj = main.get_objects(target[0], target[1], lambda o: o.blocks)
         if len(obj) > 0:
-            main.message('The ' + obj[0].name + ' is in the way.', libtcod.gray)
+            ui.message('The ' + obj[0].name + ' is in the way.', libtcod.gray)
             return False
-        main.message('You conjure a spark of flame, igniting the ' + tile.name + '!', libtcod.flame)
+        ui.message('You conjure a spark of flame, igniting the ' + tile.name + '!', libtcod.flame)
         main.create_fire(target[0], target[1], 10)
         return True
     return False
@@ -167,10 +169,10 @@ def cast_ignite():
 def cast_mend():
     if main.player.fighter.hp < main.player.fighter.max_hp:
         main.player.fighter.heal(consts.MEND_HEAL)
-        main.message('A soft green glow passes over you as your wounds are healed.', libtcod.light_blue)
+        ui.message('A soft green glow passes over you as your wounds are healed.', libtcod.light_blue)
         return True
     else:
-        main.message('You have no need of mending.', libtcod.light_blue)
+        ui.message('You have no need of mending.', libtcod.light_blue)
         return False
 
 
@@ -178,9 +180,9 @@ def cast_forge():
     weapon = main.get_equipped_in_slot(main.player.fighter.inventory, 'right hand')
     if weapon is not None and weapon.owner.item.category == 'weapon':
         if weapon.quality == 'artifact':
-            main.message('Your ' + weapon.owner.name + ' shimmers briefly. It cannot be improved further by this magic.', libtcod.orange)
+            ui.message('Your ' + weapon.owner.name + ' shimmers briefly. It cannot be improved further by this magic.', libtcod.orange)
         else:
-            main.message('Your ' + weapon.owner.name + ' glows bright orange!', libtcod.orange)
+            ui.message('Your ' + weapon.owner.name + ' glows bright orange!', libtcod.orange)
 
             new_quality = ''
             if weapon.quality == 'broken':
@@ -196,11 +198,11 @@ def cast_forge():
             elif weapon.quality == 'masterwork':
                 new_quality = 'artifact'
             main.set_quality(weapon, new_quality)
-            main.message('It is now a ' + weapon.owner.name + '.', libtcod.orange)
+            ui.message('It is now a ' + weapon.owner.name + '.', libtcod.orange)
     elif weapon is not None and weapon.owner.item.category != 'weapon':
-        main.message('Your ' + weapon.owner.name + ' emits a dull glow. This magic was only intended for weapons!', libtcod.orange)
+        ui.message('Your ' + weapon.owner.name + ' emits a dull glow. This magic was only intended for weapons!', libtcod.orange)
     else:
-        main.message('Your hands tingle briefly. This magic was only intended for weapons!', libtcod.orange)
+        ui.message('Your hands tingle briefly. This magic was only intended for weapons!', libtcod.orange)
     return True
 
 

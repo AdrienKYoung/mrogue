@@ -690,7 +690,7 @@ def skill_menu(add_skill=False):
             return None
         # Enter select
         elif key.vk == libtcod.KEY_ENTER and add_skill:
-            if menu_lines[selected_index].meets_requirements() and menu_lines[selected_index] not in learned_skills:
+            if menu_lines[selected_index].meets_requirements() and menu_lines[selected_index] not in main.learned_skills:
                 return menu_lines[selected_index] # returns a Perk object
         # Down arrow increments selection index
         elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_KP2 or key.vk == libtcod.KEY_KP6:

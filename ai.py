@@ -2,6 +2,8 @@ from game import *
 import fov
 import consts
 import game
+import ui
+import effects
 
 class AI_Default:
 
@@ -54,10 +56,10 @@ class ReekerGasBehavior:
                 if obj.name != 'reeker' and obj.name != 'blastcap':
                     if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
                         if fov.player_can_see(obj.x, obj.y):
-                            message('A foul-smelling cloud of gas begins to form around the ' + obj.name, libtcod.fuchsia)
+                            ui.message('A foul-smelling cloud of gas begins to form around the ' + obj.name, libtcod.fuchsia)
                     else:
                         if fov.player_can_see(obj.x, obj.y):
-                            message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
+                            ui.message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
                         obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
 
 
@@ -87,9 +89,9 @@ class FireBehavior:
             # Spread to adjacent tiles
             if self.temperature < 9: # don't spread on the first turn
                 for tile in adjacent_tiles_diagonal(self.owner.x, self.owner.y):
-                    if dungeon_map[tile[0]][tile[1]].flammable:
+                    if game.dungeon_map[tile[0]][tile[1]].flammable:
                         if libtcod.random_get_int(0, 0, 8) == 0:
-                            create_fire(tile[0], tile[1], 10)
+                            game.create_fire(tile[0], tile[1], 10)
 
 
 class AI_Reeker:
@@ -103,7 +105,7 @@ class AI_Reeker:
                     position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
                     puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
                                 clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
-                    if not dungeon_map[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
+                    if not game.dungeon_map[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
                                                         lambda o: o.name == 'reeker gas' or o.name == 'reeker')) == 0:
                         puff = GameObject(puff_pos[0], puff_pos[1], libtcod.CHAR_BLOCK3,
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
@@ -188,5 +190,5 @@ class ConfusedMonster:
         else:
             self.owner.ai.behavior = self.old_ai
             if fov.player_can_see(self.owner.x, self.owner.y):
-                message('The ' + self.owner.name + ' is no longer confused.', libtcod.light_grey)
+                ui.message('The ' + self.owner.name + ' is no longer confused.', libtcod.light_grey)
 

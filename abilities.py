@@ -22,7 +22,7 @@ class Ability:
                 self.current_cd = self.cooldown
         else:
             if actor is main.player:
-                main.message('{} is on cooldown'.format(self.name), libtcod.red)
+                ui.message('{} is on cooldown'.format(self.name), libtcod.red)
             result = 'didnt-take-turn'
         return result
 
@@ -95,10 +95,10 @@ def ability_berserk_self(actor=None):
         if not actor.fighter.has_status('berserk') and not actor.fighter.has_status('exhausted'):
             actor.fighter.apply_status_effect(effects.berserk())
             if actor is not main.player:
-                main.message("{} roars!!".format(actor.name),libtcod.red)
+                ui.message("{} roars!!".format(actor.name),libtcod.red)
         else:
             if actor is main.player:
-                main.message("You can't berserk right now.", libtcod.yellow)
+                ui.message("You can't berserk right now.", libtcod.yellow)
             return 'didnt-take-turn'
 
 def ability_spawn_vermin(actor=None):
@@ -122,7 +122,7 @@ def ability_spawn_vermin(actor=None):
             if len(summon_tiles) > 0:
                 pos = summon_tiles[libtcod.random_get_int(0, 0, len(summon_tiles) - 1)]
                 spawn = main.spawn_monster(monsters.verman_summons[summon_choice]['monster'], pos[0], pos[1])
-                main.message('A ' + spawn.name + " crawls from beneath the verman's cloak.", actor.color)
+                ui.message('A ' + spawn.name + " crawls from beneath the verman's cloak.", actor.color)
                 spawn.fighter.loot_table = None
                 actor.summons.append(spawn)
                 summon_tiles.remove(pos)

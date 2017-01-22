@@ -481,8 +481,8 @@ class Fighter:
         self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
             new_effect.on_apply(self.owner)
-        if new_effect.ui.message is not None and self.owner is player:
-            ui.message(new_effect.ui.message,new_effect.color)
+        if new_effect.message is not None and self.owner is player:
+            ui.message(new_effect.message, new_effect.color)
         return True
 
     def has_status(self, name):
@@ -2331,8 +2331,8 @@ def play_game():
 
 
 # my modules
-import spells
 import loot
+import spells
 import monsters
 import dungeon
 import mapgen
