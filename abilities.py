@@ -5,6 +5,7 @@ import effects
 import spells
 import monsters
 import fov
+import ui
 
 class Ability:
     def __init__(self, name, description, function, cooldown):
@@ -51,7 +52,7 @@ class Perk:
 
 
 def ability_attack(actor=None):
-    x,y = main.target_tile(max_range=1)
+    x,y = ui.target_tile(max_range=1)
     target = None
     for object in main.objects:
         if object.x == x and object.y == y and object.fighter is not None:
@@ -64,7 +65,7 @@ def ability_attack(actor=None):
     return 'didnt-take-turn'
 
 def ability_attack_reach(actor=None):
-    x, y = main.target_tile(max_range=1)
+    x, y = ui.target_tile(max_range=1)
     target = None
     for object in main.objects:
         if object.x == x and object.y == y and object.fighter is not None:
@@ -77,7 +78,7 @@ def ability_attack_reach(actor=None):
     return 'didnt-take-turn'
 
 def ability_bash_attack(actor=None):
-    x,y = main.target_tile(max_range=1)
+    x,y = ui.target_tile(max_range=1)
     target = None
     for object in main.objects:
         if object.x == x and object.y == y and object.fighter is not None:
