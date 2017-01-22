@@ -21,6 +21,7 @@
 //       _ : default ground (only replace solid
 //           tiles)
 //	 $ : loot*
+//	 > : map link
 //     0-9 : monster*
 //   FLAGS : indicates the rest of the line
 //           will be flags, separated by spaces
@@ -68,7 +69,7 @@
 //*******************
 //0   Pillar Room
 //*******************
-FEATURE
+FEATURE pillar_room
 FLAGS NOREFLECT
   _____  
  __###__ 
@@ -83,7 +84,7 @@ ENDFEATURE
 //*******************
 //1   Tiny Pond
 //*******************
-FEATURE
+FEATURE tiny_pond
  __    
 _--__  
 _-~~--_
@@ -95,7 +96,7 @@ ENDFEATURE
 //*******************
 //2   Round Maze
 //*******************
-FEATURE
+FEATURE round_maze
    _________    
  ___#.#####___  
  _####...#.##_ 
@@ -115,7 +116,7 @@ ENDFEATURE
 //*******************
 //3      Brook
 //*******************
-FEATURE
+FEATURE brook
 ###
 #---
  #---,
@@ -133,7 +134,7 @@ ENDFEATURE
 //*******************
 //4    Fissure
 //*******************
-FEATURE
+FEATURE fissure
  ...
 :::..
  ::::.....
@@ -144,7 +145,7 @@ ENDFEATURE
 //*******************
 //5   Verman Hut
 //*******************
-FEATURE
+FEATURE verman_hut
 FLAGS NOSPAWNS
 DEFINE $ LOOT_LEVEL 5 CATEGORY consumable
 DEFINE 1 MONSTER_ID monster_verman
@@ -159,7 +160,7 @@ ENDFEATURE
 //*******************
 //6    Platform
 //*******************
-FEATURE
+FEATURE platform
 DEFAULT ,
   _______
  _::::::__
@@ -174,7 +175,7 @@ ENDFEATURE
 //*******************
 //7    Frog pond
 //*******************
-FEATURE
+FEATURE frog_pond
 DEFAULT ,
 DEFINE $ LOOT_LEVEL 15
 DEFINE 1 MONSTER_ID monster_giant_frog
@@ -199,7 +200,7 @@ ENDFEATURE
 //*******************
 //8  Reeker Field
 //*******************
-FEATURE
+FEATURE reeker_field
 DEFAULT ,
 DEFINE 1 MONSTER_ID monster_reeker
   , ,,  
@@ -214,7 +215,7 @@ ENDFEATURE
 //*******************
 //9   Fairy Ring
 //*******************
-FEATURE
+FEATURE fairy_ring
 DEFAULT ,
 DEFINE 1 MONSTER_ID monster_blastcap
   , 1,  
@@ -229,7 +230,7 @@ ENDFEATURE
 //*******************
 //10 Goblin Campfire
 //*******************
-FEATURE
+FEATURE goblin_campfire
 DEFINE 1 MONSTER_ID monster_goblin
 DEFINE 2 GO_NAME campfire GO_DESCRIPTION a small firepit, burning low GO_CHAR ^ GO_COLOR 255 63 0 GO_BLOCKS True
   ___
@@ -271,7 +272,7 @@ _____________________
 ENDFEATURE//*******************
 //11   Small Hill
 //*******************
-FEATURE
+FEATURE small_hill
 _______
 _     _
 _     _
@@ -288,4 +289,12 @@ HEIGHT 1
  /.../ 
        
 ENDHEIGHT
+ENDFEATURE
+//*******************
+//12   Marsh Gate
+//*******************
+FEATURE marsh_gate
+CATEGORY marsh_hlink
+###
+.>.
 ENDFEATURE

@@ -25,7 +25,7 @@ class Graph:
                                 self.edges[(x, y)].append((tile[0], tile[1]))
                             else:
                                 self.edges[(x, y)] = [(tile[0], tile[1])]
-        for obj in main.objects:
+        for obj in main.current_cell.objects:
             if obj.blocks:
                 self.mark_impassable((obj.x, obj.y))
 
@@ -33,8 +33,8 @@ class Graph:
     # add an edge from the source tile to the neighbor tile (checking elevation rules). Assumes that 'neighbor' is passable
     def add_edge(self, source, neighbor):
 
-        source_tile = main.dungeon_map[source[0]][source[1]]
-        neighbor_tile = main.dungeon_map[neighbor[0]][neighbor[1]]
+        source_tile = main.current_cell.map[source[0]][source[1]]
+        neighbor_tile = main.current_cell.map[neighbor[0]][neighbor[1]]
 
         if source_tile.elevation != neighbor_tile.elevation:
             if not (source_tile.tile_type == 'ramp' or neighbor_tile.tile_type == 'ramp'):
@@ -139,7 +139,7 @@ class Graph:
 # Used for debugging (consts.DEBUG_DRAW_PATHS must be true)
 def draw_path(path):
     oldpaths = []
-    for obj in main.objects:
+    for obj in main.current_cell.objects:
         if obj.name == 'path':
             oldpaths.append(obj)
     for obj in oldpaths:
@@ -147,7 +147,7 @@ def draw_path(path):
 
     if path != 'failure':
         for t in path:
-            main.objects.append(
+            main.current_cell.objects.append(
                 main.GameObject(t[0], t[1], '*', 'path', libtcod.yellow, always_visible=True, description=''))
 
 # The pathfinding map object

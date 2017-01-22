@@ -154,7 +154,7 @@ def target_next_monster():
         main.changed_tiles.append((selected_monster.x, selected_monster.y))
 
     nearby = []
-    for obj in main.objects:
+    for obj in main.current_cell.objects:
         if fov.player_can_see(obj.x, obj.y) and obj.fighter and obj is not main.player:
             nearby.append((obj.distance_to(main.player), obj))
     nearby.sort(key=lambda m: m[0])
@@ -196,9 +196,9 @@ def mouse_select_monster():
         (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
         monster = None
-        for obj in main.objects:
+        for obj in main.current_cell.objects:
             if obj.x == x and obj.y == y and (
-                fov.player_can_see(obj.x, obj.y) or (obj.always_visible and main.dungeon_map[obj.x][obj.y].explored)):
+                fov.player_can_see(obj.x, obj.y) or (obj.always_visible and main.current_cell.map[obj.x][obj.y].explored)):
                 if hasattr(obj, 'fighter') and obj.fighter and not obj is player:
                     monster = obj
                     break
@@ -213,9 +213,9 @@ def get_names_under_mouse():
                        main.player.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
     (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
-    names = [obj.name for obj in main.objects if (obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y)
+    names = [obj.name for obj in main.current_cell.objects if (obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y)
                                                                             or (
-                                                                            obj.always_visible and main.dungeon_map[obj.x][
+                                                                            obj.always_visible and main.current_cell.map[obj.x][
                                                                                 obj.y].explored)))]
     names = ', '.join(names)
 
@@ -372,7 +372,7 @@ def render_side_panel(acc_mod=1.0):
         if end < len(objects_here) - 1:
             libtcod.console_print(side_panel, 4, drawHeight, '...' + str(len(objects_here) - 7) + ' more...')
             drawHeight += 1
-    libtcod.console_print(side_panel, 4, drawHeight, main.dungeon_map[player.x][player.y].name)
+    libtcod.console_print(side_panel, 4, drawHeight, main.current_cell.map[player.x][player.y].name)
     drawHeight += 2
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
 

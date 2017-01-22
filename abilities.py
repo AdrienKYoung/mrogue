@@ -54,7 +54,7 @@ class Perk:
 def ability_attack(actor=None):
     x,y = ui.target_tile(max_range=1)
     target = None
-    for object in main.objects:
+    for object in main.current_cell.objects:
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break
@@ -67,7 +67,7 @@ def ability_attack(actor=None):
 def ability_attack_reach(actor=None):
     x, y = ui.target_tile(max_range=1)
     target = None
-    for object in main.objects:
+    for object in main.current_cell.objects:
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break
@@ -80,7 +80,7 @@ def ability_attack_reach(actor=None):
 def ability_bash_attack(actor=None):
     x,y = ui.target_tile(max_range=1)
     target = None
-    for object in main.objects:
+    for object in main.current_cell.objects:
         if object.x == x and object.y == y and object.fighter is not None:
             target = object
             break

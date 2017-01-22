@@ -7,6 +7,7 @@ import terrain
 import loot
 import Queue
 import pathfinding
+import world
 
 angles = [0,
           0.5 * math.pi,
@@ -16,7 +17,7 @@ angles = [0,
 NOROTATE = 1
 NOREFLECT = 2
 NOSPAWNS = 4
-
+cell = None
 
 # It's not a bug, it's a
 class Feature:
@@ -24,6 +25,7 @@ class Feature:
         self.room = None
         self.flags = 0
         self.scripts = []
+        self.name = ''
 
     def set_flag(self, flag):
         self.flags = self.flags | flag
@@ -361,11 +363,11 @@ def create_room(room):
         for y in range(room.y1 + 1, room.y2):
             dice = libtcod.random_get_int(0, 0, 3)
             if dice == 0:
-                main.dungeon_map[x][y].tile_type = 'shallow water'
+                cell.map[x][y].tile_type = 'shallow water'
             elif dice == 1:
-                main.dungeon_map[x][y].tile_type = 'grass floor'
+                cell.map[x][y].tile_type = 'grass floor'
             else:
-                main.dungeon_map[x][y].tile_type = 'stone floor'
+                cell.map[x][y].tile_type = 'stone floor'
 
 
 def apply_room(room, clear_objects=False):
@@ -374,7 +376,7 @@ def apply_room(room, clear_objects=False):
         if tile[0] < 0 or tile[1] < 0 or tile[0] >= consts.MAP_WIDTH or tile[1] >= consts.MAP_HEIGHT:
             raise IndexError('Tile index out of range: ' + str(tile[0]) + ', ' + str(tile[1]))
 
-        old_tile = main.dungeon_map[tile[0]][tile[1]]
+        old_tile = cell.map[tile[0]][tile[1]]
 
         if not old_tile.no_overwrite:
 
@@ -385,7 +387,7 @@ def apply_room(room, clear_objects=False):
                 old_tile.tile_type = room.tiles[tile[0], tile[1]]
             old_tile.no_overwrite = room.no_overwrite
             if clear_objects or old_tile.blocks:
-                for o in main.objects:
+                for o in cell.objects:
                     if o.x == tile[0] and o.y == tile[1] and o is not main.player:
                         o.destroy()
             if tile in room.data.keys():
@@ -409,7 +411,7 @@ def apply_data(x, y, data):
 
     for i in range(len(data)):
         if data[i] == 'ELEVATION':
-            main.dungeon_map[x][y].elevation = int(data[i + 1])
+            cell.map[x][y].elevation = int(data[i + 1])
             for obj in main.get_objects(x, y):
                 obj.elevation = int(data[i + 1])
             i += 1
@@ -454,14 +456,14 @@ def apply_object(x, y, data):
                 go_description += data[i] + ' '
                 i += 1
         elif data[i] == 'ELEVATION':
-            main.dungeon_map[x][y].elevation = data[i + 1]
+            cell.map[x][y].elevation = data[i + 1]
             i += 1
 
     if monster_id is not None:
         main.spawn_monster(monster_id, x, y)
     elif go_name is not None:
         new_obj = main.GameObject(x, y, go_char, go_name, go_color, blocks=go_blocks, description=go_description)
-        main.objects.append(new_obj)
+        cell.objects.append(new_obj)
 
 def apply_item(x, y, data):
     loot_level = main.dungeon_level * 5
@@ -492,7 +494,7 @@ def apply_item(x, y, data):
         item = loot.item_from_table(loot_level=loot_level, category=category)
         item.x = x
         item.y = y
-        main.objects.append(item)
+        cell.objects.append(item)
         item.send_to_back()
 
 def create_wandering_tunnel(x1, y1, x2, y2):
@@ -525,33 +527,28 @@ def create_wandering_tunnel(x1, y1, x2, y2):
         if move == 'y' or move == 'xy':
             current_y += ydir
         # replace terrain at current tile with floor
-        main.dungeon_map[current_x][current_y].tile_type = 'stone floor'
+        cell.map[current_x][current_y].tile_type = 'stone floor'
         if libtcod.random_get_int(0, 0, 1) == 0 or move == 'xy':
-            main.dungeon_map[current_x - 1][current_y].tile_type = 'stone floor'
-            main.dungeon_map[current_x + 1][current_y].tile_type = 'stone floor'
-            main.dungeon_map[current_x][current_y - 1].tile_type = 'stone floor'
-            main.dungeon_map[current_x][current_y + 1].tile_type = 'stone floor'
+            cell.map[current_x - 1][current_y].tile_type = 'stone floor'
+            cell.map[current_x + 1][current_y].tile_type = 'stone floor'
+            cell.map[current_x][current_y - 1].tile_type = 'stone floor'
+            cell.map[current_x][current_y + 1].tile_type = 'stone floor'
 
 
 def create_h_tunnel(x1, x2, y):
     for x in range(min(x1, x2), max(x1, x2) + 1):
-        main.dungeon_map[x][y].tile_type = 'stone floor'
+        cell.map[x][y].tile_type = 'stone floor'
 
 
 def create_v_tunnel(y1, y2, x):
     for y in range(min(y1, y2), max(y1, y2) + 1):
-        main.dungeon_map[x][y].tile_type = 'stone floor'
+        cell.map[x][y].tile_type = 'stone floor'
 
 
 def scatter_reeds(tiles):
     for tile in tiles:
-        if libtcod.random_get_int(0, 0, 4) == 0 and not main.dungeon_map[tile[0]][tile[1]].blocks:
+        if libtcod.random_get_int(0, 0, 4) == 0 and not cell.map[tile[0]][tile[1]].blocks:
             create_reed(tile[0], tile[1])
-
-    #for y in range(room.w - 1):
-    #    for x in range(room.h - 1):
-    #        if libtcod.random_get_int(0, 0, 3) == 0 and not main.dungeon_map[x + room.x1][y + room.y1].blocks:
-    #            create_reed(room.x1 + x, room.y1 + y)
 
 
 def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400):
@@ -562,7 +559,7 @@ def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400):
     changed_tiles = []
     while not Q.empty() and patch_count < patch_limit:
         tile = Q.get()
-        main.dungeon_map[tile[0]][tile[1]].tile_type = terrain_type
+        cell.map[tile[0]][tile[1]].tile_type = terrain_type
         changed_tiles.append(tile)
         patch_count += 1
         adjacent = []
@@ -570,7 +567,7 @@ def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400):
             for x in range(tile[0] - 1, tile[0] + 2):
                 if x < 0 or y < 0 or x >= consts.MAP_WIDTH or y >= consts.MAP_HEIGHT:
                     continue
-                if not main.dungeon_map[x][y].blocks and main.dungeon_map[x][y].tile_type != terrain_type:
+                if not cell.map[x][y].blocks and cell.map[x][y].tile_type != terrain_type:
                     adjacent.append((x, y))
         for i in range(3):
             if len(adjacent) > 0:
@@ -584,20 +581,21 @@ def create_reed(x, y):
     obj = main.get_objects(x, y)
     if len(obj) > 0:
         return  # object in the way
-    type_here = main.dungeon_map[x][y].tile_type
+    type_here = cell.map[x][y].tile_type
     if type_here == 'deep water':
-        main.dungeon_map[x][y].tile_type = 'shallow water'
+        cell.map[x][y].tile_type = 'shallow water'
     elif type_here != 'shallow water':
-        main.dungeon_map[x][y].tile_type = 'grass floor'
+        cell.map[x][y].tile_type = 'grass floor'
     reed = main.GameObject(x, y, 244, 'reeds', libtcod.darker_green, always_visible=True, description='A thicket of '
                            'reeds so tall they obstruct your vision. They are easily crushed underfoot.'
                            , blocks_sight=True, on_step=main.step_on_reed, burns=True)
-    main.objects.append(reed)
+    cell.objects.append(reed)
 
 
 def load_features_from_file(filename):
-    global file_features
-    file_features = []
+    global feature_categories, features
+    feature_categories = {}
+    features = {}
     feature_file = open(filename, 'r')
     lines = feature_file.read().split('\n')
     while len(lines) > 0:
@@ -605,14 +603,31 @@ def load_features_from_file(filename):
         lines.remove(lines[0])
         if current_line.startswith('//'):
             continue
-        if current_line == 'FEATURE':
+        if current_line.startswith('FEATURE'):
+            name = current_line.split(' ')[1]
+
             #do stuff
             feature_lines = []
+            categories = []
             while lines[0] != 'ENDFEATURE':
                 if not lines[0].startswith('//'):
                     feature_lines.append(lines[0])
+                if lines[0].startswith('CATEGORY'):
+                    cat_line = lines[0].split()
+                    for i in range(1, len(cat_line)):
+                        categories.append(cat_line[i])
                 lines.remove(lines[0])
-            load_feature(feature_lines)
+            new_feature = load_feature(feature_lines)
+            new_feature.name = name
+
+            if len(categories) == 0:
+                categories.append('default')
+            for category in categories:
+                if category in feature_categories.keys():
+                    feature_categories[category].append(new_feature)
+                else:
+                    feature_categories[category] = [new_feature]
+            features[name] = new_feature
 
 
 file_key = {
@@ -627,7 +642,6 @@ file_key = {
     '/' : 'ramp',
 }
 def load_feature(lines=[]):
-    global file_features
     try:
         #stuff
         new_feature = Feature()
@@ -694,22 +708,20 @@ def load_feature(lines=[]):
         new_feature.room = feature_room
         for script in script_strings:
             new_feature.scripts.append(script)
-        file_features.append(new_feature)
+        return new_feature
     except:
         raise IOError('Input could not be parsed.')
 
 
-def create_feature(x, y, open_tiles=None, index=None):
-    global file_features, feature_rects
-    if len(file_features) == 0:
-        return 'no features loaded'
+def create_feature(x, y, feature_name, open_tiles=None):
+    if feature_name not in features.keys():
+        return 'feature not found'
     else:
-        if index is None:
-            index = libtcod.random_get_int(0, 0, len(file_features) - 1)
-        template = file_features[index].room
-        if not file_features[index].has_flag(NOREFLECT):
+        feature = features[feature_name]
+        template = feature.room
+        if not feature.has_flag(NOREFLECT):
             template.reflect(reflect_x=libtcod.random_get_int(0, 0, 1) == 1, reflect_y=libtcod.random_get_int(0, 0, 1) == 1)
-        if not file_features[index].has_flag(NOROTATE):
+        if not feature.has_flag(NOROTATE):
             template.rotate(angles[libtcod.random_get_int(0, 0, 3)])
         if template.bounds[0] + x > consts.MAP_WIDTH - 1:
             x = consts.MAP_WIDTH - 1 - template.bounds[0]
@@ -724,11 +736,11 @@ def create_feature(x, y, open_tiles=None, index=None):
                 return 'failed'
 
         feature_rects.append(new_rect)
-        apply_room(template, file_features[index].has_flag(NOSPAWNS))
+        apply_room(template, feature.has_flag(NOSPAWNS))
 
         if open_tiles is not None:
             # If feature has NOSPAWNS flag, remove all tiles from 'open_tiles' list
-            if file_features[index].has_flag(NOSPAWNS):
+            if feature.has_flag(NOSPAWNS):
                 for tile in template.tiles.keys():
                     if tile in open_tiles:
                         open_tiles.remove(tile)
@@ -740,7 +752,7 @@ def create_feature(x, y, open_tiles=None, index=None):
                     if tile not in open_tiles:
                         open_tiles.append(tile)
 
-        apply_scripts(file_features[index])
+        apply_scripts(feature)
         return 'success'
 
 def apply_scripts(feature):
@@ -805,13 +817,13 @@ def make_rooms_and_corridors():
 
     # Generate every-floor random features
     sample = random.sample(rooms, 2)
-    x, y = sample[0].center()
-    main.stairs = main.GameObject(x, y, '<', 'stairs downward', libtcod.white, always_visible=True)
-    main.objects.append(main.stairs)
-    main.stairs.send_to_back()
+    #x, y = sample[0].center()
+    #main.stairs = main.GameObject(x, y, '<', 'stairs downward', libtcod.white, always_visible=True)
+    #cell.objects.append(main.stairs)
+    #main.stairs.send_to_back()
     x, y = sample[len(sample) - 1].center()
     level_shrine = main.GameObject(x, y, '=', 'shrine of power', libtcod.white, always_visible=True, interact=None)
-    main.objects.append(level_shrine)
+    cell.objects.append(level_shrine)
     level_shrine.send_to_back()
     boss = main.check_boss(main.get_dungeon_level())
     if boss is not None:
@@ -844,15 +856,16 @@ def make_one_big_room():
         tile = choose_random_tile(open_tiles)
         main.spawn_monster('monster_blastcap', tile[0], tile[1])
 
-    # test last feature in features.txt by forcing it to spawn first
-    if consts.DEBUG_TEST_FEATURE:
+    if consts.DEBUG_TEST_FEATURE is not None:
         tile = choose_random_tile(open_tiles)
-        create_feature(tile[0], tile[1], open_tiles, index=len(file_features)-1)
+        create_feature(tile[0], tile[1], consts.DEBUG_TEST_FEATURE, open_tiles)
 
     feature_count = libtcod.random_get_int(0, 0, 10)
     for i in range(feature_count):
         tile = choose_random_tile(open_tiles)
-        create_feature(tile[0], tile[1], open_tiles)
+        feature_index = libtcod.random_get_int(0, 0, len(feature_categories['default']) - 1)
+        feature_name = feature_categories['default'][feature_index].name
+        create_feature(tile[0], tile[1], feature_name, open_tiles)
 
     player_tile = choose_random_tile(open_tiles)
 
@@ -860,10 +873,10 @@ def make_one_big_room():
     main.player.y = player_tile[1]
     for i in range(7):
         main.place_objects(open_tiles)
-    stair_tile = choose_random_tile(open_tiles)
-    main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white, always_visible=True)
-    main.objects.append(main.stairs)
-    main.stairs.send_to_back()
+    #stair_tile = choose_random_tile(open_tiles)
+    #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white, always_visible=True)
+    #cell.objects.append(main.stairs)
+    #main.stairs.send_to_back()
     boss = main.check_boss(main.get_dungeon_level())
     if boss is not None:
         boss_tile = choose_random_tile(open_tiles)
@@ -873,32 +886,34 @@ def make_one_big_room():
 def make_test_space():
     for y in range(2, consts.MAP_HEIGHT - 2):
         for x in range(2, consts.MAP_WIDTH - 2):
-            main.dungeon_map[x][y].tile_type = 'stone floor'
+            cell.map[x][y].tile_type = 'stone floor'
 
     player_tile = (consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2)
 
-    create_feature(player_tile[0] - 3, player_tile[1] - 16, None, 11)
+    if consts.DEBUG_TEST_FEATURE is not None:
+        create_feature(player_tile[0] - 3, player_tile[1] - 16, consts.DEBUG_TEST_FEATURE, None)
 
     main.player.x = player_tile[0]
     main.player.y = player_tile[1]
 
     main.spawn_monster('monster_reeker', player_tile[0], player_tile[1] - 20)
 
-    stair_tile = (player_tile[0], player_tile[1] + 3)
-    main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,
-                                  always_visible=True)
-    main.objects.append(main.stairs)
-    main.stairs.send_to_back()
+    #stair_tile = (player_tile[0], player_tile[1] + 3)
+    #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,
+    #                              always_visible=True)
+    #cell.objects.append(main.stairs)
+    #main.stairs.send_to_back()
 
 
-def make_map():
-    global feature_rects
+def make_map(world_cell):
+    global feature_rects, cell
 
     feature_rects = []
+    cell = world_cell
 
-    main.objects = [main.player]
+    cell.objects = [main.player]
 
-    main.dungeon_map = [[main.Tile('stone wall')
+    cell.map = [[main.Tile('stone wall')
                          for y in range(consts.MAP_HEIGHT)]
                         for x in range(consts.MAP_WIDTH)]
     main.spawned_bosses = {}
@@ -906,6 +921,10 @@ def make_map():
     # choose generation type
     if consts.DEBUG_TEST_MAP:
         make_test_space()
+    elif world_cell.branch == 'marsh':
+        make_one_big_room()
+    elif world_cell.branch == 'goblin':
+        make_rooms_and_corridors()
     else:
         # make_rooms_and_corridors()
         make_one_big_room()
@@ -913,11 +932,10 @@ def make_map():
 
     # make sure the edges are undiggable walls
     for i in range(consts.MAP_WIDTH):
-        main.dungeon_map[i][0].tile_type = 'hard stone wall'
-        main.dungeon_map[i][consts.MAP_HEIGHT - 1].tile_type = 'hard stone wall'
+        cell.map[i][0].tile_type = 'hard stone wall'
+        cell.map[i][consts.MAP_HEIGHT - 1].tile_type = 'hard stone wall'
     for i in range(consts.MAP_HEIGHT):
-        main.dungeon_map[0][i].tile_type = 'hard stone wall'
-        main.dungeon_map[consts.MAP_WIDTH - 1][i].tile_type = 'hard stone wall'
+        cell.map[0][i].tile_type = 'hard stone wall'
+        cell.map[consts.MAP_WIDTH - 1][i].tile_type = 'hard stone wall'
 
-    pathfinding.map.initialize(main.dungeon_map)
-
+    pathfinding.map.initialize(cell.map)

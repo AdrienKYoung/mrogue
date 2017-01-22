@@ -30,7 +30,7 @@ def initialize_fov():
         for y in range(consts.MAP_HEIGHT):
             for x in range(consts.MAP_WIDTH):
 
-                this_elevation = main.dungeon_map[x][y].elevation
+                this_elevation = main.current_cell.map[x][y].elevation
 
                 if this_elevation != elevation:
                     # check if this tile is at an elevation we haven't discovered yet
@@ -38,17 +38,17 @@ def initialize_fov():
                         elevations.append(this_elevation)
                     # set properties for tile of different elevation
                     libtcod.map_set_properties(fov_height[elevation], x, y,
-                                               this_elevation <= elevation and not main.dungeon_map[x][y].blocks_sight, True)
+                                               this_elevation <= elevation and not main.current_cell.map[x][y].blocks_sight, True)
                 else:
                     # set properties for tile of same elevation
-                    libtcod.map_set_properties(fov_height[elevation], x, y, not main.dungeon_map[x][y].blocks_sight, True)
+                    libtcod.map_set_properties(fov_height[elevation], x, y, not main.current_cell.map[x][y].blocks_sight, True)
 
                 # reveal all tiles if consts.DEBUG_ALL_EXPLORED is True
                 if consts.DEBUG_ALL_EXPLORED:
-                    main.dungeon_map[x][y].explored = True
+                    main.current_cell.map[x][y].explored = True
 
     # after computing fov maps for tiles, modify them for any object that blocks sight
-    for obj in main.objects:
+    for obj in main.current_cell.objects:
         if obj.blocks_sight:
             set_fov_properties(obj.x, obj.y, True, obj.elevation)
 

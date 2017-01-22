@@ -8,6 +8,7 @@ import terrain
 # Classes
 #############################################
 
+
 class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
@@ -23,8 +24,8 @@ class Equipment:
         self.spell_power_bonus = spell_power_bonus
         self.stamina_cost = stamina_cost
         self.str_requirement = str_requirement
-        self.shred_bonus=shred_bonus
-        self.guaranteed_shred_bonus=guaranteed_shred_bonus
+        self.shred_bonus = shred_bonus
+        self.guaranteed_shred_bonus = guaranteed_shred_bonus
         self.pierce_bonus = pierce
         self.accuracy_bonus = accuracy
         self.ctrl_attack = ctrl_attack
@@ -103,8 +104,8 @@ class Equipment:
             print_height += h + 1
             libtcod.console_set_default_foreground(console, libtcod.white)
 
-
         return print_height
+
 
 class Item:
     def __init__(self, category, use_function=None, learn_spell=None, type='item', ability=None):
@@ -161,7 +162,7 @@ class Item:
     def drop(self):
         if self.owner.equipment:
             self.owner.equipment.dequip();
-        objects.append(self.owner)
+        current_cell.objects.append(self.owner)
         player.fighter.inventory.remove(self.owner)
         self.owner.x = player.x
         self.owner.y = player.y
@@ -256,11 +257,8 @@ class Fighter:
         self.time_since_last_damaged = 0
         self.abilities = abilities
 
-
     def print_description(self, console, x, y, width):
         print_height = 1
-        #print_height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, 'This is a fighter description')
-        #libtcod.console_print_rect(console, x, y, width, consts.SCREEN_HEIGHT, 'This is a fighter description')
         # Print health
         libtcod.console_set_default_foreground(console, libtcod.dark_red)
         libtcod.console_print(console, x, y + print_height, 'HP: %d/%d' % (self.hp, self.max_hp))
@@ -327,7 +325,7 @@ class Fighter:
                                              description='A colored orb that glows with magical potential.',
                                              on_step=pick_up_mana, on_tick=expire_out_of_vision)
                     mana_pickup.mana_type = m[1]
-                    objects.append(mana_pickup)
+                    current_cell.objects.append(mana_pickup)
                     return
 
     def calculate_attack_stamina_cost(self):
@@ -391,9 +389,6 @@ class Fighter:
             else:
                 damage = int(math.ceil(damage))
 
-            #damage *= (consts.ARMOR_FACTOR / (consts.ARMOR_FACTOR + target.fighter.armor))
-            #damage = math.ceil(damage)
-            #damage = int(damage)
             if damage > 0:
                 # Trigger on-hit effects
                 if on_hit is not None:
@@ -434,7 +429,7 @@ class Fighter:
                 ui.message('You repair your armor')
 
         # Manage breath/drowning
-        if dungeon_map[self.owner.x][self.owner.y].tile_type == 'deep water':
+        if current_cell.map[self.owner.x][self.owner.y].tile_type == 'deep water':
             if not (self.can_breath_underwater or self.has_status('waterbreathing')):
                 if self.breath > 0:
                     self.breath -= 1
@@ -569,9 +564,10 @@ class Fighter:
         bonus = sum(equipment.max_hp_bonus for equipment in get_all_equipped(self.inventory))
         return self.base_max_hp + bonus
 
+
 class GameObject:
 
-    def __init__(self, x, y, char, name, color, blocks=False, fighter=None, ai=None, item=None, equipment=None,
+    def __init__(self, x, y, char, name, color, blocks=False, fighter=None, behavior=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None, elevation=None):
         self.x = x
@@ -587,11 +583,11 @@ class GameObject:
         self.on_create = on_create
         if self.fighter:
             self.fighter.owner = self
-        self.ai = ai
-        if self.ai:
-            self.ai = AI_General(update_speed, ai)
-            self.ai.owner = self
-            self.ai.behavior.owner = self
+        self.behavior = behavior
+        if self.behavior:
+            self.behavior = ai.AI_General(update_speed, behavior)
+            self.behavior.owner = self
+            self.behavior.behavior.owner = self
         self.item = item
         if self.item:
             self.item.owner = self
@@ -613,8 +609,8 @@ class GameObject:
         self.burns = burns
         self.on_tick_specified = on_tick
         if elevation is None:
-            if dungeon_map is not None:
-                self.elevation = dungeon_map[self.x][self.y].elevation
+            if current_cell is not None and current_cell.map is not None:
+                self.elevation = current_cell.map[self.x][self.y].elevation
             else:
                 self.elevation = 0
         else:
@@ -623,8 +619,6 @@ class GameObject:
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
         draw_height = y
-        #libtcod.console_print(console, x, draw_height, self.name.capitalize())
-        #draw_height += 2
         libtcod.console_print_rect(console, x, draw_height, width, height, self.description)
         draw_height += height
         if self.item:
@@ -653,7 +647,7 @@ class GameObject:
 
         # Update fov maps (if this object affects fov)
         if self.blocks_sight:
-            fov.set_fov_properties(self.x, self.y, dungeon_map[self.x][self.y].blocks_sight, self.elevation)
+            fov.set_fov_properties(self.x, self.y, current_cell.map[self.x][self.y].blocks_sight, self.elevation)
             fov.set_fov_properties(x, y, True, self.elevation)
 
         # Update the pathfinding map - mark our previous space as passable and our new space as impassable
@@ -665,7 +659,7 @@ class GameObject:
         self.x = x
         self.y = y
         old_elev = self.elevation
-        self.elevation = dungeon_map[x][y].elevation
+        self.elevation = current_cell.map[x][y].elevation
 
         # Check for objects with 'stepped_on' functions on our new space (xp, mana, traps, etc)
         stepped_on = get_objects(self.x, self.y, lambda o: o.on_step)
@@ -682,7 +676,7 @@ class GameObject:
     def move(self, dx, dy):
 
         blocked = is_blocked(self.x + dx, self.y + dy, self.elevation)
-        if blocked and dungeon_map[self.x][self.y].tile_type == 'ramp':
+        if blocked and current_cell.map[self.x][self.y].tile_type == 'ramp':
             blocked = is_blocked(self.x + dx, self.y + dy, self.elevation - 1)
 
         if not blocked:
@@ -694,7 +688,7 @@ class GameObject:
                     ui.message('The ' + self.name + ' struggles against the web.')
                     web.destroy()
                     return True
-                cost = dungeon_map[self.x][self.y].stamina_cost
+                cost = current_cell.map[self.x][self.y].stamina_cost
                 if cost > 0 and self is player: # only the player cares about stamina costs (at least for now. I kind of like it this way) -T
                     if self.fighter.stamina >= cost:
                         self.fighter.adjust_stamina(-cost)
@@ -714,7 +708,7 @@ class GameObject:
             else:
                 libtcod.console_set_default_foreground(console, self.color)
                 libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
-        elif self.always_visible and dungeon_map[self.x][self.y].explored:
+        elif self.always_visible and current_cell.map[self.x][self.y].explored:
             shaded_color = libtcod.Color(self.color[0], self.color[1], self.color[2])
             libtcod.color_scale_HSV(shaded_color, 0.1, 0.4)
             libtcod.console_set_default_foreground(console, shaded_color)
@@ -743,7 +737,7 @@ class GameObject:
                 closest_adjacent = None
                 closest = 10000
                 for adj in adjacent_tiles_diagonal(target_x, target_y):
-                    if is_blocked(adj[0], adj[1], dungeon_map[target_x][target_y].elevation):
+                    if is_blocked(adj[0], adj[1], current_cell.map[target_x][target_y].elevation):
                         continue
                     dist = self.distance(adj[0], adj[1])
                     if dist < closest:
@@ -765,7 +759,7 @@ class GameObject:
                 # find the next coordinate in the computed full path
                 x, y = path[1]
                 if x or y:
-                    if dungeon_map[x][y].blocks:
+                    if current_cell.map[x][y].blocks:
                         pathfinding.map.mark_impassable((x, y))  # bandaid fix - hopefully paths will self-correct now
                     else:
                         self.move_towards(x, y)
@@ -784,13 +778,13 @@ class GameObject:
         # Scan the map and set all walls to unwalkable
         for y1 in range(consts.MAP_HEIGHT):
             for x1 in range(consts.MAP_WIDTH):
-                terrain = dungeon_map[x1][y1].blocks
-                elev = self.elevation != dungeon_map[x1][y1].elevation and dungeon_map[x1][y1].tile_type != 'ramp'
+                terrain = current_cell.map[x1][y1].blocks
+                elev = self.elevation != current_cell.map[x1][y1].elevation and current_cell.map[x1][y1].tile_type != 'ramp'
                 blocks = terrain or elev
-                libtcod.map_set_properties(fov, x1, y1, not dungeon_map[x1][y1].blocks_sight, not blocks)
+                libtcod.map_set_properties(fov, x1, y1, not current_cell.map[x1][y1].blocks_sight, not blocks)
         
         # Scan all objects to see if there are objects that must be navigated around
-        for obj in objects:
+        for obj in current_cell.objects:
             if obj.blocks and obj != self and not (obj.x == target_x and obj.y == target_y):
                 libtcod.map_set_properties(fov, obj.x, obj.y, True, False)
                 
@@ -821,9 +815,9 @@ class GameObject:
         return math.sqrt((self.x - x) ** 2 + (self.y - y) ** 2)
         
     def send_to_back(self):
-        global objects
-        objects.remove(self)
-        objects.insert(0, self)
+        global current_cell
+        current_cell.objects.remove(self)
+        current_cell.objects.insert(0, self)
 
     def on_tick(self, object=None):
         if self.on_tick_specified:
@@ -836,11 +830,11 @@ class GameObject:
     def destroy(self):
         global changed_tiles
         if self.blocks_sight:
-            fov.set_fov_properties(self.x, self.y, dungeon_map[self.x][self.y].blocks_sight, self.elevation)
+            fov.set_fov_properties(self.x, self.y, current_cell.map[self.x][self.y].blocks_sight, self.elevation)
         if self.blocks and pathfinding.map:
             pathfinding.map.mark_passable((self.x, self.y))
         changed_tiles.append((self.x, self.y))
-        objects.remove(self)
+        current_cell.objects.remove(self)
 
 
 class Tile:
@@ -969,7 +963,7 @@ def blastcap_explode(blastcap):
 
     blastcap.fighter = None
     ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
-    for obj in objects:
+    for obj in current_cell.objects:
         if obj.fighter and is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
             if obj.fighter.apply_status_effect(effects.StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
                 ui.message('The ' + obj.name + ' is stunned!', libtcod.gold)
@@ -1013,7 +1007,7 @@ def random_position_in_circle(radius):
 
 
 def object_at_tile(x, y, name):
-    for obj in objects:
+    for obj in current_cell.objects:
         if obj.x == x and obj.y == y and obj.name == name:
             return obj
     return None
@@ -1024,7 +1018,7 @@ def tunnel_spider_spawn_web(obj):
     adjacent = adjacent_tiles_diagonal(obj.x, obj.y)
     webs = [(obj.x, obj.y)]
     for a in adjacent:
-        if libtcod.random_get_int(0, 0, 2) == 0 and not dungeon_map[a[0]][a[1]].blocks:
+        if libtcod.random_get_int(0, 0, 2) == 0 and not current_cell.map[a[0]][a[1]].blocks:
             webs.append(a)
     for w in webs:
         make_spiderweb(w[0], w[1])
@@ -1035,7 +1029,7 @@ def make_spiderweb(x, y):
     web = GameObject(x, y, '*', 'spiderweb', libtcod.lightest_gray,
                      description='a web of spider silk. Stepping into a web will impede movement for a turn.',
                      burns=True)
-    objects.append(web)
+    current_cell.objects.append(web)
     web.send_to_back()
 
 
@@ -1171,7 +1165,7 @@ def bomb_beetle_death(beetle):
     if beetle.fighter.loot_table is not None:
         drop = get_loot(beetle.fighter)
         if drop:
-            objects.append(drop)
+            current_cell.objects.append(drop)
             drop.send_to_back()
 
     ui.message(beetle.name.capitalize() + ' is dead!', libtcod.red)
@@ -1179,7 +1173,7 @@ def bomb_beetle_death(beetle):
     beetle.color = libtcod.black
     beetle.blocks = True
     beetle.fighter = None
-    beetle.ai = None
+    beetle.behavior = None
     beetle.name = 'beetle bomb'
     beetle.description = 'The explosive carapace of a blast beetle. In a few turns, it will explode!'
     beetle.bomb_timer = 3
@@ -1197,14 +1191,14 @@ def monster_death(monster):
     if monster.fighter.loot_table is not None:
         drop = get_loot(monster.fighter)
         if drop:
-            objects.append(drop)
+            current_cell.objects.append(drop)
             drop.send_to_back()
 
     if hasattr(monster.fighter,'inventory') and len(monster.fighter.inventory) > 0:
         for item in monster.fighter.inventory:
             item.x = monster.x
             item.y = monster.y
-            objects.append(item)
+            current_cell.objects.append(item)
             item.send_to_back()
 
 
@@ -1215,7 +1209,7 @@ def monster_death(monster):
     if pathfinding.map:
         pathfinding.map.mark_passable((monster.x, monster.y))
     monster.fighter = None
-    monster.ai = None
+    monster.behavior = None
     monster.name = 'remains of ' + monster.name
     monster.send_to_back()
 
@@ -1230,23 +1224,22 @@ def target_monster(max_range=None):
         (x, y) = ui.target_tile(max_range)
         if x is None:
             return None
-        for obj in objects:
+        for obj in current_cell.objects:
             if obj.x == x and obj.y == y and obj.fighter and obj is not player:
                 return obj
         return None
 
 
 def get_monster_at_tile(x, y):
-    for obj in objects:
+    for obj in current_cell.objects:
         if obj.x == x and obj.y == y and obj.fighter and obj is not player:
             return obj
     return None
 
 
 def object_at_coords(x, y):
-    global dungeon_map
 
-    ops = [t for t in objects if (t.x == x and t.y == y)]
+    ops = [t for t in current_cell.objects if (t.x == x and t.y == y)]
     if len(ops) > 1:
         menu_choice = ui.menu("Which object?", [o.name for o in ops], 40)
         if menu_choice is not None:
@@ -1254,7 +1247,7 @@ def object_at_coords(x, y):
         else:
             return None
     elif len(ops) == 0:
-        return dungeon_map[x][y]
+        return current_cell.map[x][y]
     else:
         return ops[0]
 
@@ -1278,7 +1271,7 @@ def beam_interrupt(sourcex, sourcey, destx, desty):
     libtcod.line_init(sourcex, sourcey, destx, desty)
     line_x, line_y = libtcod.line_step()
     while line_x is not None:
-        if is_blocked(line_x, line_y, dungeon_map[sourcex][sourcey].elevation):  # beam interrupt scans until it hits something
+        if is_blocked(line_x, line_y, current_cell.map[sourcex][sourcey].elevation):  # beam interrupt scans until it hits something
             return line_x, line_y
         line_x, line_y = libtcod.line_step()
     return destx, desty
@@ -1288,7 +1281,7 @@ def closest_monster(max_range):
     closest_enemy = None
     closest_dist = max_range + 1
 
-    for object in objects:
+    for object in current_cell.objects:
         if object.fighter and not object == player and fov.player_can_see(object.x, object.y):
             dist = player.distance_to(object)
             if dist < closest_dist:
@@ -1304,13 +1297,13 @@ def in_bounds(x, y):
 
 def is_blocked(x, y, elevation=None):
 
-    if elevation is not None and dungeon_map[x][y].elevation != elevation and dungeon_map[x][y].tile_type != 'ramp':
+    if elevation is not None and current_cell.map[x][y].elevation != elevation and current_cell.map[x][y].tile_type != 'ramp':
         return True
 
-    if dungeon_map[x][y].blocks:
+    if current_cell.map[x][y].blocks:
         return True
 
-    for object in objects:
+    for object in current_cell.objects:
         if object.blocks and object.x == x and object.y == y:
             return True
 
@@ -1339,15 +1332,15 @@ def spawn_monster(name, x, y):
                                     base_pierce=p.get('pierce', 0))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
-        ai = None
+        behavior = None
         if p.get('ai'):
-            ai = p.get('ai')()
+            behavior = p.get('ai')()
         monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
-                             ai=ai, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'])
+                             behavior=behavior, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'])
         if p.get('mana'):
             monster.mana = p.get('mana')
-        monster.elevation = dungeon_map[x][y].elevation
-        objects.append(monster)
+        monster.elevation = current_cell.map[x][y].elevation
+        current_cell.objects.append(monster)
         return monster
     return None
 
@@ -1456,7 +1449,7 @@ def spawn_item(name, x, y, material=None, quality=None):
         item = create_item(name, material, quality)
         item.x = x
         item.y = y
-        objects.append(item)
+        current_cell.objects.append(item)
         item.send_to_back()
 
 
@@ -1505,14 +1498,14 @@ def check_breakage(equipment):
 def create_fire(x,y,temp):
     global changed_tiles
 
-    tile = dungeon_map[x][y]
+    tile = current_cell.map[x][y]
     if tile.tile_type == 'shallow water' or tile.tile_type == 'deep water' or tile.blocks:
         return
-    component = FireBehavior(temp)
+    component = ai.FireBehavior(temp)
     obj = GameObject(x,y,'^','Fire',libtcod.red,misc=component)
-    objects.append(obj)
+    current_cell.objects.append(obj)
     if temp > 4 and tile.tile_type != 'ramp':
-        dungeon_map[x][y].tile_type = 'scorched floor'
+        current_cell.map[x][y].tile_type = 'scorched floor'
     for obj in get_objects(x, y, condition=lambda o: o.burns):
         obj.destroy()
     changed_tiles.append((x, y))
@@ -1522,10 +1515,6 @@ def place_objects(tiles):
     if len(tiles) == 0:
         return
     max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
-    #item_chances = {'potion_healing':65, 'scroll_lightning':10, 'scroll_confusion':10, 'scroll_fireball':10, 'scroll_forge':5 }
-    #item_chances['equipment_longsword'] = 15
-    #item_chances['equipment_shield'] = 20
-    #item_chances['equipment_spear'] = 15
 
     table = dungeon.table[get_dungeon_level()]['versions']
     for i in range(libtcod.random_get_int(0, 0, 4)):  # temporary line to spawn multiple monster groups in a room
@@ -1533,8 +1522,6 @@ def place_objects(tiles):
         for s in spawns:
             for n in range(0,s[1]):
                 random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
-                #x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
-                #y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
                 spawn_monster(s[0], random_pos[0], random_pos[1])
                 tiles.remove(random_pos)
                 if len(tiles) == 0:
@@ -1542,17 +1529,13 @@ def place_objects(tiles):
 
     num_items = libtcod.random_get_int(0, 0, max_items)
     for i in range(num_items):
-        #x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
-        #y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
 
         if not is_blocked(random_pos[0], random_pos[1]):
-            #choice = random_choice(item_chances)
-            #spawn_item(choice, random_pos[0], random_pos[1])
             item = loot.item_from_table(dungeon_level * 5)
             item.x = random_pos[0]
             item.y = random_pos[1]
-            objects.append(item)
+            current_cell.objects.append(item)
             item.send_to_back()
             tiles.remove(random_pos)
             if len(tiles) == 0:
@@ -1560,7 +1543,7 @@ def place_objects(tiles):
 
     for i in range(2):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
-        objects.append(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
+        current_cell.objects.append(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
                                   description='xp', on_step=pick_up_xp))
         tiles.remove(random_pos)
         if len(tiles) == 0:
@@ -1570,10 +1553,10 @@ def place_objects(tiles):
 def check_boss(level):
     global spawned_bosses
 
-    for (k,v) in dungeon.bosses.items():
+    for (k, v) in dungeon.bosses.items():
         chance = v.get(level)
         if chance is not None and spawned_bosses.get(k) is None:
-            if chance >= libtcod.random_get_int(0,0,100):
+            if chance >= libtcod.random_get_int(0, 0, 100):
                 spawned_bosses[k] = True
                 return k
     return None
@@ -1614,12 +1597,12 @@ def player_dig(dx, dy):
 
     dig_x = player.x + dx
     dig_y = player.y + dy
-    if dungeon_map[dig_x][dig_y].diggable:
-        dungeon_map[dig_x][dig_y].tile_type = 'stone floor'
+    if current_cell.map[dig_x][dig_y].diggable:
+        current_cell.map[dig_x][dig_y].tile_type = 'stone floor'
         changed_tiles.append((dig_x, dig_y))
         if pathfinding.map:
             pathfinding.map.mark_passable((dig_x, dig_y))
-        fov.set_fov_properties(dig_x, dig_y, False, dungeon_map[dig_x][dig_y].elevation)
+        fov.set_fov_properties(dig_x, dig_y, False, current_cell.map[dig_x][dig_y].elevation)
         check_breakage(get_equipped_in_slot(player.fighter.inventory, 'right hand'))
         return 'success'
     else:
@@ -1688,15 +1671,15 @@ def player_bash_attack(dx, dy):
             direction = target.x - player.x, target.y - player.y  # assumes the player is adjacent
             stun = False
             against = ''
-            against_tile = dungeon_map[target.x + direction[0]][target.y + direction[1]]
+            against_tile = current_cell.map[target.x + direction[0]][target.y + direction[1]]
             if against_tile.blocks:
                 stun = True
-                against = dungeon_map[target.x + direction[0]][target.y + direction[1]].name
-            elif against_tile.elevation != target.elevation and against_tile.tile_type != 'ramp' and dungeon_map[target.x][target.y] != 'ramp':
+                against = current_cell.map[target.x + direction[0]][target.y + direction[1]].name
+            elif against_tile.elevation != target.elevation and against_tile.tile_type != 'ramp' and current_cell.map[target.x][target.y] != 'ramp':
                 stun = True
                 against = 'cliff'
             else:
-                for obj in objects:
+                for obj in current_cell.objects:
                     if obj.x == target.x + direction[0] and obj.y == target.y + direction[1] and obj.blocks:
                         stun = True
                         against = obj.name
@@ -1732,8 +1715,6 @@ def get_loot(monster):
 def do_queued_action(action):
     if action == 'finish-meditate':
         manatype = 'normal'
-        #if dungeon_map[player.x][player.y].tile_type == 'grass floor':  # Temporary - used for testing
-        #    manatype = 'life'
 
         if len(player.mana) < player.player_stats.max_mana:
             player.mana.append(manatype)
@@ -1769,13 +1750,10 @@ def handle_keys():
     global game_state, stairs
     global key, mouse
 
-    # key = libtcod.console_check_for_keypress()  #real-time
-    # key = libtcod.console_wait_for_keypress(True)  #turn-based
-
     ui.mouse_select_monster()
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
-        #Alt+Enter: toggle fullscreen
+        # Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
     elif key.vk == libtcod.KEY_ESCAPE:
@@ -1791,7 +1769,6 @@ def handle_keys():
             player.action_queue.remove(action)
             do_queued_action(action)
             return action
-
 
         key_char = chr(key.c)
         moved = False
@@ -1843,16 +1820,6 @@ def handle_keys():
                        consts.CHARACTER_SCREEN_WIDTH)
             if key_char == 'z':
                 return cast_spell_new()
-                #if key.shift:
-                #    return cast_spell_new()
-                #else:
-                #    if len(memory) == 0:
-                #        ui.message('You have no spells in your memory to cast.', libtcod.purple)
-                #    elif dungeon_map[player.x][player.y].tile_type == 'deep water':
-                #        ui.message('You cannot cast spells underwater.', libtcod.purple)
-                #    else:
-                #        cast_spell()
-                #        return 'casted-spell'
             if key_char == 'j':
                 return jump()
             if key_char == 'e':
@@ -1874,6 +1841,7 @@ def handle_keys():
             return 'didnt-take-turn'
         if not moved:
             return 'didnt-take-turn'
+
 
 def cast_spell_new():
     if len(player.known_spells) <= 0:
@@ -1925,7 +1893,7 @@ def pick_up_item():
 
 def get_objects(x, y, condition=None, distance=0):
     found = []
-    for obj in objects:
+    for obj in current_cell.objects:
         if max(abs(obj.x - x), abs(obj.y - y)) <= distance:
             if condition is not None:
                 if condition(obj):
@@ -1956,7 +1924,7 @@ def examine(x=None, y=None):
         obj = object_at_coords(x, y)
         if obj is not None:
             if isinstance(obj, GameObject):
-                desc = obj.name.capitalize()# + '\n' + get_description(obj)
+                desc = obj.name.capitalize()
                 if hasattr(obj, 'fighter') and obj.fighter is not None and \
                         hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
                     desc = desc + '\nInventory: '
@@ -1970,7 +1938,7 @@ def examine(x=None, y=None):
 
 def jump(actor=None):
 
-    if not dungeon_map[player.x][player.y].jumpable:
+    if not current_cell.map[player.x][player.y].jumpable:
         ui.message('You cannot jump from this terrain!', libtcod.light_yellow)
         return 'didnt-take-turn'
 
@@ -1990,15 +1958,15 @@ def jump(actor=None):
     libtcod.console_flush()
     (x, y) = ui.target_tile(consts.BASE_JUMP_RANGE, 'pick', consts.JUMP_ATTACK_ACC_MOD)
     if x is not None and y is not None:
-        if dungeon_map[x][y].blocks:
+        if current_cell.map[x][y].blocks:
             ui.message('There is something in the way.', libtcod.light_yellow)
             return 'didnt-take-turn'
-        elif is_blocked(x, y, player.elevation) and dungeon_map[x][y].elevation > player.elevation:
+        elif is_blocked(x, y, player.elevation) and current_cell.map[x][y].elevation > player.elevation:
             ui.message("You can't jump that high!", libtcod.light_yellow)
             return 'didnt-take-turn'
         else:
             jump_attack_target = None
-            for obj in objects:
+            for obj in current_cell.objects:
                 if obj.x == x and obj.y == y and obj.blocks:
                     jump_attack_target = obj
                     break
@@ -2020,7 +1988,7 @@ def jump(actor=None):
                     ui.message('There is something in the way.', libtcod.white)
                     return 'didnt-take-turn'
             else:
-                #jump to open space
+                # jump to open space
                 player.set_position(x, y)
                 player.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
                 return 'jumped'
@@ -2049,7 +2017,7 @@ def cast_spell():
 
     choice = libtcod.console_wait_for_keypress(True).c - 48
 
-    if choice > 0 and choice < len(memory) + 1:
+    if 0 < choice < len(memory) + 1:
         memory[choice - 1].item.use()
     else:
         ui.message('No such spell.', libtcod.purple)
@@ -2085,27 +2053,27 @@ def render_map():
         x = tile[0]
         y = tile[1]
         visible = libtcod.map_is_in_fov(fov.fov_player, x, y)
-        color_fg = libtcod.Color(dungeon_map[x][y].color_fg[0], dungeon_map[x][y].color_fg[1],
-                                 dungeon_map[x][y].color_fg[2])
-        color_bg = libtcod.Color(dungeon_map[x][y].color_bg[0], dungeon_map[x][y].color_bg[1],
-                                 dungeon_map[x][y].color_bg[2])
-        tint = clamp(1.0 + 0.25 * float(dungeon_map[x][y].elevation), 0.1, 2.0)
+        color_fg = libtcod.Color(current_cell.map[x][y].color_fg[0], current_cell.map[x][y].color_fg[1],
+                                 current_cell.map[x][y].color_fg[2])
+        color_bg = libtcod.Color(current_cell.map[x][y].color_bg[0], current_cell.map[x][y].color_bg[1],
+                                 current_cell.map[x][y].color_bg[2])
+        tint = clamp(1.0 + 0.25 * float(current_cell.map[x][y].elevation), 0.1, 2.0)
         libtcod.color_scale_HSV(color_fg, 1.0, tint)
         libtcod.color_scale_HSV(color_bg, 1.0, tint)
         if not visible:
-            if dungeon_map[x][y].explored:
+            if current_cell.map[x][y].explored:
                 libtcod.color_scale_HSV(color_fg, 0.1, 0.4)
                 libtcod.color_scale_HSV(color_bg, 0.1, 0.4)
-                libtcod.console_put_char_ex(map_con, x, y, dungeon_map[x][y].tile_char, color_fg, color_bg)
+                libtcod.console_put_char_ex(map_con, x, y, current_cell.map[x][y].tile_char, color_fg, color_bg)
             else:
                 libtcod.console_put_char_ex(map_con, x, y, ' ', libtcod.black, libtcod.black)
         else:
-            libtcod.console_put_char_ex(map_con, x, y, dungeon_map[x][y].tile_char, color_fg, color_bg)
-            dungeon_map[x][y].explored = True
+            libtcod.console_put_char_ex(map_con, x, y, current_cell.map[x][y].tile_char, color_fg, color_bg)
+            current_cell.map[x][y].explored = True
 
     changed_tiles = []
 
-    for obj in objects:
+    for obj in current_cell.objects:
         if obj is not player:
             obj.draw(map_con)
     player.draw(map_con)
@@ -2113,8 +2081,6 @@ def render_map():
     libtcod.console_blit(map_con, player.x - consts.MAP_VIEWPORT_WIDTH / 2, player.y - consts.MAP_VIEWPORT_HEIGHT / 2,
                 consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y)
     ui.draw_border(0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
-
-
 
 
 def render_all():
@@ -2133,10 +2099,20 @@ def render_all():
 
     ui.render_ui_overlay()
 
-def generate_level():
-    global dungeon_map, objects, stairs, spawned_bosses
-    mapgen.make_map()
+
+def enter_world_cell(world_cell):
+    global current_cell
+
+    current_cell = world_cell
+
+    if world_cell.map is None:
+        generate_level(world_cell)
     fov.initialize_fov()
+
+
+def generate_level(world_cell):
+    global stairs, spawned_bosses
+    mapgen.make_map(world_cell)
 
 
 #############################################
@@ -2178,34 +2154,25 @@ def new_game():
 
     in_game = True
 
-    #create object representing the player
+    import world
+    world.initialize_world()
+
+    # create object representing the player
     fighter_component = Fighter(hp=100, xp=0, stamina=100, death_function=player_death)
     player = GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component, player_stats=PlayerStats(), description='You, the fearless adventurer!')
     player.level = 1
     
-    #generate map
+    # generate map
     dungeon_level = 1
-    generate_level()
-    #initialize_fov()
+    enter_world_cell(world.world_cells['marsh_1_1'])
+    # initialize_fov()
     game_state = 'playing'
-
-    #item = GameObject(0, 0, '#', 'scroll of bullshit', libtcod.yellow, item=Item(use_function=spells.cast_fireball), description='the sword you started with')
-    #waterbreathing = GameObject(0, 0, '!', 'potion of waterbreathing', libtcod.yellow, item=Item(use_function=spells.cast_waterbreathing), description='This potion allows the drinker to breath underwater for a short time.')
-    #inventory.append(item)
-    #inventory.append(waterbreathing)
 
     memory = []
     player.mana = []
-    player.known_spells = [] #[spells.cast_manabolt]
+    player.known_spells = []
     learned_skills = []
     player.action_queue = []
-    # spell = GameObject(0, 0, '?', 'mystery spell', libtcod.yellow, item=Item(use_function=spells.cast_lightning, type="spell"))
-    # memory.append(spell)
-
-    #spawn_item('tome_manabolt', player.x, player.y)
-    #spawn_item('tome_mend', player.x, player.y)
-    #spawn_item('scroll_fireball', player.x, player.y)
-    #spawn_item('equipment_pickaxe', player.x, player.y, material='iron', quality='')
 
     leather_armor = create_item('equipment_leather_armor')
     player.fighter.inventory.append(leather_armor)
@@ -2218,8 +2185,6 @@ def new_game():
         test = create_item(consts.DEBUG_STARTING_ITEM)
         player.fighter.inventory.append(test)
 
-    selected_monster = None
-
     ui.message('Welcome to the dungeon...', libtcod.gold)
 
     for y in range(consts.MAP_HEIGHT):
@@ -2228,60 +2193,58 @@ def new_game():
 
 
 def save_game():
-    file = shelve.open('savegame', 'n')
-    file['map'] = dungeon_map
-    file['objects'] = objects
-    file['player_index'] = objects.index(player)
-    file['stairs_index'] = objects.index(stairs)
-    file['memory'] = memory
-    file['game_msgs'] = ui.game_msgs
-    file['game_state'] = game_state
-    file['dungeon_level'] = dungeon_level
-    file['learned_skills'] = learned_skills
-    file.close()
+    pass
+    #file = shelve.open('savegame', 'n')
+    #file['map'] = dungeon_map
+    #file['objects'] = objects
+    #file['player_index'] = objects.index(player)
+    #file['stairs_index'] = objects.index(stairs)
+    #file['memory'] = memory
+    #file['game_msgs'] = ui.game_msgs
+    #file['game_state'] = game_state
+    #file['dungeon_level'] = dungeon_level
+    #file['learned_skills'] = learned_skills
+    #file.close()
 
 
 def load_game():
-    global dungeon_map, objects, player, memory, game_state, dungeon_level, stairs, in_game, selected_monster, learned_skills
+    pass
+    #global dungeon_map, objects, player, memory, game_state, dungeon_level, stairs, in_game, selected_monster, learned_skills
 
-    in_game = True
+    #in_game = True
 
-    file = shelve.open('savegame', 'r')
-    dungeon_map = file['map']
-    objects = file['objects']
-    player = objects[file['player_index']]
-    stairs = objects[file['stairs_index']]
-    memory = file['memory']
-    ui.game_msgs = file['game_msgs']
-    game_state = file['game_state']
-    dungeon_level = file['dungeon_level']
-    selected_monster = None
-    learned_skills = file['learned_skills']
-    file.close()
+    #file = shelve.open('savegame', 'r')
+    #dungeon_map = file['map']
+    #objects = file['objects']
+    #player = objects[file['player_index']]
+    #stairs = objects[file['stairs_index']]
+    #memory = file['memory']
+    #ui.game_msgs = file['game_msgs']
+    #game_state = file['game_state']
+    #dungeon_level = file['dungeon_level']
+    #selected_monster = None
+    #learned_skills = file['learned_skills']
+    #file.close()
 
-    pathfinding.map.initialize(dungeon_map)
-    fov.initialize_fov()
+    #pathfinding.map.initialize(dungeon_map)
+    #fov.initialize_fov()
 
-    for y in range(consts.MAP_HEIGHT):
-        for x in range(consts.MAP_WIDTH):
-            changed_tiles.append((x, y))
+    #for y in range(consts.MAP_HEIGHT):
+    #    for x in range(consts.MAP_WIDTH):
+    #        changed_tiles.append((x, y))
 
 
 def play_game():
     global key, mouse, game_state, in_game
-    player_action = None
     
     mouse = libtcod.Mouse()
     key = libtcod.Key()
     while not libtcod.console_is_window_closed():
 
         # render the screen
-        libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE,key,mouse)
+        libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)
         render_all()
         libtcod.console_flush()
-    
-        # erase the map so it can be redrawn next frame
-        #clear_map()
 
         # handle keys and exit game if needed
         player_action = handle_keys()
@@ -2297,9 +2260,9 @@ def play_game():
         # Let monsters take their turn
         if game_state == 'playing' and player_action != 'didnt-take-turn':
             player.on_tick(object=player)
-            for object in objects:
-                if object.ai:
-                    object.ai.take_turn()
+            for object in current_cell.objects:
+                if object.behavior:
+                    object.behavior.take_turn()
                 if object is not player:
                     object.on_tick(object=object)
 
@@ -2318,7 +2281,7 @@ import effects
 import pathfinding
 import fov
 import ui
-from ai import *
+import ai
 
 # Globals
 
@@ -2339,4 +2302,4 @@ changed_tiles = []
 visible_tiles = []
 
 # Level
-dungeon_map = None
+current_cell = None
