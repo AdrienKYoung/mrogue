@@ -1820,7 +1820,7 @@ def handle_keys():
             if key_char == 'g':
                 return pick_up_item()
             if key_char == 'i':
-                return inspect_inventory()
+                return ui.inspect_inventory()
             if key_char == 'u':
                 chosen_item = ui.inventory_menu('Use which item?')
                 if chosen_item is not None:
@@ -1933,29 +1933,6 @@ def get_objects(x, y, condition=None, distance=0):
             else:
                 found.append(obj)
     return found
-
-
-def inspect_inventory():
-    chosen_item = ui.inventory_menu('Select which item?')
-    if chosen_item is not None:
-        options = chosen_item.get_options_list()
-        menu_choice = ui.menu(chosen_item.owner.name, options, 50, render_func=chosen_item.owner.print_description)
-        if menu_choice is not None:
-            if options[menu_choice] == 'Use':
-                chosen_item.use()
-                return 'used-item'
-            elif options[menu_choice] == 'Drop':
-                chosen_item.drop()
-                return 'dropped-item'
-            elif options[menu_choice] == 'Equip' or options[menu_choice] == 'Unequip':
-                chosen_item.owner.equipment.toggle()
-                return 'equipped-item'
-            else:
-                return inspect_inventory()
-        else:
-            return inspect_inventory()
-    return 'didnt-take-turn'
-
 
 def meditate():
     ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)
