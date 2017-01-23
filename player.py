@@ -100,13 +100,13 @@ def handle_keys():
             moved = move_or_attack(-1, 0, ctrl)
         elif key.vk == libtcod.KEY_RIGHT or key.vk == libtcod.KEY_KP6:
             moved = move_or_attack(1, 0, ctrl)
-        elif key.vk == libtcod.KEY_KP7:
+        elif key.vk == libtcod.KEY_KP7 or key_char == 'y':
             moved = move_or_attack(-1, -1, ctrl)
-        elif key.vk == libtcod.KEY_KP9:
+        elif key.vk == libtcod.KEY_KP9 or key_char == 'u':
             moved = move_or_attack(1, -1, ctrl)
-        elif key.vk == libtcod.KEY_KP1:
+        elif key.vk == libtcod.KEY_KP1 or key_char == 'h':
             moved = move_or_attack(-1, 1, ctrl)
-        elif key.vk == libtcod.KEY_KP3:
+        elif key.vk == libtcod.KEY_KP3 or key_char == 'j':
             moved = move_or_attack(1, 1, ctrl)
         elif key.vk == libtcod.KEY_KP5 or key_char == 's':
             instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT) # gain stamina for standing still
