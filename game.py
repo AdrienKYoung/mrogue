@@ -245,7 +245,7 @@ class GameObject:
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
         draw_height = y
-        libtcod.console_print_rect(console, x, draw_height, width, height, self.description)
+        libtcod.console_print_rect(console, x, draw_height, width, height, self.description.title())
         draw_height += height
         if self.item:
             h = self.item.print_description(console, x, draw_height, width)
@@ -725,7 +725,7 @@ def bomb_beetle_death(beetle):
             current_map.add_object(drop)
             drop.send_to_back()
 
-    ui.message(beetle.name.capitalize() + ' is dead!', libtcod.red)
+    ui.message(beetle.name.title() + ' is dead!', libtcod.red)
     beetle.char = 149
     beetle.color = libtcod.black
     beetle.blocks = True
@@ -759,7 +759,7 @@ def monster_death(monster):
             item.send_to_back()
 
 
-    ui.message(monster.name.capitalize() + ' is dead!', libtcod.red)
+    ui.message(monster.name.title() + ' is dead!', libtcod.red)
     monster.char = '%'
     monster.color = libtcod.darker_red
     monster.blocks = False
@@ -872,24 +872,33 @@ def spawn_monster(name, x, y):
         return None
     if not is_blocked(x, y):
         p = monsters.proto[name]
+
+        modifier = {}
+        mod_tag = ""
+        if(p.get('modifier_category',None) is not None):
+            mod_tag = random_choice(monsters.modifier_categories[p['modifier_category']])
+            modifier = monsters.modifiers[mod_tag]
+            mod_tag = mod_tag + " " #for monster description
+
         death = monster_death
         if p.get('death_function'):
             death = p.get('death_function')
-        fighter_component = combat.Fighter(hp=p['hp'], attack_damage=p['attack_damage'], armor=p['armor'],
-                                    evasion=p['evasion'], accuracy=p['accuracy'], xp=0,
-                                    death_function=death, loot_table=loot.table[p.get('loot', 'default')],
-                                    can_breath_underwater=True, resistances=p['resistances'],
-                                    inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
-                                    base_shred=p.get('shred', 0),
-                                    base_guaranteed_shred=p.get('guaranteed_shred', 0),
-                                    base_pierce=p.get('pierce', 0), hit_table=p.get('body_type'))
+        fighter_component = combat.Fighter( hp=int(p['hp'] * modifier.get('hp_bonus',1)), attack_damage=int(p['attack_damage'] * modifier.get('attack_bonus',1)),
+                                            armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evastion_bonus',1)),
+                                            accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
+                                            death_function=death, loot_table=loot.table[p.get('loot', 'default')],
+                                            can_breath_underwater=True, resistances=p['resistances'] + modifier.get('resistances',[]),
+                                            inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
+                                            base_shred=p.get('shred', 0) * modifier.get('shred_bonus',1),
+                                            base_guaranteed_shred=p.get('guaranteed_shred', 0),
+                                            base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
         behavior = None
         if p.get('ai'):
             behavior = p.get('ai')()
-        monster = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, fighter=fighter_component,
-                             behavior=behavior, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'])
+        monster = GameObject(x, y, p['char'], mod_tag + p['name'], p['color'], blocks=True, fighter=fighter_component,
+                             behavior=behavior, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'] * modifier.get('speed_bonus',1))
         if p.get('mana'):
             monster.mana = p.get('mana')
         monster.elevation = current_map.tiles[x][y].elevation

@@ -19,7 +19,8 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'Small vicious humanoid. Dangerous in groups.',
         'resistances': [],
-        'shred': 1
+        'shred': 1,
+        'modifier_category':'goblin'
     },
     'monster_cockroach': {
         'name': 'cockroach',
@@ -76,7 +77,8 @@ proto = {
         'description': 'Small vicious humanoid that scavenged some equipment.',
         'resistances': [],
         'equipment': [{'equipment_dagger':50,'equipment_longsword':50},{'none':50,'equipment_shield':50},{'none':50,'equipment_leather_armor':50}],
-        'shred': 1
+        'shred': 1,
+        'modifier_category':'goblin'
     },
     'monster_goblin_chief': {
         'name': 'goblin chief',
@@ -95,7 +97,8 @@ proto = {
         'description': 'Slightly larger, much more vicious humanoid that tells other goblins what to do.',
         'resistances': [],
         'equipment': [{'equipment_spear':50,'equipment_longsword':50},{'none':50,'equipment_shield':50},{'equipment_leather_armor':100}],
-        'shred': 1
+        'shred': 1,
+        'modifier_category':'goblin'
     },
     'monster_bomb_beetle': {
         'name': 'bomb beetle',
@@ -272,6 +275,51 @@ proto = {
         'shred': 3,
         'mana': [(15, 'fire')]
     }
+}
+
+modifiers = {
+    'brawny' : {
+        'hp_bonus' : 1.5
+    },
+    'wimpy' : {
+        'hp_bonus' : 0.5
+    },
+    'crazed' : {
+        'damage_bonus' : 1.5
+    },
+    'mild' : {
+        'damage_bonus' : 0.5
+    },
+    'nimble' : {
+        'evasion_bonus' : 1.5,
+        'speed_bonus' : 1.2
+    },
+    'lethargic' : {
+        'evasion_bonus' : 1.5,
+        'speed_bonus' : 1.2
+    },
+    'cursed' : {
+        'hp_bonus' : 0.75,
+        'evasion_bonus' : 0.75,
+        'speed_bonus' : 1.25,
+        'damage_bonus' : 1.5
+    },
+    'chosen of splug' : {
+        'damage_bonus' : 1.5,
+        'hp_bonus' : 1.5
+    },
+    'greased up' : {
+        'speed_bonus' : 2
+    },
+    'adventurous' : {
+        'hp_bonus': 1.25,
+        'resistances' : ['fire','burn','stun']
+    }
+}
+
+modifier_categories = {
+    'default'   : {'brawny':1,'wimpy':1,'crazed':1,'mild':1,'nimble':1,'lethargic':1,'cursed':1},
+    'goblin'    : {'brawny':1,'wimpy':1,'crazed':1,'nimble':1,'lethargic':1,'cursed':1,'chosen of splug':1,'greased up':1,'adventurous':1}
 }
 
 verman_summons = [

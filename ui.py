@@ -218,7 +218,7 @@ def get_names_under_mouse():
                                                                                 obj.y].explored)))]
     names = ', '.join(names)
 
-    return names.capitalize()
+    return names.title()
 
 
 def message(new_msg, color=libtcod.white):
@@ -447,7 +447,7 @@ def render_ui_overlay():
         y = 1
         max_width = 0
         for line in unders:
-            libtcod.console_print(overlay, mouse.cx, mouse.cy + y, line.capitalize())
+            libtcod.console_print(overlay, mouse.cx, mouse.cy + y, line.title())
             if len(line) > max_width: max_width = len(line)
             y += 1
         libtcod.console_blit(overlay, mouse.cx, mouse.cy + 1, max_width, y - 1, 0, mouse.cx, mouse.cy + 1, 1.0, 0.5)
@@ -663,7 +663,7 @@ def skill_menu(add_skill=False):
                         else:
                             libtcod.console_set_default_foreground(sub_window, libtcod.gray)
 
-                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, skill.name.capitalize())
+                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, skill.name.title())
                     for s in main.learned_skills:
                         if s.name == skill.name:
                             libtcod.console_set_default_foreground(sub_window, libtcod.dark_blue)
@@ -747,7 +747,7 @@ def examine(x=None, y=None):
         obj = main.object_at_coords(x, y)
         if obj is not None:
             if isinstance(obj, main.GameObject):
-                desc = obj.name.capitalize()
+                desc = obj.name.title()
                 if hasattr(obj, 'fighter') and obj.fighter is not None and \
                         hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
                     desc = desc + '\nInventory: '
@@ -755,7 +755,7 @@ def examine(x=None, y=None):
                         desc = desc + item.name + ', '
                 menu(desc, ['back'], 50, render_func=obj.print_description)
             else:
-                desc = obj.name.capitalize() + '\n' + main.get_description(obj)
+                desc = obj.name.title() + '\n' + main.get_description(obj)
                 menu(desc, ['back'], 50)
 
 def show_ability_screen():

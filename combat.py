@@ -392,20 +392,20 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
             if effect is not None:
                 target.fighter.apply_status_effect(effect)
             # Take damage
-            ui.message(fighter.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ' in the ' + location + ' for ' + str(damage) + ' damage!', libtcod.grey)
+            ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ' in the ' + location + ' for ' + str(damage) + ' damage!', libtcod.grey)
             target.fighter.take_damage(damage)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)
             return 'hit'
         else:
-            ui.message(fighter.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ', but the attack is deflected!', libtcod.grey)
+            ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but the attack is deflected!', libtcod.grey)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)
             return 'blocked'
     else:
-        ui.message(fighter.owner.name.capitalize() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
+        ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
         return 'miss'
 
 
