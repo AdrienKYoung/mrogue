@@ -296,7 +296,7 @@ modifiers = {
     },
     'lethargic' : {
         'evasion_bonus' : 1.5,
-        'speed_bonus' : 1.2
+        'speed_bonus' : 0.8
     },
     'cursed' : {
         'hp_bonus' : 0.75,
@@ -306,10 +306,11 @@ modifiers = {
     },
     'chosen of splug' : {
         'damage_bonus' : 1.5,
-        'hp_bonus' : 1.5
+        'hp_bonus' : 1.75,
+        'speed_bonus' : 1.1
     },
     'greased up' : {
-        'speed_bonus' : 2
+        'speed_bonus' : 1.66
     },
     'adventurous' : {
         'hp_bonus': 1.25,
@@ -319,7 +320,7 @@ modifiers = {
 
 modifier_categories = {
     'default'   : {'brawny':1,'wimpy':1,'crazed':1,'mild':1,'nimble':1,'lethargic':1,'cursed':1},
-    'goblin'    : {'brawny':1,'wimpy':1,'crazed':1,'nimble':1,'lethargic':1,'cursed':1,'chosen of splug':1,'greased up':1,'adventurous':1}
+    'goblin'    : {'brawny':2,'wimpy':3,'crazed':2,'nimble':2,'lethargic':3,'cursed':2,'chosen of splug':1,'greased up':1,'adventurous':2}
 }
 
 verman_summons = [
