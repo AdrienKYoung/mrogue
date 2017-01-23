@@ -380,6 +380,9 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
             # Trigger on-hit effects
             if on_hit is not None:
                 on_hit(fighter.owner, target)
+            if weapon is not None and weapon.on_hit is not None:
+                for oh in weapon.on_hit:
+                    oh(fighter.owner, target)
             # Shred armor
             for i in range(shred):
                 if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
@@ -432,3 +435,10 @@ def get_chance_to_hit(target, accuracy):
     if target.fighter.has_status('stunned'):
         return 1.0
     return 1.0 - float(target.fighter.evasion) / float(max(accuracy, target.fighter.evasion + 1))
+
+def on_hit_stun(attacker,target):
+    scaling_factor = 1
+    if(attacker is player.instance):
+        scaling_factor = attacker.player_stats.str / 10
+    if libtcod.random_get_float(0,0.0,1.0) * scaling_factor > 0.85:
+        target.fighter.apply_status_effect(effects.stunned())

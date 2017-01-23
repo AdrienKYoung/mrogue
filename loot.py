@@ -3,6 +3,7 @@ import spells
 import game as main
 import abilities
 import player
+import combat
 
 def item_from_table(loot_level=0, category=None):
     if category is None:
@@ -433,6 +434,22 @@ proto = {
         'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.',
         'weapon_dice'        : '1d6',
         'str_dice'           : 2
+    },
+    'equipment_mace': {
+        'name'               : 'mace',
+        'category'           : 'weapon',
+        'char'               : chr(141),
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               : 'right hand',
+        'description'        : 'A one-handed flanged mace. Good against armored enemies',
+        'stamina_cost'       : 10,
+        'str_requirement'    : 11,
+        'shred'              : 2,
+        'accuracy'           : 2,
+        'weapon_dice'        : '1d6',
+        'str_dice'           : 1,
+        'on_hit'             : [combat.on_hit_stun]
     },
 
     #ARMOR
