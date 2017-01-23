@@ -71,11 +71,13 @@ def handle_keys():
 
     ui.mouse_select_monster()
 
+    key_char = chr(key.c)
+
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
-    elif key.vk == libtcod.KEY_ESCAPE:
+    elif key_char == 'q' and key.shift:
         return 'exit'  #exit game
 
     if game_state == 'playing':
@@ -89,7 +91,6 @@ def handle_keys():
             do_queued_action(action)
             return action
 
-        key_char = chr(key.c)
         moved = False
         ctrl = key.lctrl or key.rctrl
         if key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_KP8:
@@ -117,7 +118,7 @@ def handle_keys():
                 return pick_up_item()
             if key_char == 'i':
                 return ui.inspect_inventory()
-            if key_char == 'u':
+            if key_char == 'o':
                 chosen_item = ui.inventory_menu('Use which item?')
                 if chosen_item is not None:
                     use_result = chosen_item.use()
@@ -139,7 +140,7 @@ def handle_keys():
                        consts.CHARACTER_SCREEN_WIDTH)
             if key_char == 'z':
                 return cast_spell()
-            if key_char == 'j':
+            if key_char == 'v':
                 return jump()
             if key_char == 'e':
                 ui.examine()
@@ -294,7 +295,8 @@ def dig(dx, dy):
         changed_tiles.append((dig_x, dig_y))
         if main.pathfinding.map:
             main.pathfinding.map.mark_passable((dig_x, dig_y))
-        fov.set_fov_properties(dig_x, dig_y, False, main.current_map.tiles[dig_x][dig_y].elevation)
+        fov.set_fov_properties(dig_x, dig_y, False)
+        fov.set_fov_recompute()
         main.check_breakage(main.get_equipped_in_slot(instance.fighter.inventory, 'right hand'))
         return 'success'
     else:

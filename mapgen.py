@@ -430,12 +430,16 @@ def apply_room(room, clear_objects=False, hard_override=False):
 
 def apply_data(x, y, data):
 
+    skip = 0
     for i in range(len(data)):
+        if skip > 0:
+            skip -= 1
+            continue
         if data[i] == 'ELEVATION':
             map.tiles[x][y].elevation = int(data[i + 1])
             for obj in main.get_objects(x, y):
                 obj.elevation = int(data[i + 1])
-            i += 1
+            skip = 1
         elif data[i].isdigit():
             apply_object(x, y, data[i:])
             break
@@ -1020,15 +1024,15 @@ def make_test_space():
         for x in range(2, consts.MAP_WIDTH - 2):
             map.tiles[x][y].tile_type = 'stone floor'
 
-    player_tile = (consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2)
+    player_tile = (consts.MAP_WIDTH / 2, consts.MAP_HEIGHT - 4)
 
     if consts.DEBUG_TEST_FEATURE is not None:
-        create_feature(player_tile[0] - 3, player_tile[1] - 16, consts.DEBUG_TEST_FEATURE, None)
+        create_feature(consts.MAP_WIDTH / 2 - 11, consts.MAP_HEIGHT / 2 - 11, consts.DEBUG_TEST_FEATURE, None)
 
     player.instance.x = player_tile[0]
     player.instance.y = player_tile[1]
 
-    main.spawn_monster('monster_reeker', player_tile[0], player_tile[1] - 20)
+    #main.spawn_monster('monster_reeker', player_tile[0], player_tile[1] - 20)
 
     #stair_tile = (player_tile[0], player_tile[1] + 3)
     #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,

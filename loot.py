@@ -26,7 +26,7 @@ def item_from_table(loot_level=0, category=None):
     return main.create_item(item_id, material, quality)
 
 def choose_category():
-    return main.random_choice({'consumable' : 45, 'weapon' : 25, 'armor' : 20, 'book': 10})
+    return main.random_choice({'consumable' : 40, 'weapon' : 25, 'armor' : 25, 'book': 10})
 
 
 def choose_weapon(loot_level=0):

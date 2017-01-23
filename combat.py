@@ -87,6 +87,8 @@ class Fighter:
             self.stamina = self.max_stamina
 
     def take_damage(self, damage):
+        if self.owner == player.instance and consts.DEBUG_INVINCIBLE:
+            damage = 0
         if self.has_status('stung'):
             damage *= consts.CENTIPEDE_STING_AMPLIFICATION
             damage = int(damage)
