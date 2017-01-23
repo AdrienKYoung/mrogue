@@ -445,7 +445,9 @@ def apply_data(x, y, data):
         elif data[i] == '>':
             cell.objects.append(main.GameObject(x, y, '>', 'stairs', libtcod.white, always_visible=True))
         elif data[i] == '+':
-            cell.objects.append(create_door(x,y))
+            door = create_door(x, y)
+            cell.objects.append(door)
+            door.send_to_back()
 
 
 def apply_object(x, y, data):
@@ -636,8 +638,9 @@ def create_door(x, y):
     type_here = cell.map[x][y].tile_type
     if terrain.data[type_here].isFloor:
         cell.map[x][y].tile_type = "stone floor"
-    door = main.GameObject(x, y, '+', 'door', libtcod.brass, always_visible=True, description='A sturdy door'
-                           , blocks_sight=True, blocks=True, burns=True, interact=main.door_interact)
+    door = main.GameObject(x, y, '+', 'door', libtcod.brass, always_visible=True, description='A sturdy wooden door',
+                           blocks_sight=True, blocks=False, burns=True, interact=main.door_interact,
+                           background_color=libtcod.sepia)
     door.closed = True
     return door
 

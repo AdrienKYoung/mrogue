@@ -192,7 +192,8 @@ class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, behavior=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
-                 update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None, elevation=None):
+                 update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
+                 elevation=None, background_color=None):
         self.x = x
         self.y = y
         self.char = char
@@ -238,6 +239,7 @@ class GameObject:
                 self.elevation = 0
         else:
             self.elevation = elevation
+        self.background_color = background_color
 
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
@@ -311,6 +313,10 @@ class GameObject:
                     ui.message('The ' + self.name + ' struggles against the web.')
                     web.destroy()
                     return True
+                door = object_at_tile(self.x + dx, self.y + dy, 'door')
+                if door is not None and door.closed:
+                    door_interact(door)
+                    return True
                 cost = current_cell.map[self.x][self.y].stamina_cost
                 if cost > 0 and self is player.instance: # only the player cares about stamina costs (at least for now. I kind of like it this way) -T
                     if self.fighter.stamina >= cost:
@@ -329,13 +335,21 @@ class GameObject:
             if ui.selected_monster is self:
                 libtcod.console_put_char_ex(console, self.x, self.y, self.char, libtcod.black, self.color)
             else:
-                libtcod.console_set_default_foreground(console, self.color)
-                libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
+                if self.background_color is None:
+                    libtcod.console_set_default_foreground(console, self.color)
+                    libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
+                else:
+                    libtcod.console_put_char_ex(console, self.x, self.y, self.char, self.color, self.background_color)
         elif self.always_visible and current_cell.map[self.x][self.y].explored:
             shaded_color = libtcod.Color(self.color[0], self.color[1], self.color[2])
             libtcod.color_scale_HSV(shaded_color, 0.1, 0.4)
             libtcod.console_set_default_foreground(console, shaded_color)
-            libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
+            if self.background_color is not None:
+                shaded_bkgnd = libtcod.Color(self.background_color[0], self.background_color[1], self.background_color[2])
+                libtcod.color_scale_HSV(shaded_bkgnd, 0.1, 0.4)
+                libtcod.console_put_char_ex(console, self.x, self.y, self.char, shaded_color, shaded_bkgnd)
+            else:
+                libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def move_towards(self, target_x, target_y):
         if self.x == target_x and self.y == target_y:
@@ -1048,15 +1062,20 @@ def create_fire(x,y,temp):
     changed_tiles.append((x, y))
 
 def door_interact(door):
-    if door.closed:
-        door.closed = False
-        door.blocks = False
-        door.blocks_sight = False
-    else:
-        door.closed = True
-        door.blocks = True
-        door.blocks_sight = True
-    fov.set_fov_properties(door.x,door.y,door.blocks_sight,door.elevation)
+    if not is_blocked(door.x, door.y):
+        if door.closed:
+            door.closed = False
+            door.blocks_sight = False
+            door.background_color = None
+        else:
+            door.closed = True
+            door.blocks_sight = True
+            door.background_color = libtcod.sepia
+        changed_tiles.append((door.x, door.y))
+        fov.set_fov_properties(door.x, door.y, door.blocks_sight, door.elevation)
+        return 'interacted-door'
+    ui.message('Something is blocking the door.')
+    return 'didnt-take-turn'
 
 def place_objects(tiles):
     if len(tiles) == 0:

@@ -415,8 +415,10 @@ def pick_up_item():
     else:
         interactable_here = main.get_objects(instance.x, instance.y, condition=lambda o:o.interact, distance=1) #get stuff that's adjacent too
         if len(interactable_here) > 0:
-            interactable_here[0].interact(interactable_here[0])
-            return 'interacted'
+            result = interactable_here[0].interact(interactable_here[0])
+            if result is None:
+                result = 'interacted'
+            return result
     return 'didnt-take-turn'
 
 def meditate():
