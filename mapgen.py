@@ -990,7 +990,7 @@ def make_map_links():
             y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 4, consts.MAP_HEIGHT * 3 / 4)
             hlink = False
         if hlink:
-            link_feature = random_from_list(feature_categories[cell.branch + '_hlink']).name
+            link_feature = random_from_list(feature_categories[link[1].branch + '_hlink']).name
             exclude = []
             create_feature(x, y, link_feature, hard_override=True, rotation=r, open_tiles=exclude)
             closest = find_closest_open_tile(x + 1, y + 1, exclude=exclude)

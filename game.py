@@ -1234,8 +1234,8 @@ def enter_world_cell(world_cell, direction=None):
     if direction is not None:
         for obj in current_cell.objects:
             if hasattr(obj, 'link') and obj.link[0] == direction:
-                player.x = obj.x
-                player.y = obj.y
+                player.instance.x = obj.x
+                player.instance.y = obj.y
 
     fov.initialize_fov()
 
