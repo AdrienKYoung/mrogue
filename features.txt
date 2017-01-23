@@ -49,7 +49,7 @@
 //     CATEGORY   : only spawn items of this
 //                  category
 //     ITEM_ID    : spawn a specific item ID
-//                  (e.g. equipment_dagger)
+//                  (e.g. weapon_dagger)
 //     MATERIAL   : set material (only if ITEM_ID
 //                  is set)
 //     QUALITY    : set quality (only if ITEM_ID

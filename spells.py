@@ -8,11 +8,13 @@ import player
 import combat
 
 class Spell:
-    def __init__(self, name, mana_cost, function, cost_string):
+    def __init__(self, name, mana_cost, function, cost_string, description, int_requirement):
         self.name = name
         self.mana_cost = mana_cost
         self.function = function
         self.cost_string = cost_string
+        self.description = description
+        self.int_requirement = int_requirement
 
     def cast(self):
         success = self.function()

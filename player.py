@@ -55,7 +55,7 @@ def create():
     leather_armor = main.create_item('equipment_leather_armor')
     instance.fighter.inventory.append(leather_armor)
     leather_armor.equipment.equip()
-    dagger = main.create_item('equipment_dagger', material='iron', quality='')
+    dagger = main.create_item('weapon_dagger', material='iron', quality='')
     instance.fighter.inventory.append(dagger)
     dagger.equipment.equip()
 

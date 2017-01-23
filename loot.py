@@ -34,17 +34,17 @@ def choose_weapon(loot_level=0):
     if roll < 5:
         return choose_weapon(loot_level + 5)
     elif roll < 20:
-        return 'equipment_dagger'
+        return 'weapon_dagger'
     elif roll < 30:
-        return 'equipment_spear'
+        return 'weapon_spear'
     elif roll < 40:
-        return 'equipment_hatchet'
+        return 'weapon_hatchet'
     elif roll < 50:
-        return 'equipment_longsword'
+        return 'weapon_longsword'
     elif roll < 60:
-        return 'equipment_mace'
+        return 'weapon_mace'
     else:
-        return 'equipment_pickaxe'
+        return 'weapon_pickaxe'
 
 
 def choose_armor(loot_level=0):
@@ -367,7 +367,7 @@ proto = {
     },
 
     #WEAPONS
-    'equipment_longsword': {
+    'weapon_longsword': {
         'name'               : 'longsword',
         'category'           : 'weapon',
         'char'               : '/',
@@ -383,7 +383,7 @@ proto = {
         'weapon_dice'        : '2d6',
         'str_dice'           : 2
     },
-    'equipment_dagger': {
+    'weapon_dagger': {
         'name'               : 'dagger',
         'category'           : 'weapon',
         'char'               : '-',
@@ -399,7 +399,7 @@ proto = {
         'weapon_dice'        : '2d4',
         'str_dice'           : 1
     },
-    'equipment_spear': {
+    'weapon_spear': {
         'name'               : 'spear',
         'category'           : 'weapon',
         'char'               : libtcodpy.CHAR_ARROW_N,
@@ -420,7 +420,7 @@ proto = {
         'weapon_dice'        : '2d5',
         'str_dice'           : 1
     },
-    'equipment_pickaxe': {
+    'weapon_pickaxe': {
         'name'               : 'pickaxe',
         'category'           : 'weapon',
         'char'               : 'T',
@@ -441,7 +441,7 @@ proto = {
         'weapon_dice'        : '1d4',
         'str_dice'           : 3
     },
-    'equipment_hatchet': {
+    'weapon_hatchet': {
         'name'               : 'hatchet',
         'category'           : 'weapon',
         'char'               : 'p',
@@ -459,7 +459,7 @@ proto = {
         'weapon_dice'        : '1d6',
         'str_dice'           : 2
     },
-    'equipment_mace': {
+    'weapon_mace': {
         'name'               : 'mace',
         'category'           : 'weapon',
         'char'               : chr(141),

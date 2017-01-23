@@ -357,7 +357,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
         damage = fighter.calculate_damage() * location_damage_tables[location]['damage']
         # Daggers deal x3 damage to stunned targets
         weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
-        if weapon and weapon.base_id and weapon.base_id == 'equipment_dagger' and target.fighter.has_status('stunned') and verb != 'bashes':
+        if weapon and weapon.base_id and weapon.base_id == 'weapon_dagger' and target.fighter.has_status('stunned') and verb != 'bashes':
             damage *= 3
 
         # calculate damage reduction
