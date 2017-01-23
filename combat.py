@@ -7,6 +7,7 @@ import player
 import spells
 import fov
 import effects
+from syntax import Verb
 
 class Fighter:
 
@@ -134,7 +135,7 @@ class Fighter:
 
     def attack(self, target):
         return attack_ex(self, target, self.calculate_attack_stamina_cost(), self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
-                       'attacks', self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
+                       None, self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
 
     def heal(self, amount):
         self.hp += amount
@@ -328,6 +329,33 @@ location_damage_tables = {
     }
 }
 
+damage_description_tables = {
+    'stabbing' : [
+        'stabs',
+        'sinks into',
+        'drives through',
+        'impales'
+    ],
+    'slashing' : [
+        'cuts',
+        'slashes',
+        'lays open'
+        'cleaves through'
+    ],
+    'bludgeoning' : [
+        'strikes',
+        'cracks',
+        'smashes',
+        'shatters'
+    ],
+    'deflected' : [
+        'deflects off',
+        'bounces off',
+        'glances off',
+        'grazes'
+    ]
+}
+
 def roll_damage(weapon,fighter):
     total_damage = 0
     if weapon.weapon_dice is not None:
@@ -377,6 +405,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
             damage = int(math.ceil(damage))
 
         if damage > 0:
+            percent_hit = float(damage) / float(target.fighter.max_hp)
             # Trigger on-hit effects
             if on_hit is not None:
                 on_hit(fighter.owner, target)
@@ -389,9 +418,18 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
                     target.fighter.shred += 1
             target.fighter.shred += min(guaranteed_shred, target.fighter.armor)
             # Receive effect
-            if effect is not None:
+            if effect is not None and percent_hit > 0.1:
                 target.fighter.apply_status_effect(effect)
             # Take damage
+            if verb is None:
+                #weapon-specific damage verbs
+                hit_type = None
+                if weapon is not None and weapon.damage_type is not None:
+                    hit_type = weapon.damage_type
+                else:
+                    hit_type = 'bludgeoning'
+                verb = main.normalized_choice(damage_description_tables[hit_type],percent_hit)
+
             ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ' in the ' + location + ' for ' + str(damage) + ' damage!', libtcod.grey)
             target.fighter.take_damage(damage)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
@@ -405,6 +443,8 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
                 main.check_breakage(weapon)
             return 'blocked'
     else:
+        if verb is None:
+            verb = 'attacks'
         ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
         return 'miss'
 

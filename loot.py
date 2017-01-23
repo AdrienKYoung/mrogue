@@ -370,6 +370,7 @@ proto = {
     'weapon_longsword': {
         'name'               : 'longsword',
         'category'           : 'weapon',
+        'damage_type'        : 'slashing',
         'char'               : '/',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -386,6 +387,7 @@ proto = {
     'weapon_dagger': {
         'name'               : 'dagger',
         'category'           : 'weapon',
+        'damage_type'        : 'stabbing',
         'char'               : '-',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -402,6 +404,7 @@ proto = {
     'weapon_spear': {
         'name'               : 'spear',
         'category'           : 'weapon',
+        'damage_type'        : 'stabbing',
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -423,6 +426,7 @@ proto = {
     'weapon_pickaxe': {
         'name'               : 'pickaxe',
         'category'           : 'weapon',
+        'damage_type'        : 'stabbing',
         'char'               : 'T',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -444,6 +448,7 @@ proto = {
     'weapon_hatchet': {
         'name'               : 'hatchet',
         'category'           : 'weapon',
+        'damage_type'        : 'slashing',
         'char'               : 'p',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -462,7 +467,8 @@ proto = {
     'weapon_mace': {
         'name'               : 'mace',
         'category'           : 'weapon',
-        'char'               : chr(141),
+        'damage_type'        : 'bludgeoning',
+        'char'               : chr(156),
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
         'slot'               : 'right hand',
@@ -553,7 +559,7 @@ proto = {
     'equipment_iron_helm': {
         'name'          : 'Iron Helm',
         'category'      : 'armor',
-        'char'          : chr(67),
+        'char'          : chr(167),
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 1,
@@ -565,7 +571,7 @@ proto = {
     'equipment_great_helm': {
         'name'          : 'Great Helm',
         'category'      : 'armor',
-        'char'          : chr(67),
+        'char'          : chr(167),
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 2,
@@ -577,7 +583,7 @@ proto = {
     'equipment_armet_helm': {
         'name'          : 'Armet Helm',
         'category'      : 'armor',
-        'char'          : chr(67),
+        'char'          : chr(167),
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 2,

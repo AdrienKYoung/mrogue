@@ -211,9 +211,9 @@ def cast_forge():
 
 
 spell_library = {
-    'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]'),
-    'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]'),
-    'ignite' : Spell('ignite', { 'fire' : 1 }, cast_ignite, '[1 fire]'),
+    'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]',"",0),
+    'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]',"",0),
+    'ignite' : Spell('ignite', { 'fire' : 1 }, cast_ignite, '[1 fire]',"",0),
 }
 
 

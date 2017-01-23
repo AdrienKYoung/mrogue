@@ -13,7 +13,7 @@ class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
-                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None):
+                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -34,6 +34,7 @@ class Equipment:
         self.weapon_dice = weapon_dice
         self.str_dice = str_dice
         self.on_hit = on_hit #expects list
+        self.damage_type = damage_type
 
     def toggle(self):
         if self.is_equipped:
@@ -676,6 +677,12 @@ def from_dungeon_level(table):
             return value
     return 0
 
+#expects a value between 0.0 and 1.0 for factor
+def normalized_choice(choices_list,factor):
+    size = len(choices_list)
+    if size < 1:
+        return None
+    return choices_list[int((size - 1) * clamp(factor,0,1))]
 
 def random_choice(chances_dict):
     chances = chances_dict.values()
@@ -964,7 +971,8 @@ def create_item(name, material=None, quality=None):
             break_chance=p.get('break', 0),
             weapon_dice=p.get('weapon_dice'),
             str_dice=p.get('str_dice', 0),
-            on_hit=p.get('on_hit',[])
+            on_hit=p.get('on_hit',[]),
+            damage_type=p.get('damage_type')
         )
 
         if equipment_component.category == 'weapon':
