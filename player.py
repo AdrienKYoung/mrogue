@@ -5,6 +5,7 @@ import consts
 import ui
 import fov
 import effects
+import combat
 
 class PlayerStats:
 
@@ -43,7 +44,7 @@ instance = None
 def create():
     global instance
 
-    fighter_component = main.Fighter(hp=100, xp=0, stamina=100, death_function=on_death)
+    fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death)
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(), description='You, the fearless adventurer!')
     instance.level = 1
@@ -306,7 +307,7 @@ def reach_attack(dx, dy):
     target_space = instance.x + 2 * dx, instance.y + 2 * dy
     target = main.get_monster_at_tile(target_space[0], target_space[1])
     if target is not None:
-        result = instance.fighter.attack_ex(target, instance.fighter.calculate_attack_stamina_cost(), instance.fighter.accuracy,
+        result = combat.attack_ex(instance.fighter, target, instance.fighter.calculate_attack_stamina_cost(), instance.fighter.accuracy,
                              instance.fighter.attack_damage * 1.5, instance.fighter.damage_variance, None, 'reach-attacks',
                              instance.fighter.attack_shred, instance.fighter.attack_guaranteed_shred, instance.fighter.attack_pierce)
         if result != 'failed' and target.fighter:
@@ -337,7 +338,7 @@ def cleave_attack(dx, dy):
         for tile in adjacent:
             target = main.get_monster_at_tile(tile[0], tile[1])
             if target and target.fighter:
-                instance.fighter.attack_ex(target, 0, instance.fighter.accuracy, instance.fighter.attack_damage,
+                combat.attack_ex(instance.fighter, target, 0, instance.fighter.accuracy, instance.fighter.attack_damage,
                                  instance.fighter.damage_variance, None, 'cleaves', instance.fighter.attack_shred,
                                  instance.fighter.attack_guaranteed_shred + 1, instance.fighter.attack_pierce)
         return 'cleaved'
@@ -351,7 +352,7 @@ def cleave_attack(dx, dy):
 def bash_attack(dx, dy):
     target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
     if target is not None:
-        result = instance.fighter.attack_ex(target, consts.BASH_STAMINA_COST, instance.fighter.accuracy * consts.BASH_ACC_MOD,
+        result = combat.attack_ex(instance.fighter, target, consts.BASH_STAMINA_COST, instance.fighter.accuracy * consts.BASH_ACC_MOD,
                                  instance.fighter.attack_damage * consts.BASH_DMG_MOD, instance.fighter.damage_variance,
                                  None, 'bashes', instance.fighter.attack_shred + 1, instance.fighter.attack_guaranteed_shred,
                                  instance.fighter.attack_pierce)
@@ -465,7 +466,7 @@ def jump(actor=None):
                     instance.set_position(land[0], land[1])
                     instance.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
 
-                    instance.fighter.attack_ex(jump_attack_target, 0, instance.fighter.accuracy * consts.JUMP_ATTACK_ACC_MOD,
+                    combat.attack_ex(instance.fighter, jump_attack_target, 0, instance.fighter.accuracy * consts.JUMP_ATTACK_ACC_MOD,
                                              instance.fighter.attack_damage * consts.JUMP_ATTACK_DMG_MOD,
                                              instance.fighter.damage_variance, instance.fighter.on_hit, 'jump-attacks',
                                              instance.fighter.attack_shred, instance.fighter.attack_guaranteed_shred,

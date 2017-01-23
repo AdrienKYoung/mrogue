@@ -66,6 +66,7 @@ MEDITATE_CHANNEL_TIME = 3
 ARMOR_REDUCTION_BASE = 0.25
 ARMOR_REDUCTION_STEP = 0.05
 ARMOR_REDUCTION_DROPOFF = 5
+ARMOR_LOCATION_RESIST_FACTOR = 4 #influences how effective armor is at protecting against hit-location bonuses. Higher means less effect
 XP_ORB_AMOUNT_MIN = 100
 XP_ORB_AMOUNT_MAX = 150
 

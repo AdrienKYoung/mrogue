@@ -5,6 +5,7 @@ import effects
 import ui
 import ai
 import player
+import combat
 
 class Spell:
     def __init__(self, name, mana_cost, function, cost_string):
@@ -107,7 +108,7 @@ def cast_shielding():
 
 def cast_frog_tongue(frog, target):
 
-    if main.roll_to_hit(target, consts.FROG_TONGUE_ACC):
+    if combat.roll_to_hit(target, consts.FROG_TONGUE_ACC):
         ui.message('The frog pulls you from a distance with its tongue!', libtcod.dark_green)
         target.fighter.take_damage(consts.FROG_TONGUE_DMG)
         beam = main.beam(frog.x, frog.y, target.x, target.y)
@@ -136,7 +137,7 @@ def cast_manabolt():
         #game effect
         monster = main.get_monster_at_tile(target[0], target[1])
         if monster is not None:
-            if main.roll_to_hit(monster, player.instance.fighter.accuracy * consts.MANABOLT_ACC):
+            if combat.roll_to_hit(monster, player.instance.fighter.accuracy * consts.MANABOLT_ACC):
                 ui.message('The manabolt hits the ' + monster.name + ', dealing ' + str(consts.MANABOLT_DMG) + ' damage!', libtcod.light_blue)
                 monster.fighter.take_damage(consts.MANABOLT_DMG)
             else:
