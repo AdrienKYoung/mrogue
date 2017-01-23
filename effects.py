@@ -53,8 +53,8 @@ def rot(duration = -1):
 
 def fire_tick(object=None):
     if object is None or object.fighter is None or \
-                    main.dungeon_map[object.x][object.y].tile_type == 'shallow water' or \
-                    main.dungeon_map[object.x][object.y].tile_type == 'deep water':
+                    main.current_map.tiles[object.x][object.y].tile_type == 'shallow water' or \
+                    main.current_map.tiles[object.x][object.y].tile_type == 'deep water':
         object.fighter.remove_status('burning')
     object.fighter.take_damage(5)
 

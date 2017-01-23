@@ -4,7 +4,7 @@ full_names = {
     'goblin' : 'the Goblin Tunnels'
 }
 
-class WorldCell:
+class Map:
     def __init__(self, branch, coord=None, depth=None):
         self.links = []
         self.branch = branch
@@ -13,7 +13,7 @@ class WorldCell:
             self.name += '_%d_%d' % (coord[0], coord[1])
         if depth is not None:
             self.name += '_%d' % depth
-        self.map = None
+        self.tiles = None
         self.objects = None
 
     def add_link(self, cell, direction):
@@ -43,16 +43,16 @@ def opposite(direction):
         return None
 
 def initialize_world():
-    global world_cells
+    global world_maps
 
-    world_cells = {}
+    world_maps = {}
     for y in range(3):
         for x in range(2):
-            new_cell = WorldCell('marsh', coord=(x, y))
+            new_map = Map('marsh', coord=(x, y))
             if x > 0:
-                new_cell.add_link(world_cells['marsh_' + str(x - 1) + '_' + str(y)], 'west')
+                new_map.add_link(world_maps['marsh_' + str(x - 1) + '_' + str(y)], 'west')
             if y > 0:
-                new_cell.add_link(world_cells['marsh_' + str(x) + '_' + str(y - 1)], 'north')
-            world_cells[new_cell.name] = new_cell
+                new_map.add_link(world_maps['marsh_' + str(x) + '_' + str(y - 1)], 'north')
+            world_maps[new_map.name] = new_map
 
-world_cells = None
+world_maps = None

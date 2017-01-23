@@ -163,7 +163,7 @@ class Item:
     def drop(self):
         if self.owner.equipment:
             self.owner.equipment.dequip();
-        current_cell.add_objxect(self.owner)
+        current_map.add_object(self.owner)
         player.instance.fighter.inventory.remove(self.owner)
         self.owner.x = player.instance.x
         self.owner.y = player.instance.y
@@ -234,8 +234,8 @@ class GameObject:
         self.burns = burns
         self.on_tick_specified = on_tick
         if elevation is None:
-            if current_cell is not None and current_cell.map is not None:
-                self.elevation = current_cell.map[self.x][self.y].elevation
+            if current_map is not None and current_map.tiles is not None:
+                self.elevation = current_map.tiles[self.x][self.y].elevation
             else:
                 self.elevation = 0
         else:
@@ -273,7 +273,7 @@ class GameObject:
 
         # Update fov maps (if this object affects fov)
         if self.blocks_sight:
-            fov.set_fov_properties(self.x, self.y, current_cell.map[self.x][self.y].blocks_sight, self.elevation)
+            fov.set_fov_properties(self.x, self.y, current_map.tiles[self.x][self.y].blocks_sight, self.elevation)
             fov.set_fov_properties(x, y, True, self.elevation)
 
         # Update the pathfinding map - mark our previous space as passable and our new space as impassable
@@ -285,7 +285,7 @@ class GameObject:
         self.x = x
         self.y = y
         old_elev = self.elevation
-        self.elevation = current_cell.map[x][y].elevation
+        self.elevation = current_map.tiles[x][y].elevation
 
         # Check for objects with 'stepped_on' functions on our new space (xp, mana, traps, etc)
         stepped_on = get_objects(self.x, self.y, lambda o: o.on_step)
@@ -302,7 +302,7 @@ class GameObject:
     def move(self, dx, dy):
 
         blocked = is_blocked(self.x + dx, self.y + dy, self.elevation)
-        if blocked and current_cell.map[self.x][self.y].tile_type == 'ramp':
+        if blocked and current_map.tiles[self.x][self.y].tile_type == 'ramp':
             blocked = is_blocked(self.x + dx, self.y + dy, self.elevation - 1)
 
         if not blocked:
@@ -318,7 +318,7 @@ class GameObject:
                 if door is not None and door.closed:
                     door_interact(door)
                     return True
-                cost = current_cell.map[self.x][self.y].stamina_cost
+                cost = current_map.tiles[self.x][self.y].stamina_cost
                 if cost > 0 and self is player.instance: # only the player cares about stamina costs (at least for now. I kind of like it this way) -T
                     if self.fighter.stamina >= cost:
                         self.fighter.adjust_stamina(-cost)
@@ -341,7 +341,7 @@ class GameObject:
                     libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
                 else:
                     libtcod.console_put_char_ex(console, self.x, self.y, self.char, self.color, self.background_color)
-        elif self.always_visible and current_cell.map[self.x][self.y].explored:
+        elif self.always_visible and current_map.tiles[self.x][self.y].explored:
             shaded_color = libtcod.Color(self.color[0], self.color[1], self.color[2])
             libtcod.color_scale_HSV(shaded_color, 0.1, 0.4)
             libtcod.console_set_default_foreground(console, shaded_color)
@@ -375,7 +375,7 @@ class GameObject:
                 closest_adjacent = None
                 closest = 10000
                 for adj in adjacent_tiles_diagonal(target_x, target_y):
-                    if is_blocked(adj[0], adj[1], current_cell.map[target_x][target_y].elevation):
+                    if is_blocked(adj[0], adj[1], current_map.tiles[target_x][target_y].elevation):
                         continue
                     dist = self.distance(adj[0], adj[1])
                     if dist < closest:
@@ -397,7 +397,7 @@ class GameObject:
                 # find the next coordinate in the computed full path
                 x, y = path[1]
                 if x or y:
-                    if current_cell.map[x][y].blocks:
+                    if current_map.tiles[x][y].blocks:
                         pathfinding.map.mark_impassable((x, y))  # bandaid fix - hopefully paths will self-correct now
                     else:
                         self.move_towards(x, y)
@@ -416,13 +416,13 @@ class GameObject:
         # Scan the map and set all walls to unwalkable
         for y1 in range(consts.MAP_HEIGHT):
             for x1 in range(consts.MAP_WIDTH):
-                terrain = current_cell.map[x1][y1].blocks
-                elev = self.elevation != current_cell.map[x1][y1].elevation and current_cell.map[x1][y1].tile_type != 'ramp'
+                terrain = current_map.tiles[x1][y1].blocks
+                elev = self.elevation != current_map.tiles[x1][y1].elevation and current_map.tiles[x1][y1].tile_type != 'ramp'
                 blocks = terrain or elev
-                libtcod.map_set_properties(fov, x1, y1, not current_cell.map[x1][y1].blocks_sight, not blocks)
+                libtcod.map_set_properties(fov, x1, y1, not current_map.tiles[x1][y1].blocks_sight, not blocks)
         
         # Scan all objects to see if there are objects that must be navigated around
-        for obj in current_cell.objects:
+        for obj in current_map.objects:
             if obj.blocks and obj != self and not (obj.x == target_x and obj.y == target_y):
                 libtcod.map_set_properties(fov, obj.x, obj.y, True, False)
                 
@@ -453,9 +453,9 @@ class GameObject:
         return math.sqrt((self.x - x) ** 2 + (self.y - y) ** 2)
         
     def send_to_back(self):
-        global current_cell
-        current_cell.objects.remove(self)
-        current_cell.objects.insert(0, self)
+        global current_map
+        current_map.objects.remove(self)
+        current_map.objects.insert(0, self)
 
     def on_tick(self, object=None):
         if self.on_tick_specified:
@@ -468,11 +468,11 @@ class GameObject:
     def destroy(self):
         global changed_tiles
         if self.blocks_sight:
-            fov.set_fov_properties(self.x, self.y, current_cell.map[self.x][self.y].blocks_sight, self.elevation)
+            fov.set_fov_properties(self.x, self.y, current_map.tiles[self.x][self.y].blocks_sight, self.elevation)
         if self.blocks and pathfinding.map:
             pathfinding.map.mark_passable((self.x, self.y))
         changed_tiles.append((self.x, self.y))
-        current_cell.objects.remove(self)
+        current_map.objects.remove(self)
 
 
 class Tile:
@@ -585,7 +585,7 @@ def blastcap_explode(blastcap):
 
     blastcap.fighter = None
     ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
-    for obj in current_cell.objects:
+    for obj in current_map.objects:
         if obj.fighter and is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
             if obj.fighter.apply_status_effect(effects.StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
                 ui.message('The ' + obj.name + ' is stunned!', libtcod.gold)
@@ -617,7 +617,7 @@ def random_position_in_circle(radius):
 
 
 def object_at_tile(x, y, name):
-    for obj in current_cell.objects:
+    for obj in current_map.objects:
         if obj.x == x and obj.y == y and obj.name == name:
             return obj
     return None
@@ -628,7 +628,7 @@ def tunnel_spider_spawn_web(obj):
     adjacent = adjacent_tiles_diagonal(obj.x, obj.y)
     webs = [(obj.x, obj.y)]
     for a in adjacent:
-        if libtcod.random_get_int(0, 0, 2) == 0 and not current_cell.map[a[0]][a[1]].blocks:
+        if libtcod.random_get_int(0, 0, 2) == 0 and not current_map.tiles[a[0]][a[1]].blocks:
             webs.append(a)
     for w in webs:
         make_spiderweb(w[0], w[1])
@@ -639,7 +639,7 @@ def make_spiderweb(x, y):
     web = GameObject(x, y, '*', 'spiderweb', libtcod.lightest_gray,
                      description='a web of spider silk. Stepping into a web will impede movement for a turn.',
                      burns=True)
-    current_cell.add_object(web)
+    current_map.add_object(web)
     web.send_to_back()
 
 
@@ -722,7 +722,7 @@ def bomb_beetle_death(beetle):
     if beetle.fighter.loot_table is not None:
         drop = get_loot(beetle.fighter)
         if drop:
-            current_cell.add_object(drop)
+            current_map.add_object(drop)
             drop.send_to_back()
 
     ui.message(beetle.name.capitalize() + ' is dead!', libtcod.red)
@@ -748,14 +748,14 @@ def monster_death(monster):
     if monster.fighter.loot_table is not None:
         drop = get_loot(monster.fighter)
         if drop:
-            current_cell.add_object(drop)
+            current_map.add_object(drop)
             drop.send_to_back()
 
     if hasattr(monster.fighter,'inventory') and len(monster.fighter.inventory) > 0:
         for item in monster.fighter.inventory:
             item.x = monster.x
             item.y = monster.y
-            current_cell.add_object(item)
+            current_map.add_object(item)
             item.send_to_back()
 
 
@@ -781,14 +781,14 @@ def target_monster(max_range=None):
         (x, y) = ui.target_tile(max_range)
         if x is None:
             return None
-        for obj in current_cell.objects:
+        for obj in current_map.objects:
             if obj.x == x and obj.y == y and obj.fighter and obj is not player.instance:
                 return obj
         return None
 
 
 def get_monster_at_tile(x, y):
-    for obj in current_cell.objects:
+    for obj in current_map.objects:
         if obj.x == x and obj.y == y and obj.fighter and obj is not player.instance:
             return obj
     return None
@@ -796,7 +796,7 @@ def get_monster_at_tile(x, y):
 
 def object_at_coords(x, y):
 
-    ops = [t for t in current_cell.objects if (t.x == x and t.y == y)]
+    ops = [t for t in current_map.objects if (t.x == x and t.y == y)]
     if len(ops) > 1:
         menu_choice = ui.menu("Which object?", [o.name for o in ops], 40)
         if menu_choice is not None:
@@ -804,7 +804,7 @@ def object_at_coords(x, y):
         else:
             return None
     elif len(ops) == 0:
-        return current_cell.map[x][y]
+        return current_map.tiles[x][y]
     else:
         return ops[0]
 
@@ -824,7 +824,7 @@ def beam_interrupt(sourcex, sourcey, destx, desty):
     libtcod.line_init(sourcex, sourcey, destx, desty)
     line_x, line_y = libtcod.line_step()
     while line_x is not None:
-        if is_blocked(line_x, line_y, current_cell.map[sourcex][sourcey].elevation):  # beam interrupt scans until it hits something
+        if is_blocked(line_x, line_y, current_map.tiles[sourcex][sourcey].elevation):  # beam interrupt scans until it hits something
             return line_x, line_y
         line_x, line_y = libtcod.line_step()
     return destx, desty
@@ -834,7 +834,7 @@ def closest_monster(max_range):
     closest_enemy = None
     closest_dist = max_range + 1
 
-    for object in current_cell.objects:
+    for object in current_map.objects:
         if object.fighter and not object == player.instance and fov.player_can_see(object.x, object.y):
             dist = player.instance.distance_to(object)
             if dist < closest_dist:
@@ -850,13 +850,13 @@ def in_bounds(x, y):
 
 def is_blocked(x, y, elevation=None):
 
-    if elevation is not None and current_cell.map[x][y].elevation != elevation and current_cell.map[x][y].tile_type != 'ramp':
+    if elevation is not None and current_map.tiles[x][y].elevation != elevation and current_map.tiles[x][y].tile_type != 'ramp':
         return True
 
-    if current_cell.map[x][y].blocks:
+    if current_map.tiles[x][y].blocks:
         return True
 
-    for object in current_cell.objects:
+    for object in current_map.objects:
         if object.blocks and object.x == x and object.y == y:
             return True
 
@@ -892,8 +892,8 @@ def spawn_monster(name, x, y):
                              behavior=behavior, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'])
         if p.get('mana'):
             monster.mana = p.get('mana')
-        monster.elevation = current_cell.map[x][y].elevation
-        current_cell.add_object(monster)
+        monster.elevation = current_map.tiles[x][y].elevation
+        current_map.add_object(monster)
         return monster
     return None
 
@@ -1004,7 +1004,7 @@ def spawn_item(name, x, y, material=None, quality=None):
         item = create_item(name, material, quality)
         item.x = x
         item.y = y
-        current_cell.add_object(item)
+        current_map.add_object(item)
         item.send_to_back()
 
 
@@ -1052,14 +1052,14 @@ def check_breakage(equipment):
 def create_fire(x,y,temp):
     global changed_tiles
 
-    tile = current_cell.map[x][y]
+    tile = current_map.tiles[x][y]
     if tile.tile_type == 'shallow water' or tile.tile_type == 'deep water' or tile.blocks:
         return
     component = ai.FireBehavior(temp)
     obj = GameObject(x,y,libtcod.CHAR_ARROW2_N,'Fire',libtcod.red,misc=component)
-    current_cell.add_object(obj)
+    current_map.add_object(obj)
     if temp > 4 and tile.tile_type != 'ramp':
-        current_cell.map[x][y].tile_type = 'scorched floor'
+        current_map.tiles[x][y].tile_type = 'scorched floor'
     for obj in get_objects(x, y, condition=lambda o: o.burns):
         obj.destroy()
     changed_tiles.append((x, y))
@@ -1104,7 +1104,7 @@ def place_objects(tiles):
             item = loot.item_from_table(dungeon_level * 5)
             item.x = random_pos[0]
             item.y = random_pos[1]
-            current_cell.add_object(item)
+            current_map.add_object(item)
             item.send_to_back()
             tiles.remove(random_pos)
             if len(tiles) == 0:
@@ -1112,7 +1112,7 @@ def place_objects(tiles):
 
     for i in range(2):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
-        current_cell.add_object(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
+        current_map.add_object(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
                                   description='xp', on_step= player.pick_up_xp))
         tiles.remove(random_pos)
         if len(tiles) == 0:
@@ -1145,7 +1145,7 @@ def get_loot(monster):
 
 def get_objects(x, y, condition=None, distance=0):
     found = []
-    for obj in current_cell.objects:
+    for obj in current_map.objects:
         if max(abs(obj.x - x), abs(obj.y - y)) <= distance:
             if condition is not None:
                 if condition(obj):
@@ -1201,27 +1201,27 @@ def render_map():
         x = tile[0]
         y = tile[1]
         visible = libtcod.map_is_in_fov(fov.fov_player, x, y)
-        color_fg = libtcod.Color(current_cell.map[x][y].color_fg[0], current_cell.map[x][y].color_fg[1],
-                                 current_cell.map[x][y].color_fg[2])
-        color_bg = libtcod.Color(current_cell.map[x][y].color_bg[0], current_cell.map[x][y].color_bg[1],
-                                 current_cell.map[x][y].color_bg[2])
-        tint = clamp(1.0 + 0.25 * float(current_cell.map[x][y].elevation), 0.1, 2.0)
+        color_fg = libtcod.Color(current_map.tiles[x][y].color_fg[0], current_map.tiles[x][y].color_fg[1],
+                                 current_map.tiles[x][y].color_fg[2])
+        color_bg = libtcod.Color(current_map.tiles[x][y].color_bg[0], current_map.tiles[x][y].color_bg[1],
+                                 current_map.tiles[x][y].color_bg[2])
+        tint = clamp(1.0 + 0.25 * float(current_map.tiles[x][y].elevation), 0.1, 2.0)
         libtcod.color_scale_HSV(color_fg, 1.0, tint)
         libtcod.color_scale_HSV(color_bg, 1.0, tint)
         if not visible:
-            if current_cell.map[x][y].explored:
+            if current_map.tiles[x][y].explored:
                 libtcod.color_scale_HSV(color_fg, 0.1, 0.4)
                 libtcod.color_scale_HSV(color_bg, 0.1, 0.4)
-                libtcod.console_put_char_ex(map_con, x, y, current_cell.map[x][y].tile_char, color_fg, color_bg)
+                libtcod.console_put_char_ex(map_con, x, y, current_map.tiles[x][y].tile_char, color_fg, color_bg)
             else:
                 libtcod.console_put_char_ex(map_con, x, y, ' ', libtcod.black, libtcod.black)
         else:
-            libtcod.console_put_char_ex(map_con, x, y, current_cell.map[x][y].tile_char, color_fg, color_bg)
-            current_cell.map[x][y].explored = True
+            libtcod.console_put_char_ex(map_con, x, y, current_map.tiles[x][y].tile_char, color_fg, color_bg)
+            current_map.tiles[x][y].explored = True
 
     changed_tiles = []
 
-    for obj in current_cell.objects:
+    for obj in current_map.objects:
         if obj is not player.instance:
             obj.draw(map_con)
     player.instance.draw(map_con)
@@ -1250,20 +1250,20 @@ def render_all():
 
 def use_stairs(stairs):
     import world
-    next_cell = stairs.link[1]
-    enter_world_cell(next_cell, world.opposite(stairs.link[0]))
+    next_map = stairs.link[1]
+    enter_map(next_map, world.opposite(stairs.link[0]))
 
 
-def enter_world_cell(world_cell, direction=None):
-    global current_cell
+def enter_map(world_map, direction=None):
+    global current_map
 
-    current_cell = world_cell
+    current_map = world_map
 
-    if world_cell.map is None:
-        generate_level(world_cell)
+    if world_map.tiles is None:
+        generate_level(world_map)
 
     if direction is not None:
-        for obj in current_cell.objects:
+        for obj in current_map.objects:
             if hasattr(obj, 'link') and obj.link[0] == direction:
                 player.instance.x = obj.x
                 player.instance.y = obj.y
@@ -1271,9 +1271,9 @@ def enter_world_cell(world_cell, direction=None):
     fov.initialize_fov()
 
 
-def generate_level(world_cell):
+def generate_level(world_map):
     global spawned_bosses
-    mapgen.make_map(world_cell)
+    mapgen.make_map(world_map)
 
 
 #############################################
@@ -1321,7 +1321,7 @@ def new_game():
     
     # generate map
     dungeon_level = 1
-    enter_world_cell(world.world_cells['marsh_1_1'])
+    enter_map(world.world_maps['marsh_1_1'])
     # initialize_fov()
     game_state = 'playing'
 
@@ -1403,7 +1403,7 @@ def play_game():
         # Let monsters take their turn
         if game_state == 'playing' and player_action != 'didnt-take-turn':
             player.instance.on_tick(object=player.instance)
-            for object in current_cell.objects:
+            for object in current_map.objects:
                 if object.behavior:
                     object.behavior.take_turn()
                 if object is not player.instance:
@@ -1447,4 +1447,4 @@ changed_tiles = []
 visible_tiles = []
 
 # Level
-current_cell = None
+current_map = None

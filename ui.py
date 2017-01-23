@@ -154,7 +154,7 @@ def target_next_monster():
         main.changed_tiles.append((selected_monster.x, selected_monster.y))
 
     nearby = []
-    for obj in main.current_cell.objects:
+    for obj in main.current_map.objects:
         if fov.player_can_see(obj.x, obj.y) and obj.fighter and obj is not player.instance:
             nearby.append((obj.distance_to(player.instance), obj))
     nearby.sort(key=lambda m: m[0])
@@ -195,9 +195,9 @@ def mouse_select_monster():
         (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
         monster = None
-        for obj in main.current_cell.objects:
+        for obj in main.current_map.objects:
             if obj.x == x and obj.y == y and (
-                fov.player_can_see(obj.x, obj.y) or (obj.always_visible and main.current_cell.map[obj.x][obj.y].explored)):
+                fov.player_can_see(obj.x, obj.y) or (obj.always_visible and main.current_map.tiles[obj.x][obj.y].explored)):
                 if hasattr(obj, 'fighter') and obj.fighter and not obj is player.instance:
                     monster = obj
                     break
@@ -212,9 +212,9 @@ def get_names_under_mouse():
                        player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
     (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
-    names = [obj.name for obj in main.current_cell.objects if (obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y)
+    names = [obj.name for obj in main.current_map.objects if (obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y)
                                                                             or (
-                                                                            obj.always_visible and main.current_cell.map[obj.x][
+                                                                            obj.always_visible and main.current_map.tiles[obj.x][
                                                                                 obj.y].explored)))]
     names = ', '.join(names)
 
@@ -369,7 +369,7 @@ def render_side_panel(acc_mod=1.0):
         if end < len(objects_here) - 1:
             libtcod.console_print(side_panel, 4, drawHeight, '...' + str(len(objects_here) - 7) + ' more...')
             drawHeight += 1
-    libtcod.console_print(side_panel, 4, drawHeight, main.current_cell.map[player.instance.x][player.instance.y].name)
+    libtcod.console_print(side_panel, 4, drawHeight, main.current_map.tiles[player.instance.x][player.instance.y].name)
     drawHeight += 2
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
@@ -494,7 +494,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
         libtcod.console_set_default_background(overlay, libtcod.magenta)
         libtcod.console_clear(overlay)
         if targeting_type == 'beam' or targeting_type == 'beam_interrupt':
-            libtcod.line_init(player.x, player.y, cursor_x, cursor_y)
+            libtcod.line_init(player.instance.x, player.instance.y, cursor_x, cursor_y)
             line_x, line_y = libtcod.line_step()
             while (not line_x is None):
                 libtcod.console_put_char_ex(overlay, line_x - offsetx, line_y - offsety, ' ', libtcod.white, libtcod.yellow)
@@ -544,9 +544,9 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
         beam_values = []
 
         if targeting_type == 'beam_interrupt':
-            selected_x, selected_y = main.beam_interrupt(player.x, player.y, cursor_x, cursor_y)
+            selected_x, selected_y = main.beam_interrupt(player.instance.x, player.instance.y, cursor_x, cursor_y)
         elif targeting_type == 'beam':
-            beam_values = main.beam(player.x, player.y, cursor_x, cursor_y)
+            beam_values = main.beam(player.instance.x, player.instance.y, cursor_x, cursor_y)
             selected_x, selected_y = beam_values[len(beam_values) - 1]
 
         if (mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and fov.player_can_see(x, y):

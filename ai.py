@@ -88,7 +88,7 @@ class FireBehavior:
             # Spread to adjacent tiles
             if self.temperature < 9: # don't spread on the first turn
                 for tile in adjacent_tiles_diagonal(self.owner.x, self.owner.y):
-                    if game.current_cell.map[tile[0]][tile[1]].flammable:
+                    if game.current_map.tiles[tile[0]][tile[1]].flammable:
                         if libtcod.random_get_int(0, 0, 8) == 0:
                             game.create_fire(tile[0], tile[1], 10)
 
@@ -104,12 +104,12 @@ class AI_Reeker:
                     position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
                     puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
                                 clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
-                    if not game.current_cell.map[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
+                    if not game.current_map.tiles[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
                                                         lambda o: o.name == 'reeker gas' or o.name == 'reeker')) == 0:
                         puff = GameObject(puff_pos[0], puff_pos[1], libtcod.CHAR_BLOCK3,
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())
-                        game.current_cell.add_object(puff)
+                        game.current_map.add_object(puff)
 
 
 class AI_TunnelSpider:
@@ -155,7 +155,7 @@ class AI_TunnelSpider:
     def find_closest_web(self):
         closest_web = None
         closest_dist = consts.TUNNEL_SPIDER_MAX_WEB_DIST
-        for obj in game.current_cell.objects:
+        for obj in game.current_map.objects:
             if obj.name == 'spiderweb':
                 if closest_web is None or self.owner.distance_to(obj) < closest_dist:
                     closest_web = obj

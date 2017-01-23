@@ -112,7 +112,7 @@ class Fighter:
                                              description='A colored orb that glows with magical potential.',
                                              on_step=player.pick_up_mana, on_tick=main.expire_out_of_vision)
                     mana_pickup.mana_type = m[1]
-                    main.current_cell.add_object(mana_pickup)
+                    main.current_map.add_object(mana_pickup)
                     return
 
     def calculate_attack_stamina_cost(self):
@@ -150,7 +150,7 @@ class Fighter:
                 ui.message('You repair your armor')
 
         # Manage breath/drowning
-        if main.current_cell.map[self.owner.x][self.owner.y].tile_type == 'deep water':
+        if main.current_map.tiles[self.owner.x][self.owner.y].tile_type == 'deep water':
             if not (self.can_breath_underwater or self.has_status('waterbreathing')):
                 if self.breath > 0:
                     self.breath -= 1

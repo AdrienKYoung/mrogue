@@ -57,7 +57,7 @@ def cast_fireball():
     if x is None: return 'cancelled'
     ui.message('The fireball explodes, burning everything within ' + str(consts.FIREBALL_RADIUS) + ' tiles!', libtcod.light_blue)
     main.create_fire(x,y,10)
-    for obj in main.current_cell.objects:
+    for obj in main.current_map.objects:
         if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
             ui.message('The ' + obj.name + ' gets burned for ' + str(consts.FIREBALL_DAMAGE) + ' damage!', libtcod.light_blue)
             obj.fighter.take_damage(consts.FIREBALL_DAMAGE)
@@ -128,7 +128,7 @@ def cast_manabolt():
         #visual effect
         bolt = main.GameObject(player.instance.x, player.instance.y, 7, 'bolt', color=libtcod.light_blue)
         line = main.beam(player.instance.x, player.instance.y, target[0], target[1])
-        main.current_cell.add_object(bolt)
+        main.current_map.add_object(bolt)
         for p in line:
             bolt.set_position(p[0], p[1])
             main.render_map()
@@ -143,7 +143,7 @@ def cast_manabolt():
             else:
                 ui.message('The manabolt misses the ' + monster.name + '.', libtcod.gray)
         else:
-            ui.message('The manabolt hits the ' + main.current_cell.map[target[0]][target[1]].tile_type + '.', libtcod.light_blue)
+            ui.message('The manabolt hits the ' + main.current_map.tiles[target[0]][target[1]].tile_type + '.', libtcod.light_blue)
         return True
     return False
 
@@ -151,7 +151,7 @@ def cast_manabolt():
 def cast_ignite():
     target = ui.target_tile(consts.IGNITE_RANGE)
     if target[0] is not None and target[1] is not None:
-        tile = main.current_cell.map[target[0]][target[1]]
+        tile = main.current_map.tiles[target[0]][target[1]]
         if tile.blocks:
             ui.message('The ' + tile.name + ' is in the way.', libtcod.gray)
             return False

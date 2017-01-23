@@ -289,12 +289,12 @@ def dig(dx, dy):
 
     dig_x = instance.x + dx
     dig_y = instance.y + dy
-    if main.current_cell.map[dig_x][dig_y].diggable:
-        main.current_cell.map[dig_x][dig_y].tile_type = 'stone floor'
+    if main.current_map.tiles[dig_x][dig_y].diggable:
+        main.current_map.tiles[dig_x][dig_y].tile_type = 'stone floor'
         changed_tiles.append((dig_x, dig_y))
         if main.pathfinding.map:
             main.pathfinding.map.mark_passable((dig_x, dig_y))
-        fov.set_fov_properties(dig_x, dig_y, False, main.current_cell.map[dig_x][dig_y].elevation)
+        fov.set_fov_properties(dig_x, dig_y, False, main.current_map.tiles[dig_x][dig_y].elevation)
         main.check_breakage(main.get_equipped_in_slot(instance.fighter.inventory, 'right hand'))
         return 'success'
     else:
@@ -362,15 +362,15 @@ def bash_attack(dx, dy):
             direction = target.x - instance.x, target.y - instance.y  # assumes the instance is adjacent
             stun = False
             against = ''
-            against_tile = main.current_cell.map[target.x + direction[0]][target.y + direction[1]]
+            against_tile = main.current_map.tiles[target.x + direction[0]][target.y + direction[1]]
             if against_tile.blocks:
                 stun = True
-                against = main.current_cell.map[target.x + direction[0]][target.y + direction[1]].name
-            elif against_tile.elevation != target.elevation and against_tile.tile_type != 'ramp' and main.current_cell.map[target.x][target.y] != 'ramp':
+                against = main.current_map.tiles[target.x + direction[0]][target.y + direction[1]].name
+            elif against_tile.elevation != target.elevation and against_tile.tile_type != 'ramp' and main.current_map.tiles[target.x][target.y] != 'ramp':
                 stun = True
                 against = 'cliff'
             else:
-                for obj in main.current_cell.objects:
+                for obj in main.current_map.objects:
                     if obj.x == target.x + direction[0] and obj.y == target.y + direction[1] and obj.blocks:
                         stun = True
                         against = obj.name
@@ -429,7 +429,7 @@ def meditate():
     return 'start-meditate'
 
 def jump(actor=None):
-    if not main.current_cell.map[instance.x][instance.y].jumpable:
+    if not main.current_map.tiles[instance.x][instance.y].jumpable:
         ui.message('You cannot jump from this terrain!', libtcod.light_yellow)
         return 'didnt-take-turn'
 
@@ -449,15 +449,15 @@ def jump(actor=None):
     libtcod.console_flush()
     (x, y) = ui.target_tile(consts.BASE_JUMP_RANGE, 'pick', consts.JUMP_ATTACK_ACC_MOD)
     if x is not None and y is not None:
-        if main.current_cell.map[x][y].blocks:
+        if main.current_map.tiles[x][y].blocks:
             ui.message('There is something in the way.', libtcod.light_yellow)
             return 'didnt-take-turn'
-        elif main.is_blocked(x, y, instance.elevation) and main.current_cell.map[x][y].elevation > instance.elevation:
+        elif main.is_blocked(x, y, instance.elevation) and main.current_map.tiles[x][y].elevation > instance.elevation:
             ui.message("You can't jump that high!", libtcod.light_yellow)
             return 'didnt-take-turn'
         else:
             jump_attack_target = None
-            for obj in main.current_cell.objects:
+            for obj in main.current_map.objects:
                 if obj.x == x and obj.y == y and obj.blocks:
                     jump_attack_target = obj
                     break
