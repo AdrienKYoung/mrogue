@@ -129,14 +129,7 @@ class Fighter:
         if self.inventory and len(self.inventory) > 0:
             weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
             if weapon is not None:
-                total_damage = 0
-                if weapon.weapon_dice is not None:
-                    d = weapon.weapon_dice.split('d')
-                    for i in range(1, int(d[0]) + 1):
-                        total_damage += libtcod.random_get_int(0, 1, int(d[1]))
-                for i in range(weapon.str_dice):
-                    total_damage += libtcod.random_get_int(0, 1, self.attack_damage)
-                return total_damage
+                return roll_damage(weapon,self)
         return self.attack_damage * (1.0 - self.damage_variance + libtcod.random_get_float(0, 0, 2 * self.damage_variance))
 
     def attack(self, target):
@@ -335,6 +328,16 @@ location_damage_tables = {
     }
 }
 
+def roll_damage(weapon,fighter):
+    total_damage = 0
+    if weapon.weapon_dice is not None:
+        d = weapon.weapon_dice.split('d')
+        for i in range(1, int(d[0]) + 1):
+            total_damage += libtcod.random_get_int(0, 1, int(d[1]))
+    for i in range(weapon.str_dice):
+        total_damage += libtcod.random_get_int(0, 1, fighter.attack_damage)
+    return total_damage
+
 def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_variance, on_hit, verb, shred, guaranteed_shred, pierce):
     # check stamina
     if fighter.owner.name == 'player':
@@ -420,8 +423,6 @@ def roll_location_effect(target, location):
             return None
     else:
         return None
-
-
 
 def roll_to_hit(target,  accuracy):
     return libtcod.random_get_float(0, 0, 1) < get_chance_to_hit(target, accuracy)

@@ -1056,7 +1056,7 @@ def door_interact(door):
         door.closed = True
         door.blocks = True
         door.blocks_sight = True
-    fov.set_fov_properties(door.x,door.y,door.blocks_sigh,door.elevation)
+    fov.set_fov_properties(door.x,door.y,door.blocks_sight,door.elevation)
 
 def place_objects(tiles):
     if len(tiles) == 0:
