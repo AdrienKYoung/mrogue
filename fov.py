@@ -32,6 +32,7 @@ def initialize_fov():
             for x in range(consts.MAP_WIDTH):
 
                 this_elevation = main.current_cell.map[x][y].elevation
+                main.changed_tiles.append((x, y))
 
                 if this_elevation != elevation:
                     # check if this tile is at an elevation we haven't discovered yet

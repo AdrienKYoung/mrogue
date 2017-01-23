@@ -1,4 +1,8 @@
 import game as main
+full_names = {
+    'marsh' : 'the Marshes',
+    'goblin' : 'the Goblin Tunnels'
+}
 
 class WorldCell:
     def __init__(self, branch, coord=None, depth=None):

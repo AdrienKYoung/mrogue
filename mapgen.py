@@ -146,6 +146,8 @@ class Room:
         for tile in self.tiles.keys():
             if self.tiles[tile] == 'default ground' or (not terrain.data[self.tiles[tile]].blocks and tile not in self.data.keys()):
                 return_tiles.append(tile)
+            if tile in self.data.keys() and self.data[tile] == '>':
+                return_tiles.append(tile)
         return return_tiles
 
     def get_blocked_tiles(self):
@@ -336,6 +338,31 @@ def get_adjacent_walls(room, x, y):
                 wall_count += 1
     return wall_count
 
+
+def random_from_list(list):
+    if list is None or len(list) == 0:
+        return None
+    i = libtcod.random_get_int(0, 0, len(list) - 1)
+    return list[i]
+
+
+def find_closest_open_tile(x, y, exclude=[]):
+    explored = [(x, y)]
+    neighbors = [(x, y)]
+    for tile in main.adjacent_tiles_diagonal(x, y):
+        neighbors.append(tile)
+    while len(neighbors) > 0:
+        tile = neighbors[0]
+        if main.in_bounds(tile[0], tile[1]) and not main.is_blocked(tile[0], tile[1], 0) and tile not in exclude:
+            return tile  # we found an open tile
+        neighbors.remove(tile)
+        explored.append(tile)
+        for n in main.adjacent_tiles_diagonal(tile[0], tile[1]):
+            if n not in explored and n not in neighbors:
+                neighbors.append(n)
+    return None  # failure
+
+
 def create_room_rectangle():
     room = Room()
     room.add_rectangle(tile_type=random_terrain())
@@ -364,14 +391,14 @@ def create_room(room):
         for y in range(room.y1 + 1, room.y2):
             dice = libtcod.random_get_int(0, 0, 3)
             if dice == 0:
-                cell.map[x][y].tile_type = 'shallow water'
+                change_map_tile(x, y, 'shallow water')
             elif dice == 1:
-                cell.map[x][y].tile_type = 'grass floor'
+                change_map_tile(x, y, 'grass floor')
             else:
-                cell.map[x][y].tile_type = 'stone floor'
+                change_map_tile(x, y, 'stone floor')
 
 
-def apply_room(room, clear_objects=False):
+def apply_room(room, clear_objects=False, hard_override=False):
     for tile in room.tiles.keys():
 
         if tile[0] < 0 or tile[1] < 0 or tile[0] >= consts.MAP_WIDTH or tile[1] >= consts.MAP_HEIGHT:
@@ -379,8 +406,9 @@ def apply_room(room, clear_objects=False):
 
         old_tile = cell.map[tile[0]][tile[1]]
 
-        if not old_tile.no_overwrite:
+        if not old_tile.no_overwrite or hard_override:
 
+            change_map_tile(tile[0], tile[1], room.tiles[tile[0], tile[1]])
             if room.tiles[tile[0], tile[1]] == 'default ground':
                 if old_tile.blocks:
                     old_tile.tile_type = 'stone floor'
@@ -397,18 +425,9 @@ def apply_room(room, clear_objects=False):
                     pass
                 else:
                     apply_data(tile[0], tile[1], line)
-                #elif line[0] == '$':
-                #    apply_item(tile[0], tile[1], line)
-                #elif line[0].isdigit():
-                #    apply_data(tile[0], tile[1], line)
 
 
 def apply_data(x, y, data):
-
-    #if data[0] == '$':
-    #    apply_item(x, y, data)
-    #elif data[0].isdigit():
-    #    apply_object(x, y, data)
 
     for i in range(len(data)):
         if data[i] == 'ELEVATION':
@@ -422,6 +441,8 @@ def apply_data(x, y, data):
         elif data[i] == '$':
             apply_item(x, y, data[i:])
             break
+        elif data[i] == '>':
+            cell.objects.append(main.GameObject(x, y, '>', 'stairs', libtcod.white, always_visible=True))
 
 
 def apply_object(x, y, data):
@@ -498,7 +519,20 @@ def apply_item(x, y, data):
         cell.add_object(item)
         item.send_to_back()
 
-def create_wandering_tunnel(x1, y1, x2, y2):
+
+def change_map_tile(x, y, tile_type, no_overwrite=False):
+    if not main.in_bounds(x, y):
+        return 'out of range'
+    if not cell.map[x][y].no_overwrite:
+        if tile_type == 'default ground':
+            if cell.map[x][y].blocks:
+                cell.map[x][y].tile_type = 'stone floor'
+        else:
+            cell.map[x][y].tile_type = tile_type
+        cell.map[x][y].no_overwrite = no_overwrite
+
+
+def create_wandering_tunnel(x1, y1, x2, y2, tile_type='stone floor'):
     current_x = x1
     current_y = y1
     xdir = 0
@@ -528,22 +562,22 @@ def create_wandering_tunnel(x1, y1, x2, y2):
         if move == 'y' or move == 'xy':
             current_y += ydir
         # replace terrain at current tile with floor
-        cell.map[current_x][current_y].tile_type = 'stone floor'
+        change_map_tile(current_x, current_y, tile_type)
         if libtcod.random_get_int(0, 0, 1) == 0 or move == 'xy':
-            cell.map[current_x - 1][current_y].tile_type = 'stone floor'
-            cell.map[current_x + 1][current_y].tile_type = 'stone floor'
-            cell.map[current_x][current_y - 1].tile_type = 'stone floor'
-            cell.map[current_x][current_y + 1].tile_type = 'stone floor'
+            change_map_tile(current_x - 1, current_y, tile_type)
+            change_map_tile(current_x + 1, current_y, tile_type)
+            change_map_tile(current_x, current_y - 1, tile_type)
+            change_map_tile(current_x, current_y + 1, tile_type)
 
 
-def create_h_tunnel(x1, x2, y):
+def create_h_tunnel(x1, x2, y, tile_type='stone floor'):
     for x in range(min(x1, x2), max(x1, x2) + 1):
-        cell.map[x][y].tile_type = 'stone floor'
+        change_map_tile(x, y, tile_type)
 
 
-def create_v_tunnel(y1, y2, x):
+def create_v_tunnel(y1, y2, x, tile_type='stone floor'):
     for y in range(min(y1, y2), max(y1, y2) + 1):
-        cell.map[x][y].tile_type = 'stone floor'
+        change_map_tile(x, y, tile_type)
 
 
 def scatter_reeds(tiles):
@@ -611,7 +645,7 @@ def load_features_from_file(filename):
             feature_lines = []
             categories = []
             while lines[0] != 'ENDFEATURE':
-                if not lines[0].startswith('//'):
+                if not lines[0].startswith('//') and not lines[0].startswith('CATEGORY'):
                     feature_lines.append(lines[0])
                 if lines[0].startswith('CATEGORY'):
                     cat_line = lines[0].split()
@@ -681,6 +715,8 @@ def load_feature(lines=[]):
                 y_index = 0
             elif lines[i_y].startswith('ENDHEIGHT'):
                 height = 0
+            elif lines[i_y].startswith('CATEGORY'):
+                pass
             else:
                 for i_x in range(len(lines[i_y])):
                     c = lines[i_y][i_x]
@@ -698,6 +734,11 @@ def load_feature(lines=[]):
                                 feature_room.data[(i_x, y_index)].append(s)
                         else:
                             feature_room.data[(i_x, y_index)] = loot_string
+                    elif c == '>':
+                        if (i_x, y_index) in feature_room.data.keys():
+                            feature_room.data[(i_x, y_index)].append('>')
+                        else:
+                            feature_room.data[(i_x, y_index)] = '>'
                     elif c.isdigit():
                         if (i_x, y_index) in feature_room.data.keys():
                             for s in data_strings[int(c)]:
@@ -714,16 +755,24 @@ def load_feature(lines=[]):
         raise IOError('Input could not be parsed.')
 
 
-def create_feature(x, y, feature_name, open_tiles=None):
+def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rotation=None):
     if feature_name not in features.keys():
         return 'feature not found'
     else:
         feature = features[feature_name]
         template = feature.room
+
         if not feature.has_flag(NOREFLECT):
             template.reflect(reflect_x=libtcod.random_get_int(0, 0, 1) == 1, reflect_y=libtcod.random_get_int(0, 0, 1) == 1)
-        if not feature.has_flag(NOROTATE):
-            template.rotate(angles[libtcod.random_get_int(0, 0, 3)])
+
+        if rotation is not None:
+            template.rotate(rotation)
+        elif not feature.has_flag(NOROTATE):
+            rotation = angles[libtcod.random_get_int(0, 0, 3)]
+            template.rotate(rotation)
+        else:
+            rotation = 0
+
         if template.bounds[0] + x > consts.MAP_WIDTH - 1:
             x = consts.MAP_WIDTH - 1 - template.bounds[0]
         if template.bounds[1] + y > consts.MAP_HEIGHT - 1:
@@ -731,13 +780,14 @@ def create_feature(x, y, feature_name, open_tiles=None):
         template.set_pos(x, y)
 
         # Check to see if our new feature collides with any existing features
-        new_rect = Rect(template.pos[0], template.pos[1], template.bounds[0], template.bounds[1])
-        for rect in feature_rects:
-            if rect.intersect(new_rect):
-                return 'failed'
+        if not hard_override:
+            new_rect = Rect(template.pos[0], template.pos[1], template.bounds[0], template.bounds[1])
+            for rect in feature_rects:
+                if rect.intersect(new_rect):
+                    return 'failed'
+            feature_rects.append(new_rect)
 
-        feature_rects.append(new_rect)
-        apply_room(template, feature.has_flag(NOSPAWNS))
+        apply_room(template, feature.has_flag(NOSPAWNS), hard_override=hard_override)
 
         if open_tiles is not None:
             # If feature has NOSPAWNS flag, remove all tiles from 'open_tiles' list
@@ -752,6 +802,9 @@ def create_feature(x, y, feature_name, open_tiles=None):
                 for tile in template.get_open_tiles():
                     if tile not in open_tiles:
                         open_tiles.append(tile)
+
+        # reorient the template for next placement
+        template.rotate(2 * math.pi - rotation)
 
         apply_scripts(feature)
         return 'success'
@@ -906,6 +959,55 @@ def make_test_space():
     #main.stairs.send_to_back()
 
 
+def make_map_links():
+    # make map links
+    for link in cell.links:
+        hlink = True
+        r = 0
+        c = '>'
+        if link[0] == 'north':
+            x = libtcod.random_get_int(0, consts.MAP_WIDTH / 4, consts.MAP_WIDTH * 3 / 4)
+            y = 1
+            r = angles[0]
+            c = chr(24)
+        elif link[0] == 'south':
+            x = libtcod.random_get_int(0, consts.MAP_WIDTH / 4, consts.MAP_WIDTH * 3 / 4)
+            y = consts.MAP_HEIGHT - 1
+            r = angles[2]
+            c = chr(25)
+        elif link[0] == 'east':
+            x = consts.MAP_WIDTH - 1
+            y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 4, consts.MAP_HEIGHT * 3 / 4)
+            r = angles[1]
+            c = chr(26)
+        elif link[0] == 'west':
+            x = 1
+            y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 4, consts.MAP_HEIGHT * 3 / 4)
+            r = angles[3]
+            c = chr(27)
+        else:
+            x = libtcod.random_get_int(0, consts.MAP_HEIGHT / 4, consts.MAP_HEIGHT * 3 / 4)
+            y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 4, consts.MAP_HEIGHT * 3 / 4)
+            hlink = False
+        if hlink:
+            link_feature = random_from_list(feature_categories[cell.branch + '_hlink']).name
+            exclude = []
+            create_feature(x, y, link_feature, hard_override=True, rotation=r, open_tiles=exclude)
+            closest = find_closest_open_tile(x + 1, y + 1, exclude=exclude)
+            create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='default ground')
+            # find the stairs that we just placed
+            stairs = None
+            for i in range(len(cell.objects) - 1, 0, -1):
+                if cell.objects[i].name == 'stairs':
+                    stairs = cell.objects[i]
+                    break
+            if stairs is not None:
+                stairs.name = 'Path to ' + world.full_names[link[1].branch]
+                stairs.description = 'A winding path leading to ' + world.full_names[link[1].branch]
+                stairs.link = link
+                stairs.interact = main.use_stairs
+                stairs.char = c
+
 def make_map(world_cell):
     global feature_rects, cell
 
@@ -930,8 +1032,7 @@ def make_map(world_cell):
         # make_rooms_and_corridors()
         make_one_big_room()
 
-    #for link in cell.links:
-
+    make_map_links()
 
     # make sure the edges are undiggable walls
     for i in range(consts.MAP_WIDTH):

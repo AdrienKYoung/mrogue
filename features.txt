@@ -241,35 +241,7 @@ ___1___
  _____
   ___
 ENDFEATURE
-//***********
-//Bear Ambush
-//***********
-DEFINE 1 MONSTER_ID monster_bear
-SCRIPT scatter_reeds
-     ####
-    #....##### #
-   #............#
-    ##.......1.$#
-      ## ##....#
-           ####
-ENDFEATURE
-//***********
-//Goblin Fort
-//***********
-DEFINE 1 MONSTER_ID monster_goblin_warrior
-DEFINE 1 MONSTER_ID monster_goblin_chief
-_____________________
-_~~~~~~~~~.~~~~~~~~~_
-_~########.########~_
-_~#2...$#...#....1#~_
-_~###.###...###.###~_
-_........1.1........_
-_~###.###...###.###~_
-_~#....1#...#....1#~_
-_~########.########~_
-_~~~~~~~~~.~~~~~~~~~_
-_____________________
-ENDFEATURE//*******************
+//*******************
 //11   Small Hill
 //*******************
 FEATURE small_hill
@@ -295,6 +267,8 @@ ENDFEATURE
 //*******************
 FEATURE marsh_gate
 CATEGORY marsh_hlink
+FLAGS NOREFLECT
 ###
-.>.
+,>,
+_,_
 ENDFEATURE

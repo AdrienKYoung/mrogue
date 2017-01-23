@@ -1217,13 +1217,26 @@ def render_all():
     ui.render_ui_overlay()
 
 
-def enter_world_cell(world_cell):
+def use_stairs(stairs):
+    import world
+    next_cell = stairs.link[1]
+    enter_world_cell(next_cell, world.opposite(stairs.link[0]))
+
+
+def enter_world_cell(world_cell, direction=None):
     global current_cell
 
     current_cell = world_cell
 
     if world_cell.map is None:
         generate_level(world_cell)
+
+    if direction is not None:
+        for obj in current_cell.objects:
+            if hasattr(obj, 'link') and obj.link[0] == direction:
+                player.x = obj.x
+                player.y = obj.y
+
     fov.initialize_fov()
 
 
