@@ -30,7 +30,7 @@ def choose_category():
 
 
 def choose_weapon(loot_level=0):
-    roll = libtcodpy.random_get_int(0, 0, min(50 + loot_level, 70))
+    roll = libtcodpy.random_get_int(0, 0, min(60 + loot_level, 80))
     if roll < 5:
         return choose_weapon(loot_level + 5)
     elif roll < 20:
@@ -41,18 +41,42 @@ def choose_weapon(loot_level=0):
         return 'equipment_hatchet'
     elif roll < 50:
         return 'equipment_longsword'
+    elif roll < 60:
+        return 'equipment_mace'
     else:
         return 'equipment_pickaxe'
 
 
 def choose_armor(loot_level=0):
-    roll = libtcodpy.random_get_int(0, 0, min(50 + loot_level, 70))
+    roll = libtcodpy.random_get_int(0, 0, min(60 + loot_level, 140))
     if roll < 5:
         return choose_armor(loot_level + 5)
-    elif roll < 35:
+    elif roll < 15:
         return 'equipment_leather_armor'
-    else:
+    elif roll < 25:
         return 'equipment_shield'
+    elif roll < 35:
+        return 'equipment_iron_helm'
+    elif roll < 45:
+        return 'equipment_mail_skirt'
+    elif roll < 55:
+        return 'equipment_vambraces'
+    elif roll < 65:
+        return 'equipment_mail_armor'
+    elif roll < 75:
+        return 'equipment_brigandine'
+    elif roll < 85:
+        return 'equipment_great_helm'
+    elif roll < 95:
+        return 'equipment_pauldrons'
+    elif roll < 105:
+        return 'equipment_greaves'
+    elif roll < 115:
+        return 'equipment_spaulders'
+    elif roll < 125:
+        return 'equipment_armet_helm'
+    else:
+        return 'equipment_plate_armor'
 
 
 def choose_book(loot_level=0):
@@ -482,7 +506,7 @@ proto = {
         'name'          : 'Mail Armor',
         'category'      : 'armor',
         'char'          : chr(6), #spade
-        'color'         : libtcodpy.gray,
+        'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 3,
         'evasion_bonus' : -3,
@@ -494,7 +518,7 @@ proto = {
         'name'          : 'Brigandine',
         'category'      : 'armor',
         'char'          : chr(6), #spade
-        'color'         : libtcodpy.red,
+        'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 5,
         'evasion_bonus' : -5,
@@ -506,7 +530,7 @@ proto = {
         'name'          : 'Plate armor',
         'category'      : 'armor',
         'char'          : chr(6), #spade
-        'color'         : libtcodpy.light_blue,
+        'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 7,
         'evasion_bonus' : -7,
@@ -518,7 +542,7 @@ proto = {
         'name'          : 'Boob Plate',
         'category'      : 'armor',
         'char'          : chr(235), #infinity
-        'color'         : libtcodpy.gray,
+        'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 6,
         'evasion_bonus' : -4,
@@ -530,7 +554,7 @@ proto = {
         'name'          : 'Iron Helm',
         'category'      : 'armor',
         'char'          : chr(67),
-        'color'         : libtcodpy.gray,
+        'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 1,
         'evasion_bonus' : -1,
@@ -542,7 +566,7 @@ proto = {
         'name'          : 'Great Helm',
         'category'      : 'armor',
         'char'          : chr(67),
-        'color'         : libtcodpy.red,
+        'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 2,
         'evasion_bonus' : -3,
@@ -554,11 +578,71 @@ proto = {
         'name'          : 'Armet Helm',
         'category'      : 'armor',
         'char'          : chr(67),
-        'color'         : libtcodpy.light_blue,
+        'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 2,
         'evasion_bonus' : -1,
         'slot'          : 'head',
         'description'   : 'A crested steel helm with visor and bevor.'
+    },
+
+    'equipment_vambraces' : {
+        'name'          : 'Vambraces',
+        'category'      : 'armor',
+        'char'          : chr(34),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'armor_bonus'   : 1,
+        'evasion_bonus' : 0,
+        'slot'          : 'arms',
+        'description'   : 'A steel forearm guard'
+    },
+
+    'equipment_pauldrons' : {
+        'name'          : 'Pauldrons',
+        'category'      : 'armor',
+        'char'          : chr(34),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'armor_bonus'   : 2,
+        'evasion_bonus' : -3,
+        'slot'          : 'arms',
+        'description'   : 'A single piece steel shoulder plate'
+    },
+
+    'equipment_spaulders' : {
+        'name'          : 'Spaulders',
+        'category'      : 'armor',
+        'char'          : chr(34),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'armor_bonus'   : 2,
+        'evasion_bonus' : -1,
+        'slot'          : 'arms',
+        'description'   : 'Articulated steel plates that protect the arms and shoulders'
+    },
+
+    'equipment_mail_skirt' : {
+        'name'          : 'Mail Skirt',
+        'category'      : 'armor',
+        'char'          : chr(239),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'armor_bonus'   : 1,
+        'evasion_bonus' : -1,
+        'slot'          : 'legs',
+        'description'   : 'A simple skirt of mail that protects the legs'
+    },
+
+    'equipment_greaves' : {
+        'name'          : 'Greaves',
+        'category'      : 'armor',
+        'char'          : chr(239),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'armor_bonus'   : 2,
+        'evasion_bonus' : -2,
+        'slot'          : 'legs',
+        'description'   : 'Steel plates that protect the shins'
     },
 }
