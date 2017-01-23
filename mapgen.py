@@ -232,6 +232,7 @@ def create_room_random():
         return create_room_rectangle()
 
 
+#TODO: This should look at branch type
 def random_terrain():
     dice = libtcod.random_get_int(0, 0, 3)
     if dice == 0:
@@ -443,6 +444,8 @@ def apply_data(x, y, data):
             break
         elif data[i] == '>':
             cell.objects.append(main.GameObject(x, y, '>', 'stairs', libtcod.white, always_visible=True))
+        elif data[i] == '+':
+            cell.objects.append(create_door(x,y))
 
 
 def apply_object(x, y, data):
@@ -626,6 +629,17 @@ def create_reed(x, y):
                            , blocks_sight=True, on_step=main.step_on_reed, burns=True)
     cell.add_object(reed)
 
+def create_door(x, y):
+    obj = main.get_objects(x, y)
+    if len(obj) > 0:
+        return  # object in the way
+    type_here = cell.map[x][y].tile_type
+    if terrain.data[type_here].isFloor:
+        cell.map[x][y].tile_type = "stone floor"
+    door = main.GameObject(x, y, '+', 'door', libtcod.brass, always_visible=True, description='A sturdy door'
+                           , blocks_sight=True, blocks=True, burns=True, interact=main.door_interact)
+    door.closed = True
+    return door
 
 def load_features_from_file(filename):
     global feature_categories, features
@@ -739,6 +753,11 @@ def load_feature(lines=[]):
                             feature_room.data[(i_x, y_index)].append('>')
                         else:
                             feature_room.data[(i_x, y_index)] = '>'
+                    elif c == '+':
+                        if (i_x, y_index) in feature_room.data.keys():
+                            feature_room.data[(i_x, y_index)].append('+')
+                        else:
+                            feature_room.data[(i_x, y_index)] = '+'
                     elif c.isdigit():
                         if (i_x, y_index) in feature_room.data.keys():
                             for s in data_strings[int(c)]:

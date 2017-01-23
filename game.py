@@ -1032,7 +1032,6 @@ def check_breakage(equipment):
     else:
         return False
 
-
 def create_fire(x,y,temp):
     global changed_tiles
 
@@ -1048,6 +1047,16 @@ def create_fire(x,y,temp):
         obj.destroy()
     changed_tiles.append((x, y))
 
+def door_interact(door):
+    if door.closed:
+        door.closed = False
+        door.blocks = False
+        door.blocks_sight = False
+    else:
+        door.closed = True
+        door.blocks = True
+        door.blocks_sight = True
+    fov.set_fov_properties(door.x,door.y,door.blocks_sigh,door.elevation)
 
 def place_objects(tiles):
     if len(tiles) == 0:
