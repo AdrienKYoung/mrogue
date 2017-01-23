@@ -152,7 +152,7 @@ DEFINE 1 MONSTER_ID monster_verman
 _______
 _#####_
 _#$..#_
-_#$1.+_
+_#$1.._
 _#$..#_
 _#####_
 _______
@@ -271,4 +271,14 @@ FLAGS NOREFLECT
 ###
 ,>,
 _,_
+ENDFEATURE
+//*******************
+//13   Beach Gate
+//*******************
+FEATURE beach_gate
+CATEGORY beach_hlink
+FLAGS NOREFLECT
+###
+->-
+---
 ENDFEATURE

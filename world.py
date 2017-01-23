@@ -1,7 +1,8 @@
 import game as main
 full_names = {
     'marsh' : 'the Marshes',
-    'goblin' : 'the Goblin Tunnels'
+    'goblin' : 'the Goblin Tunnels',
+    'beach' : 'the coast'
 }
 
 class Map:
@@ -46,13 +47,17 @@ def initialize_world():
     global world_maps
 
     world_maps = {}
-    for y in range(3):
-        for x in range(2):
+
+    world_maps['beach'] = Map('beach')
+
+    for y in range(2):
+        for x in range(3):
             new_map = Map('marsh', coord=(x, y))
             if x > 0:
                 new_map.add_link(world_maps['marsh_' + str(x - 1) + '_' + str(y)], 'west')
             if y > 0:
                 new_map.add_link(world_maps['marsh_' + str(x) + '_' + str(y - 1)], 'north')
             world_maps[new_map.name] = new_map
+    world_maps['marsh_2_1'].add_link(world_maps['beach'], 'east')
 
 world_maps = None

@@ -846,6 +846,34 @@ def choose_random_tile(tile_list, exclusive=True):
     return chosen_tile
 
 
+def create_coastline(height):
+    shore_noise = libtcod.noise_new(1)
+    shore_y = height
+    for x in range(consts.MAP_WIDTH):
+        shore = libtcod.noise_get_fbm(shore_noise, [float(x) / 10.0, float(x) / 10.0 + 1.0], libtcod.NOISE_PERLIN)
+        this_shore = shore_y + int(shore * 10)
+        for y in range(consts.MAP_HEIGHT - 1, this_shore, -1):
+            change_map_tile(x, y, 'shallow water')
+        for y in range(consts.MAP_HEIGHT - 1, shore_y + 6 + int(shore * 8), -1):
+            change_map_tile(x, y, 'deep water')
+
+
+def erode_map(floor_type='stone floor', iterations=1):
+    for i in range(iterations):
+        eroded = []
+        for y in range(consts.MAP_HEIGHT):
+            for x in range(consts.MAP_WIDTH):
+                open_count = 0
+                adjacent = main.adjacent_tiles_diagonal(x, y)
+                for tile in adjacent:
+                    if not map.tiles[tile[0]][tile[1]].is_wall:
+                        open_count += 1
+                if libtcod.random_get_int(0, 0, 4) < open_count:
+                    eroded.append((x, y))
+        for tile in eroded:
+            change_map_tile(tile[0], tile[1], floor_type)
+
+
 def make_rooms_and_corridors():
 
     rooms = []
@@ -959,6 +987,34 @@ def make_map_marsh():
         main.spawn_monster(boss, boss_tile[0], boss_tile[1])
 
 
+def make_map_beach():
+
+    for y in range(6, consts.MAP_HEIGHT - 6):
+        for x in range(6, consts.MAP_WIDTH - 6):
+            map.tiles[x][y].tile_type = 'sand'
+
+    for i in range(0, 6 + libtcod.random_get_int(0, 0, 8)):
+        start = (libtcod.random_get_int(0, 10, consts.MAP_WIDTH - 10),
+                 libtcod.random_get_int(0, 10, consts.MAP_HEIGHT * 2 / 3))
+        create_terrain_patch(start, 'stone wall', 40, 80)
+
+    erode_map('sand', 2)
+
+    create_coastline(2 * consts.MAP_HEIGHT / 3)
+
+    # Determine player spawn
+    player_x = consts.MAP_WIDTH / 2
+    player_y = consts.MAP_HEIGHT / 2
+    for y in range(consts.MAP_HEIGHT - 1, 1, -1):
+        if map.tiles[player_x][y].tile_type == 'sand':
+            player_y = y
+            break
+    player.instance.x = player_x
+    player.instance.y = player_y
+
+    #make_test_space()
+
+
 def make_test_space():
     for y in range(2, consts.MAP_HEIGHT - 2):
         for x in range(2, consts.MAP_WIDTH - 2):
@@ -1052,6 +1108,8 @@ def make_map(_map):
         make_map_marsh()
     elif map.branch == 'goblin':
         make_rooms_and_corridors()
+    elif map.branch == 'beach':
+        make_map_beach()
     else:
         # make_rooms_and_corridors()
         make_map_marsh()

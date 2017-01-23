@@ -527,6 +527,18 @@ class Tile:
     def diggable(self):
         return terrain.data[self.tile_type].diggable
 
+    @property
+    def is_wall(self):
+        return terrain.data[self.tile_type].isWall
+
+    @property
+    def is_floor(self):
+        return terrain.data[self.tile_type].isFloor
+
+    @property
+    def is_water(self):
+        return terrain.data[self.tile_type].isWater
+
                 
 #############################################
 # General Functions
@@ -1317,7 +1329,7 @@ def main_menu():
             play_game()
         elif choice == 2:
             break
-    
+
 
 def new_game():
     global game_state, dungeon_level, memory, in_game, changed_tiles, learned_skills
@@ -1330,7 +1342,7 @@ def new_game():
     
     # generate map
     dungeon_level = 1
-    enter_map(world.world_maps['marsh_1_1'])
+    enter_map(world.world_maps['beach'])
     # initialize_fov()
     game_state = 'playing'
 

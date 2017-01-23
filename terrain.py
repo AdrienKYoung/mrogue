@@ -25,6 +25,8 @@ class TileData:
 data = {
     'stone floor': TileData(False, False, 'stone floor', '.', (128, 96, 0), (64, 48, 0),
                              'the cold, cobblestone dungeon floor', isFloor=True),
+    'sand': TileData(False, False, 'sand', '.', (158, 134, 100), (127, 101, 63),
+                             'fine, damp sand', isFloor=True),
     'stone wall': TileData(True, True, 'stone wall', '#', (255, 191, 0), (191, 143, 0),
                              'the sturdy masonry of the dungeon walls', diggable=True, isWall=True),
     'hard stone wall': TileData(True, True, 'stone wall', '#', (255, 191, 0), (191, 143, 0), # used for edge of map
