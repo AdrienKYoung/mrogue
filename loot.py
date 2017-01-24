@@ -480,7 +480,7 @@ proto = {
         'name'               : 'mace',
         'category'           : 'weapon',
         'damage_type'        : 'bludgeoning',
-        'char'               : chr(156),
+        'char'               : chr(157),
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
         'slot'               : 'right hand',

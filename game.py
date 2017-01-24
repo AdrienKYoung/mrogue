@@ -739,12 +739,6 @@ def bomb_beetle_corpse_tick(object=None):
 
 def bomb_beetle_death(beetle):
 
-    if beetle.fighter.loot_table is not None:
-        drop = get_loot(beetle.fighter)
-        if drop:
-            current_map.add_object(drop)
-            drop.send_to_back()
-
     ui.message(beetle.name.title() + ' is dead!', libtcod.red)
     beetle.char = 149
     beetle.color = libtcod.black
@@ -1141,7 +1135,7 @@ def place_objects(tiles,encounter_count=1, loot_count=1):
         for i in range(encounter_count):
             encounter_roll = roll_dice('1d' + str(branch['encounter_range'] + current_map.difficulty))
             if roll_dice('1d10') == 10:  # Crit the encounter table, roll to confirm
-                encounter_roll = libtcod.random_get_int(0, encounter_roll, len(monsters_set))
+                encounter_roll = libtcod.random_get_int(0, encounter_roll, len(monsters_set)) - 1
             encounter = monsters_set[encounter_roll]
             size = 1
             random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]

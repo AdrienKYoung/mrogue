@@ -9,11 +9,12 @@ import combat
 
 class PlayerStats:
 
-    def __init__(self, int=10, wiz=10, str=10, agi=10):
+    def __init__(self, int=10, wiz=10, str=10, agi=10, con=10):
         self.base_int = int
         self.base_wiz = wiz
         self.base_str = str
         self.base_agi = agi
+        self.base_con = con
 
     @property
     def int(self):
@@ -39,25 +40,113 @@ class PlayerStats:
     def max_mana(self):
         return 1 + int(math.floor(self.wiz / 4))
 
+loadouts = {
+    'warrior' : {
+        'str':12,
+        'agi':10,
+        'int':6,
+        'spr':10,
+        'con':12,
+        'inventory':[
+            #'charm_magic_weapon',
+            'weapon_longsword',
+            'equipment_leather_armor',
+            'equipment_iron_helm'
+        ],
+        'description' : """
+        Balanced melee fighter. Starts with good weapon and armor.
+        Charm channels essence to imbue temporary weapon effects.
+        """
+    },
+    'rogue' : {
+        'str':10,
+        'agi':14,
+        'int':8,
+        'spr':9,
+        'con':8,
+        'inventory':[
+            #'charm_curse',
+            'weapon_dagger',
+            'equipment_leather,armor'
+        ],
+        'description' : """
+        Nimble melee fighter. Starts with excellent agility.
+        Charm channels essence to curse enemies with negative effects.
+        """
+    },
+    'wanderer' : {
+        'str':10,
+        'agi':10,
+        'int':10,
+        'spr':14,
+        'con':10,
+        'inventory':[
+            #'charm_blessing'
+        ],
+        'description' : """
+        Generalist class with great stats, especially spirit. Starts with no gear.
+        Charm channels essence to bless self with beneficial effects.
+        """
+    },
+    'fanatic' : {
+        'str':12,
+        'agi':10,
+        'int':8,
+        'spr':12,
+        'con':8,
+        'inventory':[
+            #'charm_resistance'
+            'weapon_mace'
+        ],
+        'description' : """
+        Offensive melee fighter. Starts with no armor and a mace.
+        Charm channels essence to bless self with elemental resistance.
+        """
+    },
+    'wizard' : {
+        'str':6,
+        'agi':8,
+        'int':12,
+        'spr':10,
+        'con':8,
+        'inventory':[
+            #'charm_summon',
+            #'tome_basic',
+            'tome_manabolt' #TODO:Remove this line
+        ],
+        'description' : """
+        Fragile in melee, but have access to powerful offensive magic. Starts with a tome.
+        Charm channels essence to summon elementals
+        """
+    },
+}
+
 instance = None
 
 def create():
     global instance
 
+    loadout = loadouts[consts.DEBUG_STARTING_CLASS]
+
     fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death)
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
-                        player_stats=PlayerStats(), description='You, the fearless adventurer!')
+                        player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),int(loadout['agi']),int(loadout['con']))
+                        , description='You, the fearless adventurer!')
     instance.level = 1
     instance.mana = []
     instance.known_spells = []
     instance.action_queue = []
 
-    leather_armor = main.create_item('equipment_leather_armor')
-    instance.fighter.inventory.append(leather_armor)
-    leather_armor.equipment.equip()
-    dagger = main.create_item('weapon_dagger', material='iron', quality='')
-    instance.fighter.inventory.append(dagger)
-    dagger.equipment.equip()
+    for item in loadout['inventory']:
+        equipment = None
+
+        if 'weapon' in item:
+            equipment = main.create_item(item, material='iron', quality='')
+        else:
+            equipment = main.create_item(item)
+
+        instance.fighter.inventory.append(equipment)
+        equipment.equipment.equip()
 
     if consts.DEBUG_STARTING_ITEM is not None:
         test = main.create_item(consts.DEBUG_STARTING_ITEM)
