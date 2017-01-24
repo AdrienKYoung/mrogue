@@ -8,29 +8,29 @@ import dungeon
 
 table = {
     'weapons_0': [
-        'equipment_dagger',
-        'equipment_hatchet',
-        'equipment_longsword',
-        'equipment_mace',
-        'equipment_spear',
+        'weapon_dagger',
+        'weapon_hatchet',
+        'weapon_longsword',
+        'weapon_mace',
+        'weapon_spear',
     ],
 
      'weapons_1': [
-        'equipment_dagger',
-        'equipment_hatchet',
-        'equipment_longsword',
-        'equipment_mace',
-        'equipment_spear',
-        'equipment_pickaxe',
+        'weapon_dagger',
+        'weapon_hatchet',
+        'weapon_longsword',
+        'weapon_mace',
+        'weapon_spear',
+        'weapon_pickaxe',
     ],
 
     'weapons_2' : [
-        'equipment_dagger',
-        'equipment_hatchet',
-        'equipment_longsword',
-        'equipment_mace',
-        'equipment_spear',
-        'equipment_pickaxe',
+        'weapon_dagger',
+        'weapon_hatchet',
+        'weapon_longsword',
+        'weapon_mace',
+        'weapon_spear',
+        'weapon_pickaxe',
     ],
 
     'armor_0': [

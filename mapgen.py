@@ -433,8 +433,9 @@ def apply_data(x, y, data):
             map.objects.append(main.GameObject(x, y, '>', 'stairs', libtcod.white, always_visible=True))
         elif data[i] == '+':
             door = create_door(x, y)
-            map.objects.append(door)
-            door.send_to_back()
+            if door is not None:
+                map.objects.append(door)
+                door.send_to_back()
 
 
 def apply_object(x, y, data):
@@ -624,7 +625,7 @@ def create_reed(x, y):
 def create_door(x, y):
     obj = main.get_objects(x, y)
     if len(obj) > 0:
-        return  # object in the way
+        return None # object in the way
     type_here = map.tiles[x][y].tile_type
     if terrain.data[type_here].isFloor:
         map.tiles[x][y].tile_type = "stone floor"

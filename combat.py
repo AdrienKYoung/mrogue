@@ -7,7 +7,6 @@ import player
 import spells
 import fov
 import effects
-from syntax import Verb
 
 class Fighter:
 
