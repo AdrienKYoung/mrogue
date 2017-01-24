@@ -150,8 +150,16 @@ class Fighter:
             return 1  # monsters get only 1
 
     def attack(self, target):
-        return attack_ex(self, target, self.calculate_attack_stamina_cost(), self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
-                       None, self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
+        result = 'failed'
+        attacks = self.calculate_attack_count()
+        for i in range(attacks):
+            result = attack_ex(self, target, self.calculate_attack_stamina_cost(), self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
+                           None, self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
+            if result == 'failed':
+                return result
+            elif target.fighter is None:
+                return result
+        return result
 
     def heal(self, amount):
         self.hp += amount
@@ -364,7 +372,7 @@ damage_description_tables = {
     'slashing' : [
         'cuts',
         'slashes',
-        'lays open'
+        'lays open',
         'cleaves through'
     ],
     'bludgeoning' : [
@@ -462,7 +470,10 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
                 main.check_breakage(weapon)
             return 'hit'
         else:
-            ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but the attack is deflected!', libtcod.grey)
+            verbs = damage_description_tables['deflected']
+            verb = verbs[libtcod.random_get_int(0, 0, len(verbs) - 1)]
+
+            ui.message('The ' + fighter.owner.name.title() + "'s attack " + verb + ' the ' + target.name + '!', libtcod.grey)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)

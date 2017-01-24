@@ -394,7 +394,8 @@ proto = {
         'shred'              : 1,
         'accuracy'           : 1,
         'weapon_dice'        : '2d6',
-        'str_dice'           : 2
+        'str_dice'           : 2,
+        'attack_delay'       : 14
     },
     'weapon_dagger': {
         'name'               : 'dagger',
@@ -411,7 +412,8 @@ proto = {
         'shred'              : 0,
         'accuracy'           : 5,
         'weapon_dice'        : '2d4',
-        'str_dice'           : 1
+        'str_dice'           : 1,
+        'attack_delay'       : 12
     },
     'weapon_spear': {
         'name'               : 'spear',
@@ -433,7 +435,8 @@ proto = {
         'ctrl_attack_desc'   : 'Reach-Attack - attack an enemy up to 2 spaces away in this direction. Deals 50% more '
                                'damage to enemies exactly 2 spaces away.',
         'weapon_dice'        : '2d5',
-        'str_dice'           : 1
+        'str_dice'           : 1,
+        'attack_delay'       : 14
     },
     'weapon_pickaxe': {
         'name'               : 'pickaxe',
@@ -455,7 +458,8 @@ proto = {
         'ctrl_attack_desc'   : 'Dig - dig through walls in this direction.',
         'break'              : 5.0,
         'weapon_dice'        : '1d4',
-        'str_dice'           : 3
+        'str_dice'           : 3,
+        'attack_delay'       : 28
     },
     'weapon_hatchet': {
         'name'               : 'hatchet',
@@ -474,7 +478,8 @@ proto = {
         'ctrl_attack'        : player.cleave_attack,
         'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.',
         'weapon_dice'        : '1d6',
-        'str_dice'           : 2
+        'str_dice'           : 2,
+        'attack_delay'       : 16
     },
     'weapon_mace': {
         'name'               : 'mace',
@@ -486,12 +491,13 @@ proto = {
         'slot'               : 'right hand',
         'description'        : 'A one-handed flanged mace. Good against armored enemies',
         'stamina_cost'       : 10,
-        'str_requirement'    : 11,
+        'str_requirement'    : 13,
         'shred'              : 2,
         'accuracy'           : 2,
         'weapon_dice'        : '1d6',
-        'str_dice'           : 1,
-        'on_hit'             : [combat.on_hit_stun]
+        'str_dice'           : 2,
+        'on_hit'             : [combat.on_hit_stun],
+        'attack_delay'       : 18
     },
 
     #ARMOR
