@@ -133,6 +133,22 @@ class Fighter:
                 return roll_damage(weapon,self)
         return self.attack_damage * (1.0 - self.damage_variance + libtcod.random_get_float(0, 0, 2 * self.damage_variance))
 
+    def calculate_attack_count(self):
+        if self.owner is player.instance:
+            weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
+            if weapon is None:
+                delay = 10
+            else:
+                delay = weapon.attack_delay
+            dm = divmod(self.attack_speed, delay)
+            attacks = dm[0]
+            remainder = float(dm[1]) / float(delay)
+            if libtcod.random_get_float(0, 0.0, 1.0) < remainder:
+                attacks += 1
+            return attacks
+        else:
+            return 1  # monsters get only 1
+
     def attack(self, target):
         return attack_ex(self, target, self.calculate_attack_stamina_cost(), self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
                        None, self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
@@ -285,6 +301,15 @@ class Fighter:
     def max_hp(self):
         bonus = sum(equipment.max_hp_bonus for equipment in main.get_all_equipped(self.inventory))
         return self.base_max_hp + bonus
+
+    @property
+    def attack_speed(self):
+        # NOTE: this is a player-only stat
+        if self.owner.player_stats:
+            bonus = sum(equipment.attack_speed_bonus for equipment in main.get_all_equipped(self.inventory))
+            return self.owner.player_stats.agi + bonus
+        else:
+            return 0
 
 hit_tables = {
     'default': {

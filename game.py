@@ -14,7 +14,8 @@ class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
-                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None):
+                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None,
+                 attack_speed_bonus=0, attack_delay=10):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -36,6 +37,8 @@ class Equipment:
         self.str_dice = str_dice
         self.on_hit = on_hit #expects list
         self.damage_type = damage_type
+        self.attack_speed_bonus = attack_speed_bonus
+        self.attack_delay = attack_delay
 
     def toggle(self):
         if self.is_equipped:
@@ -961,7 +964,9 @@ def create_item(name, material=None, quality=None):
             weapon_dice=p.get('weapon_dice'),
             str_dice=p.get('str_dice', 0),
             on_hit=p.get('on_hit',[]),
-            damage_type=p.get('damage_type')
+            damage_type=p.get('damage_type'),
+            attack_speed_bonus=p.get('attack_speed_bonus', 0),
+            attack_delay=p.get('attack_delay', 10)
         )
 
         if equipment_component.category == 'weapon':
