@@ -6,7 +6,7 @@ full_names = {
 }
 
 class Map:
-    def __init__(self, branch, coord=None, depth=None):
+    def __init__(self, branch, coord=None, depth=None, difficulty=0):
         self.links = []
         self.branch = branch
         self.name = branch
@@ -16,6 +16,7 @@ class Map:
             self.name += '_%d' % depth
         self.tiles = None
         self.objects = None
+        self.difficulty = difficulty
 
     def add_link(self, cell, direction):
         self.links.append((direction, cell))

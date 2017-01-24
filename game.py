@@ -3,6 +3,7 @@ import math
 import shelve
 import consts
 import terrain
+import world
 
 #############################################
 # Classes
@@ -764,12 +765,6 @@ def bomb_beetle_death(beetle):
 def monster_death(monster):
     global changed_tiles
 
-    if monster.fighter.loot_table is not None:
-        drop = get_loot(monster.fighter)
-        if drop:
-            current_map.add_object(drop)
-            drop.send_to_back()
-
     if hasattr(monster.fighter,'inventory') and len(monster.fighter.inventory) > 0:
         for item in monster.fighter.inventory:
             item.x = monster.x
@@ -905,7 +900,7 @@ def spawn_monster(name, x, y):
         fighter_component = combat.Fighter( hp=int(p['hp'] * modifier.get('hp_bonus',1)), attack_damage=int(p['attack_damage'] * modifier.get('attack_bonus',1)),
                                             armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evastion_bonus',1)),
                                             accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
-                                            death_function=death, loot_table=loot.table[p.get('loot', 'default')],
+                                            death_function=death,
                                             can_breath_underwater=True, resistances=p['resistances'] + modifier.get('resistances',[]),
                                             inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
                                             base_shred=p.get('shred', 0) * modifier.get('shred_bonus',1),
@@ -1109,35 +1104,73 @@ def door_interact(door):
     ui.message('Something is blocking the door.')
     return 'didnt-take-turn'
 
-def place_objects(tiles):
+def roll_dice(dice):
+    c = 0
+    if '+' in dice:
+        dice,c = dice.split('+')
+
+    a,b = dice.split('d')
+    r = 0
+    for i in range(int(a)):
+        r += libtcod.random_get_int(0,1,int(b))
+    return r + int(c)
+
+def find_closest_open_tile(x, y, exclude=[]):
+    explored = [(x, y)]
+    neighbors = [(x, y)]
+    for tile in adjacent_tiles_diagonal(x, y):
+        neighbors.append(tile)
+    while len(neighbors) > 0:
+        tile = neighbors[0]
+        if in_bounds(tile[0], tile[1]) and not is_blocked(tile[0], tile[1], 0) and tile not in exclude:
+            return tile  # we found an open tile
+        neighbors.remove(tile)
+        explored.append(tile)
+        for n in adjacent_tiles_diagonal(tile[0], tile[1]):
+            if n not in explored and n not in neighbors:
+                neighbors.append(n)
+    return None  # failure
+
+def place_objects(tiles,encounter_count=1, loot_count=1):
     if len(tiles) == 0:
         return
-    max_items = from_dungeon_level([[1, 1], [2, 4], [4, 7]])
 
-    table = dungeon.table[get_dungeon_level()]['versions']
-    for i in range(libtcod.random_get_int(0, 0, 4)):  # temporary line to spawn multiple monster groups in a room
-        spawns = get_room_spawns(table[random_choice_index([e['weight'] for e in table])])
-        for s in spawns:
-            for n in range(0,s[1]):
-                random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
-                spawn_monster(s[0], random_pos[0], random_pos[1])
-                tiles.remove(random_pos)
-                if len(tiles) == 0:
-                    return
+    branch = dungeon.branches[current_map.branch]
+    monsters_set = branch.get('monsters')
+    if monsters_set is not None:
+        for i in range(encounter_count):
+            encounter_roll = roll_dice('1d' + str(branch['encounter_range'] + current_map.difficulty))
+            if roll_dice('1d10') == 10:  # Crit the encounter table, roll to confirm
+                encounter_roll = libtcod.random_get_int(0, encounter_roll, len(monsters_set))
+            encounter = monsters_set[encounter_roll]
+            size = 1
+            random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
 
-    num_items = libtcod.random_get_int(0, 0, max_items)
-    for i in range(num_items):
+            if encounter.get('party') is not None:
+                size = roll_dice(encounter['party'])
+
+            for i in range(size):
+                loc = find_closest_open_tile(random_pos[0],random_pos[1])
+                if loc is not None and loc in tiles:
+                    spawn_monster(encounter['encounter'][libtcod.random_get_int(0,0,len(encounter['encounter'])-1)], loc[0], loc[1])
+                    tiles.remove(loc)
+                    if len(tiles) == 0:
+                        return
+
+
+    for i in range(loot_count):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
 
         if not is_blocked(random_pos[0], random_pos[1]):
-            item = loot.item_from_table(dungeon_level * 5)
-            item.x = random_pos[0]
-            item.y = random_pos[1]
-            current_map.add_object(item)
-            item.send_to_back()
-            tiles.remove(random_pos)
-            if len(tiles) == 0:
-                return
+            item = loot.item_from_table(current_map.branch)
+            if item is not None:
+                item.x = random_pos[0]
+                item.y = random_pos[1]
+                current_map.add_object(item)
+                item.send_to_back()
+                tiles.remove(random_pos)
+                if len(tiles) == 0:
+                    return
 
     for i in range(2):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
@@ -1151,12 +1184,12 @@ def place_objects(tiles):
 def check_boss(level):
     global spawned_bosses
 
-    for (k, v) in dungeon.bosses.items():
-        chance = v.get(level)
-        if chance is not None and spawned_bosses.get(k) is None:
-            if chance >= libtcod.random_get_int(0, 0, 100):
-                spawned_bosses[k] = True
-                return k
+    #for (k, v) in dungeon.bosses.items():
+    #    chance = v.get(level)
+    #    if chance is not None and spawned_bosses.get(k) is None:
+    #        if chance >= libtcod.random_get_int(0, 0, 100):
+    #            spawned_bosses[k] = True
+    #            return k
     return None
 
 

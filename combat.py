@@ -12,7 +12,7 @@ from syntax import Verb
 class Fighter:
 
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=25, attack_damage=1,
-                 damage_variance=0.15, spell_power=0, death_function=None, loot_table=None, breath=6,
+                 damage_variance=0.15, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None):
         self.xp = xp
@@ -23,7 +23,6 @@ class Fighter:
         self.death_function = death_function
         self.max_stamina = stamina
         self.stamina = stamina
-        self.loot_table = loot_table
         self.base_armor = armor
         self.base_evasion = evasion
         self.base_attack_damage = attack_damage

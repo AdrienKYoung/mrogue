@@ -9,6 +9,7 @@ import Queue
 import pathfinding
 import world
 import player
+import dungeon
 
 angles = [0,
           0.5 * math.pi,
@@ -346,24 +347,6 @@ def random_from_list(list):
     i = libtcod.random_get_int(0, 0, len(list) - 1)
     return list[i]
 
-
-def find_closest_open_tile(x, y, exclude=[]):
-    explored = [(x, y)]
-    neighbors = [(x, y)]
-    for tile in main.adjacent_tiles_diagonal(x, y):
-        neighbors.append(tile)
-    while len(neighbors) > 0:
-        tile = neighbors[0]
-        if main.in_bounds(tile[0], tile[1]) and not main.is_blocked(tile[0], tile[1], 0) and tile not in exclude:
-            return tile  # we found an open tile
-        neighbors.remove(tile)
-        explored.append(tile)
-        for n in main.adjacent_tiles_diagonal(tile[0], tile[1]):
-            if n not in explored and n not in neighbors:
-                neighbors.append(n)
-    return None  # failure
-
-
 def create_room_rectangle():
     room = Room()
     room.add_rectangle(tile_type=random_terrain())
@@ -522,11 +505,14 @@ def apply_item(x, y, data):
     if item_id:
         main.spawn_item(item_id, x, y, material=material, quality=quality)
     else:
-        item = loot.item_from_table(loot_level=loot_level, category=category)
-        item.x = x
-        item.y = y
-        map.add_object(item)
-        item.send_to_back()
+        #TODO - Fix feature loot drops to use tables
+        if category is not None:
+            item = loot.item_from_table(map.branch, category+'_'+str(loot_level))
+            if item is not None:
+                item.x = x
+                item.y = y
+                map.add_object(item)
+                item.send_to_back()
 
 
 def change_map_tile(x, y, tile_type, no_overwrite=False):
@@ -977,10 +963,10 @@ def make_map_marsh():
 
     player_tile = choose_random_tile(open_tiles)
 
+    active_branch = dungeon.branches[map.branch]
     player.instance.x = player_tile[0]
     player.instance.y = player_tile[1]
-    for i in range(7):
-        main.place_objects(open_tiles)
+    main.place_objects(open_tiles,main.roll_dice(active_branch['encounter_dice']),main.roll_dice(active_branch['loot_dice']))
     #stair_tile = choose_random_tile(open_tiles)
     #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white, always_visible=True)
     #map.objects.append(main.stairs)
@@ -1075,7 +1061,7 @@ def make_map_links():
             link_feature = random_from_list(feature_categories[link[1].branch + '_hlink']).name
             exclude = []
             create_feature(x, y, link_feature, hard_override=True, rotation=r, open_tiles=exclude)
-            closest = find_closest_open_tile(x + 1, y + 1, exclude=exclude)
+            closest = main.find_closest_open_tile(x + 1, y + 1, exclude=exclude)
             create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='default ground')
         else:
             pass  # TODO: Vertical passages

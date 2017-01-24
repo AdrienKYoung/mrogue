@@ -147,7 +147,7 @@ ENDFEATURE
 //*******************
 FEATURE verman_hut
 FLAGS NOSPAWNS
-DEFINE $ LOOT_LEVEL 5 CATEGORY consumable
+DEFINE $ LOOT_LEVEL 1 CATEGORY consumables
 DEFINE 1 MONSTER_ID monster_verman
 _______
 _#####_
@@ -177,7 +177,7 @@ ENDFEATURE
 //*******************
 FEATURE frog_pond
 DEFAULT ,
-DEFINE $ LOOT_LEVEL 15
+DEFINE $ LOOT_LEVEL 2
 DEFINE 1 MONSTER_ID monster_giant_frog
 SCRIPT scatter_reeds
   ,,,,,,,,,,,
