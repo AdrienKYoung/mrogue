@@ -10,7 +10,7 @@ proto = {
         'hp': 20,
         'attack_damage': 10,
         'armor': 1,
-        'evasion': 10,
+        'evasion': 9,
         'accuracy': 18,
         'speed': 0.8,
         'difficulty': 1,
@@ -26,6 +26,7 @@ proto = {
         'name': 'cockroach',
         'char': 'r',
         'color': libtcod.dark_red,
+        'body_type': 'insect',
         'hp': 1,
         'attack_damage': 6,
         'armor': 0,
@@ -67,7 +68,7 @@ proto = {
         'hp': 20,
         'attack_damage': 10,
         'armor': 2,
-        'evasion': 10,
+        'evasion': 9,
         'accuracy': 23,
         'speed': 0.8,
         'difficulty': 1,
@@ -87,7 +88,7 @@ proto = {
         'hp': 30,
         'attack_damage': 15,
         'armor': 3,
-        'evasion': 10,
+        'evasion': 9,
         'accuracy': 23,
         'speed': 0.8,
         'difficulty': 1,
@@ -108,7 +109,7 @@ proto = {
         'hp': 15,
         'attack_damage': 6,
         'armor': 3,
-        'evasion': 7,
+        'evasion': 6,
         'accuracy': 22,
         'speed': 0.9,
         'difficulty': 1,
@@ -117,7 +118,7 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'A round brown beetle. A warm glow emanates from beneath its carapace.',
         'resistances': [],
-        'mana': [(50, 'fire')]
+        'essence': [(50, 'fire')]
     },
     'monster_giant_frog': {
         'name': 'giant frog',
@@ -126,7 +127,7 @@ proto = {
         'hp': 25,
         'attack_damage': 5,
         'armor': 0,
-        'evasion': 12,
+        'evasion': 10,
         'accuracy': 21,
         'speed': 1.0,
         'difficulty': 1,
@@ -137,13 +138,13 @@ proto = {
                        'Can grab unwary adventurers with its sticky tongue.',
         'resistances': [],
         'attributes':['ability_grapel'],
-        'mana': [(10, 'water'), (10, 'life')]
+        'essence': [(10, 'water'), (10, 'life')]
     },
     'monster_verman': {
         'name': 'verman',
         'char': 'v',
         'color': libtcod.amber,
-        'hp': 35,
+        'hp': 30,
         'attack_damage': 6,
         'armor': 1,
         'evasion': 13,
@@ -158,7 +159,7 @@ proto = {
         'resistances': [],
         'attributes':['ability_summon_vermin'],
         'shred': 1,
-        'mana': [(10, 'earth')]
+        'essence': [(10, 'earth')]
     },
     'monster_reeker': {
         'name': 'reeker',
@@ -177,7 +178,7 @@ proto = {
         'ai': ai.AI_Reeker,
         'description': 'A short, stocky fungus that emits puffs of foul-smelling gas.',
         'resistances': ['confusion', 'stunned'],
-        'mana': [(65, 'life')]
+        'essence': [(65, 'life')]
     },
     'monster_blastcap': {
         'name': 'blastcap',
@@ -215,7 +216,7 @@ proto = {
         'description': 'Large stone golem, animated by magic. Slow but very strong.',
         'resistances': [],
         'shred': 2,
-        'mana': [(70, 'earth')]
+        'essence': [(70, 'earth')]
     },
     'monster_bear': {
         'name': 'cave bear',
@@ -224,7 +225,7 @@ proto = {
         'hp': 50,
         'attack_damage': 30,
         'armor': 2,
-        'evasion': 9,
+        'evasion': 6,
         'accuracy': 23,
         'speed': 0.65,
         'difficulty': 3,
@@ -241,7 +242,7 @@ proto = {
         'char': 's',
         'color': libtcod.gray,
         'body_type': 'insect',
-        'hp': 16,
+        'hp': 20,
         'attack_damage': 6,
         'armor': 0,
         'evasion': 12,
@@ -273,7 +274,7 @@ proto = {
         'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.',
         'resistances': [],
         'shred': 3,
-        'mana': [(15, 'fire')]
+        'essence': [(15, 'fire')]
     }
 }
 

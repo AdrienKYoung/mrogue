@@ -304,14 +304,14 @@ def render_side_panel(acc_mod=1.0):
     libtcod.console_print(side_panel, 2, 12, 'XP:  ' + str(player.instance.fighter.xp))
 
     # Mana
-    libtcod.console_print(side_panel, 2, 14, 'Mana:')
+    libtcod.console_print(side_panel, 2, 14, 'Essence:')
     libtcod.console_put_char(side_panel, 2, 15, '[')
     x = 4
-    for m in range(len(player.instance.mana)):
-        libtcod.console_set_default_foreground(side_panel, spells.mana_colors[player.instance.mana[m]])
+    for m in range(len(player.instance.essence)):
+        libtcod.console_set_default_foreground(side_panel, spells.essence_colors[player.instance.essence[m]])
         libtcod.console_put_char(side_panel, x, 15, '*')
         x += 2
-    for m in range(player.instance.player_stats.max_mana - len(player.instance.mana)):
+    for m in range(player.instance.player_stats.max_essence - len(player.instance.essence)):
         libtcod.console_set_default_foreground(side_panel, libtcod.dark_grey)
         libtcod.console_put_char(side_panel, x, 15, '.')
         x += 2

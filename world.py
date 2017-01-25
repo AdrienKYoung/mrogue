@@ -5,6 +5,12 @@ full_names = {
     'beach' : 'the coast'
 }
 
+branch_scaling = {
+    'marsh' : 0,
+    'goblin' : 0,
+    'beach' : 0
+}
+
 class Map:
     def __init__(self, branch, coord=None, depth=None, difficulty=0):
         self.links = []

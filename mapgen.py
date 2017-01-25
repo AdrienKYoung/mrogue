@@ -481,7 +481,7 @@ def apply_object(x, y, data):
         map.add_object(new_obj)
 
 def apply_item(x, y, data):
-    loot_level = main.dungeon_level * 5
+    loot_level = None
     category = None
     item_id = None
     quality = None
@@ -490,25 +490,40 @@ def apply_item(x, y, data):
         for i in range(1, len(data)):
             if data[i] == 'LOOT_LEVEL':
                 loot_level = int(data[i + 1])
-                i += 1
             elif data[i] == 'CATEGORY':
                 category = data[i + 1]
-                i += 1
             elif data[i] == 'ITEM_ID':
                 item_id = data[i + 1]
-                i += 1
             elif data[i] == 'QUALITY':
                 quality = data[i + 1]
-                i += 1
             elif data[i] == 'MATERIAL':
                 material = data[i + 1]
-                i += 1
     if item_id:
         main.spawn_item(item_id, x, y, material=material, quality=quality)
     else:
-        #TODO - Fix feature loot drops to use tables
-        if category is not None:
-            item = loot.item_from_table(map.branch, category+'_'+str(loot_level))
+        table = None
+        tables = dungeon.branches[map.branch]['loot']
+        if tables is not None:
+            if category is None and loot_level is None:
+                # choose a random loot table for this branch
+                table = tables.keys()[libtcod.random_get_int(0, 0, len(tables.keys()) - 1)]
+            elif category is not None and loot_level is None:
+                # choose the first table matching this category
+                for t in tables:
+                    if t.startswith(category):
+                        table = t
+                        break
+            elif category is None and loot_level is not None:
+                # choose a random table. Set its loot level to match.
+                table = tables.keys()[libtcod.random_get_int(0, 0, len(tables.keys()) - 1)]
+                table = table.split('_')[0]
+                table += '_%d' % loot_level
+            else:
+                # we have both a category and a loot level
+                table = category + '_' + str(loot_level)
+
+        if table is not None:
+            item = loot.item_from_table(map.branch, table)
             if item is not None:
                 item.x = x
                 item.y = y
@@ -816,10 +831,11 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
                     if tile not in open_tiles:
                         open_tiles.append(tile)
 
+        apply_scripts(feature)
+
         # reorient the template for next placement
         template.rotate(2 * math.pi - rotation)
 
-        apply_scripts(feature)
         return 'success'
 
 def apply_scripts(feature):
@@ -967,7 +983,7 @@ def make_map_marsh():
     active_branch = dungeon.branches[map.branch]
     player.instance.x = player_tile[0]
     player.instance.y = player_tile[1]
-    main.place_objects(open_tiles,main.roll_dice(active_branch['encounter_dice']),main.roll_dice(active_branch['loot_dice']))
+    main.place_objects(open_tiles,main.roll_dice(active_branch['encounter_dice']),main.roll_dice(active_branch['loot_dice']), active_branch['xp_amount'])
     #stair_tile = choose_random_tile(open_tiles)
     #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white, always_visible=True)
     #map.objects.append(main.stairs)
@@ -1003,14 +1019,13 @@ def make_map_beach():
     player.instance.x = player_x
     player.instance.y = player_y
 
-    #make_test_space()
-
 
 def make_test_space():
     for y in range(2, consts.MAP_HEIGHT - 2):
         for x in range(2, consts.MAP_WIDTH - 2):
             map.tiles[x][y].tile_type = 'stone floor'
 
+    map.branch = 'marsh'
     player_tile = (consts.MAP_WIDTH / 2, consts.MAP_HEIGHT - 4)
 
     if consts.DEBUG_TEST_FEATURE is not None:
@@ -1090,6 +1105,10 @@ def make_map(_map):
     map.tiles = [[main.Tile('stone wall')
                          for y in range(consts.MAP_HEIGHT)]
                         for x in range(consts.MAP_WIDTH)]
+
+    map.difficulty = world.branch_scaling[map.branch]
+    world.branch_scaling[map.branch] += 1
+
     main.spawned_bosses = {}
 
     # choose generation type

@@ -386,7 +386,6 @@ proto = {
         'char'               : '/',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 0, #10
         'slot'               :'right hand',
         'description'        : 'A hand-and-a-half cruciform sword',
         'stamina_cost'       : 10,
@@ -404,7 +403,6 @@ proto = {
         'char'               : '-',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 0, #3
         'slot'               :'right hand',
         'description'        : 'A small double-edged knife. Deals triple damage to incapacitated targets',
         'stamina_cost'       : 6,
@@ -422,7 +420,6 @@ proto = {
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 0, #6
         'slot'               :'right hand',
         'description'        : 'A light thrusting spear',
         'stamina_cost'       : 10,
@@ -445,7 +442,6 @@ proto = {
         'char'               : 'T',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 0, #5
         'slot'               :'right hand',
         'description'        : 'A heavy digging implement used by miners. Can be used to dig through the walls '
                                'of the dungeon',
@@ -468,7 +464,6 @@ proto = {
         'char'               : 'p',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'attack_damage_bonus': 0, #7
         'slot'               : 'right hand',
         'description'        : 'A one-handed axe made for cutting wood.',
         'stamina_cost'       : 9,

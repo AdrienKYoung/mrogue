@@ -292,7 +292,7 @@ class GameObject:
         old_elev = self.elevation
         self.elevation = current_map.tiles[x][y].elevation
 
-        # Check for objects with 'stepped_on' functions on our new space (xp, mana, traps, etc)
+        # Check for objects with 'stepped_on' functions on our new space (xp, essence, traps, etc)
         stepped_on = get_objects(self.x, self.y, lambda o: o.on_step)
         if len(stepped_on) > 0:
             for obj in stepped_on:
@@ -910,8 +910,8 @@ def spawn_monster(name, x, y):
             behavior = p.get('ai')()
         monster = GameObject(x, y, p['char'], mod_tag + p['name'], p['color'], blocks=True, fighter=fighter_component,
                              behavior=behavior, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'] * modifier.get('speed_bonus',1))
-        if p.get('mana'):
-            monster.mana = p.get('mana')
+        if p.get('essence'):
+            monster.essence = p.get('essence')
         monster.elevation = current_map.tiles[x][y].elevation
         current_map.add_object(monster)
         return monster
@@ -1130,7 +1130,7 @@ def find_closest_open_tile(x, y, exclude=[]):
                 neighbors.append(n)
     return None  # failure
 
-def place_objects(tiles,encounter_count=1, loot_count=1):
+def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
     if len(tiles) == 0:
         return
 
@@ -1171,13 +1171,14 @@ def place_objects(tiles,encounter_count=1, loot_count=1):
                 if len(tiles) == 0:
                     return
 
-    for i in range(2):
-        random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
-        current_map.add_object(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
-                                  description='xp', on_step= player.pick_up_xp))
-        tiles.remove(random_pos)
-        if len(tiles) == 0:
-            return
+    for x in range(xp_count):
+        for i in range(2):
+            random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
+            current_map.add_object(GameObject(random_pos[0], random_pos[1], 7, 'xp', libtcod.lightest_blue, always_visible=True,
+                                      description='xp', on_step= player.pick_up_xp))
+            tiles.remove(random_pos)
+            if len(tiles) == 0:
+                return
 
 
 def check_boss(level):

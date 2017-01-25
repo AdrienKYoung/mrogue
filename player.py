@@ -37,7 +37,7 @@ class PlayerStats:
         return 3 + int(math.floor(self.wiz / 4))
 
     @property
-    def max_mana(self):
+    def max_essence(self):
         return 1 + int(math.floor(self.wiz / 4))
 
 loadouts = {
@@ -133,7 +133,7 @@ def create():
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),int(loadout['agi']),int(loadout['con']))
                         , description='You, the fearless adventurer!')
     instance.level = 1
-    instance.mana = []
+    instance.essence = []
     instance.known_spells = []
     instance.action_queue = []
 
@@ -254,16 +254,16 @@ def handle_keys():
 def do_queued_action(action):
 
     if action == 'finish-meditate':
-        manatype = 'normal'
+        essencetype = 'normal'
 
-        if len(instance.mana) < instance.player_stats.max_mana:
-            instance.mana.append(manatype)
+        if len(instance.essence) < instance.player_stats.max_essence:
+            instance.essence.append(essencetype)
             ui.message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
             return
-        elif manatype != 'normal':
-            for i in range(len(instance.mana)):
-                if instance.mana[i] == 'normal':
-                    instance.mana[i] = manatype
+        elif essencetype != 'normal':
+            for i in range(len(instance.essence)):
+                if instance.essence[i] == 'normal':
+                    instance.essence[i] = essencetype
                     ui.message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
                     return
         ui.message('You have finished meditating. You were unable to gain any more power than you already have.', libtcod.dark_cyan)
@@ -279,21 +279,21 @@ def cast_spell():
             names.append(s.name + ' ' + s.cost_string)
         selection = ui.menu('Cast which spell?', names, 30)
         if selection is not None:
-            if instance.known_spells[selection].check_mana():
+            if instance.known_spells[selection].check_essence():
                 if instance.known_spells[selection].cast():
                     return 'cast-spell'
                 else:
                     return 'didnt-take-turn'
             else:
-                ui.message("You don't have enough mana to cast that spell.", libtcod.light_blue)
+                ui.message("You don't have enough essence to cast that spell.", libtcod.light_blue)
                 return 'didnt-take-turn'
     return 'didnt-take-turn'
 
-def pick_up_mana(mana, obj):
-    if obj is instance and len(instance.mana) < instance.player_stats.max_mana:
-        instance.mana.append(mana.mana_type)
-        ui.message('You are infused with magical power.', mana.color)
-        mana.destroy()
+def pick_up_essence(essence, obj):
+    if obj is instance and len(instance.essence) < instance.player_stats.max_essence:
+        instance.essence.append(essence.essence_type)
+        ui.message('You are infused with magical power.', essence.color)
+        essence.destroy()
 
 
 def pick_up_xp(xp, obj):

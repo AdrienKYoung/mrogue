@@ -20,6 +20,7 @@ branches = {
         },
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
+        'xp_amount':7,
         'encounter_range':6,
         'monsters':[
             {'encounter':['monster_cockroach'], 'party':'2d2+2'},
@@ -27,6 +28,7 @@ branches = {
             {'encounter':['monster_reeker'],'party':'1d2'},
             {'encounter':['monster_tunnel_spider']},
             {'encounter':['monster_bomb_beetle'],'party':'1d2'},
+            {'encounter':['monster_cockroach'], 'party':'3d2+3'},
             {'encounter':['monster_giant_frog']},
             {'encounter':['monster_bear']},
             {'encounter':['monster_verman']},

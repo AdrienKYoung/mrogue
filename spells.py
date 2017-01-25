@@ -8,9 +8,9 @@ import player
 import combat
 
 class Spell:
-    def __init__(self, name, mana_cost, function, cost_string, description, int_requirement):
+    def __init__(self, name, essence_cost, function, cost_string, description, int_requirement):
         self.name = name
-        self.mana_cost = mana_cost
+        self.essence_cost = essence_cost
         self.function = function
         self.cost_string = cost_string
         self.description = description
@@ -22,36 +22,36 @@ class Spell:
             self.subtract_cost()
         return success
 
-    def check_mana(self):
+    def check_essence(self):
         pool = []
-        for m in player.instance.mana:  # Create a mana pool that is a copy of the player's mana pool
+        for m in player.instance.essence:  # Create a essence pool that is a copy of the player's essence pool
             pool.append(m)
-        for mana in self.mana_cost:
-            if mana == 'normal':  # First check every mana cost other than 'normal'
+        for essence in self.essence_cost:
+            if essence == 'normal':  # First check every essence cost other than 'normal'
                 continue
             else:
-                for i in range(self.mana_cost[mana]):
-                    if mana in pool:
-                        pool.remove(mana)  # If this mana exists in the pool, remove it and continue looping
+                for i in range(self.essence_cost[essence]):
+                    if essence in pool:
+                        pool.remove(essence)  # If this essence exists in the pool, remove it and continue looping
                     else:
-                        return False  # Special mana does not exist in the pool - failure
-        if 'normal' in self.mana_cost:
-            if len(pool) < self.mana_cost['normal']:
+                        return False  # Special essence does not exist in the pool - failure
+        if 'normal' in self.essence_cost:
+            if len(pool) < self.essence_cost['normal']:
                 return False
         return True
 
     def subtract_cost(self):
-        for mana in self.mana_cost:  # First remove special mana
-            if mana == 'normal':
+        for essence in self.essence_cost:  # First remove special essence
+            if essence == 'normal':
                 continue
-            for i in range(self.mana_cost[mana]):
-                player.instance.mana.remove(mana)
-        if 'normal' in self.mana_cost:  # Then remove normal mana
-            for i in range(self.mana_cost['normal']):
-                if 'normal' in player.instance.mana:  # First attempt to remove normal mana
-                    player.instance.mana.remove('normal')
+            for i in range(self.essence_cost[essence]):
+                player.instance.essence.remove(essence)
+        if 'normal' in self.essence_cost:  # Then remove normal essence
+            for i in range(self.essence_cost['normal']):
+                if 'normal' in player.instance.essence:  # First attempt to remove normal essence
+                    player.instance.essence.remove('normal')
                 else:
-                    player.instance.mana.remove(player.instance.mana[len(player.instance.mana) - 1]) # Then use rightmost mana
+                    player.instance.essence.remove(player.instance.essence[len(player.instance.essence) - 1]) # Then use rightmost essence
 
 def cast_fireball():
     ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
@@ -217,7 +217,7 @@ spell_library = {
 }
 
 
-mana_colors = {
+essence_colors = {
     'normal' : libtcod.gray,
     'life' : libtcod.green,
     'fire' : libtcod.flame,

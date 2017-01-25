@@ -145,6 +145,7 @@ class Fighter:
             remainder = float(dm[1]) / float(delay)
             if libtcod.random_get_float(0, 0.0, 1.0) < remainder:
                 attacks += 1
+            attacks = max(attacks, 1)
             return attacks
         else:
             return 1  # monsters get only 1
@@ -393,8 +394,9 @@ def roll_damage(weapon,fighter):
     total_damage = 0
     if weapon.weapon_dice is not None:
         d = weapon.weapon_dice.split('d')
+        dice_size = max(int(d[1]) + (2 * weapon.attack_damage_bonus), 1)
         for i in range(1, int(d[0]) + 1):
-            total_damage += libtcod.random_get_int(0, 1, int(d[1]))
+            total_damage += libtcod.random_get_int(0, 1, dice_size)
     for i in range(weapon.str_dice):
         total_damage += libtcod.random_get_int(0, 1, fighter.attack_damage)
     return total_damage
