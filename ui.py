@@ -343,7 +343,10 @@ def render_side_panel(acc_mod=1.0):
     if len(player.instance.fighter.status_effects) > 0:
         for effect in player.instance.fighter.status_effects:
             libtcod.console_set_default_foreground(side_panel, effect.color)
-            libtcod.console_print(side_panel, 2, drawHeight, effect.name + ' (' + str(effect.time_limit) + ')')
+            effect_str = effect.name
+            if effect.time_limit is not None:
+                effect_str += ' (' + str(effect.time_limit) + ')'
+            libtcod.console_print(side_panel, 2, drawHeight, effect_str)
             drawHeight += 1
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.white)
@@ -403,7 +406,10 @@ def render_side_panel(acc_mod=1.0):
         drawHeight += 2
         for effect in selected_monster.fighter.status_effects:
             libtcod.console_set_default_foreground(side_panel, effect.color)
-            libtcod.console_print(side_panel, 2, drawHeight, effect.name + ' (' + str(effect.time_limit) + ')')
+            effect_str = effect.name
+            if effect.time_limit is not None:
+                effect_str += ' (' + str(effect.time_limit) + ')'
+            libtcod.console_print(side_panel, 2, drawHeight, effect_str)
             drawHeight += 1
 
     draw_border(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
@@ -435,6 +441,8 @@ def render_message_panel():
 
 
 def render_ui_overlay():
+    global display_ticker, overlay_text
+
     mouse = main.mouse
 
     libtcod.console_set_default_background(overlay, libtcod.black)
@@ -451,6 +459,23 @@ def render_ui_overlay():
             if len(line) > max_width: max_width = len(line)
             y += 1
         libtcod.console_blit(overlay, mouse.cx, mouse.cy + 1, max_width, y - 1, 0, mouse.cx, mouse.cy + 1, 1.0, 0.5)
+
+    if overlay_text is not None:
+        libtcod.console_set_default_foreground(overlay, libtcod.black)
+        libtcod.console_set_default_background(overlay, libtcod.black)
+        libtcod.console_clear(overlay)
+        libtcod.console_set_default_foreground(overlay, libtcod.white)
+        text_width = len(overlay_text)
+        libtcod.console_print(overlay, 0, 0, overlay_text)
+        if display_ticker > fade_value:
+            fade_factor = 1.0
+        else:
+            fade_factor = 1.0 - float(fade_value - display_ticker) / float(fade_value)
+        libtcod.console_blit(overlay, 0, 0, text_width, 1, 0, consts.MAP_VIEWPORT_X + consts.MAP_VIEWPORT_WIDTH / 2 -
+                             text_width / 2, consts.MAP_VIEWPORT_Y + 20, fade_factor, 0.0)
+        display_ticker -= 1
+        if display_ticker == 0:
+            overlay_text = None
 
 
 def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_target=None):
@@ -772,9 +797,20 @@ def show_ability_screen():
             return choice.use(player.instance)
     return 'didnt-take-turn'
 
+
+def display_fading_text(text, display_time, fade_time):
+    global fade_value, display_ticker, overlay_text
+    fade_value = fade_time
+    display_ticker = display_time
+    overlay_text = text
+
+
 overlay = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 panel = libtcod.console_new(consts.PANEL_WIDTH, consts.PANEL_HEIGHT)
 side_panel = libtcod.console_new(consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
 window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 selected_monster = None
 game_msgs = []
+fade_value = 0
+display_ticker = 0
+overlay_text = None

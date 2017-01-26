@@ -298,6 +298,13 @@ class GameObject:
             for obj in stepped_on:
                 obj.on_step(obj, self)
 
+        # Update 'in-mud' state
+        if self.fighter:
+            if current_map.tiles[self.x][self.y].tile_type == 'mud' and not self.fighter.has_status('sluggish'):
+                self.fighter.apply_status_effect(effects.StatusEffect('sluggish', color=libtcod.sepia))
+            elif current_map.tiles[self.x][self.y].tile_type != 'mud' and self.fighter.has_status('sluggish'):
+                self.fighter.remove_status('sluggish')
+
         # If the player moved, recalculate field of view, checking for elevation changes
         if self is player.instance:
             if old_elev != self.elevation:
@@ -307,7 +314,7 @@ class GameObject:
     def move(self, dx, dy):
 
         blocked = is_blocked(self.x + dx, self.y + dy, self.elevation)
-        if blocked and current_map.tiles[self.x][self.y].tile_type == 'ramp':
+        if blocked and current_map.tiles[self.x][self.y].is_ramp:
             blocked = is_blocked(self.x + dx, self.y + dy, self.elevation - 1)
 
         if not blocked:
@@ -422,7 +429,7 @@ class GameObject:
         for y1 in range(consts.MAP_HEIGHT):
             for x1 in range(consts.MAP_WIDTH):
                 terrain = current_map.tiles[x1][y1].blocks
-                elev = self.elevation != current_map.tiles[x1][y1].elevation and current_map.tiles[x1][y1].tile_type != 'ramp'
+                elev = self.elevation != current_map.tiles[x1][y1].elevation and not current_map.tiles[x1][y1].is_ramp
                 blocks = terrain or elev
                 libtcod.map_set_properties(fov, x1, y1, not current_map.tiles[x1][y1].blocks_sight, not blocks)
         
@@ -487,6 +494,7 @@ class Tile:
         self.tile_type = tile_type
         self.no_overwrite = False
         self.elevation = 0
+        self.flags = 0
 
     @property
     def name(self):
@@ -530,6 +538,8 @@ class Tile:
 
     @property
     def diggable(self):
+        if self.flags & terrain.FLAG_NO_DIG == terrain.FLAG_NO_DIG:
+            return False
         return terrain.data[self.tile_type].diggable
 
     @property
@@ -543,6 +553,10 @@ class Tile:
     @property
     def is_water(self):
         return terrain.data[self.tile_type].isWater
+
+    @property
+    def is_ramp(self):
+        return terrain.data[self.tile_type].isRamp
 
                 
 #############################################
@@ -563,8 +577,19 @@ def expire_out_of_vision(obj):
     if not fov.player_can_see(obj.x, obj.y):
         obj.destroy()
 
+
 def step_on_reed(reed, obj):
     reed.destroy()
+
+
+def step_on_blightweed(weed, obj):
+    if obj.fighter:
+        obj.fighter.time_since_last_damaged = 0
+        if obj.fighter.armor > 0:
+            obj.fighter.shred += 1
+            if fov.player_can_see(obj.x, obj.y):
+                ui.message("The blightweed thorns shred the " + obj.name + "'s armor!", libtcod.desaturated_red)
+
 
 
 def adjacent_tiles_orthogonal(x, y):
@@ -861,7 +886,7 @@ def in_bounds(x, y):
 
 def is_blocked(x, y, elevation=None):
 
-    if elevation is not None and current_map.tiles[x][y].elevation != elevation and current_map.tiles[x][y].tile_type != 'ramp':
+    if elevation is not None and current_map.tiles[x][y].elevation != elevation and not current_map.tiles[x][y].is_ramp:
         return True
 
     if current_map.tiles[x][y].blocks:
@@ -1076,12 +1101,14 @@ def create_fire(x,y,temp):
     global changed_tiles
 
     tile = current_map.tiles[x][y]
-    if tile.tile_type == 'shallow water' or tile.tile_type == 'deep water' or tile.blocks:
+    if tile.tile_type == 'shallow water' or tile.tile_type == 'deep water' or (tile.blocks and not tile.flammable):
         return
     component = ai.FireBehavior(temp)
     obj = GameObject(x,y,libtcod.CHAR_ARROW2_N,'Fire',libtcod.red,misc=component)
     current_map.add_object(obj)
-    if temp > 4 and tile.tile_type != 'ramp':
+    if temp > 4 and not tile.is_ramp:
+        if tile.blocks:
+            fov.set_fov_properties(x, y, False)
         current_map.tiles[x][y].tile_type = 'scorched floor'
     for obj in get_objects(x, y, condition=lambda o: o.burns):
         obj.destroy()
@@ -1141,6 +1168,7 @@ def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
             encounter_roll = roll_dice('1d' + str(branch['encounter_range'] + current_map.difficulty))
             if roll_dice('1d10') == 10:  # Crit the encounter table, roll to confirm
                 encounter_roll = libtcod.random_get_int(0, encounter_roll, len(monsters_set)) - 1
+            encounter_roll = min(encounter_roll, len(monsters_set) - 1)
             encounter = monsters_set[encounter_roll]
             size = 1
             random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
@@ -1319,6 +1347,21 @@ def use_stairs(stairs):
 def enter_map(world_map, direction=None):
     global current_map
 
+    if current_map is not None:
+        clear_map()
+        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y)
+        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, consts.SCREEN_WIDTH - consts.MAP_WIDTH, consts.MAP_VIEWPORT_Y)
+        libtcod.console_set_default_foreground(map_con, libtcod.white)
+        if world_map.tiles is None:
+            load_string = 'Generating...'
+        else:
+            load_string = 'Loading...'
+        libtcod.console_print(map_con, 0, 0, load_string)
+        libtcod.console_blit(map_con, 0, 0, len(load_string), 1, 0, consts.MAP_VIEWPORT_X + 4, consts.MAP_VIEWPORT_Y + 4)
+        ui.draw_border(0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
+
+        libtcod.console_flush()
+
     current_map = world_map
 
     if world_map.tiles is None:
@@ -1329,8 +1372,11 @@ def enter_map(world_map, direction=None):
             if hasattr(obj, 'link') and obj.link[0] == direction:
                 player.instance.x = obj.x
                 player.instance.y = obj.y
+                player.instance.elevation = current_map.tiles[obj.x][obj.y].elevation
 
     fov.initialize_fov()
+
+    ui.display_fading_text(dungeon.branches[current_map.branch]['name'].title(), 60, 20)
 
 
 def generate_level(world_map):
@@ -1383,7 +1429,13 @@ def new_game():
     
     # generate map
     dungeon_level = 1
-    enter_map(world.world_maps['beach'])
+
+    if consts.DEBUG_STARTING_MAP is not None:
+        enter_map(world.world_maps[consts.DEBUG_STARTING_MAP])
+    else:
+        enter_map(world.world_maps['beach'])
+
+
     # initialize_fov()
     game_state = 'playing'
 

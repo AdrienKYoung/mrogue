@@ -1,15 +1,4 @@
 import game as main
-full_names = {
-    'marsh' : 'the Marshes',
-    'goblin' : 'the Goblin Tunnels',
-    'beach' : 'the coast'
-}
-
-branch_scaling = {
-    'marsh' : 0,
-    'goblin' : 0,
-    'beach' : 0
-}
 
 class Map:
     def __init__(self, branch, coord=None, depth=None, difficulty=0):
@@ -66,5 +55,15 @@ def initialize_world():
                 new_map.add_link(world_maps['marsh_' + str(x) + '_' + str(y - 1)], 'north')
             world_maps[new_map.name] = new_map
     world_maps['marsh_2_1'].add_link(world_maps['beach'], 'east')
+
+    for y in range(3):
+        for x in range(2):
+            new_map = Map('badlands', coord=(x, y))
+            if x > 0:
+                new_map.add_link(world_maps['badlands_' + str(x - 1) + '_' + str(y)], 'west')
+            if y > 0:
+                new_map.add_link(world_maps['badlands_' + str(x) + '_' + str(y - 1)], 'north')
+            world_maps[new_map.name] = new_map
+    world_maps['badlands_0_2'].add_link(world_maps['beach'], 'west')
 
 world_maps = None

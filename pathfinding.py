@@ -20,7 +20,7 @@ class Graph:
                     neighbor_tile = dungeon_map[tile[0]][tile[1]]
                     if not neighbor_tile.blocks:
                         if neighbor_tile.elevation == source_tile.elevation or \
-                                        neighbor_tile.tile_type == 'ramp' or source_tile.tile_type == 'ramp':
+                                        neighbor_tile.is_ramp or source_tile.is_ramp:
                             if (x, y) in self.edges.keys():
                                 self.edges[(x, y)].append((tile[0], tile[1]))
                             else:
@@ -37,7 +37,7 @@ class Graph:
         neighbor_tile = main.current_map.tiles[neighbor[0]][neighbor[1]]
 
         if source_tile.elevation != neighbor_tile.elevation:
-            if not (source_tile.tile_type == 'ramp' or neighbor_tile.tile_type == 'ramp'):
+            if not (source_tile.is_ramp or neighbor_tile.is_ramp):
                 return
 
         if source in self.edges.keys():

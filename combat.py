@@ -93,7 +93,7 @@ class Fighter:
         if damage > 0:
             self.hp -= damage
             if self.hp <= 0:
-                self.drop_mana()
+                self.drop_essence()
                 function = self.death_function
                 if function is not None:
                     function(self.owner)
@@ -101,19 +101,19 @@ class Fighter:
                     player.instance.fighter.xp += self.xp
             self.time_since_last_damaged = 0
 
-    def drop_mana(self):
-        if hasattr(self.owner, 'mana') and self.owner is not player.instance:
+    def drop_essence(self):
+        if hasattr(self.owner, 'essence') and self.owner is not player.instance:
             roll = libtcod.random_get_int(0, 1, 100)
             total = 0
-            for m in self.owner.mana:
+            for m in self.owner.essence:
                 total += m[0]
                 if roll < total:
-                    mana_pickup = main.GameObject(self.owner.x, self.owner.y, '*', 'mote of ' + m[1] + ' mana',
-                                             spells.mana_colors[m[1]],
-                                             description='A colored orb that glows with magical potential.',
-                                             on_step=player.pick_up_mana, on_tick=main.expire_out_of_vision)
-                    mana_pickup.mana_type = m[1]
-                    main.current_map.add_object(mana_pickup)
+                    essence_pickup = main.GameObject(self.owner.x, self.owner.y, '*', 'mote of ' + m[1] + ' essence',
+                                             spells.essence_colors[m[1]],
+                                             description='A colored orb that glows with elemental potential.',
+                                             on_step=player.pick_up_essence, on_tick=main.expire_out_of_vision)
+                    essence_pickup.essence_type = m[1]
+                    main.current_map.add_object(essence_pickup)
                     return
 
     def calculate_attack_stamina_cost(self):
@@ -200,7 +200,8 @@ class Fighter:
         for effect in removed_effects:
             if effect.on_end is not None:
                 effect.on_end(self.owner)
-            self.status_effects.remove(effect)
+            if effect in self.status_effects:  # It can sometimes be removed in the on-tick function
+                self.status_effects.remove(effect)
 
         # Manage ability cooldowns
         for ability in self.abilities:
@@ -293,6 +294,8 @@ class Fighter:
     @property
     def evasion(self):
         bonus = sum(equipment.evasion_bonus for equipment in main.get_all_equipped(self.inventory))
+        if self.has_status('sluggish'):
+            bonus -= 5
         if self.owner.player_stats:
             return max(self.base_evasion + self.owner.player_stats.agi + bonus, 0)
         else:

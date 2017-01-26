@@ -67,17 +67,17 @@ def cast_fireball():
 
 def cast_confuse():
     ui.message('Choose a target with left-click, or right-click to cancel.', libtcod.white)
-    monster = ui.target_monster(consts.CONFUSE_RANGE)
-    if monster is None or monster.ai is None: return 'cancelled'
+    monster = main.target_monster(consts.CONFUSE_RANGE)
+    if monster is None or monster.behavior is None: return 'cancelled'
     else:
         if monster.fighter.apply_status_effect(effects.StatusEffect('confusion', consts.CONFUSE_NUM_TURNS, color=libtcod.pink, on_apply=set_confused_behavior)):
             ui.message('The ' + monster.name + ' is confused!', libtcod.light_blue)
 
 def set_confused_behavior(object):
-    if object.ai is not None:
-        old_ai = object.ai.behavior
-        object.ai.behavior = ai.ConfusedMonster(old_ai)
-        object.ai.behavior.owner = object
+    if object.behavior is not None:
+        old_ai = object.behavior.behavior
+        object.behavior.behavior = ai.ConfusedMonster(old_ai)
+        object.behavior.behavior.owner = object
 
 def cast_lightning():
     monster = main.closest_monster(consts.LIGHTNING_RANGE)

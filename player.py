@@ -6,6 +6,7 @@ import ui
 import fov
 import effects
 import combat
+import dungeon
 
 class PlayerStats:
 
@@ -380,7 +381,7 @@ def dig(dx, dy):
     dig_x = instance.x + dx
     dig_y = instance.y + dy
     if main.current_map.tiles[dig_x][dig_y].diggable:
-        main.current_map.tiles[dig_x][dig_y].tile_type = 'stone floor'
+        main.current_map.tiles[dig_x][dig_y].tile_type = dungeon.branches[main.current_map.branch]['default_floor']
         changed_tiles.append((dig_x, dig_y))
         if main.pathfinding.map:
             main.pathfinding.map.mark_passable((dig_x, dig_y))

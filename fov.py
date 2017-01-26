@@ -72,7 +72,7 @@ def set_fov_properties(x, y, blocks_sight, elevation=None):
             if index <= elevation:
                 libtcod.map_set_properties(fov_height[index], x, y, not blocks_sight, True)
 
-        set_fov_recompute()
+    set_fov_recompute()
 
 
 # Checks if the given tile is in the player's line of sight. If the last fov calculation was not with respect to the
