@@ -250,7 +250,7 @@ class GameObject:
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
         draw_height = y
-        libtcod.console_print_rect(console, x, draw_height, width, height, self.description.title())
+        libtcod.console_print_rect(console, x, draw_height, width, height, self.description.capitalize())
         draw_height += height
         if self.item:
             h = self.item.print_description(console, x, draw_height, width)
