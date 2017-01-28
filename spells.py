@@ -74,16 +74,12 @@ def cast_shielding():
 
 def cast_frog_tongue(frog, target):
 
-    if combat.roll_to_hit(target, consts.FROG_TONGUE_ACC):
-        ui.message('The frog pulls you from a distance with its tongue!', libtcod.dark_green)
-        target.fighter.take_damage(consts.FROG_TONGUE_DMG)
+    ui.message("The frog's tongue lashes out at you!", libtcod.dark_green)
+    result = combat.attack_ex(frog.fighter, target, 0, consts.FROG_TONGUE_ACC, consts.FROG_TONGUE_DMG, 0, None, 'pulls', 0, 0, 0)
+    if result == 'hit':
         beam = main.beam(frog.x, frog.y, target.x, target.y)
-        # target.x, target.y = beam[max(len(beam) - 3, 0)]
         pull_to = beam[max(len(beam) - 3, 0)]
         target.set_position(pull_to[0], pull_to[1])
-    else:
-        ui.message('The frog tries to grab you with its tongue, but misses!', libtcod.grey)
-
 
 def cast_manabolt():
     default = None

@@ -1481,7 +1481,6 @@ def new_game():
     else:
         enter_map(world.world_maps['beach'])
 
-
     # initialize_fov()
     game_state = 'playing'
 
