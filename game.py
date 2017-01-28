@@ -15,7 +15,7 @@ class Equipment:
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None,
-                 attack_speed_bonus=0, attack_delay=10):
+                 attack_speed_bonus=0, attack_delay=10, essence=None,spell_list=None,level_progression=None):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -39,6 +39,16 @@ class Equipment:
         self.damage_type = damage_type
         self.attack_speed_bonus = attack_speed_bonus
         self.attack_delay = attack_delay
+        self.essence = essence
+        self.level = 0
+        self.max_level = len(level_progression)
+        self.level_progression = level_progression
+        if spell_list is not None:
+            default_level = 0
+            if level_progression is None:
+                default_level = 1
+            self.spell_list = {s:default_level for s in spell_list}
+            self.flat_spell_list = spell_list
 
     def toggle(self):
         if self.is_equipped:
@@ -69,6 +79,9 @@ class Equipment:
             libtcod.console_set_default_foreground(console, libtcod.white)
         libtcod.console_print(console, x, y + print_height, 'Slot: ' + self.slot)
         print_height += 1
+        if self.level_progression != 0:
+            libtcod.console_print(console, x, y + print_height, 'Level: ' + str(self.level) + '/' + str(self.max_level))
+            print_height += 1
         if self.armor_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Armor: ' + str(self.armor_bonus))
             print_height += 1
@@ -109,16 +122,53 @@ class Equipment:
             libtcod.console_print_rect(console, x, y + print_height + 1, width, h, text)
             print_height += h + 1
             libtcod.console_set_default_foreground(console, libtcod.white)
+        if self.spell_list:
+            libtcod.console_set_default_foreground(console, libtcod.azure)
+            libtcod.console_print(console, x, y + print_height,'Spells:')
+            libtcod.console_set_default_foreground(console, libtcod.white)
+            for spell in self.flat_spell_list:
+                level = self.spell_list[spell] #dictionaries don't preserve order - flat lists do
+                spell_data = spells.library[spell]
+                if level == 0:
+                    libtcod.console_set_default_foreground(console, libtcod.gray)
+                libtcod.console_print(console, x, y + print_height, "- " + spell_data.name.title() + " " + str(level) + "/" + str(spell_data.max_level))
+                libtcod.console_set_default_foreground(console, libtcod.white)
+                print_height += 1
 
         return print_height
 
+    def get_active_spells(self):
+        return {s: l for (s, l) in self.spell_list.items() if l > 0}
+
+    def can_cast(self, spell_name, actor):
+        sl = self.spell_list[spell_name]
+        if actor is player.instance:
+            if player.instance.player_stats.int < spells.library[spell_name].int_requirement:
+                return False
+        level = spells.library[spell_name].levels[sl-1]
+        #TODO Enforce spell uses
+        return self.spell_list.has_key(spell_name) and sl > 0 and \
+               actor.fighter.stamina >= level['stamina_cost']
+
+    def level_up(self):
+        if self.level >= self.max_level:
+            ui.message('{} is already max level!'.format(self.owner.name))
+
+        if self.essence not in player.instance.essence:
+            return 'didnt-take-turn'
+
+        if self.spell_list is not None:
+            self.spell_list[self.level_progression[self.level]] += 1
+        player.instance.essence.remove(self.essence)
+        self.level += 1
+        return 'leveled-up'
+
 
 class Item:
-    def __init__(self, category, use_function=None, learn_spell=None, type='item', ability=None):
+    def __init__(self, category, use_function=None, type='item', ability=None):
         self.category = category
         self.use_function = use_function
         self.type = type
-        self.learn_spell = learn_spell
         self.ability = ability
         
     def pick_up(self):
@@ -152,15 +202,6 @@ class Item:
                     memory.remove(self.owner)
             else:
                 return 'cancelled'
-        elif self.learn_spell is not None:
-            spell = spells.spell_library[self.learn_spell]
-            if spell in player.instance.known_spells:
-                ui.message('You already know this spell.', libtcod.light_blue)
-                return 'cancelled'
-            else:
-                player.instance.known_spells.append(spell)
-                ui.message('You have mastered ' + spell.name + '!', libtcod.light_blue)
-                player.instance.fighter.inventory.remove(self.owner)
         else:
             ui.message('The ' + self.owner.name + ' cannot be used.')
 
@@ -176,13 +217,15 @@ class Item:
 
     def get_options_list(self):
         options = []
-        if self.use_function is not None or self.learn_spell is not None:
+        if self.use_function is not None:
             options.append('Use')
         if self.owner.equipment:
             if self.owner.equipment.is_equipped:
                 options.append('Unequip')
             else:
                 options.append('Equip')
+            if self.owner.equipment.level_progression:
+                options.append('Level up')
         options.append('Drop')
         return options
 
@@ -966,9 +1009,9 @@ def create_item(name, material=None, quality=None):
     ability = None
     if p.get('ability') is not None and p.get('ability') in abilities.data:
         ability = create_ability(p.get('ability'))
-    item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], learn_spell=p.get('learn_spell'), ability=ability)
+    item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], ability=ability)
     equipment_component = None
-    if p['category'] == 'weapon' or p['category'] == 'armor':
+    if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book':
         equipment_component = Equipment(
             slot=p['slot'],
             category=p['category'],
@@ -991,7 +1034,10 @@ def create_item(name, material=None, quality=None):
             on_hit=p.get('on_hit',[]),
             damage_type=p.get('damage_type'),
             attack_speed_bonus=p.get('attack_speed_bonus', 0),
-            attack_delay=p.get('attack_delay', 10)
+            attack_delay=p.get('attack_delay', 10),
+            essence=p.get('essence'),
+            spell_list=p.get('spells'),
+            level_progression=p.get('levels')
         )
 
         if equipment_component.category == 'weapon':

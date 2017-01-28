@@ -7,6 +7,7 @@ import fov
 import effects
 import combat
 import dungeon
+import spells
 
 class PlayerStats:
 
@@ -112,8 +113,7 @@ loadouts = {
         'con':8,
         'inventory':[
             #'charm_summon',
-            #'tome_basic',
-            'tome_manabolt' #TODO:Remove this line
+            'book_lesser_fire'
         ],
         'description' : """
         Fragile in melee, but have access to powerful offensive magic. Starts with a tome.
@@ -134,7 +134,7 @@ def create():
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),int(loadout['agi']),int(loadout['con']))
                         , description='You, the fearless adventurer!')
     instance.level = 1
-    instance.essence = []
+    instance.essence = ['fire']
     instance.known_spells = []
     instance.action_queue = []
 
@@ -271,22 +271,27 @@ def do_queued_action(action):
         return
 
 def cast_spell():
-    if len(instance.known_spells) <= 0:
-        ui.message("You don't know any spells.", libtcod.light_blue)
+    left_hand = main.get_equipped_in_slot(instance.fighter.inventory,'left hand')
+    if len(left_hand.spell_list) <= 0:
+        ui.message("You have no spells available", libtcod.light_blue)
         return 'didnt-take-turn'
     else:
         names = []
-        for s in instance.known_spells:
-            names.append(s.name + ' ' + s.cost_string)
+        ops = []
+        for spell,level in left_hand.get_active_spells().items():
+            spell_data = spells.library[spell]
+            stamina_cost = spell_data.levels[level-1]['stamina_cost']
+            names.append(spell_data.name.title() + ':' + str(stamina_cost))
+            ops.append(spell)
         selection = ui.menu('Cast which spell?', names, 30)
         if selection is not None:
-            if instance.known_spells[selection].check_essence():
-                if instance.known_spells[selection].cast():
+            s = ops[selection]
+            if left_hand.can_cast(s,instance):
+                if spells.library[s].function():
                     return 'cast-spell'
                 else:
                     return 'didnt-take-turn'
             else:
-                ui.message("You don't have enough essence to cast that spell.", libtcod.light_blue)
                 return 'didnt-take-turn'
     return 'didnt-take-turn'
 

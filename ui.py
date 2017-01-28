@@ -604,6 +604,8 @@ def inspect_inventory():
             elif options[menu_choice] == 'Equip' or options[menu_choice] == 'Unequip':
                 chosen_item.owner.equipment.toggle()
                 return 'equipped-item'
+            elif options[menu_choice] == 'Level up':
+                chosen_item.owner.equipment.level_up()
             else:
                 return inspect_inventory()
         else:

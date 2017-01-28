@@ -1,57 +1,21 @@
+import libtcodpy as libtcod
 import game as main
 import consts
-import libtcodpy as libtcod
 import effects
 import ui
 import ai
 import player
 import combat
 
+
 class Spell:
-    def __init__(self, name, essence_cost, function, cost_string, description, int_requirement):
+    def __init__(self, name, function, description, levels, int_requirement = 10):
         self.name = name
-        self.essence_cost = essence_cost
         self.function = function
-        self.cost_string = cost_string
         self.description = description
+        self.levels = levels
         self.int_requirement = int_requirement
-
-    def cast(self):
-        success = self.function()
-        if success:
-            self.subtract_cost()
-        return success
-
-    def check_essence(self):
-        pool = []
-        for m in player.instance.essence:  # Create a essence pool that is a copy of the player's essence pool
-            pool.append(m)
-        for essence in self.essence_cost:
-            if essence == 'normal':  # First check every essence cost other than 'normal'
-                continue
-            else:
-                for i in range(self.essence_cost[essence]):
-                    if essence in pool:
-                        pool.remove(essence)  # If this essence exists in the pool, remove it and continue looping
-                    else:
-                        return False  # Special essence does not exist in the pool - failure
-        if 'normal' in self.essence_cost:
-            if len(pool) < self.essence_cost['normal']:
-                return False
-        return True
-
-    def subtract_cost(self):
-        for essence in self.essence_cost:  # First remove special essence
-            if essence == 'normal':
-                continue
-            for i in range(self.essence_cost[essence]):
-                player.instance.essence.remove(essence)
-        if 'normal' in self.essence_cost:  # Then remove normal essence
-            for i in range(self.essence_cost['normal']):
-                if 'normal' in player.instance.essence:  # First attempt to remove normal essence
-                    player.instance.essence.remove('normal')
-                else:
-                    player.instance.essence.remove(player.instance.essence[len(player.instance.essence) - 1]) # Then use rightmost essence
+        self.max_level = len(levels)
 
 def cast_fireball():
     ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
@@ -210,12 +174,16 @@ def cast_forge():
     return True
 
 
-spell_library = {
-    'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]',"",0),
-    'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]',"",0),
-    'ignite' : Spell('ignite', { 'fire' : 1 }, cast_ignite, '[1 fire]',"",0),
+library = {
+    #'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]',"",0),
+    #'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]',"",0),
+    #'ignite' : Spell('ignite', { 'fire' : 1 }, cast_ignite, '[1 fire]',"",0),
+    'spell_heat_ray' : Spell('heat ray',cast_fireball,'Fire a ray of magical heat in a line',[{'stamina_cost':30,'charges':3}],10),
+    'spell_flame_wall' : Spell('flame wall',cast_fireball,'Create a wall of flames',[{'stamina_cost':30,'charges':3}],10),
+    'spell_fireball' : Spell('fireball',cast_fireball,'Fling an exploding fireball',[{'stamina_cost':30,'charges':3}],10),
+    'spell_shatter_item' : Spell('shatter item',cast_fireball,'Overheat items to shatter them',[{'stamina_cost':30,'charges':3}],10),
+    'spell_magma_bolt' : Spell('magma bolt',cast_fireball,'Fire a bolt of roiling magma that melts floors',[{'stamina_cost':30,'charges':3}],10)
 }
-
 
 essence_colors = {
     'normal' : libtcod.gray,

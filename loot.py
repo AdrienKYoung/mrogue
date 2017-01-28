@@ -664,4 +664,29 @@ proto = {
         'slot'          : 'legs',
         'description'   : 'Steel plates that protect the shins'
     },
+
+    #Books
+
+    'book_lesser_fire' : {
+        'name'          : 'Lesser Book of Fire',
+        'category'      : 'book',
+        'char'          : '#',
+        'color'         : libtcodpy.red,
+        'type'          : 'item',
+        'slot'          : 'left hand',
+        'description'   : 'A basic book of fire magic',
+        'essence':'fire',
+        'spells': [
+            'spell_heat_ray',
+            'spell_flame_wall',
+            'spell_fireball',
+            'spell_shatter_item',
+            'spell_magma_bolt'
+        ],
+        'levels': [
+            'spell_heat_ray', 'spell_flame_wall', 'spell_heat_ray', 'spell_fireball', 'spell_shatter_item',
+            'spell_fireball', 'spell_magma_bolt', 'spell_heat_ray', 'spell_fireball', 'spell_magma_bolt',
+            'spell_shatter_item', 'spell_magma_bolt'
+        ]
+    },
 }
