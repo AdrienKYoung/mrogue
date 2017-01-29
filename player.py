@@ -282,13 +282,16 @@ def cast_spell():
         for spell,level in left_hand.get_active_spells().items():
             spell_data = spells.library[spell]
             stamina_cost = spell_data.levels[level-1]['stamina_cost']
-            names.append(spell_data.name.title() + ':' + str(stamina_cost))
+            spell_charges = left_hand.spell_charges[spell]['charges']
+            max_spell_charges = spell_data.levels[level-1]['charges']
+            names.append(spell_data.name.title() + '[' + str(stamina_cost) + ']' + " " + str(spell_charges) + "/" + str(max_spell_charges))
             ops.append(spell)
         selection = ui.menu('Cast which spell?', names, 30)
         if selection is not None:
             s = ops[selection]
             if left_hand.can_cast(s,instance):
                 if spells.library[s].function():
+                    left_hand.spell_charges[s] -= 1
                     return 'cast-spell'
                 else:
                     return 'didnt-take-turn'

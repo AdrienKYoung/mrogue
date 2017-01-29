@@ -51,6 +51,8 @@ class Equipment:
                 default_level = 1
             self.spell_list = {s:default_level for s in spell_list}
             self.flat_spell_list = spell_list
+            self.spell_charges = {}
+            self.refill_spell_charges()
 
     def toggle(self):
         if self.is_equipped:
@@ -148,9 +150,9 @@ class Equipment:
             if player.instance.player_stats.int < spells.library[spell_name].int_requirement:
                 return False
         level = spells.library[spell_name].levels[sl-1]
-        #TODO Enforce spell uses
         return self.spell_list.has_key(spell_name) and sl > 0 and \
-               actor.fighter.stamina >= level['stamina_cost']
+               actor.fighter.stamina >= level['stamina_cost'] and \
+                self.spell_charges[spell_name] > 0
 
     def level_up(self):
         if self.level >= self.max_level:
@@ -160,11 +162,19 @@ class Equipment:
             return 'didnt-take-turn'
 
         if self.spell_list is not None:
-            self.spell_list[self.level_progression[self.level]] += 1
+            spell = self.level_progression[self.level]
+            self.spell_list[spell] += 1
+            #refill spell charges for that spell
+            self.spell_charges[spell] = spells.library[spell].levels[self.spell_list[spell]-1]
         player.instance.essence.remove(self.essence)
         self.level += 1
         return 'leveled-up'
 
+    def refill_spell_charges(self):
+        #on medidate, item create, and potions(?)
+        for spell,level in self.get_active_spells().items():
+            spell_level = spells.library[spell].levels[level-1]
+            self.spell_charges[spell] = spell_level['charges']
 
 class Item:
     def __init__(self, category, use_function=None, type='item', ability=None):
