@@ -736,12 +736,22 @@ def centipede_on_hit(attacker, target):
     target.fighter.apply_status_effect(effects.StatusEffect('stung', consts.CENTIPEDE_STING_DURATION, libtcod.flame))
 
 
+def zombie_on_hit(attacker, target):
+    if libtcod.random_get_int(0, 0, 100) < consts.ZOMBIE_IMMOBILIZE_CHANCE:
+        ui.message('%s grabs %s! %s cannot move!' % (
+                        syntax.name(attacker.name).capitalize(),
+                        syntax.name(target.name),
+                        syntax.pronoun(target.name).capitalize()), libtcod.yellow)
+        target.fighter.apply_status_effect(effects.immobilized(3))
+
+
 def clamp(value, min_value, max_value):
     if value < min_value:
         value = min_value
     if value > max_value:
         value = max_value
     return value
+
 
 def random_position_in_circle(radius):
     r = libtcod.random_get_float(0, 0.0, float(radius))
@@ -886,15 +896,19 @@ def monster_death(monster):
             item.send_to_back()
 
     ui.message('%s is dead!' % syntax.name(monster.name).capitalize(), libtcod.red)
-    monster.char = '%'
-    monster.color = libtcod.darker_red
-    monster.blocks = False
-    if pathfinding.map:
-        pathfinding.map.mark_passable((monster.x, monster.y))
+
+    if monster.fighter.monster_flags & monsters.NO_CORPSE == monsters.NO_CORPSE:
+        monster.destroy()
+    else:
+        monster.char = '%'
+        monster.color = libtcod.darker_red
+        monster.blocks = False
+        if pathfinding.map:
+            pathfinding.map.mark_passable((monster.x, monster.y))
+        monster.behavior = None
+        monster.name = 'remains of ' + monster.name
+        monster.send_to_back()
     monster.fighter = None
-    monster.behavior = None
-    monster.name = 'remains of ' + monster.name
-    monster.send_to_back()
 
     if ui.selected_monster is monster:
         changed_tiles.append((monster.x, monster.y))
@@ -1017,7 +1031,8 @@ def spawn_monster(name, x, y):
                                             inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
                                             base_shred=p.get('shred', 0) * modifier.get('shred_bonus',1),
                                             base_guaranteed_shred=p.get('guaranteed_shred', 0),
-                                            base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'))
+                                            base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
+                                            monster_flags=p.get('flags', 0))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
         behavior = None

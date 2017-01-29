@@ -6,32 +6,32 @@ def conjugate(is_player, conjugations):
     return conjugations[1]
 
 
-def name(name, possesive=False, proper=False):
+def name(_name, possesive=False, proper=False):
     if possesive:
-        if name == 'player':
+        if _name == 'player':
             return 'your'
         elif proper:
-            if name[len(name) - 1] == 's':
-                return name.capitalize() + "'"
+            if _name[len(_name) - 1] == 's':
+                return _name.capitalize() + "'"
             else:
-                return name.capitalize() + "'s"
+                return _name.capitalize() + "'s"
         else:
-            if name[len(name) - 1] == 's':
-                return 'the ' + name + "'"
+            if _name[len(_name) - 1] == 's':
+                return 'the ' + _name + "'"
             else:
-                return 'the ' + name + "'s"
+                return 'the ' + _name + "'s"
     else:
-        if name == 'player':
+        if _name == 'player':
             return 'you'
         elif proper:
-            return name.capitalize()
+            return _name.capitalize()
         else:
-            return 'the ' + name
+            return 'the ' + _name
 
 
-def pronoun(name, possesive=False, objective=False, gender='N'):
-    if name == 'player':
-        return name(name, possesive=possesive)
+def pronoun(_name, possesive=False, objective=False, gender='N'):
+    if _name == 'player':
+        return name(_name, possesive=possesive)
     if possesive:
         if gender == 'M':
             return 'his'

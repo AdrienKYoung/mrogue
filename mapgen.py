@@ -1226,7 +1226,10 @@ def make_map_badlands():
         scatter_blightweed(blight_tile)
 
     active_branch = dungeon.branches[map.branch]
-    main.place_objects(open_tiles,main.roll_dice(active_branch['encounter_dice']),main.roll_dice(active_branch['loot_dice']), active_branch['xp_amount'])
+    main.place_objects(open_tiles,
+                       main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d'+str(map.difficulty + 1)),
+                       main.roll_dice(active_branch['loot_dice']),
+                       active_branch['xp_amount'])
 
 
 def make_test_space():

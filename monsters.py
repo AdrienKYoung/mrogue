@@ -2,6 +2,10 @@ import game as main
 import ai
 import libtcodpy as libtcod
 
+
+# Monster Flags
+NO_CORPSE = 1
+
 proto = {
     'monster_goblin': {
         'name': 'goblin lurker',
@@ -60,6 +64,27 @@ proto = {
         'resistances': [],
         'on_hit': main.centipede_on_hit,
         'shred': 2
+    },
+    'monster_rotting_zombie': {
+        'name': 'rotting zombie',
+        'char': 'z',
+        'color': libtcod.dark_chartreuse,
+        'hp': 45,
+        'attack_damage': 8,
+        'armor': 0,
+        'evasion': 4,
+        'accuracy': 19,
+        'speed': 0.5,
+        'difficulty': 1,
+        'loot': 'default',
+        'on_create': None,
+        'ai': ai.AI_Default,
+        'description': 'A rotting corpse animated by some evil magic. It shambles slowly, but once it reaches its prey it latches on tight.',
+        'resistances': [],
+        'on_hit': main.zombie_on_hit,
+        'shred': 1,
+        'flags' : NO_CORPSE,
+        'modifier_category':'default'
     },
     'monster_goblin_warrior': {
         'name': 'goblin warrior',
@@ -140,6 +165,27 @@ proto = {
         'attributes':['ability_grapel'],
         'essence': [(10, 'water'), (10, 'life')]
     },
+    'monster_necroling': {
+        'name': 'necroling',
+        'char': 'n',
+        'color': libtcod.dark_violet,
+        'hp': 35,
+        'attack_damage': 22,
+        'armor': 2,
+        'evasion': 12,
+        'accuracy': 19,
+        'speed': 0.9,
+        'difficulty': 2,
+        'loot': 'default',
+        'on_create': None,
+        'ai': ai.AI_Default,
+        'description': 'Unusually large amphibian that dwells in lakes and ponds. '
+                       'Can grab unwary adventurers with its sticky tongue.',
+        'resistances': [],
+        'attributes':['ability_raise_zombie'],
+        'essence': [(15, 'dark')],
+        'flags' : NO_CORPSE,
+    },
     'monster_verman': {
         'name': 'verman',
         'char': 'v',
@@ -178,7 +224,8 @@ proto = {
         'ai': ai.AI_Reeker,
         'description': 'A short, stocky fungus that emits puffs of foul-smelling gas.',
         'resistances': ['confusion', 'stunned'],
-        'essence': [(65, 'life')]
+        'essence': [(65, 'life')],
+        'flags' : NO_CORPSE,
     },
     'monster_blastcap': {
         'name': 'blastcap',
@@ -216,7 +263,8 @@ proto = {
         'description': 'Large stone golem, animated by magic. Slow but very strong.',
         'resistances': [],
         'shred': 2,
-        'essence': [(70, 'earth')]
+        'essence': [(70, 'earth')],
+        'flags' : NO_CORPSE,
     },
     'monster_bear': {
         'name': 'cave bear',

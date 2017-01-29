@@ -14,7 +14,7 @@ class Fighter:
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=25, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances=[], inventory=[], on_hit=None, base_shred=0,
-                 base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None):
+                 base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -43,6 +43,7 @@ class Fighter:
         self.time_since_last_damaged = 0
         self.abilities = abilities
         self.hit_table = hit_table
+        self.monster_flags = monster_flags
 
     def print_description(self, console, x, y, width):
         print_height = 1

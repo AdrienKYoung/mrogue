@@ -143,6 +143,27 @@ def ability_grapel(actor=None):
     else:
         return 'didnt-take-turn'
 
+
+def ability_raise_zombie(actor=None):
+
+    check_corpse = main.adjacent_tiles_diagonal(actor.x, actor.y)
+    check_corpse.append((actor.x, actor.y))
+    corpse = None
+    for tile in check_corpse:
+        corpses_here = main.get_objects(tile[0], tile[1], lambda o: o.name.startswith('remains of'))
+        if len(corpses_here) > 0:
+            corpse = corpses_here[0]
+            break
+
+    if corpse is not None:
+        spawn_tile = main.find_closest_open_tile(corpse.x, corpse.y)
+        ui.message('A dark aura emanates from the necroling... a corpse walks again.', libtcod.dark_violet)
+        main.spawn_monster('monster_rotting_zombie', spawn_tile[0], spawn_tile[1])
+        corpse.destroy()
+        return 'rasied-zombie'
+    else:
+        return 'didnt-take-turn'
+
 data = {
     #item abilities
     'ability_thrust': {
@@ -169,6 +190,12 @@ data = {
         'name': 'Grapel',
         'function': ability_grapel,
         'cooldown': consts.FROG_TONGUE_COOLDOWN
+    },
+
+    'ability_raise_zombie': {
+        'name': 'Raise Zombie',
+        'function' : ability_raise_zombie,
+        'cooldown' : consts.NECROLING_RAISE_COOLDOWN
     }
 }
 
