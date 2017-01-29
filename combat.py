@@ -88,20 +88,9 @@ class Fighter:
         if self.stamina > self.max_stamina:
             self.stamina = self.max_stamina
 
-    def take_damage(self, damage, type='physical'):
+    def take_damage(self, damage):
         if self.owner == player.instance and consts.DEBUG_INVINCIBLE:
             damage = 0
-
-        #Damage modifiers
-        if type in self.getResists():
-            damage *= consts.RESISTANCE_FACTOR
-            damage = int(damage)
-        if type in self.getWeaknesses():
-            damage *= consts.WEAKNESS_FACTOR
-            damage = int(damage)
-        if self.has_status('stung'):
-            damage *= consts.CENTIPEDE_STING_AMPLIFICATION
-            damage = int(damage)
 
         if damage > 0:
             self.hp -= damage
@@ -499,17 +488,29 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
             else:
                 hit_type = 'bludgeoning'
 
+            # Damage modifiers
+            if type in target.fighter.getResists():
+                damage *= consts.RESISTANCE_FACTOR
+                damage = int(damage)
+            if type in target.fighter.getWeaknesses():
+                damage *= consts.WEAKNESS_FACTOR
+                damage = int(damage)
+            if target.fighter.has_status('stung'):
+                damage *= consts.CENTIPEDE_STING_AMPLIFICATION
+                damage = int(damage)
+
             if verb is None:
                 verb = main.normalized_choice(damage_description_tables[hit_type],percent_hit)
 
-            #ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ' in the ' + location + ' for ' + str(damage) + ' damage!', libtcod.grey)
-            final_damage = target.fighter.take_damage(damage,hit_type)
+            #need to grab the name first, because take_damage can kill the target, leading to some weird messages
+            target_name = syntax.name(target.name)
             ui.message('%s %s %s in the %s for %s%d damage!' % (
                             syntax.name(fighter.owner.name).capitalize(),
                             syntax.conjugate(fighter.owner is player.instance, verb),
-                            syntax.name(target.name), location,
-                            syntax.relative_adjective(damage, final_damage, ['an increased ', 'a reduced ']),
-                            final_damage), libtcod.grey)
+                            target_name, location,
+                            syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
+                            damage), libtcod.grey)
+            target.fighter.take_damage(damage)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)
