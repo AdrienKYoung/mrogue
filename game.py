@@ -4,6 +4,7 @@ import shelve
 import consts
 import terrain
 import world
+import syntax
 
 #############################################
 # Classes
@@ -41,7 +42,8 @@ class Equipment:
         self.attack_delay = attack_delay
         self.essence = essence
         self.level = 0
-        self.max_level = len(level_progression)
+        if level_progression is not None:
+            self.max_level = len(level_progression)
         self.level_progression = level_progression
         if spell_list is not None:
             default_level = 0
@@ -366,7 +368,9 @@ class GameObject:
                     return True
                 web = object_at_tile(self.x, self.y, 'spiderweb')
                 if web is not None and not self.name == 'tunnel spider':
-                    ui.message('The ' + self.name + ' struggles against the web.')
+                    ui.message('%s %s against the web' % (
+                                    syntax.name(self.name).capitalize(),
+                                    syntax.conjugate(self is player.instance, ('struggle', 'struggles'))))
                     web.destroy()
                     return True
                 door = object_at_tile(self.x + dx, self.y + dy, 'door')
@@ -631,7 +635,7 @@ def step_on_blightweed(weed, obj):
         if obj.fighter.armor > 0:
             obj.fighter.shred += 1
             if fov.player_can_see(obj.x, obj.y):
-                ui.message("The blightweed thorns shred the " + obj.name + "'s armor!", libtcod.desaturated_red)
+                ui.message('The blightweed thorns shred %s armor!' % syntax.name(obj.name, possesive=True), libtcod.desaturated_red)
 
 
 
@@ -673,7 +677,9 @@ def blastcap_explode(blastcap):
     for obj in current_map.objects:
         if obj.fighter and is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
             if obj.fighter.apply_status_effect(effects.StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
-                ui.message('The ' + obj.name + ' is stunned!', libtcod.gold)
+                ui.message('%s %s stunned!' % (
+                                syntax.name(obj.name).capitalize(),
+                                syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.gold)
 
     if ui.selected_monster is blastcap:
         changed_tiles.append((blastcap.x, blastcap.y))
@@ -810,7 +816,7 @@ def bomb_beetle_corpse_tick(object=None):
 
 def bomb_beetle_death(beetle):
 
-    ui.message(beetle.name.title() + ' is dead!', libtcod.red)
+    ui.message('%s is dead!' % syntax.name(beetle.name).capitalize(), libtcod.red)
     beetle.char = 149
     beetle.color = libtcod.black
     beetle.blocks = True
@@ -837,8 +843,7 @@ def monster_death(monster):
             current_map.add_object(item)
             item.send_to_back()
 
-
-    ui.message(monster.name.title() + ' is dead!', libtcod.red)
+    ui.message('%s is dead!' % syntax.name(monster.name).capitalize(), libtcod.red)
     monster.char = '%'
     monster.color = libtcod.darker_red
     monster.blocks = False
@@ -1292,7 +1297,7 @@ def get_objects(x, y, condition=None, distance=0):
 
 def get_description(obj):
     if obj and hasattr(obj, 'description') and obj.description is not None:
-        return obj.description
+        return obj.description.capitalize()
     else:
         return ""
 

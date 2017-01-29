@@ -6,6 +6,7 @@ import ui
 import ai
 import player
 import combat
+import syntax
 
 
 class Spell:
@@ -21,11 +22,14 @@ def cast_fireball():
     ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
     (x, y) = ui.target_tile()
     if x is None: return 'cancelled'
-    ui.message('The fireball explodes, burning everything within ' + str(consts.FIREBALL_RADIUS) + ' tiles!', libtcod.light_blue)
+    ui.message('The fireball explodes, burning everything within ' + str(consts.FIREBALL_RADIUS) + ' tiles!', libtcod.flame)
     main.create_fire(x,y,10)
     for obj in main.current_map.objects:
         if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
-            ui.message('The ' + obj.name + ' gets burned for ' + str(consts.FIREBALL_DAMAGE) + ' damage!', libtcod.light_blue)
+            ui.message('%s %s burned for %d damage!' % (
+                            syntax.name(obj.name).capitalize(),
+                            syntax.conjugate(obj is player.instance, ('are','is')),
+                            consts.FIREBALL_DAMAGE), libtcod.flame)
             obj.fighter.take_damage(consts.FIREBALL_DAMAGE)
 
 
@@ -35,7 +39,9 @@ def cast_confuse():
     if monster is None or monster.behavior is None: return 'cancelled'
     else:
         if monster.fighter.apply_status_effect(effects.StatusEffect('confusion', consts.CONFUSE_NUM_TURNS, color=libtcod.pink, on_apply=set_confused_behavior)):
-            ui.message('The ' + monster.name + ' is confused!', libtcod.light_blue)
+            ui.message('%s %s confused!' % (
+                            syntax.name(monster.name).capitalize(),
+                            syntax.conjugate(monster is player.instance, ('are', 'is'))), libtcod.light_blue)
 
 def set_confused_behavior(object):
     if object.behavior is not None:
@@ -50,7 +56,11 @@ def cast_lightning():
         return 'cancelled'
     else:
         damage = consts.LIGHTNING_DAMAGE
-        ui.message('A bolt of lightning strikes the ' + monster.name + '! It suffers ' + str(damage) + ' damage.', libtcod.light_blue)
+        ui.message('A bolt of lightning strikes %s! %s %s %d damage.' % (
+                    syntax.name(monster.name),
+                    syntax.pronoun(monster.name),
+                    syntax.conjugate(monster is player.instance, ('suffer', 'suffers')),
+                    damage), libtcod.light_blue)
         monster.fighter.take_damage(damage)
 
 
@@ -75,7 +85,7 @@ def cast_shielding():
 def cast_frog_tongue(frog, target):
 
     ui.message("The frog's tongue lashes out at you!", libtcod.dark_green)
-    result = combat.attack_ex(frog.fighter, target, 0, consts.FROG_TONGUE_ACC, consts.FROG_TONGUE_DMG, 0, None, 'pulls', 0, 0, 0)
+    result = combat.attack_ex(frog.fighter, target, 0, consts.FROG_TONGUE_ACC, consts.FROG_TONGUE_DMG, 0, None, ('pull', 'pulls'), 0, 0, 0)
     if result == 'hit':
         beam = main.beam(frog.x, frog.y, target.x, target.y)
         pull_to = beam[max(len(beam) - 3, 0)]
@@ -100,12 +110,12 @@ def cast_manabolt():
         monster = main.get_monster_at_tile(target[0], target[1])
         if monster is not None:
             if combat.roll_to_hit(monster, player.instance.fighter.accuracy * consts.MANABOLT_ACC):
-                ui.message('The manabolt hits the ' + monster.name + ', dealing ' + str(consts.MANABOLT_DMG) + ' damage!', libtcod.light_blue)
+                ui.message('The manabolt strikes %s, dealing %d damage!' % (syntax.name(monster.name), consts.MANABOLT_DMG), libtcod.light_blue)
                 monster.fighter.take_damage(consts.MANABOLT_DMG)
             else:
-                ui.message('The manabolt misses the ' + monster.name + '.', libtcod.gray)
+                ui.message('The manabolt misses %s.' % syntax.name(monster.name), libtcod.gray)
         else:
-            ui.message('The manabolt hits the ' + main.current_map.tiles[target[0]][target[1]].tile_type + '.', libtcod.light_blue)
+            ui.message('The manabolt hits the %s.' % main.current_map.tiles[target[0]][target[1]].tile_type, libtcod.light_blue)
         return True
     return False
 
@@ -122,7 +132,9 @@ def cast_ignite():
             return False
         obj = main.get_objects(target[0], target[1], lambda o: o.blocks)
         if len(obj) > 0:
-            ui.message('The ' + obj[0].name + ' is in the way.', libtcod.gray)
+            ui.message('%s %s in the way' % (
+                            syntax.name(obj[0].name).capitalize(),
+                            syntax.conjugate(obj[0] is player.instance, ('are', 'is'))), libtcod.gray)
             return False
         ui.message('You conjure a spark of flame, igniting the ' + tile.name + '!', libtcod.flame)
         main.create_fire(target[0], target[1], 10)

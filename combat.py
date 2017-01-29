@@ -7,6 +7,7 @@ import player
 import spells
 import fov
 import effects
+import syntax
 
 class Fighter:
 
@@ -59,15 +60,16 @@ class Fighter:
             libtcod.console_print(console, x + 10, y + print_height, '(%d)' % (self.armor + self.shred))
         print_height += 1
         # Print accuracy
-        libtcod.console_set_default_foreground(console, libtcod.white)
-        s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(self.owner, player.instance.fighter.accuracy))
-        s += '%'
-        libtcod.console_print(console, x, y + print_height, s)
-        print_height += 1
-        s = 'Its Accuracy: %d%%' % int(100.0 * get_chance_to_hit(player.instance, self.accuracy))
-        s += '%'
-        libtcod.console_print(console, x, y + print_height, s)
-        print_height += 1
+        if self.owner is not player.instance:
+            libtcod.console_set_default_foreground(console, libtcod.white)
+            s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(self.owner, player.instance.fighter.accuracy))
+            s += '%'
+            libtcod.console_print(console, x, y + print_height, s)
+            print_height += 1
+            s = 'Its Accuracy: %d%%' % int(100.0 * get_chance_to_hit(player.instance, self.accuracy))
+            s += '%'
+            libtcod.console_print(console, x, y + print_height, s)
+            print_height += 1
 
         for effect in self.status_effects:
             libtcod.console_set_default_foreground(console, effect.color)
@@ -182,8 +184,9 @@ class Fighter:
                     self.breath -= 1
                 else:
                     drown_damage = int(self.max_hp / 4)
-                    ui.message('The ' + self.owner.name + ' drowns, suffering ' + str(drown_damage) + ' damage!',
-                            libtcod.blue)
+                    ui.message('%s %s, suffering %d damage!' % (syntax.name(self.owner.name).capitalize(),
+                                             syntax.conjugate(self.owner is player.instance,
+                                             ('drown', 'drowns')), drown_damage), libtcod.blue)
                     self.take_damage(drown_damage)
         elif self.breath < self.max_breath:
             self.breath += 1
@@ -213,7 +216,8 @@ class Fighter:
         for resist in self.resistances:
             if resist == new_effect.name:
                 if fov.player_can_see(self.owner.x, self.owner.y):
-                    ui.message('The ' + self.owner.name + ' resists.', libtcod.gray)
+                    ui.message('%s %s.' % (syntax.name(self.owner.name).capitalize(), syntax.conjugate(
+                                    self.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
                 return False
         # check for existing matching effects
         for effect in self.status_effects:
@@ -242,6 +246,8 @@ class Fighter:
 
     @property
     def accuracy(self):
+        if self.base_accuracy == 0:
+            return 0
         bonus = sum(equipment.accuracy_bonus for equipment in main.get_all_equipped(self.inventory))
         if self.owner.player_stats and main.get_equipped_in_slot(self.inventory, 'right hand'):
             bonus -= 5 * max(main.get_equipped_in_slot(self.inventory, 'right hand').str_requirement - self.owner.player_stats.str, 0)
@@ -326,9 +332,9 @@ class Fighter:
 hit_tables = {
     'default': {
         'body' : 60,
-        'head'  : 15,
+        'head'  : 10,
         'arms'  : 15,
-        'legs'  : 10,
+        'legs'  : 15,
         #'feet'  : 5,
         #'hands' : 5
     },
@@ -368,28 +374,28 @@ location_damage_tables = {
 
 damage_description_tables = {
     'stabbing' : [
-        'stabs',
-        'sinks into',
-        'drives through',
-        'impales'
+        ('stab', 'stabs'),
+        ('sink into', 'sinks into'),
+        ('drive through', 'drives through'),
+        ('impale', 'impales')
     ],
     'slashing' : [
-        'cuts',
-        'slashes',
-        'lays open',
-        'cleaves through'
+        ('cut', 'cuts'),
+        ('slash', 'slashes'),
+        ('lay open', 'lays open'),
+        ('cleave through', 'cleaves through')
     ],
     'bludgeoning' : [
-        'strikes',
-        'cracks',
-        'smashes',
-        'shatters'
+        ('strike', 'strikes'),
+        ('crack', 'cracks'),
+        ('smash', 'smashes'),
+        ('shatter', 'shatters')
     ],
     'deflected' : [
-        'deflects off',
-        'bounces off',
-        'glances off',
-        'grazes'
+        ('deflect off', 'deflects off'),
+        ('bounce off', 'bounces off'),
+        ('glance off', 'glances off'),
+        ('graze', 'grazes')
     ]
 }
 
@@ -468,7 +474,11 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
                     hit_type = 'bludgeoning'
                 verb = main.normalized_choice(damage_description_tables[hit_type],percent_hit)
 
-            ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ' in the ' + location + ' for ' + str(damage) + ' damage!', libtcod.grey)
+            #ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ' in the ' + location + ' for ' + str(damage) + ' damage!', libtcod.grey)
+            ui.message('%s %s %s in the %s for %d damage!' % (
+                            syntax.name(fighter.owner.name).capitalize(),
+                            syntax.conjugate(fighter.owner is player.instance, verb),
+                            syntax.name(target.name), location, damage), libtcod.grey)
             target.fighter.take_damage(damage)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
@@ -478,15 +488,24 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
             verbs = damage_description_tables['deflected']
             verb = verbs[libtcod.random_get_int(0, 0, len(verbs) - 1)]
 
-            ui.message('The ' + fighter.owner.name.title() + "'s attack " + verb + ' the ' + target.name + '!', libtcod.grey)
+            #ui.message('The ' + fighter.owner.name.title() + "'s attack " + verb + ' the ' + target.name + '!', libtcod.grey)
+            ui.message('%s attack %s %s' % (
+                            syntax.name(fighter.owner.name, possesive=True).capitalize(),
+                            verb[0],
+                            syntax.name(target.name)), libtcod.grey)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)
             return 'blocked'
     else:
         if verb is None:
-            verb = 'attacks'
-        ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
+            verb = ('attack', 'attacks')
+        #ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
+        ui.message('%s %s %s, but %s!' % (
+                            syntax.name(fighter.owner.name).capitalize(),
+                            syntax.conjugate(fighter.owner is player.instance, verb),
+                            syntax.name(target.name),
+                            syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
 

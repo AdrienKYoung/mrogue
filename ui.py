@@ -40,7 +40,7 @@ def menu(header, options, width, x_center=None, render_func=None):
         y += 1
 
     if render_func is not None:
-        h = render_func(window, 1, y, width)
+        h = render_func(window, 1, y, width - 2)
         y += h + 1
         height += h + 1
 
@@ -212,10 +212,13 @@ def get_names_under_mouse():
                        player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
     (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
-    names = [obj.name for obj in main.current_map.objects if (obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y)
-                                                                            or (
-                                                                            obj.always_visible and main.current_map.tiles[obj.x][
-                                                                                obj.y].explored)))]
+    names = []
+    for obj in main.get_objects(x, y, lambda o: fov.player_can_see(o.x, o.y) or (o.always_visible and main.current_map.tiles[o.x][o.y].explored)):
+        if obj.name == 'player':
+            names.append('you')
+        else:
+            names.append(obj.name)
+
     names = ', '.join(names)
 
     return names.title()
@@ -346,7 +349,7 @@ def render_side_panel(acc_mod=1.0):
             effect_str = effect.name
             if effect.time_limit is not None:
                 effect_str += ' (' + str(effect.time_limit) + ')'
-            libtcod.console_print(side_panel, 2, drawHeight, effect_str)
+            libtcod.console_print(side_panel, 2, drawHeight, effect_str.capitalize())
             drawHeight += 1
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.white)
@@ -354,7 +357,7 @@ def render_side_panel(acc_mod=1.0):
     # Objects here
     libtcod.console_print(side_panel, 2, drawHeight, 'Objects here:')
     drawHeight += 1
-    objects_here = main.get_objects(player.instance.x, player.instance.y, lambda o: o is not player)
+    objects_here = main.get_objects(player.instance.x, player.instance.y, lambda o: o is not player.instance)
     if len(objects_here) > 0:
         end = min(len(objects_here), 7)
         if len(objects_here) == 8:
@@ -366,20 +369,20 @@ def render_side_panel(acc_mod=1.0):
                 libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
             else:
                 libtcod.console_set_default_foreground(side_panel, libtcod.gray)
-            libtcod.console_print(side_panel, 4, drawHeight, line)
+            libtcod.console_print(side_panel, 4, drawHeight, line.capitalize())
             drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
         if end < len(objects_here) - 1:
             libtcod.console_print(side_panel, 4, drawHeight, '...' + str(len(objects_here) - 7) + ' more...')
             drawHeight += 1
-    libtcod.console_print(side_panel, 4, drawHeight, main.current_map.tiles[player.instance.x][player.instance.y].name)
+    libtcod.console_print(side_panel, 4, drawHeight, main.current_map.tiles[player.instance.x][player.instance.y].name.capitalize())
     drawHeight += 2
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
     # Selected Monster
     if selected_monster is not None and selected_monster.fighter is not None:
         drawHeight = consts.SIDE_PANEL_HEIGHT - 16
-        libtcod.console_print(side_panel, 2, drawHeight, selected_monster.name)
+        libtcod.console_print(side_panel, 2, drawHeight, selected_monster.name.title())
         drawHeight += 2
         render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
                    libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)
@@ -409,7 +412,7 @@ def render_side_panel(acc_mod=1.0):
             effect_str = effect.name
             if effect.time_limit is not None:
                 effect_str += ' (' + str(effect.time_limit) + ')'
-            libtcod.console_print(side_panel, 2, drawHeight, effect_str)
+            libtcod.console_print(side_panel, 2, drawHeight, effect_str.capitalize())
             drawHeight += 1
 
     draw_border(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
@@ -455,7 +458,7 @@ def render_ui_overlay():
         y = 1
         max_width = 0
         for line in unders:
-            libtcod.console_print(overlay, mouse.cx, mouse.cy + y, line.title())
+            libtcod.console_print(overlay, mouse.cx, mouse.cy + y, line.capitalize())
             if len(line) > max_width: max_width = len(line)
             y += 1
         libtcod.console_blit(overlay, mouse.cx, mouse.cy + 1, max_width, y - 1, 0, mouse.cx, mouse.cy + 1, 1.0, 0.5)
@@ -775,14 +778,16 @@ def examine(x=None, y=None):
         if obj is not None:
             if isinstance(obj, main.GameObject):
                 desc = obj.name.title()
-                if hasattr(obj, 'fighter') and obj.fighter is not None and \
+                if obj.name == 'player':
+                    desc = 'You'
+                if hasattr(obj, 'fighter') and obj.fighter is not None and obj is not player.instance and \
                         hasattr(obj.fighter, 'inventory') and obj.fighter.inventory is not None and len(obj.fighter.inventory) > 0:
-                    desc = desc + '\nInventory: '
+                    desc = desc + '\n\nInventory: '
                     for item in obj.fighter.inventory:
                         desc = desc + item.name + ', '
                 menu(desc, ['back'], 50, render_func=obj.print_description)
             else:
-                desc = obj.name.title() + '\n' + main.get_description(obj)
+                desc = obj.name.title() + '\n\n' + main.get_description(obj)
                 menu(desc, ['back'], 50)
 
 def show_ability_screen():

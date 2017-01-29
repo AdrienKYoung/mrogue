@@ -8,6 +8,7 @@ import effects
 import combat
 import dungeon
 import spells
+import syntax
 
 class PlayerStats:
 
@@ -132,7 +133,7 @@ def create():
     fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death)
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),int(loadout['agi']),int(loadout['con']))
-                        , description='You, the fearless adventurer!')
+                        , description='An exile, banished to this forsaken island for your crimes. This place will surely be your grave.')
     instance.level = 1
     instance.essence = ['fire']
     instance.known_spells = []
@@ -272,7 +273,7 @@ def do_queued_action(action):
 
 def cast_spell():
     left_hand = main.get_equipped_in_slot(instance.fighter.inventory,'left hand')
-    if len(left_hand.spell_list) <= 0:
+    if hasattr(left_hand, 'spell_list') and len(left_hand.spell_list) <= 0:
         ui.message("You have no spells available", libtcod.light_blue)
         return 'didnt-take-turn'
     else:
@@ -350,7 +351,7 @@ def level_up():
     instance.fighter.heal(instance.fighter.max_hp / 2)
 
 def on_death(instance):
-    ui.message('You\'re dead, sucka.', libtcod.grey)
+    ui.message("You're dead, sucka.", libtcod.grey)
     main.game_state = 'dead'
     instance.char = '%'
     instance.color = libtcod.darker_red
@@ -405,7 +406,7 @@ def reach_attack(dx, dy):
     target = main.get_monster_at_tile(target_space[0], target_space[1])
     if target is not None:
         result = combat.attack_ex(instance.fighter, target, instance.fighter.calculate_attack_stamina_cost(), instance.fighter.accuracy,
-                             instance.fighter.attack_damage * 1.5, instance.fighter.damage_variance, None, 'reach-attacks',
+                             instance.fighter.attack_damage * 1.5, instance.fighter.damage_variance, None, ('reach-attack', 'reach-attacks'),
                              instance.fighter.attack_shred, instance.fighter.attack_guaranteed_shred, instance.fighter.attack_pierce)
         if result != 'failed' and target.fighter:
             ui.select_monster(target)
@@ -436,7 +437,7 @@ def cleave_attack(dx, dy):
             target = main.get_monster_at_tile(tile[0], tile[1])
             if target and target.fighter:
                 combat.attack_ex(instance.fighter, target, 0, instance.fighter.accuracy, instance.fighter.attack_damage,
-                                 instance.fighter.damage_variance, None, 'cleaves', instance.fighter.attack_shred,
+                                 instance.fighter.damage_variance, None, ('cleave', 'cleaves'), instance.fighter.attack_shred,
                                  instance.fighter.attack_guaranteed_shred + 1, instance.fighter.attack_pierce)
         return 'cleaved'
     else:
@@ -451,7 +452,7 @@ def bash_attack(dx, dy):
     if target is not None:
         result = combat.attack_ex(instance.fighter, target, consts.BASH_STAMINA_COST, instance.fighter.accuracy * consts.BASH_ACC_MOD,
                                  instance.fighter.attack_damage * consts.BASH_DMG_MOD, instance.fighter.damage_variance,
-                                 None, 'bashes', instance.fighter.attack_shred + 1, instance.fighter.attack_guaranteed_shred,
+                                 None, ('bash', 'bashes'), instance.fighter.attack_shred + 1, instance.fighter.attack_guaranteed_shred,
                                  instance.fighter.attack_pierce)
         if result == 'hit' and target.fighter:
             ui.select_monster(target)
@@ -476,9 +477,15 @@ def bash_attack(dx, dy):
             if stun:
                 #  stun the target
                 if target.fighter.apply_status_effect(effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
-                    ui.message('The ' + target.name + ' collides with the ' + against + ', stunning it!', libtcod.gold)
+                    ui.message('%s %s with the %s, stunning %s!' % (
+                                    syntax.name(target.name).capitalize(),
+                                    syntax.conjugate(target is instance, ('collide', 'collides')),
+                                    against,
+                                    syntax.pronoun(target.name, objective=True)), libtcod.gold)
             else:
-                ui.message('The ' + target.name + ' is knocked backwards.', libtcod.gray)
+                ui.message('%s %s knocked backwards.' % (
+                                    syntax.name(target.name).capitalize(),
+                                    syntax.conjugate(target is instance, ('are', 'is'))), libtcod.gray)
                 target.set_position(target.x + direction[0], target.y + direction[1])
                 main.render_map()
                 libtcod.console_flush()

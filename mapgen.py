@@ -975,9 +975,9 @@ def create_coastline(height):
         shore = libtcod.noise_get_fbm(shore_noise, [float(x) / 10.0, float(x) / 10.0 + 1.0], libtcod.NOISE_PERLIN)
         this_shore = shore_y + int(shore * 10)
         for y in range(consts.MAP_HEIGHT - 1, this_shore, -1):
-            change_map_tile(x, y, 'shallow water')
+            change_map_tile(x, y, 'shallow seawater')
         for y in range(consts.MAP_HEIGHT - 1, shore_y + 6 + int(shore * 8), -1):
-            change_map_tile(x, y, 'deep water')
+            change_map_tile(x, y, 'deep seawater')
 
 
 def erode_map(floor_type=default_floor, iterations=1):

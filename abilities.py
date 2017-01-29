@@ -7,6 +7,7 @@ import monsters
 import fov
 import ui
 import player
+import syntax
 
 class Ability:
     def __init__(self, name, description, function, cooldown):
@@ -96,10 +97,12 @@ def ability_berserk_self(actor=None):
         if not actor.fighter.has_status('berserk') and not actor.fighter.has_status('exhausted'):
             actor.fighter.apply_status_effect(effects.berserk())
             if actor is not player.instance:
-                ui.message("{} roars!!".format(actor.name),libtcod.red)
+                ui.message('%s %s!' % (
+                                syntax.name(actor.name).capitalize(),
+                                syntax.conjugate(actor is player.instance, ('roar', 'roars'))), libtcod.red)
         else:
             if actor is player.instance:
-                ui.message("You can't berserk right now.", libtcod.yellow)
+                ui.message("You cannot go berserk right now.", libtcod.yellow)
             return 'didnt-take-turn'
 
 def ability_spawn_vermin(actor=None):
