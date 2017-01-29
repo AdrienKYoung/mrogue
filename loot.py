@@ -505,6 +505,24 @@ proto = {
         'on_hit'             : [combat.on_hit_stun],
         'attack_delay'       : 18
     },
+    'weapon_coal_mace': {
+        'name'               : 'coal-brazer mace',
+        'category'           : 'weapon',
+        'damage_type'        : 'fire',
+        'char'               : chr(157),
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               : 'right hand',
+        'description'        : 'A one-handed mace, fitted with a grate for burning coals.',
+        'stamina_cost'       : 10,
+        'str_requirement'    : 13,
+        'shred'              : 2,
+        'accuracy'           : 2,
+        'weapon_dice'        : '1d6',
+        'str_dice'           : 2,
+        'on_hit'             : [combat.on_hit_stun],
+        'attack_delay'       : 22
+    },
 
     #ARMOR
     'equipment_shield': {

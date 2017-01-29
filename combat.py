@@ -13,7 +13,7 @@ class Fighter:
 
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=25, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, breath=6,
-                 can_breath_underwater=False, resistances=[], inventory=[], on_hit=None, base_shred=0,
+                 can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0):
         self.xp = xp
         self.base_max_hp = hp
@@ -33,6 +33,7 @@ class Fighter:
         self.breath = breath
         self.can_breath_underwater = can_breath_underwater
         self.resistances = list(resistances)
+        self.weaknesses = list(weaknesses)
         self.inventory = list(inventory)
         self.base_shred = base_shred
         self.base_guaranteed_shred = base_guaranteed_shred
@@ -87,12 +88,21 @@ class Fighter:
         if self.stamina > self.max_stamina:
             self.stamina = self.max_stamina
 
-    def take_damage(self, damage):
+    def take_damage(self, damage, type='physical'):
         if self.owner == player.instance and consts.DEBUG_INVINCIBLE:
             damage = 0
+
+        #Damage modifiers
+        if type in self.getResists():
+            damage *= consts.RESISTANCE_FACTOR
+            damage = int(damage)
+        if type in self.getWeaknesses():
+            damage *= consts.WEAKNESS_FACTOR
+            damage = int(damage)
         if self.has_status('stung'):
             damage *= consts.CENTIPEDE_STING_AMPLIFICATION
             damage = int(damage)
+
         if damage > 0:
             self.hp -= damage
             if self.hp <= 0:
@@ -103,6 +113,7 @@ class Fighter:
                 if self.owner != player.instance:
                     player.instance.fighter.xp += self.xp
             self.time_since_last_damaged = 0
+        return damage
 
     def drop_essence(self):
         if hasattr(self.owner, 'essence') and self.owner is not player.instance:
@@ -331,6 +342,13 @@ class Fighter:
         else:
             return 0
 
+    def getResists(self):
+        from_equips = reduce(lambda a,b: a | set(b.resistances), main.get_all_equipped(self.inventory), set())
+        return list(set(self.resistances) | from_equips)
+
+    def getWeaknesses(self):
+        return self.weaknesses
+
 hit_tables = {
     'default': {
         'body' : 60,
@@ -377,7 +395,7 @@ location_damage_tables = {
 damage_description_tables = {
     'stabbing' : [
         ('stab', 'stabs'),
-        ('sink into', 'sinks into'),
+        ('spear', 'spears'),
         ('drive through', 'drives through'),
         ('impale', 'impales')
     ],
@@ -398,6 +416,12 @@ damage_description_tables = {
         ('bounce off', 'bounces off'),
         ('glance off', 'glances off'),
         ('graze', 'grazes')
+    ],
+    'fire': [
+        ('char', 'chars'),
+        ('burn', 'burns'),
+        ('immolate', 'immolates'),
+        ('incinerate', 'incinerates')
     ]
 }
 
@@ -467,21 +491,25 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
             if effect is not None and percent_hit > 0.1:
                 target.fighter.apply_status_effect(effect)
             # Take damage
+
+            #weapon-specific damage verbs
+            hit_type = None
+            if weapon is not None and weapon.damage_type is not None:
+                hit_type = weapon.damage_type
+            else:
+                hit_type = 'bludgeoning'
+
             if verb is None:
-                #weapon-specific damage verbs
-                hit_type = None
-                if weapon is not None and weapon.damage_type is not None:
-                    hit_type = weapon.damage_type
-                else:
-                    hit_type = 'bludgeoning'
                 verb = main.normalized_choice(damage_description_tables[hit_type],percent_hit)
 
             #ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ' in the ' + location + ' for ' + str(damage) + ' damage!', libtcod.grey)
-            ui.message('%s %s %s in the %s for %d damage!' % (
+            final_damage = target.fighter.take_damage(damage,hit_type)
+            ui.message('%s %s %s in the %s for %s%d damage!' % (
                             syntax.name(fighter.owner.name).capitalize(),
                             syntax.conjugate(fighter.owner is player.instance, verb),
-                            syntax.name(target.name), location, damage), libtcod.grey)
-            target.fighter.take_damage(damage)
+                            syntax.name(target.name), location,
+                            syntax.relative_adjective(damage, final_damage, ['an increased ', 'a reduced ']),
+                            final_damage), libtcod.grey)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)

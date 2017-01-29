@@ -69,6 +69,8 @@ ARMOR_REDUCTION_DROPOFF = 5
 ARMOR_LOCATION_RESIST_FACTOR = 4 #influences how effective armor is at protecting against hit-location bonuses. Higher means less effect
 XP_ORB_AMOUNT_MIN = 100
 XP_ORB_AMOUNT_MAX = 150
+RESISTANCE_FACTOR = 0.5
+WEAKNESS_FACTOR = 2.0
 
 # TERRAIN FACTORS
 SHALLOW_WATER_COST = 5
@@ -112,5 +114,5 @@ DEBUG_TEST_MAP = False
 DEBUG_DRAW_PATHS = False
 DEBUG_STARTING_ITEM = None
 DEBUG_INVINCIBLE = False
-DEBUG_STARTING_CLASS = 'wizard'
+DEBUG_STARTING_CLASS = 'fanatic'
 DEBUG_STARTING_MAP = None#'badlands_0_2'

@@ -17,7 +17,7 @@ class Equipment:
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
-                 attack_delay=10, essence=None,spell_list=None,level_progression=None,level_costs=None):
+                 attack_delay=10, essence=None,spell_list=None,level_progression=None,level_costs=None,resistances=[]):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -41,6 +41,7 @@ class Equipment:
         self.damage_type = damage_type
         self.attack_speed_bonus = attack_speed_bonus
         self.attack_delay = attack_delay
+        self.resistances = list(resistances)
         self.essence = essence
         self.level = 0
         if level_progression is not None:
@@ -1027,7 +1028,8 @@ def spawn_monster(name, x, y):
                                             armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
                                             accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
                                             death_function=death,
-                                            can_breath_underwater=True, resistances=p['resistances'] + modifier.get('resistances',[]),
+                                            can_breath_underwater=True, resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
+                                            weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
                                             inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
                                             base_shred=p.get('shred', 0) * modifier.get('shred_bonus',1),
                                             base_guaranteed_shred=p.get('guaranteed_shred', 0),

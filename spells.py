@@ -30,7 +30,7 @@ def cast_fireball():
                             syntax.name(obj.name).capitalize(),
                             syntax.conjugate(obj is player.instance, ('are','is')),
                             consts.FIREBALL_DAMAGE), libtcod.flame)
-            obj.fighter.take_damage(consts.FIREBALL_DAMAGE)
+            obj.fighter.take_damage(consts.FIREBALL_DAMAGE,'fire')
     return 'success'
 
 
@@ -62,7 +62,7 @@ def cast_lightning():
                     syntax.pronoun(monster.name),
                     syntax.conjugate(monster is player.instance, ('suffer', 'suffers')),
                     damage), libtcod.light_blue)
-        monster.fighter.take_damage(damage)
+        monster.fighter.take_damage(damage,'wind')
 
 
 def cast_heal():
@@ -112,7 +112,7 @@ def cast_manabolt():
         if monster is not None:
             if combat.roll_to_hit(monster, player.instance.fighter.accuracy * consts.MANABOLT_ACC):
                 ui.message('The manabolt strikes %s, dealing %d damage!' % (syntax.name(monster.name), consts.MANABOLT_DMG), libtcod.light_blue)
-                monster.fighter.take_damage(consts.MANABOLT_DMG)
+                monster.fighter.take_damage(consts.MANABOLT_DMG,'arcane')
             else:
                 ui.message('The manabolt misses %s.' % syntax.name(monster.name), libtcod.gray)
         else:

@@ -55,7 +55,7 @@ def fire_tick(object=None):
     if object is None or object.fighter is None or \
                     main.current_map.tiles[object.x][object.y].is_water:
         object.fighter.remove_status('burning')
-    object.fighter.take_damage(5)
+    object.fighter.take_damage(5,'fire')
 
 def regeneration_tick(object=None):
     if object is not None or object.fighter is not None:
@@ -63,12 +63,12 @@ def regeneration_tick(object=None):
 
 def poison_tick(object=None):
     if object is not None or object.fighter is not None:
-        object.fighter.take_damage(2)
+        object.fighter.take_damage(2,'poison')
 
 def rot_apply(object=None):
     if object is not None or object.fighter is not None:
         object.fighter.max_hp -= 20
-        object.fighter.take_damage(20)
+        object.fighter.take_damage(20,'dark')
 
 def rot_end(object=None):
     if object is not None or object.fighter is not None:

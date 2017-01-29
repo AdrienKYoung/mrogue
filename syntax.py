@@ -53,3 +53,15 @@ def pronoun(_name, possesive=False, objective=False, gender='N'):
             return 'she'
         else:
             return 'it'
+
+def relative_adjective(a,b,adjectives):
+    if len(adjectives) < 1:
+        return ""
+    if len(adjectives) < 2:
+        return adjectives[0]
+    if a < b:
+        return adjectives[0]
+    elif a > b:
+        return adjectives[1]
+    else:
+        return ""

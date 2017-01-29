@@ -99,7 +99,7 @@ loadouts = {
         'con':8,
         'inventory':[
             #'charm_resistance'
-            'weapon_mace'
+            'weapon_coal_mace'
         ],
         'description' : """
         Offensive melee fighter. Starts with no armor and a mace.
@@ -114,7 +114,8 @@ loadouts = {
         'con':8,
         'inventory':[
             #'charm_summon',
-            'book_lesser_fire'
+            'book_lesser_fire',
+            'potion_lesser_fire'
         ],
         'description' : """
         Fragile in melee, but have access to powerful offensive magic. Starts with a tome.
