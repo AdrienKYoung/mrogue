@@ -36,7 +36,7 @@ data = {
                              'broken shingles of flat, smooth stone', isFloor=True),
     'dark shale wall': TileData(True, True, 'dark shale wall', '#', (96, 96, 96), (64, 64, 64),
                              'a sheer cliff of blackened stone', diggable=True, isWall=True),
-    'wooden palisade': TileData(True, True, 'wooden palisade', '#', (31, 24, 15), (94, 75, 47),
+    'wooden palisade': TileData(True, True, 'wooden palisade', '#', (94, 75, 47), (31, 24, 15),
                              'a barrier crafted from dry wooden posts lashed together with rope',
                              diggable=True, isWall=True, flammable=True),
     'gnarled tree': TileData(True, True, 'gnarled tree', chr(157), (94, 75, 47), (31, 31, 31),

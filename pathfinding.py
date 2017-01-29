@@ -149,6 +149,3 @@ def draw_path(path):
         for t in path:
             main.current_map.add_object(
                 main.GameObject(t[0], t[1], '*', 'path', libtcod.yellow, always_visible=True, description=''))
-
-# The pathfinding map object
-map = Graph()

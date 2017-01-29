@@ -957,6 +957,8 @@ def apply_scripts(feature):
             scatter_reeds(feature.room.get_open_tiles())
         elif script == 'fill_blightweed':
             fill_blightweed(feature.room.get_open_tiles())
+        elif script == 'create_slopes':
+            create_slopes(feature.room.get_open_tiles())
         elif script == 'your script here':
             pass
 
@@ -996,17 +998,23 @@ def erode_map(floor_type=default_floor, iterations=1):
             change_map_tile(tile[0], tile[1], floor_type)
 
 
-def create_slopes():
-    for y in range(consts.MAP_HEIGHT):
-        for x in range(consts.MAP_WIDTH):
-            this_tile = map.tiles[x][y]
-            if this_tile.is_wall:
-                continue
-            for tile in main.adjacent_tiles_diagonal(x, y):
-                adj_tile = map.tiles[tile[0]][tile[1]]
-                if adj_tile.elevation < this_tile.elevation:
-                    change_map_tile(x, y, default_ramp)
-                    break
+def create_slopes(tiles=None):
+
+    if tiles is None:
+        tiles = []
+        for y in range(consts.MAP_HEIGHT):
+            for x in range(consts.MAP_WIDTH):
+                tiles.append((x, y))
+
+    for tile in tiles:
+        this_tile = map.tiles[tile[0]][tile[1]]
+        if this_tile.is_wall:
+            continue
+        for adj in main.adjacent_tiles_diagonal(tile[0], tile[1]):
+            adj_tile = map.tiles[adj[0]][adj[1]]
+            if adj_tile.elevation < this_tile.elevation:
+                change_map_tile(tile[0], tile[1], default_ramp, hard_override=True)
+                break
 
 def create_hills(perlin_scaling=4.0, height_scaling=4.0):
     height_noise = libtcod.noise_new(2)
@@ -1345,5 +1353,3 @@ def make_map(_map):
         map.tiles[0][i].flags |= terrain.FLAG_NO_DIG
         map.tiles[consts.MAP_WIDTH - 1][i].tile_type = default_wall
         map.tiles[consts.MAP_WIDTH - 1][i].flags |= terrain.FLAG_NO_DIG
-
-    pathfinding.map.initialize(map.tiles)

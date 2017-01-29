@@ -180,8 +180,8 @@ proto = {
         'loot': 'default',
         'on_create': None,
         'ai': ai.AI_Default,
-        'description': 'Unusually large amphibian that dwells in lakes and ponds. '
-                       'Can grab unwary adventurers with its sticky tongue.',
+        'description': "A giant segmented worm covered in bony scales and reeking of death. It is drawn to fresh "
+                       "corpses, animating them by means of some dark magic.",
         'resistances': [],
         'attributes':['ability_raise_zombie'],
         'essence': [(15, 'dark')],

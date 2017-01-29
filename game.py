@@ -370,9 +370,9 @@ class GameObject:
             fov.set_fov_properties(x, y, True, self.elevation)
 
         # Update the pathfinding map - mark our previous space as passable and our new space as impassable
-        if pathfinding.map and self.blocks:
-            pathfinding.map.mark_impassable((x, y))
-            pathfinding.map.mark_passable((self.x, self.y))
+        if current_map.pathfinding and self.blocks:
+            current_map.pathfinding.mark_impassable((x, y))
+            current_map.pathfinding.mark_passable((self.x, self.y))
 
         # Update the object's position/elevation
         self.x = x
@@ -469,11 +469,11 @@ class GameObject:
         if self.x == target_x and self.y == target_y:
             return 'already here'
 
-        if not pathfinding.map:
+        if not current_map.pathfinding:
             self.move_astar_old(target_x, target_y)
             return 'no map'
         else:
-            if not pathfinding.map.is_accessible((target_x, target_y)):
+            if not current_map.pathfinding.is_accessible((target_x, target_y)):
                 closest_adjacent = None
                 closest = 10000
                 for adj in adjacent_tiles_diagonal(target_x, target_y):
@@ -490,7 +490,7 @@ class GameObject:
                     target_x = closest_adjacent[0]
                     target_y = closest_adjacent[1]
 
-            path = pathfinding.map.a_star_search((self.x, self.y), (target_x, target_y))
+            path = current_map.pathfinding.a_star_search((self.x, self.y), (target_x, target_y))
 
             if consts.DEBUG_DRAW_PATHS:
                 pathfinding.draw_path(path)
@@ -500,7 +500,7 @@ class GameObject:
                 x, y = path[1]
                 if x or y:
                     if current_map.tiles[x][y].blocks:
-                        pathfinding.map.mark_impassable((x, y))  # bandaid fix - hopefully paths will self-correct now
+                        current_map.pathfinding.mark_impassable((x, y))  # bandaid fix - hopefully paths will self-correct now
                     else:
                         self.move_towards(x, y)
             else:
@@ -571,8 +571,8 @@ class GameObject:
         global changed_tiles
         if self.blocks_sight:
             fov.set_fov_properties(self.x, self.y, current_map.tiles[self.x][self.y].blocks_sight, self.elevation)
-        if self.blocks and pathfinding.map:
-            pathfinding.map.mark_passable((self.x, self.y))
+        if self.blocks and current_map.pathfinding:
+            current_map.pathfinding.mark_passable((self.x, self.y))
         changed_tiles.append((self.x, self.y))
         current_map.objects.remove(self)
 
@@ -904,8 +904,8 @@ def monster_death(monster):
         monster.char = '%'
         monster.color = libtcod.darker_red
         monster.blocks = False
-        if pathfinding.map:
-            pathfinding.map.mark_passable((monster.x, monster.y))
+        if current_map.pathfinding:
+            current_map.pathfinding.mark_passable((monster.x, monster.y))
         monster.behavior = None
         monster.name = 'remains of ' + monster.name
         monster.send_to_back()
@@ -1452,6 +1452,7 @@ def render_all():
 def use_stairs(stairs):
     import world
     next_map = stairs.link[1]
+    current_map.pathfinding = None
     enter_map(next_map, world.opposite(stairs.link[0]))
 
 
@@ -1477,6 +1478,9 @@ def enter_map(world_map, direction=None):
 
     if world_map.tiles is None:
         generate_level(world_map)
+
+    current_map.pathfinding = pathfinding.Graph()
+    current_map.pathfinding.initialize(current_map.tiles)
 
     if direction is not None:
         for obj in current_map.objects:
@@ -1593,7 +1597,7 @@ def load_game():
     #learned_skills = file['learned_skills']
     #file.close()
 
-    #pathfinding.map.initialize(dungeon_map)
+    #current_map.pathfinding.initialize(dungeon_map)
     #fov.initialize_fov()
 
     #for y in range(consts.MAP_HEIGHT):

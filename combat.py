@@ -68,14 +68,17 @@ class Fighter:
             s += '%'
             libtcod.console_print(console, x, y + print_height, s)
             print_height += 1
-            s = 'Its Accuracy: %d%%' % int(100.0 * get_chance_to_hit(player.instance, self.accuracy))
+            s = '%s Accuracy: %d%%' % (syntax.pronoun(self.owner.name, possesive=True).capitalize(), int(100.0 * get_chance_to_hit(player.instance, self.accuracy)))
             s += '%'
             libtcod.console_print(console, x, y + print_height, s)
             print_height += 1
 
         for effect in self.status_effects:
             libtcod.console_set_default_foreground(console, effect.color)
-            libtcod.console_print(console, x, y + print_height, 'It is ' + effect.name)
+            libtcod.console_print(console, x, y + print_height, '%s %s %s' % (
+                syntax.pronoun(self.owner.name).capitalize(),
+                syntax.conjugate(self.owner is player.instance, ('are', 'is')),
+                effect.name))
             print_height += 1
         libtcod.console_set_default_foreground(console, libtcod.white)
 

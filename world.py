@@ -12,6 +12,7 @@ class Map:
         self.tiles = None
         self.objects = None
         self.difficulty = difficulty
+        self.pathfinding = None
 
     def add_link(self, cell, direction):
         self.links.append((direction, cell))
