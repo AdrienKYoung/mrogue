@@ -256,27 +256,18 @@ def handle_keys():
 def do_queued_action(action):
 
     if action == 'finish-meditate':
+        instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
         book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
         if book is not None and hasattr(book, 'spell_list'):
             book.refill_spell_charges()
-        essencetype = 'normal'
-
-        if len(instance.essence) < instance.player_stats.max_essence:
-            instance.essence.append(essencetype)
-            ui.message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
-            return
-        elif essencetype != 'normal':
-            for i in range(len(instance.essence)):
-                if instance.essence[i] == 'normal':
-                    instance.essence[i] = essencetype
-                    ui.message('You have finished meditating. You are infused with magical power.', libtcod.dark_cyan)
-                    return
-        ui.message('You have finished meditating. You were unable to gain any more power than you already have.', libtcod.dark_cyan)
         return
+
+    elif action == 'channel-meditate':
+        instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
 
 def cast_spell():
     left_hand = main.get_equipped_in_slot(instance.fighter.inventory,'left hand')
-    if hasattr(left_hand, 'spell_list') and len(left_hand.spell_list) <= 0:
+    if not hasattr(left_hand, 'spell_list') or len(left_hand.spell_list) <= 0:
         ui.message("You have no spells available", libtcod.light_blue)
         return 'didnt-take-turn'
     else:
@@ -525,13 +516,24 @@ def pick_up_item():
                 items_here[selection - 1].item.pick_up()
             return 'picked-up-item'
     else:
-        interactable_here = main.get_objects(instance.x, instance.y, condition=lambda o:o.interact, distance=1) #get stuff that's adjacent too
-        if len(interactable_here) > 0:
-            result = interactable_here[0].interact(interactable_here[0])
-            if result is None:
-                result = 'interacted'
-            return result
+        essence_here = main.get_objects(instance.x, instance.y, condition=lambda o: hasattr(o, 'essence_type'))
+        if len(essence_here) > 0:
+            replace_essence(essence_here[0])
+            return 'replaced-essence'
+        else:
+            interactable_here = main.get_objects(instance.x, instance.y, condition=lambda o:o.interact, distance=1) #get stuff that's adjacent too
+            if len(interactable_here) > 0:
+                result = interactable_here[0].interact(interactable_here[0])
+                if result is None:
+                    result = 'interacted'
+                return result
     return 'didnt-take-turn'
+
+
+def replace_essence(essence):
+    instance.essence[ui.menu('Replace what essence with %s essence?\n' % essence.essence_type, instance.essence, 50)] = essence.essence_type
+    essence.destroy()
+
 
 def meditate():
     ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)

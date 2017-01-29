@@ -83,7 +83,7 @@ class Equipment:
             libtcod.console_set_default_foreground(console, libtcod.white)
         libtcod.console_print(console, x, y + print_height, 'Slot: ' + self.slot)
         print_height += 1
-        if self.level_progression != 0:
+        if self.level_progression is not None and self.level_progression != 0:
             libtcod.console_print(console, x, y + print_height, 'Level: ' + str(self.level) + '/' + str(self.max_level))
             print_height += 1
         if self.armor_bonus != 0:
@@ -126,7 +126,7 @@ class Equipment:
             libtcod.console_print_rect(console, x, y + print_height + 1, width, h, text)
             print_height += h + 1
             libtcod.console_set_default_foreground(console, libtcod.white)
-        if self.spell_list:
+        if hasattr(self, 'spell_list') and self.spell_list is not None:
             libtcod.console_set_default_foreground(console, libtcod.azure)
             libtcod.console_print(console, x, y + print_height,'Spells:')
             libtcod.console_set_default_foreground(console, libtcod.white)

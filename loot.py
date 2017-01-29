@@ -84,9 +84,10 @@ table = {
     ],
 
     'tomes_1': [
-        'tome_manabolt',
-        'tome_mend',
-        'tome_ignite',
+        #'tome_manabolt',
+        #'tome_mend',
+        #'tome_ignite',
+        'book_lesser_fire'
     ]
 }
 
