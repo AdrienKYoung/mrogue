@@ -31,6 +31,7 @@ def cast_fireball():
                             syntax.conjugate(obj is player.instance, ('are','is')),
                             consts.FIREBALL_DAMAGE), libtcod.flame)
             obj.fighter.take_damage(consts.FIREBALL_DAMAGE)
+    return 'success'
 
 
 def cast_confuse():

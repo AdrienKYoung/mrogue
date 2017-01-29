@@ -178,7 +178,8 @@ class Fighter:
                 ui.message('You repair your armor')
 
         # Manage breath/drowning
-        if main.current_map.tiles[self.owner.x][self.owner.y].tile_type == 'deep water':
+        tile = main.current_map.tiles[self.owner.x][self.owner.y]
+        if tile.is_water and not tile.jumpable:  # deep water / deep seawater7
             if not (self.can_breath_underwater or self.has_status('waterbreathing')):
                 if self.breath > 0:
                     self.breath -= 1

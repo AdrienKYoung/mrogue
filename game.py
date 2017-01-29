@@ -150,9 +150,25 @@ class Equipment:
             if player.instance.player_stats.int < spells.library[spell_name].int_requirement:
                 return False
         level = spells.library[spell_name].levels[sl-1]
-        return self.spell_list.has_key(spell_name) and sl > 0 and \
-               actor.fighter.stamina >= level['stamina_cost'] and \
-                self.spell_charges[spell_name] > 0
+
+        if spell_name not in self.spell_list:
+            ui.message("You don't have that spell.")
+            return False
+        elif sl <= 0:
+            ui.message('That spell has not been learned!', libtcod.blue)
+            return False
+        elif self.spell_charges[spell_name] <= 0:
+            ui.message('That spell is out of charges.', libtcod.blue)
+            return False
+        elif actor.fighter.stamina < level['stamina_cost']:
+            ui.message("You don't have the stamina to cast that spell.", libtcod.light_yellow)
+            return False
+        return True
+
+
+        #return self.spell_list.has_key(spell_name) and sl > 0 and \
+        #       actor.fighter.stamina >= level['stamina_cost'] and \
+        #        self.spell_charges[spell_name] > 0
 
     def level_up(self):
         if self.level >= self.max_level:
@@ -165,7 +181,7 @@ class Equipment:
             spell = self.level_progression[self.level]
             self.spell_list[spell] += 1
             #refill spell charges for that spell
-            self.spell_charges[spell] = spells.library[spell].levels[self.spell_list[spell]-1]
+            self.spell_charges[spell] = spells.library[spell].levels[self.spell_list[spell]-1]['charges']
         player.instance.essence.remove(self.essence)
         self.level += 1
         return 'leveled-up'
@@ -1162,7 +1178,7 @@ def create_fire(x,y,temp):
     global changed_tiles
 
     tile = current_map.tiles[x][y]
-    if tile.tile_type == 'shallow water' or tile.tile_type == 'deep water' or (tile.blocks and not tile.flammable):
+    if tile.is_water or (tile.blocks and not tile.flammable):
         return
     component = ai.FireBehavior(temp)
     obj = GameObject(x,y,libtcod.CHAR_ARROW2_N,'Fire',libtcod.red,misc=component)

@@ -256,6 +256,9 @@ def handle_keys():
 def do_queued_action(action):
 
     if action == 'finish-meditate':
+        book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
+        if book is not None and hasattr(book, 'spell_list'):
+            book.refill_spell_charges()
         essencetype = 'normal'
 
         if len(instance.essence) < instance.player_stats.max_essence:
@@ -282,7 +285,7 @@ def cast_spell():
         for spell,level in left_hand.get_active_spells().items():
             spell_data = spells.library[spell]
             stamina_cost = spell_data.levels[level-1]['stamina_cost']
-            spell_charges = left_hand.spell_charges[spell]['charges']
+            spell_charges = left_hand.spell_charges[spell]
             max_spell_charges = spell_data.levels[level-1]['charges']
             names.append(spell_data.name.title() + '[' + str(stamina_cost) + ']' + " " + str(spell_charges) + "/" + str(max_spell_charges))
             ops.append(spell)
@@ -290,8 +293,10 @@ def cast_spell():
         if selection is not None:
             s = ops[selection]
             if left_hand.can_cast(s,instance):
-                if spells.library[s].function():
+                if spells.library[s].function() == 'success':
                     left_hand.spell_charges[s] -= 1
+                    level = left_hand.spell_list[s]
+                    instance.fighter.adjust_stamina(-spells.library[s].levels[level-1]['stamina_cost'])
                     return 'cast-spell'
                 else:
                     return 'didnt-take-turn'
