@@ -5,6 +5,7 @@ import consts
 import terrain
 import world
 import syntax
+import collections
 
 #############################################
 # Classes
@@ -15,8 +16,8 @@ class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
-                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None,
-                 attack_speed_bonus=0, attack_delay=10, essence=None,spell_list=None,level_progression=None):
+                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
+                 attack_delay=10, essence=None,spell_list=None,level_progression=None,level_costs=None):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -51,6 +52,7 @@ class Equipment:
                 default_level = 1
             self.spell_list = {s:default_level for s in spell_list}
             self.flat_spell_list = spell_list
+            self.level_costs = level_costs
             self.spell_charges = {}
             self.refill_spell_charges()
 
@@ -175,6 +177,13 @@ class Equipment:
             ui.message('{} is already max level!'.format(self.owner.name))
 
         if self.essence not in player.instance.essence:
+            ui.message("You don't have any " + self.essence + " essence.", libtcod.blue)
+            return 'didnt-take-turn'
+
+        cost = self.level_costs[self.level] #next level cost, no level-1
+
+        if collections.Counter(player.instance.essence)[self.essence] < cost:
+            ui.message("You don't have enough " + self.essence + " essence.", libtcod.blue)
             return 'didnt-take-turn'
 
         if self.spell_list is not None:
@@ -182,7 +191,13 @@ class Equipment:
             self.spell_list[spell] += 1
             #refill spell charges for that spell
             self.spell_charges[spell] = spells.library[spell].levels[self.spell_list[spell]-1]['charges']
-        player.instance.essence.remove(self.essence)
+            if self.spell_list[spell] == 1:
+                ui.message('Learned spell ' + spells.library[spell].name.title(), libtcod.white)
+            else:
+                ui.message('Upgraded spell ' + spells.library[spell].name.title() + " to level " + str(self.spell_list[spell]), libtcod.white)
+            ui.message('')
+        for i in range(cost):
+            player.instance.essence.remove(self.essence)
         self.level += 1
         return 'leveled-up'
 
@@ -253,7 +268,8 @@ class Item:
             else:
                 options.append('Equip')
             if self.owner.equipment.level_progression:
-                options.append('Level up')
+                cost = self.owner.equipment.level_costs[self.owner.equipment.level]
+                options.append('Level up ' + ('*') * cost)
         options.append('Drop')
         return options
 
@@ -994,7 +1010,7 @@ def spawn_monster(name, x, y):
         if p.get('death_function'):
             death = p.get('death_function')
         fighter_component = combat.Fighter( hp=int(p['hp'] * modifier.get('hp_bonus',1)), attack_damage=int(p['attack_damage'] * modifier.get('attack_bonus',1)),
-                                            armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evastion_bonus',1)),
+                                            armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
                                             accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
                                             death_function=death,
                                             can_breath_underwater=True, resistances=p['resistances'] + modifier.get('resistances',[]),
@@ -1068,7 +1084,8 @@ def create_item(name, material=None, quality=None):
             attack_delay=p.get('attack_delay', 10),
             essence=p.get('essence'),
             spell_list=p.get('spells'),
-            level_progression=p.get('levels')
+            level_progression=p.get('levels'),
+            level_costs=p.get('level_costs')
         )
 
         if equipment_component.category == 'weapon':

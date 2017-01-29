@@ -182,16 +182,18 @@ def cast_forge():
         ui.message('Your hands tingle briefly. This magic was only intended for weapons!', libtcod.orange)
     return True
 
+def cast_potion_essence(essence):
+    return lambda : player.pick_up_essence(essence,player.instance)
 
 library = {
     #'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]',"",0),
     #'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]',"",0),
     #'ignite' : Spell('ignite', { 'fire' : 1 }, cast_ignite, '[1 fire]',"",0),
-    'spell_heat_ray' : Spell('heat ray',cast_fireball,'Fire a ray of magical heat in a line',[{'stamina_cost':30,'charges':3}],10),
-    'spell_flame_wall' : Spell('flame wall',cast_fireball,'Create a wall of flames',[{'stamina_cost':30,'charges':3}],10),
-    'spell_fireball' : Spell('fireball',cast_fireball,'Fling an exploding fireball',[{'stamina_cost':30,'charges':3}],10),
-    'spell_shatter_item' : Spell('shatter item',cast_fireball,'Overheat items to shatter them',[{'stamina_cost':30,'charges':3}],10),
-    'spell_magma_bolt' : Spell('magma bolt',cast_fireball,'Fire a bolt of roiling magma that melts floors',[{'stamina_cost':30,'charges':3}],10)
+    'spell_heat_ray' : Spell('heat ray',cast_fireball,'Fire a ray of magical heat in a line',[{'stamina_cost':30,'charges':3},{'stamina_cost':25,'charges':4},{'stamina_cost':20,'charges':5}],10),
+    'spell_flame_wall' : Spell('flame wall',cast_fireball,'Create a wall of flames',[{'stamina_cost':40,'charges':1},{'stamina_cost':35,'charges':2}],10),
+    'spell_fireball' : Spell('fireball',cast_fireball,'Fling an exploding fireball',[{'stamina_cost':50,'charges':1},{'stamina_cost':45,'charges':2},{'stamina_cost':40,'charges':2}],10),
+    'spell_shatter_item' : Spell('shatter item',cast_fireball,'Overheat items to shatter them',[{'stamina_cost':50,'charges':2},{'stamina_cost':40,'charges':3}],10),
+    'spell_magma_bolt' : Spell('magma bolt',cast_fireball,'Fire a bolt of roiling magma that melts floors',[{'stamina_cost':60,'charges':2},{'stamina_cost':50,'charges':3},{'stamina_cost':40,'charges':4}],10)
 }
 
 essence_colors = {

@@ -135,20 +135,21 @@ def create():
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),int(loadout['agi']),int(loadout['con']))
                         , description='An exile, banished to this forsaken island for your crimes. This place will surely be your grave.')
     instance.level = 1
-    instance.essence = ['fire']
+    instance.essence = []
     instance.known_spells = []
     instance.action_queue = []
 
     for item in loadout['inventory']:
-        equipment = None
+        i = None
 
         if 'weapon' in item:
-            equipment = main.create_item(item, material='iron', quality='')
+            i = main.create_item(item, material='iron', quality='')
         else:
-            equipment = main.create_item(item)
+            i = main.create_item(item)
 
-        instance.fighter.inventory.append(equipment)
-        equipment.equipment.equip()
+        instance.fighter.inventory.append(i)
+        if i.equipment is not None:
+            i.equipment.equip()
 
     if consts.DEBUG_STARTING_ITEM is not None:
         test = main.create_item(consts.DEBUG_STARTING_ITEM)
@@ -297,9 +298,13 @@ def cast_spell():
 
 def pick_up_essence(essence, obj):
     if obj is instance and len(instance.essence) < instance.player_stats.max_essence:
-        instance.essence.append(essence.essence_type)
-        ui.message('You are infused with magical power.', essence.color)
-        essence.destroy()
+        if isinstance(essence ,main.GameObject):
+            instance.essence.append(essence.essence_type)
+            ui.message('You are infused with magical power.', essence.color)
+            essence.destroy()
+        else:
+            instance.essence.append(essence)
+            ui.message('You are infused with magical power.', spells.essence_colors[essence])
 
 
 def pick_up_xp(xp, obj):

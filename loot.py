@@ -348,6 +348,16 @@ proto = {
                           ' armor and temporarily enhancing its effectiveness'
     },
 
+    'potion_lesser_fire': {
+        'name'          : 'Potion of Raging Flames',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : spells.cast_potion_essence('fire'), #not a bug, returns a lambda
+        'description'   : 'The essence of fires burns within this potion, and drinking it will bestow a single fire essence.'
+    },
+
     #TOMES
     'tome_manabolt': {
         'name'          : 'Tome of Manabolt',
@@ -688,6 +698,9 @@ proto = {
             'spell_heat_ray', 'spell_flame_wall', 'spell_heat_ray', 'spell_fireball', 'spell_shatter_item',
             'spell_fireball', 'spell_magma_bolt', 'spell_heat_ray', 'spell_fireball', 'spell_magma_bolt',
             'spell_shatter_item', 'spell_magma_bolt'
+        ],
+        'level_costs': [
+            1,1,1,2,2,2,3,3,3,4,4,4
         ]
     },
 }
