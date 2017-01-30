@@ -70,7 +70,7 @@ loadouts = {
         'inventory':[
             #'charm_curse',
             'weapon_dagger',
-            'equipment_leather,armor'
+            'equipment_leather_armor'
         ],
         'description' : """
         Nimble melee fighter. Starts with excellent agility.

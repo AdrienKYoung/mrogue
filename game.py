@@ -1541,7 +1541,7 @@ def new_game():
 
     while not confirm:
         options = list(player.loadouts.keys())
-        choice = ui.menu('Select your starting class',options,24,x_center=consts.SCREEN_WIDTH / 2)
+        choice = ui.menu('Select your starting class',options,30,x_center=consts.SCREEN_WIDTH / 2)
         loadout = options[choice]
         confirm = ui.menu('Confirm starting as ' + loadout + " " + player.loadouts[loadout]['description'],['Start','Back'],30,x_center=consts.SCREEN_WIDTH / 2) == 0
 
