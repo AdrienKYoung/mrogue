@@ -126,11 +126,10 @@ loadouts = {
 
 instance = None
 
-def create():
+def create(loadout):
     global instance
 
-    loadout = loadouts[consts.DEBUG_STARTING_CLASS]
-
+    loadout = loadouts[loadout]
     fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death)
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),int(loadout['agi']),int(loadout['con']))

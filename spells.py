@@ -120,7 +120,6 @@ def cast_manabolt():
         return True
     return False
 
-
 def cast_ignite():
     target = ui.target_tile(consts.IGNITE_RANGE)
     if target[0] is not None and target[1] is not None:

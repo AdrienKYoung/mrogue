@@ -1536,8 +1536,17 @@ def main_menu():
 def new_game():
     global game_state, dungeon_level, memory, in_game, changed_tiles, learned_skills
 
+    confirm = False
+    loadout = None
+
+    while not confirm:
+        options = list(player.loadouts.keys())
+        choice = ui.menu('Select your starting class',options,24,x_center=consts.SCREEN_WIDTH / 2)
+        loadout = options[choice]
+        confirm = ui.menu('Confirm starting as ' + loadout + " " + player.loadouts[loadout]['description'],['Start','Back'],30,x_center=consts.SCREEN_WIDTH / 2) == 0
+
     in_game = True
-    player.create()
+    player.create(loadout)
 
     import world
     world.initialize_world()
