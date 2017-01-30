@@ -662,7 +662,8 @@ proto = {
         'armor_bonus'   : 0,
         'evasion_bonus' : 0,
         'slot'          : 'head',
-        'description'   : 'A black pointed hat, suitable for the fashionable culdron-stirrer.'
+        'description'   : 'A black pointed hat, suitable for the fashionable culdron stirrer.',
+        'resistances'   : ['fire','burning']
     },
 
     'equipment_vambraces' : {

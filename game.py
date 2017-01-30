@@ -1105,7 +1105,8 @@ def create_item(name, material=None, quality=None):
             spell_list=p.get('spells'),
             level_progression=p.get('levels'),
             level_costs=p.get('level_costs'),
-            crit_bonus=p.get('crit_bonus',1.0)
+            crit_bonus=p.get('crit_bonus',1.0),
+            resistances=p.get('resistances',[])
         )
 
         if equipment_component.category == 'weapon':
