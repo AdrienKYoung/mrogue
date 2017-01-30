@@ -398,10 +398,10 @@ FLAGS NOELEV
 SCRIPT create_slopes
  ______
 _######_
-_#____+___
-_#____####_
-_#_______#_
-_#_______#_
+_#....+___
+_#....####_
+_#.......#_
+_#.......#_
 _#########_
  _________
 ENDFEATURE
@@ -482,4 +482,49 @@ _#--,###---__
 __---#----__
  _-#---____
 _______
+ENDFEATURE
+//*******************
+//21  courtyard
+//*******************
+FEATURE courtyard
+CATEGORY badlands
+DEFINE - mud
+DEFINE , dry grass
+DEFINE $ LOOT_LEVEL 1
+FLAGS NOELEV
+SCRIPT create_slopes
+__________
+_###..###_
+_##.##.##_
+_#......#_
+_.#.$..#._
+_.#....#._
+_#......#_
+_##.##.##_
+_###..###_
+__________
+ENDFEATURE
+//*******************
+//22     well
+//*******************
+FEATURE well
+CATEGORY badlands
+DEFINE $ LOOT_LEVEL 2
+DEFINE 1 MONSTER_ID monster_goblin
+DEFINE 2 MONSTER_ID monster_necroling
+DEFINE 3 MONSTER_ID monster_tunnel_spider
+DEFINE 4 MONSTER_ID monster_centipede
+FLAGS NOELEV
+SCRIPT create_slopes
+     ###
+   ###.###
+  ##..3..##
+  #.1:::..#
+.##.:::::.##
+....:::::2$#
+.##.:::::.##
+  #.1:::..#
+  ##..4..##
+   ###.###
+     ###
 ENDFEATURE

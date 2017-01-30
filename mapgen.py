@@ -1221,6 +1221,10 @@ def make_map_badlands():
             if not map.tiles[x][y].blocks:
                 open_tiles.append((x, y))
 
+    if consts.DEBUG_TEST_FEATURE is not None:
+        tile = choose_random_tile(open_tiles)
+        create_feature(tile[0], tile[1], consts.DEBUG_TEST_FEATURE, open_tiles)
+
     feature_count = libtcod.random_get_int(0, 0, 3)
     for i in range(feature_count):
         tile = choose_random_tile(open_tiles)

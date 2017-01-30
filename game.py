@@ -153,6 +153,7 @@ class Equipment:
         sl = self.spell_list[spell_name]
         if actor is player.instance:
             if player.instance.player_stats.int < spells.library[spell_name].int_requirement:
+                ui.message("This spell is too difficult for you to understand.", libtcod.blue)
                 return False
         level = spells.library[spell_name].levels[sl-1]
 
@@ -405,7 +406,7 @@ class GameObject:
 
         blocked = is_blocked(self.x + dx, self.y + dy, self.elevation)
         if blocked and current_map.tiles[self.x][self.y].is_ramp:
-            blocked = is_blocked(self.x + dx, self.y + dy, self.elevation - 1)
+            blocked = is_blocked(self.x + dx, self.y + dy)
 
         if not blocked:
             if self.fighter is not None:
@@ -1257,6 +1258,8 @@ def roll_dice(dice):
     return r + int(c)
 
 def find_closest_open_tile(x, y, exclude=[]):
+    if in_bounds(x, y) and not is_blocked(x, y) and len(exclude) == 0:
+        return x, y
     explored = [(x, y)]
     neighbors = [(x, y)]
     for tile in adjacent_tiles_diagonal(x, y):
