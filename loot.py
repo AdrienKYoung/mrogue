@@ -422,7 +422,26 @@ proto = {
         'accuracy'           : 5,
         'weapon_dice'        : '2d4',
         'str_dice'           : 1,
-        'attack_delay'       : 12
+        'attack_delay'       : 12,
+        'crit_bonus'         : 3.0
+    },
+    'weapon_messer': {
+        'name'               : 'messer',
+        'category'           : 'weapon',
+        'damage_type'        : 'slashing',
+        'char'               : '-',
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               :'right hand',
+        'description'        : 'A long knife, made for dueling',
+        'stamina_cost'       : 6,
+        'str_requirement'    : 10,
+        'shred'              : 0,
+        'accuracy'           : 5,
+        'weapon_dice'        : '2d4',
+        'str_dice'           : 2,
+        'attack_delay'       : 12,
+        'crit_bonus'         : 2
     },
     'weapon_spear': {
         'name'               : 'spear',
@@ -632,6 +651,18 @@ proto = {
         'evasion_bonus' : -1,
         'slot'          : 'head',
         'description'   : 'A crested steel helm with visor and bevor.'
+    },
+
+    'equipment_witch_hat': {
+        'name'          : 'Witch Hat',
+        'category'      : 'armor',
+        'char'          : '^',
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'armor_bonus'   : 0,
+        'evasion_bonus' : 0,
+        'slot'          : 'head',
+        'description'   : 'A black pointed hat, suitable for the fashionable culdron-stirrer.'
     },
 
     'equipment_vambraces' : {

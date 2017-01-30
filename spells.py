@@ -18,9 +18,15 @@ class Spell:
         self.int_requirement = int_requirement
         self.max_level = len(levels)
 
-def cast_fireball():
-    ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
-    (x, y) = ui.target_tile()
+def cast_fireball(actor=None,target=None):
+    x = 0
+    y = 0
+    if actor is None: #player is casting
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile()
+    else:
+        x = target.x
+        y = target.y
     if x is None: return 'cancelled'
     ui.message('The fireball explodes, burning everything within ' + str(consts.FIREBALL_RADIUS) + ' tiles!', libtcod.flame)
     main.create_fire(x,y,10)

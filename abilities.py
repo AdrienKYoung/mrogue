@@ -143,6 +143,14 @@ def ability_grapel(actor=None):
     else:
         return 'didnt-take-turn'
 
+def ability_fireball(actor=None):
+    if fov.monster_can_see_object(actor, player.instance) and \
+            main.beam_interrupt(actor.x, actor.y, player.instance.x, player.instance.y):
+            spells.cast_fireball(actor,player.instance)
+            return 'cast-spell'
+    else:
+        return 'didnt-take-turn'
+
 
 def ability_raise_zombie(actor=None):
 
@@ -196,6 +204,12 @@ data = {
         'name': 'Raise Zombie',
         'function' : ability_raise_zombie,
         'cooldown' : consts.NECROLING_RAISE_COOLDOWN
+    },
+
+    'ability_cast_fireball': {
+        'name': 'Cast Fireball',
+        'function': ability_fireball,
+        'cooldown': 20
     }
 }
 

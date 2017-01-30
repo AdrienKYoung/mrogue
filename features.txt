@@ -467,6 +467,7 @@ CATEGORY badlands
 DEFINE # wooden palisade
 DEFINE - mud
 DEFINE , dry grass
+DEFINE 1 MONSTER_ID monster_witch
 FLAGS NOELEV
 SCRIPT create_slopes
     ______
@@ -475,7 +476,7 @@ SCRIPT create_slopes
  _#----#--__
 __-----,##--_
 _#----,,,#--_
-_#----,,,#--_
+_#----,1,#--_
 _#---,,###--_
 _#--,###---__
 __---#----__

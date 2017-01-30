@@ -41,6 +41,7 @@ branches = {
             {'encounter':['monster_cockroach'], 'party':'3d2'},
             {'encounter':['monster_goblin','monster_goblin_warrior'],'party':'2d3'},
             {'encounter':['monster_necroling']},
+            {'encounter':['monster_witch']},
             {'encounter':['monster_golem'], 'party':'1d3'},
             {'encounter':['monster_rotting_zombie'], 'party':'3d4+2'},
             {'encounter':['monster_necroling', 'monster_goblin'], 'party':'1d3+3'},
