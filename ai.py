@@ -60,7 +60,7 @@ class ReekerGasBehavior:
             else:
                 if fov.player_can_see(obj.x, obj.y):
                     ui.message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
-                obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE,'poison')
+                obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
 
 
 class FireBehavior:
