@@ -428,7 +428,7 @@ damage_description_tables = {
     ]
 }
 
-def roll_damage(weapon,fighter):
+def roll_damage(weapon, fighter):
     total_damage = 0
     if weapon.weapon_dice is not None:
         d = weapon.weapon_dice.split('d')
