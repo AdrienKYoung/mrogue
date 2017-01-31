@@ -14,7 +14,7 @@ class Fighter:
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=25, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
-                 base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0):
+                 base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -45,6 +45,7 @@ class Fighter:
         self.abilities = abilities
         self.hit_table = hit_table
         self.monster_flags = monster_flags
+        self.subtype = subtype
 
     def print_description(self, console, x, y, width):
         print_height = 1
@@ -585,6 +586,8 @@ def on_hit_stun(attacker,target):
     if(attacker is player.instance):
         scaling_factor = attacker.player_stats.str / 10
     if libtcod.random_get_float(0,0.0,1.0) * scaling_factor > 0.85:
+        if attacker == player.instance:
+            ui.message("Your " + main.get_equipped_in_slot(player.instance.fighter.inventory,'right hand').owner.name.title() + " rings out!",libtcod.blue)
         target.fighter.apply_status_effect(effects.stunned())
 
 def mul(sequence):

@@ -24,7 +24,8 @@ proto = {
         'description': 'Small vicious humanoid. Dangerous in groups.',
         'resistances': [],
         'shred': 1,
-        'modifier_category':'goblin'
+        'modifier_category':'goblin',
+        'subtype':'goblin',
     },
     'monster_cockroach': {
         'name': 'cockroach',
@@ -44,6 +45,7 @@ proto = {
         'description': 'An irritating, crawling insect. Easily defeated, but a nuisance nonetheless.',
         'resistances': [],
         'shred': 1,
+        'subtype':'insect',
     },
     'monster_centipede': {
         'name': 'centipede',
@@ -63,7 +65,8 @@ proto = {
         'description': 'Many-legged arthropod with a stinging bite that amplifies damage taken.',
         'resistances': [],
         'on_hit': main.centipede_on_hit,
-        'shred': 2
+        'shred': 2,
+        'subtype':'insect',
     },
     'monster_rotting_zombie': {
         'name': 'rotting zombie',
@@ -85,7 +88,8 @@ proto = {
         'on_hit': main.zombie_on_hit,
         'shred': 1,
         'flags' : NO_CORPSE,
-        'modifier_category':'default'
+        'modifier_category':'default',
+        'subtype':'undead',
     },
     'monster_goblin_warrior': {
         'name': 'goblin warrior',
@@ -105,7 +109,8 @@ proto = {
         'resistances': [],
         'equipment': [{'weapon_dagger':50,'weapon_longsword':50},{'none':50,'equipment_shield':50},{'none':50,'equipment_leather_armor':50}],
         'shred': 1,
-        'modifier_category':'goblin'
+        'modifier_category':'goblin',
+        'subtype':'goblin',
     },
     'monster_goblin_chief': {
         'name': 'goblin chief',
@@ -125,7 +130,8 @@ proto = {
         'resistances': [],
         'equipment': [{'weapon_spear':50,'weapon_longsword':50},{'none':50,'equipment_shield':50},{'equipment_leather_armor':100}],
         'shred': 1,
-        'modifier_category':'goblin'
+        'modifier_category':'goblin',
+        'subtype':'goblin',
     },
     'monster_bomb_beetle': {
         'name': 'bomb beetle',
@@ -144,7 +150,8 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'A round brown beetle. A warm glow emanates from beneath its carapace.',
         'resistances': [],
-        'essence': [(50, 'fire')]
+        'essence': [(50, 'fire')],
+        'subtype':'insect',
     },
     'monster_giant_frog': {
         'name': 'giant frog',
@@ -164,7 +171,8 @@ proto = {
                        'Can grab unwary adventurers with its sticky tongue.',
         'resistances': [],
         'attributes':['ability_grapel'],
-        'essence': [(10, 'water'), (10, 'life')]
+        'essence': [(10, 'water'), (10, 'life')],
+        'subtype':'beast',
     },
     'monster_necroling': {
         'name': 'necroling',
@@ -186,6 +194,7 @@ proto = {
         'attributes':['ability_raise_zombie'],
         'essence': [(15, 'dark')],
         'flags' : NO_CORPSE,
+        'subtype':'undead',
     },
     'monster_verman': {
         'name': 'verman',
@@ -206,7 +215,8 @@ proto = {
         'resistances': [],
         'attributes':['ability_summon_vermin'],
         'shred': 1,
-        'essence': [(10, 'earth')]
+        'essence': [(10, 'earth')],
+        'subtype':'beast',
     },
     'monster_reeker': {
         'name': 'reeker',
@@ -228,6 +238,7 @@ proto = {
         'resistances': ['confusion', 'stunned'],
         'essence': [(65, 'life')],
         'flags' : NO_CORPSE,
+        'subtype':'plant',
     },
     'monster_blastcap': {
         'name': 'blastcap',
@@ -246,7 +257,8 @@ proto = {
         'description': 'a volatile yellow fungus covered in softly glowing nodules. If disrupted, it bursts in a '
                        'deafening crack, stunning anything adjacent for several turns.',
         'resistances': ['confusion', 'stunned'],
-        'death_function': main.blastcap_explode
+        'death_function': main.blastcap_explode,
+        'subtype':'plant',
     },
     'monster_golem': {
         'name': 'golem',
@@ -267,6 +279,7 @@ proto = {
         'shred': 2,
         'essence': [(70, 'earth')],
         'flags' : NO_CORPSE,
+        'subtype':'construct',
     },
     'monster_bear': {
         'name': 'cave bear',
@@ -285,7 +298,8 @@ proto = {
         'description': 'A rudely awakened cave bear',
         'resistances': ['ice','freeze'],
         'attributes': ['ability_berserk'],
-        'shred': 2
+        'shred': 2,
+        'subtype':'beast',
     },
     'monster_tunnel_spider': {
         'name': 'tunnel spider',
@@ -304,7 +318,8 @@ proto = {
         'ai': ai.AI_TunnelSpider,
         'description': 'An arachnid who hunts by trapping hapless prey in its webs. Fast, but fragile.',
         'resistances': [],
-        'shred': 1
+        'shred': 1,
+        'subtype':'insect',
     },
     'monster_witch': {
         'name': 'witch',
@@ -324,6 +339,7 @@ proto = {
         'attributes': ['ability_cast_fireball'],
         'shred': 0,
         'equipment': [{'none':30,'weapon_dagger':30,'weapon_messer':30},{'none':90,'book_lesser_fire':10},{'equipment_witch_hat':100}],
+        'subtype':'human',
     },
     'monster_nosferatu': {
         'name': 'Nosferatu',
@@ -343,7 +359,8 @@ proto = {
         'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.',
         'resistances': [],
         'shred': 3,
-        'essence': [(15, 'fire')]
+        'essence': [(15, 'fire')],
+        'subtype':'undead',
     }
 }
 

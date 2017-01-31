@@ -430,6 +430,7 @@ proto = {
     'weapon_longsword': {
         'name'               : 'longsword',
         'category'           : 'weapon',
+        'subtype'        : 'sword',
         'damage_type'        : 'slashing',
         'char'               : '/',
         'color'              : libtcodpy.yellow,
@@ -447,6 +448,7 @@ proto = {
     'weapon_dagger': {
         'name'               : 'dagger',
         'category'           : 'weapon',
+        'subtype'        : 'knife',
         'damage_type'        : 'stabbing',
         'char'               : '-',
         'color'              : libtcodpy.yellow,
@@ -466,6 +468,7 @@ proto = {
         'name'               : 'messer',
         'category'           : 'weapon',
         'damage_type'        : 'slashing',
+        'subtype'        : 'knife',
         'char'               : '-',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -483,6 +486,7 @@ proto = {
     'weapon_spear': {
         'name'               : 'spear',
         'category'           : 'weapon',
+        'subtype'        : 'polearm',
         'damage_type'        : 'stabbing',
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,
@@ -505,6 +509,7 @@ proto = {
     'weapon_pickaxe': {
         'name'               : 'pickaxe',
         'category'           : 'weapon',
+        'subtype'        : 'axe',
         'damage_type'        : 'stabbing',
         'char'               : 'T',
         'color'              : libtcodpy.yellow,
@@ -527,6 +532,7 @@ proto = {
     'weapon_hatchet': {
         'name'               : 'hatchet',
         'category'           : 'weapon',
+        'subtype'            : 'axe',
         'damage_type'        : 'slashing',
         'char'               : 'p',
         'color'              : libtcodpy.yellow,
@@ -546,6 +552,7 @@ proto = {
     'weapon_mace': {
         'name'               : 'mace',
         'category'           : 'weapon',
+        'subtype'        : 'club',
         'damage_type'        : 'bludgeoning',
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
@@ -565,6 +572,7 @@ proto = {
         'name'               : 'coal-brazer mace',
         'category'           : 'weapon',
         'damage_type'        : 'fire',
+        'subtype'        : 'club',
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
         'type'               : 'item',

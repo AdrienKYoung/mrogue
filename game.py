@@ -18,7 +18,7 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=10, essence=None,spell_list=None,level_progression=None,level_costs=None,resistances=[],
-                 crit_bonus=1.0):
+                 crit_bonus=1.0,subtype=None):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -46,6 +46,7 @@ class Equipment:
         self.resistances = list(resistances)
         self.essence = essence
         self.level = 0
+        self.subtype = subtype
         if level_progression is not None:
             self.max_level = len(level_progression)
         self.level_progression = level_progression
@@ -1037,7 +1038,7 @@ def spawn_monster(name, x, y):
                                             base_shred=p.get('shred', 0) * modifier.get('shred_bonus',1),
                                             base_guaranteed_shred=p.get('guaranteed_shred', 0),
                                             base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
-                                            monster_flags=p.get('flags', 0))
+                                            monster_flags=p.get('flags', 0),subtype=p.get('subtype'))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
         behavior = None
@@ -1107,7 +1108,8 @@ def create_item(name, material=None, quality=None):
             level_progression=p.get('levels'),
             level_costs=p.get('level_costs'),
             crit_bonus=p.get('crit_bonus',1.0),
-            resistances=p.get('resistances',[])
+            resistances=p.get('resistances',[]),
+            subtype=p.get('subtype')
         )
 
         if equipment_component.category == 'weapon':
