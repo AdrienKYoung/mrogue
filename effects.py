@@ -73,8 +73,13 @@ def swiftness(duration=30):
 def serenity(duration=30):
     return StatusEffect('serenity', duration, libtcod.light_blue, evasion_mod=1.5, accuracy_mod=1.5, message='Your mind becomes calm.')
 
-def resistant(element,duration=99):
-    return StatusEffect('resist ' + element,duration,spells.essence_colors[element],resistance_mod=[element],message='You feel more resistant!')
+def resistant(element=None,effect=None,color=None,duration=99):
+    if element is not None:
+        return StatusEffect('resist ' + element,duration,spells.essence_colors[element],resistance_mod=[element],
+                            message='You feel more resistant!')
+    else:
+        return StatusEffect('resist ' + effect, duration, color, resistance_mod=[effect],
+                            message='You feel more resistant!')
 
 def fire_tick(object=None):
     if object is None or object.fighter is None or \

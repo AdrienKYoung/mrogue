@@ -216,7 +216,7 @@ class Fighter:
             if ability is not None and ability.on_tick is not None:
                 ability.on_tick()
 
-    def apply_status_effect(self, new_effect):
+    def apply_status_effect(self, new_effect,supress_message=False):
         # check for immunity
         for resist in self.resistances:
             if resist == new_effect.name:
@@ -233,7 +233,7 @@ class Fighter:
         self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
             new_effect.on_apply(self.owner)
-        if new_effect.message is not None and self.owner is player.instance:
+        if new_effect.message is not None and self.owner is player.instance and not supress_message:
             ui.message(new_effect.message, new_effect.color)
         return True
 

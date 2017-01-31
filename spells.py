@@ -215,12 +215,25 @@ def cast_charm_blessing():
     player.instance.fighter.apply_status_effect(charm_blessing_effects[essence]['buff']())
     player.instance.essence.remove(essence)
 
+charm_resist_extra_resists = {
+    'fire':['burning'],
+    'water':['exhaustion'],
+    'air':['immobilize'],
+    'earth':['stun'],
+    'life':['poison'],
+    'dark':['rot'],
+    'ice':['freeze']
+}
+
 def cast_charm_resist():
     if len(player.instance.essence) < 1:
         ui.message("You don't have any essence.", libtcod.light_blue)
         return 'didnt-take-turn'
     essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
-    player.instance.fighter.apply_status_effect(effects.resistant(essence))
+    player.instance.fighter.apply_status_effect(effects.resistant(element=essence))
+    if essence in charm_resist_extra_resists:
+        for effect in charm_resist_extra_resists[essence]:
+            player.instance.fighter.apply_status_effect(effects.resistant(effect=effect,color=essence_colors[essence]),supress_message=True)
     player.instance.essence.remove(essence)
 
 def cast_potion_essence(essence):
