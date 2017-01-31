@@ -175,7 +175,8 @@ item_categories = {
     'armor' : { 'plural' : 'armor' },
     'scroll' : { 'plural' : 'scrolls' },
     'potion' : { 'plural' : 'potions' },
-    'book' : { 'plural' : 'books' }
+    'book' : { 'plural' : 'books' },
+    'charm' : { 'plural' : 'charms'}
 }
 
 weapon_qualities = {
@@ -356,6 +357,42 @@ proto = {
         'color'         : libtcodpy.yellow,
         'on_use'        : spells.cast_potion_essence('fire'), #not a bug, returns a lambda
         'description'   : 'The essence of fires burns within this potion, and drinking it will bestow a single fire essence.'
+    },
+    'potion_lesser_earth': {
+        'name'          : 'Potion of Waking Stone',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : spells.cast_potion_essence('earth'), #not a bug, returns a lambda
+        'description'   : 'The essence of stone imbues potion, and drinking it will bestow a single earth essence.'
+    },
+    'potion_lesser_life': {
+        'name'          : 'Potion of Fairy Blossoms',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : spells.cast_potion_essence('life'), #not a bug, returns a lambda
+        'description'   : 'The essence of life blesses this potion, and drinking it will bestow a single life essence.'
+    },
+    'potion_lesser_air': {
+        'name'          : 'Potion of Gentle Breeze',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : spells.cast_potion_essence('air'), #not a bug, returns a lambda
+        'description'   : 'The essence of air swirls in this potion, and drinking it will bestow a single air essence.'
+    },
+    'potion_lesser_water': {
+        'name'          : 'Potion of Crashing Waves',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : spells.cast_potion_essence('water'), #not a bug, returns a lambda
+        'description'   : 'The essence of water is mixed into this potion, and drinking it will bestow a single water essence.'
     },
 
     #TOMES
@@ -724,6 +761,28 @@ proto = {
         'evasion_bonus' : -2,
         'slot'          : 'legs',
         'description'   : 'Steel plates that protect the shins'
+    },
+
+    #Charms
+
+    'charm_resistance' : {
+        'name'          : 'Charm of Resistance',
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : spells.cast_charm_resist,
+        'description'   : 'When infused with essence, this charm grants resistance to that type of essence.'
+    },
+
+    'charm_blessing' : {
+        'name'          : 'Charm of Blessings',
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : spells.cast_charm_blessing,
+        'description'   : 'When infused with essence, this charm grants magical blessings.'
     },
 
     #Books

@@ -84,7 +84,12 @@ loadouts = {
         'spr':14,
         'con':10,
         'inventory':[
-            #'charm_blessing'
+            'charm_blessing',
+            'potion_lesser_fire',
+            'potion_lesser_earth',
+            'potion_lesser_life',
+            'potion_lesser_air',
+            'potion_lesser_water'
         ],
         'description' : """
         Generalist class with great stats, especially spirit. Starts with no gear.
@@ -98,7 +103,7 @@ loadouts = {
         'spr':12,
         'con':8,
         'inventory':[
-            #'charm_resistance'
+            'charm_resistance',
             'weapon_coal_mace'
         ],
         'description' : """

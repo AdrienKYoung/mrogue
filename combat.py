@@ -254,6 +254,7 @@ class Fighter:
         if self.base_accuracy == 0:
             return 0
         bonus = sum(equipment.accuracy_bonus for equipment in main.get_all_equipped(self.inventory))
+        bonus = int(bonus *  mul(effect.accuracy_mod for effect in self.status_effects))
         if self.owner.player_stats and main.get_equipped_in_slot(self.inventory, 'right hand'):
             bonus -= 5 * max(main.get_equipped_in_slot(self.inventory, 'right hand').str_requirement - self.owner.player_stats.str, 0)
 
@@ -266,6 +267,7 @@ class Fighter:
     @property
     def attack_damage(self):
         bonus = sum(equipment.attack_damage_bonus for equipment in main.get_all_equipped(self.inventory))
+        bonus = int(bonus *  mul(effect.attack_power_mod for effect in self.status_effects))
         bonus = 0
         if self.owner.player_stats:
             return max(self.base_attack_damage + self.owner.player_stats.str + bonus, 0)
@@ -275,6 +277,7 @@ class Fighter:
     @property
     def armor(self):
         bonus = sum(equipment.armor_bonus for equipment in main.get_all_equipped(self.inventory))
+        bonus = int(bonus *  mul(effect.armor_mod for effect in self.status_effects))
         if self.owner is player.instance and main.has_skill('Iron Skin'):
             has_armor = False
             for item in main.get_all_equipped(self.inventory):
@@ -290,6 +293,7 @@ class Fighter:
     @property
     def attack_shred(self):
         bonus = sum(equipment.shred_bonus for equipment in main.get_all_equipped(self.inventory))
+        bonus = int(bonus *  mul(effect.shred_mod for effect in self.status_effects))
         return max(self.base_shred + bonus, 0)
 
     @property
@@ -300,11 +304,13 @@ class Fighter:
     @property
     def attack_pierce(self):
         bonus = sum(equipment.pierce_bonus for equipment in main.get_all_equipped(self.inventory))
+        bonus = int(bonus *  mul(effect.pierce_mod for effect in self.status_effects))
         return max(self.base_pierce + bonus, 0)
 
     @property
     def evasion(self):
         bonus = sum(equipment.evasion_bonus for equipment in main.get_all_equipped(self.inventory))
+        bonus = int(bonus *  mul(effect.evasion_mod for effect in self.status_effects))
         if self.has_status('sluggish'):
             bonus -= 5
         if self.owner.player_stats:
@@ -315,6 +321,7 @@ class Fighter:
     @property
     def spell_power(self):
         bonus = sum(equipment.spell_power_bonus for equipment in main.get_all_equipped(self.inventory))
+        bonus = int(bonus *  mul(effect.spell_power_mod for effect in self.status_effects))
         if self.owner.player_stats:
             return self.base_spell_power + self.owner.player_stats.int + bonus
         else:
@@ -330,16 +337,19 @@ class Fighter:
         # NOTE: this is a player-only stat
         if self.owner.player_stats:
             bonus = sum(equipment.attack_speed_bonus for equipment in main.get_all_equipped(self.inventory))
+            bonus = int(bonus * mul(effect.attack_speed_mod for effect in self.status_effects))
             return self.owner.player_stats.agi + bonus
         else:
             return 0
 
     def getResists(self):
         from_equips = reduce(lambda a,b: a | set(b.resistances), main.get_all_equipped(self.inventory), set())
-        return list(set(self.resistances) | from_equips)
+        from_effects = reduce(lambda a,b: a | set(b.resistance_mod), self.status_effects, set())
+        return list(set(self.resistances) | from_equips | from_equips)
 
     def getWeaknesses(self):
-        return self.weaknesses
+        from_effects = reduce(lambda a, b: a | set(b.weakness_mod), self.status_effects, set())
+        return list(set(self.weaknesses) | from_effects)
 
 hit_tables = {
     'default': {
@@ -576,3 +586,6 @@ def on_hit_stun(attacker,target):
         scaling_factor = attacker.player_stats.str / 10
     if libtcod.random_get_float(0,0.0,1.0) * scaling_factor > 0.85:
         target.fighter.apply_status_effect(effects.stunned())
+
+def mul(sequence):
+    return reduce(lambda x,y: x * y,sequence,1)

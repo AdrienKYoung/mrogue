@@ -1,8 +1,11 @@
 import libtcodpy as libtcod
 import game as main
+import spells
 
 class StatusEffect:
-    def __init__(self, name, time_limit=None, color=libtcod.white, on_apply=None, on_end=None, on_tick=None, message=None):
+    def __init__(self, name, time_limit=None, color=libtcod.white, on_apply=None, on_end=None, on_tick=None, message=None,
+                 attack_power_mod=1.0,armor_mod=1.0,shred_mod=1.0,pierce_mod=1.0,attack_speed_mod=1.0,evasion_mod=1.0,spell_power_mod=1.0,
+                 accuracy_mod=1.0, resistance_mod=[],weakness_mod=[]):
         self.name = name
         self.time_limit = time_limit
         self.color = color
@@ -10,6 +13,16 @@ class StatusEffect:
         self.on_end = on_end
         self.on_tick = on_tick
         self.message = message
+        self.attack_power_mod = attack_power_mod
+        self.armor_mod = armor_mod
+        self.shred_mod = shred_mod
+        self.pierce_mod = pierce_mod
+        self.attack_speed_mod = attack_speed_mod
+        self.evasion_mod = evasion_mod
+        self.spell_power_mod = spell_power_mod
+        self.resistance_mod = resistance_mod
+        self.weakness_mod = weakness_mod
+        self.accuracy_mod = accuracy_mod
 
 
 def burning(duration = 8):
@@ -31,7 +44,7 @@ def immobilized(duration = 5):
     return StatusEffect('immobilized', duration, libtcod.yellow, message="Your feet are held fast!")
 
 def berserk(duration = 20):
-    return StatusEffect('berserk',duration,libtcod.red,on_end=berserk_end, message="You are overcome by rage!")
+    return StatusEffect('berserk',duration,libtcod.red,on_end=berserk_end, attack_power_mod=1.5, message="You are overcome by rage!")
 
 def regeneration(duration = 10):
     return StatusEffect('regeneration',duration,libtcod.green,on_tick=regeneration_tick,message="Your wounds begin to close.")
@@ -51,6 +64,18 @@ def confusion(duration = 10):
 def rot(duration = -1):
     return StatusEffect('rot',duration,libtcod.red,message="Your flesh rots away!",on_apply=rot_apply,on_end=rot_end)
 
+def stoneskin(duration=30):
+    return StatusEffect('stoneskin',duration,libtcod.light_blue,armor_mod=1.5,message='Your skin turns to stone!')
+
+def swiftness(duration=30):
+    return StatusEffect('swiftness', duration, libtcod.light_blue, attack_speed_mod=1.3,message='Your body feels light!')
+
+def serenity(duration=30):
+    return StatusEffect('serenity', duration, libtcod.light_blue, evasion_mod=1.5, accuracy_mod=1.5, message='Your mind becomes calm.')
+
+def resistant(element,duration=99):
+    return StatusEffect('resist ' + element,duration,spells.essence_colors[element],resistance_mod=[element],message='You feel more resistant!')
+
 def fire_tick(object=None):
     if object is None or object.fighter is None or \
                     main.current_map.tiles[object.x][object.y].is_water:
@@ -59,7 +84,7 @@ def fire_tick(object=None):
 
 def regeneration_tick(object=None):
     if object is not None or object.fighter is not None:
-        object.fighter.heal(5)
+        object.fighter.heal(3)
 
 def poison_tick(object=None):
     if object is not None or object.fighter is not None:
@@ -74,11 +99,6 @@ def rot_end(object=None):
     if object is not None or object.fighter is not None:
         object.fighter.max_hp += 20
 
-def berserk_start(object=None):
-    if object is not None or object.fighter is not None:
-        object.fighter.base_attack_damage += 20
-
 def berserk_end(object=None):
     if object is not None or object.fighter is not None:
         object.fighter.apply_status_effect(exhausted())
-        object.fighter.base_attack_damage -= 20

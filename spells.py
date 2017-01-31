@@ -187,6 +187,42 @@ def cast_forge():
         ui.message('Your hands tingle briefly. This magic was only intended for weapons!', libtcod.orange)
     return True
 
+charm_blessing_effects = {
+    'fire': {
+        'buff':effects.berserk,
+        'description':'Drive yourself berserk for a bonus to melee damage'
+    },
+    'earth': {
+        'buff':effects.stoneskin,
+        'description':'Turn your skin to stone for a bonus to armor'
+    },
+    'air': {
+        'buff':effects.swiftness,
+        'description':'Turn your skin to stone for a bonus to armor'
+    },
+    'water': {
+        'buff':effects.serenity,
+        'description':'Turn your skin to stone for a bonus to armor'
+    },
+    'life': {
+        'buff':effects.regeneration,
+        'description':'Regenerate your wounds over time.'
+    }
+}
+
+def cast_charm_blessing():
+    essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
+    player.instance.fighter.apply_status_effect(charm_blessing_effects[essence]['buff']())
+    player.instance.essence.remove(essence)
+
+def cast_charm_resist():
+    if len(player.instance.essence) < 1:
+        ui.message("You don't have any essence.", libtcod.light_blue)
+        return 'didnt-take-turn'
+    essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
+    player.instance.fighter.apply_status_effect(effects.resistant(essence))
+    player.instance.essence.remove(essence)
+
 def cast_potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
 

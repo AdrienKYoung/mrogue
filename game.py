@@ -243,7 +243,7 @@ class Item:
             return
         if self.use_function is not None:
             if self.use_function() != 'cancelled':
-                if self.type == 'item':
+                if self.type == 'item' and self.category != 'charm':
                     player.instance.fighter.inventory.remove(self.owner)
                 elif self.type == 'spell':
                     memory.remove(self.owner)
