@@ -14,7 +14,8 @@ class Fighter:
     def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=25, attack_damage=1,
                  damage_variance=0.15, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
-                 base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None):
+                 base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
+                 damage_bonus=0, m_str_dice=0, m_str_size=0):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -46,6 +47,10 @@ class Fighter:
         self.hit_table = hit_table
         self.monster_flags = monster_flags
         self.subtype = subtype
+
+        self.base_damage_bonus = damage_bonus
+        self.m_str_dice = m_str_dice
+        self.m_str_size = m_str_size
 
     def print_description(self, console, x, y, width):
         print_height = 1
@@ -270,14 +275,18 @@ class Fighter:
         return self.base_damage_variance
 
     @property
+    def damage_bonus(self):
+        return self.base_damage_bonus
+
+    @property
     def attack_damage(self):
         bonus = sum(equipment.attack_damage_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus *  mul(effect.attack_power_mod for effect in self.status_effects))
+        bonus = int(bonus * mul(effect.attack_power_mod for effect in self.status_effects))
         bonus = 0
         if self.owner.player_stats:
-            return max(self.base_attack_damage + self.owner.player_stats.str + bonus, 0)
+            return max(self.damage_bonus + self.owner.player_stats.str + bonus, 0)
         else:
-            return max(self.base_attack_damage + bonus, 0)
+            return max(self.damage_variance + self.m_str_size + bonus, 0)
 
     @property
     def armor(self):
@@ -326,7 +335,7 @@ class Fighter:
     @property
     def spell_power(self):
         bonus = sum(equipment.spell_power_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus *  mul(effect.spell_power_mod for effect in self.status_effects))
+        bonus = int(bonus * mul(effect.spell_power_mod for effect in self.status_effects))
         if self.owner.player_stats:
             return self.base_spell_power + self.owner.player_stats.int + bonus
         else:
@@ -476,17 +485,19 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
         else:
             hit_type = 'bludgeoning'
 
-        damage = 0
+        unarmed_str_dice = 1
+        if fighter is not player.instance and weapon is None:
+            unarmed_str_dice = fighter.m_str_dice
+
         if weapon is not None:
             damage = roll_damage_ex(weapon.weapon_dice,
                                 "{}d{}".format(weapon.str_dice,fighter.attack_damage), target.fighter.armor,
                                 fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
-                                target.fighter.getResists())
+                                target.fighter.getResists(), flat_bonus=fighter.damage_bonus)
         else:
-            #TODO: Hook monsters up!
-            damage = roll_damage_ex('+0', "{}d{}".format('1', fighter.attack_damage), target.fighter.armor,
+            damage = roll_damage_ex('+0', "{}d{}".format(unarmed_str_dice, fighter.attack_damage), target.fighter.armor,
                                     fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
-                                    target.fighter.getResists())
+                                    target.fighter.getResists(), flat_bonus=fighter.damage_bonus)
 
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
@@ -536,7 +547,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
                             syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
-def roll_damage_ex(damage_dice,stat_dice,defense,pierce,damage_type,damage_modifier_ex,resists,weaknesses):
+def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_modifier_ex, resists,weaknesses, flat_bonus=0):
     damage_mod = damage_modifier_ex
 
     if damage_type in resists:
@@ -545,7 +556,7 @@ def roll_damage_ex(damage_dice,stat_dice,defense,pierce,damage_type,damage_modif
         damage_mod *= consts.WEAKNESS_FACTOR
 
     #calculate damage
-    damage = main.roll_dice(damage_dice) + main.roll_dice(stat_dice)
+    damage = main.roll_dice(damage_dice) + main.roll_dice(stat_dice) + flat_bonus
 
     # calculate damage reduction
     effective_defense = defense - pierce

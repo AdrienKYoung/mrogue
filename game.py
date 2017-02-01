@@ -17,7 +17,7 @@ class Equipment:
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
-                 attack_delay=10, essence=None,spell_list=None,level_progression=None,level_costs=None,resistances=[],
+                 attack_delay=0, essence=None,spell_list=None,level_progression=None,level_costs=None,resistances=[],
                  crit_bonus=1.0,subtype=None):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
@@ -104,11 +104,11 @@ class Equipment:
         if self.armor_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Armor: ' + str(self.armor_bonus))
             print_height += 1
-        if self.weapon_dice is not None:
+        if self.weapon_dice != '+0':
             r = dice_range(self.weapon_dice)
             libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(r[0]) + '-' + str(r[1]))
             print_height += 1
-        if self.str_dice is not None:
+        if self.str_dice is not None and self.str_dice > 0:
             r = dice_range(str(self.str_dice)+'d'+str(player.instance.player_stats.str))
             libtcod.console_print(console, x, y + print_height, 'Strength Bonus: ' + str(r[0]) + '-' + str(r[1]))
             print_height += 1
@@ -1049,7 +1049,7 @@ def spawn_monster(name, x, y):
         death = monster_death
         if p.get('death_function'):
             death = p.get('death_function')
-        fighter_component = combat.Fighter( hp=int(p['hp'] * modifier.get('hp_bonus',1)), attack_damage=int(p['attack_damage'] * modifier.get('attack_bonus',1)),
+        fighter_component = combat.Fighter( hp=int(p['hp'] * modifier.get('hp_bonus',1)),
                                             armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
                                             accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
                                             death_function=death,
@@ -1059,7 +1059,8 @@ def spawn_monster(name, x, y):
                                             base_shred=p.get('shred', 0) * modifier.get('shred_bonus',1),
                                             base_guaranteed_shred=p.get('guaranteed_shred', 0),
                                             base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
-                                            monster_flags=p.get('flags', 0),subtype=p.get('subtype'))
+                                            monster_flags=p.get('flags', 0),subtype=p.get('subtype'),damage_bonus=p.get('attack_bonus', 0),
+                                            m_str_dice=p.get('str_dice', 0), m_str_size=(p.get('str_size', 0) * modifier.get('attack_bonus',1)))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
         behavior = None
@@ -1129,7 +1130,7 @@ def create_item(name, material=None, quality=None):
             on_hit=p.get('on_hit',[]),
             damage_type=p.get('damage_type'),
             attack_speed_bonus=p.get('attack_speed_bonus', 0),
-            attack_delay=p.get('attack_delay', 10),
+            attack_delay=p.get('attack_delay', 0),
             essence=p.get('essence'),
             spell_list=p.get('spells'),
             level_progression=p.get('levels'),

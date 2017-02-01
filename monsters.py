@@ -12,7 +12,10 @@ proto = {
         'char': 'g',
         'color': libtcod.desaturated_green,
         'hp': 20,
-        'attack_damage': '3d6', #10
+        #'attack_damage': '3d6', #10
+        'str_dice' : 3,
+        'str_size' : 6,
+        'attack_bonus' : 0,
         'armor': 1,
         'evasion': 9,
         'accuracy': 18,
@@ -34,7 +37,10 @@ proto = {
         'color': libtcod.dark_red,
         'body_type': 'insect',
         'hp': 1,
-        'attack_damage': '2d6', #6
+        #'attack_damage': '2d6', #6
+        'str_dice' : 2,
+        'str_size' : 6,
+        'attack_bonus' : 0,
         'armor': 0,
         'evasion': 0,
         'accuracy': 19,
@@ -55,7 +61,10 @@ proto = {
         'color': libtcod.flame,
         'body_type': 'insect',
         'hp': 18,
-        'attack_damage': '2d6+2', #12
+        #'attack_damage': '2d6+2', #12
+        'str_dice' : 2,
+        'str_size' : 6,
+        'attack_bonus' : 2,
         'armor': 0,
         'evasion': 6,
         'accuracy': 19,
@@ -76,7 +85,10 @@ proto = {
         'char': 'z',
         'color': libtcod.dark_chartreuse,
         'hp': 45,
-        'attack_damage': '2d8', #8
+        #'attack_damage': '2d8', #8
+        'str_dice' : 2,
+        'str_size' : 8,
+        'attack_bonus' : 0,
         'armor': 0,
         'evasion': 4,
         'accuracy': 19,
@@ -100,7 +112,10 @@ proto = {
         'char': 'g',
         'color': libtcod.gray,
         'hp': 20,
-        'attack_damage': '3d6', #10
+        #'attack_damage': '3d6', #10
+        'str_dice' : 3,
+        'str_size' : 6,
+        'attack_bonus' : 0,
         'armor': 2,
         'evasion': 9,
         'accuracy': 23,
@@ -122,7 +137,10 @@ proto = {
         'char': 'g',
         'color': libtcod.dark_yellow,
         'hp': 30,
-        'attack_damage': '3d6+10', #15
+        #'attack_damage': '3d6+10', #15
+        'str_dice' : 3,
+        'str_size' : 6,
+        'attack_bonus' : 10,
         'armor': 3,
         'evasion': 9,
         'accuracy': 23,
@@ -145,7 +163,10 @@ proto = {
         'color': libtcod.light_sepia,
         'body_type': 'insect',
         'hp': 15,
-        'attack_damage': '2d6', #6
+        #'attack_damage': '2d6', #6
+        'str_dice' : 2,
+        'str_size' : 6,
+        'attack_bonus' : 0,
         'armor': 3,
         'evasion': 6,
         'accuracy': 22,
@@ -165,7 +186,10 @@ proto = {
         'char': 'f',
         'color': libtcod.lime,
         'hp': 25,
-        'attack_damage': '2d4', #5
+        #'attack_damage': '2d4', #5
+        'str_dice' : 2,
+        'str_size' : 4,
+        'attack_bonus' : 0,
         'armor': 0,
         'evasion': 10,
         'accuracy': 21,
@@ -187,7 +211,10 @@ proto = {
         'char': 'n',
         'color': libtcod.dark_violet,
         'hp': 35,
-        'attack_damage': '3d8+10', #22
+        #'attack_damage': '3d8+10', #22
+        'str_dice' : 3,
+        'str_size' : 8,
+        'attack_bonus' : 10,
         'armor': 2,
         'evasion': 12,
         'accuracy': 19,
@@ -210,7 +237,10 @@ proto = {
         'char': 'v',
         'color': libtcod.amber,
         'hp': 30,
-        'attack_damage': '1d8+4', #6
+        #'attack_damage': '1d8+4', #6
+        'str_dice' : 1,
+        'str_size' : 8,
+        'attack_bonus' : 4,
         'armor': 1,
         'evasion': 13,
         'accuracy': 21,
@@ -234,7 +264,10 @@ proto = {
         'color': libtcod.light_fuchsia,
         'body_type': 'plant',
         'hp': 45,
-        'attack_damage': 0,
+        #'attack_damage': 0,
+        'str_dice' : 0,
+        'str_size' : 0,
+        'attack_bonus' : 0,
         'armor': 0,
         'evasion': 0,
         'accuracy': 0,
@@ -255,7 +288,10 @@ proto = {
         'color': libtcod.gold,
         'body_type': 'plant',
         'hp': 1,
-        'attack_damage': 0,
+        #'attack_damage': 0,
+        'str_dice' : 0,
+        'str_size' : 0,
+        'attack_bonus' : 0,
         'armor': 0,
         'evasion': 0,
         'accuracy': 0,
@@ -273,7 +309,10 @@ proto = {
         'char': 'G',
         'color': libtcod.sepia,
         'hp': 100,
-        'attack_damage': '1d20+20', #30
+        #'attack_damage': '1d20+20', #30
+        'str_dice' : 1,
+        'str_size' : 20,
+        'attack_bonus' : 20,
         'armor': 7,
         'evasion': 5,
         'accuracy': 19,
@@ -295,7 +334,10 @@ proto = {
         'char': 'B',
         'color': libtcod.sepia,
         'hp': 50,
-        'attack_damage': '1d20+20', #30
+        #'attack_damage': '1d20+20', #30
+        'str_dice' : 1,
+        'str_size' : 20,
+        'attack_bonus' : 20,
         'armor': 2,
         'evasion': 6,
         'accuracy': 23,
@@ -317,7 +359,10 @@ proto = {
         'color': libtcod.gray,
         'body_type': 'insect',
         'hp': 20,
-        'attack_damage': '2d6', #6
+        #'attack_damage': '2d6', #6
+        'str_dice' : 2,
+        'str_size' : 6,
+        'attack_bonus' : 0,
         'armor': 0,
         'evasion': 12,
         'accuracy': 22,
@@ -337,7 +382,10 @@ proto = {
         'char': 'w',
         'color': libtcod.dark_purple,
         'hp': 10,
-        'attack_damage': '2d4', #5
+        #'attack_damage': '2d4', #5
+        'str_dice' : 2,
+        'str_size' : 4,
+        'attack_bonus' : 0,
         'armor': 1,
         'evasion': 10,
         'accuracy': 50,
@@ -358,7 +406,10 @@ proto = {
         'char': 'N',
         'color': libtcod.purple,
         'hp': 100,
-        'attack_damage': '2d10+20', #65
+        #'attack_damage': '2d10+20', #65
+        'str_dice' : 2,
+        'str_size' : 10,
+        'attack_bonus' : 20,
         'armor': 10,
         'evasion': 15,
         'accuracy': 22,
