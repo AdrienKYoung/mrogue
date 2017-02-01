@@ -22,24 +22,24 @@ class AI_Default:
                 if a.current_cd <= 0:
                     #Use abilities when they're up
                     if a.use(self.owner) != 'didnt-take-turn':
-                        return monster.ai.attack_speed
+                        return monster.behavior.attack_speed
 
             #Handle moving
             if not is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y):
                 monster.move_astar(player.instance.x, player.instance.y)
-                return monster.ai.move_speed
+                return monster.behavior.move_speed
 
             #Handle attacking
             elif player.instance.fighter.hp > 0:
                 monster.fighter.attack(player.instance)
-                return monster.ai.attack_speed
+                return monster.behavior.attack_speed
         elif self.last_seen_position is not None and not\
                 (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
             result = monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
             if result == 'failure':
                 self.last_seen_position = None
                 return 1.0
-            return monster.ai.move_speed
+            return monster.behavior.move_speed
         return 1.0  # pass the turn
 
 
@@ -117,7 +117,7 @@ class AI_Reeker:
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())
                         game.current_map.add_object(puff)
-        return monster.ai.attack_speed
+        return monster.behavior.attack_speed
 
 
 class AI_TunnelSpider:
@@ -148,7 +148,7 @@ class AI_TunnelSpider:
         elif self.state == 'hunting':
             if is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y) and player.instance.fighter.hp > 0:
                 monster.fighter.attack(player.instance)
-                return monster.ai.attack_speed
+                return monster.behavior.attack_speed
             self.closest_web = self.find_closest_web()
             if self.closest_web is not None and monster.distance_to(self.closest_web) > consts.TUNNEL_SPIDER_MAX_WEB_DIST:
                 self.state = 'retreating'
@@ -156,11 +156,11 @@ class AI_TunnelSpider:
             elif fov.monster_can_see_object(monster, player.instance):
                     monster.move_astar(player.instance.x, player.instance.y)
                     self.last_seen_position = (player.instance.x, player.instance.y)
-                    return monster.ai.move_speed
+                    return monster.behavior.move_speed
             elif self.last_seen_position is not None and not \
                     (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
                 monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
-                return monster.ai.move_speed
+                return monster.behavior.move_speed
         return 1.0  # pass the turn
 
     def find_closest_web(self):
@@ -206,9 +206,9 @@ class ConfusedMonster:
         if self.num_turns > 0:
             obj.move(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
             self.num_turns -= 1
-            return obj.ai.move_speed
+            return obj.behavior.move_speed
         else:
-            obj.ai.behavior = self.old_ai
+            obj.behavior.behavior = self.old_ai
             if fov.player_can_see(obj.x, obj.y):
                 ui.message('%s %s no longer confused.' % (
                     syntax.name(obj.name).capitalize(),

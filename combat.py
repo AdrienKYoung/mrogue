@@ -286,7 +286,7 @@ class Fighter:
         if self.owner.player_stats:
             return max(self.damage_bonus + self.owner.player_stats.str + bonus, 0)
         else:
-            return max(self.damage_variance + self.m_str_size + bonus, 0)
+            return max(self.damage_bonus + self.m_str_size + bonus, 0)
 
     @property
     def armor(self):
@@ -556,6 +556,8 @@ def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_
         damage_mod *= consts.WEAKNESS_FACTOR
 
     #calculate damage
+    if damage_dice == '+0':
+        damage_dice = '0d0'
     damage = main.roll_dice(damage_dice) + main.roll_dice(stat_dice) + flat_bonus
 
     # calculate damage reduction
