@@ -15,7 +15,7 @@ class Fighter:
                  damage_variance=0.15, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
-                 damage_bonus=0, m_str_dice=0, m_str_size=0):
+                 damage_bonus=0, m_str_dice=0, m_str_size=0, monster_str_dice=None):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -51,6 +51,7 @@ class Fighter:
         self.base_damage_bonus = damage_bonus
         self.m_str_dice = m_str_dice
         self.m_str_size = m_str_size
+        self.monster_str_dice = monster_str_dice
 
     def print_description(self, console, x, y, width):
         print_height = 1
@@ -284,9 +285,10 @@ class Fighter:
         bonus = int(bonus * mul(effect.attack_power_mod for effect in self.status_effects))
         bonus = 0
         if self.owner.player_stats:
-            return max(self.damage_bonus + self.owner.player_stats.str + bonus, 0)
+            return max(self.owner.player_stats.str + bonus, 0)
         else:
-            return max(self.damage_bonus + self.m_str_size + bonus, 0)
+            str_dice_size = int(self.monster_str_dice.split('+')[0].split('d')[1])
+            return max(str_dice_size + bonus, 0)
 
     @property
     def armor(self):
@@ -485,9 +487,9 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
         else:
             hit_type = 'bludgeoning'
 
-        unarmed_str_dice = 1
+        unarmed_str_dice = '1d{}'.format(fighter.attack_damage)
         if fighter is not player.instance and weapon is None:
-            unarmed_str_dice = fighter.m_str_dice
+            unarmed_str_dice = fighter.monster_str_dice
 
         if weapon is not None:
             damage = roll_damage_ex(weapon.weapon_dice,
@@ -495,7 +497,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
                                 fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
                                 target.fighter.getResists(), flat_bonus=fighter.damage_bonus)
         else:
-            damage = roll_damage_ex('+0', "{}d{}".format(unarmed_str_dice, fighter.attack_damage), target.fighter.armor,
+            damage = roll_damage_ex('+0', unarmed_str_dice, target.fighter.armor,
                                     fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
                                     target.fighter.getResists(), flat_bonus=fighter.damage_bonus)
 

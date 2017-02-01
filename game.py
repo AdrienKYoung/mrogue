@@ -1060,7 +1060,7 @@ def spawn_monster(name, x, y):
                                             base_guaranteed_shred=p.get('guaranteed_shred', 0),
                                             base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
                                             monster_flags=p.get('flags', 0),subtype=p.get('subtype'),damage_bonus=p.get('attack_bonus', 0),
-                                            m_str_dice=p.get('str_dice', 0), m_str_size=(int(p.get('str_size', 0) * modifier.get('attack_bonus',1))))
+                                            monster_str_dice=p.get('strength_dice'))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
         behavior = None
