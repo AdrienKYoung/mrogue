@@ -453,29 +453,36 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
 
         #Determine location based effects
         location = roll_hit_location(target.fighter.hit_table)
-        effect = roll_location_effect(target,location)
+        effect = roll_location_effect(target.fighter.inventory,location)
 
-        damage = fighter.calculate_damage() * location_damage_tables[location]['damage']
+        damage_mod = location_damage_tables[location]['damage']
+
         # Daggers deal x3 damage to stunned targets
         weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
         if weapon and target.fighter.has_status('stunned') and verb != 'bashes':
-            damage *= weapon.crit_bonus
+            damage_mod *= weapon.crit_bonus
 
-        # calculate damage reduction
-        effective_armor = target.fighter.armor - pierce
-        # without armor, targets receive no damage reduction!
-        if effective_armor > 0:
-            # Damage is reduced by 25% + 5% for every point of armor up to 5 armor (50% reduction)
-            reduction_factor = consts.ARMOR_REDUCTION_BASE + consts.ARMOR_REDUCTION_STEP * min(effective_armor, consts.ARMOR_REDUCTION_DROPOFF)
-            # For every point of armor after 5, damage is further reduced by 2.5% (15+ armor = 100% reduction!)
-            if effective_armor > consts.ARMOR_REDUCTION_DROPOFF:
-                reduction_factor += 0.5 * consts.ARMOR_REDUCTION_STEP * (effective_armor - consts.ARMOR_REDUCTION_DROPOFF)
-            # Apply damage reduction
-            damage = int(math.ceil(damage * reduction_factor))
-            # After reduction, apply a flat reduction that is a random amount from 0 to the target's armor value
-            damage = max(0, damage - libtcod.random_get_int(0, 0, effective_armor))
+        if target.fighter.has_status('stung'):
+            damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
+
+        # weapon-specific damage verbs
+        hit_type = None
+        if weapon is not None and weapon.damage_type is not None:
+            hit_type = weapon.damage_type
         else:
-            damage = int(math.ceil(damage))
+            hit_type = 'bludgeoning'
+
+        damage = 0
+        if weapon is not None:
+            damage = roll_damage_ex(weapon.weapon_dice,
+                                "{}d{}".format(weapon.str_dice,fighter.attack_damage), target.fighter.armor,
+                                fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
+                                target.fighter.getResists())
+        else:
+            #TODO: Hook monsters up!
+            damage = roll_damage_ex('+0', "{}d{}".format('1', fighter.attack_damage), target.fighter.armor,
+                                    fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
+                                    target.fighter.getResists())
 
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
@@ -493,37 +500,9 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
             # Receive effect
             if effect is not None and percent_hit > 0.1:
                 target.fighter.apply_status_effect(effect)
-            # Take damage
 
-            #weapon-specific damage verbs
-            hit_type = None
-            if weapon is not None and weapon.damage_type is not None:
-                hit_type = weapon.damage_type
-            else:
-                hit_type = 'bludgeoning'
+            attack_text_ex(fighter,target,verb,location,damage,hit_type,percent_hit)
 
-            # Damage modifiers
-            if type in target.fighter.getResists():
-                damage *= consts.RESISTANCE_FACTOR
-                damage = int(damage)
-            if type in target.fighter.getWeaknesses():
-                damage *= consts.WEAKNESS_FACTOR
-                damage = int(damage)
-            if target.fighter.has_status('stung'):
-                damage *= consts.CENTIPEDE_STING_AMPLIFICATION
-                damage = int(damage)
-
-            if verb is None:
-                verb = main.normalized_choice(damage_description_tables[hit_type],percent_hit)
-
-            #need to grab the name first, because take_damage can kill the target, leading to some weird messages
-            target_name = syntax.name(target.name)
-            ui.message('%s %s %s in the %s for %s%d damage!' % (
-                            syntax.name(fighter.owner.name).capitalize(),
-                            syntax.conjugate(fighter.owner is player.instance, verb),
-                            target_name, location,
-                            syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
-                            damage), libtcod.grey)
             target.fighter.take_damage(damage)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
@@ -553,16 +532,66 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
                             syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
+def roll_damage_ex(damage_dice,stat_dice,defense,pierce,damage_type,damage_modifier_ex,resists,weaknesses):
+    damage_mod = damage_modifier_ex
+
+    if damage_type in resists:
+        damage_mod *= consts.RESISTANCE_FACTOR
+    if type in weaknesses:
+        damage_mod *= consts.WEAKNESS_FACTOR
+
+    #calculate damage
+    damage = main.roll_dice(damage_dice) + main.roll_dice(stat_dice)
+
+    # calculate damage reduction
+    effective_defense = defense - pierce
+    # without armor, targets receive no damage reduction!
+    if effective_defense > 0:
+        # Damage is reduced by 25% + 5% for every point of armor up to 5 armor (50% reduction)
+        reduction_factor = consts.ARMOR_REDUCTION_BASE + consts.ARMOR_REDUCTION_STEP * min(effective_defense,
+                                                                                           consts.ARMOR_REDUCTION_DROPOFF)
+        # For every point of armor after 5, damage is further reduced by 2.5% (15+ armor = 100% reduction!)
+        if effective_defense > consts.ARMOR_REDUCTION_DROPOFF:
+            reduction_factor += 0.5 * consts.ARMOR_REDUCTION_STEP * (
+                effective_defense - consts.ARMOR_REDUCTION_DROPOFF)
+        # Apply damage reduction
+        damage = math.ceil(damage * reduction_factor)
+        # After reduction, apply a flat reduction that is a random amount from 0 to the target's armor value
+        damage = max(0, damage - libtcod.random_get_int(0, 0, effective_defense))
+
+    return int(math.ceil(damage))
+
+def attack_text_ex(fighter,target,verb,location,damage,damage_type,severity):
+    if verb is None:
+        verb = main.normalized_choice(damage_description_tables[damage_type], severity)
+
+    target_name = syntax.name(target.name)
+
+    if damage is not None:
+        if location is not None:
+            ui.message('%s %s %s in the %s for %s%d damage!' % (
+                syntax.name(fighter.owner.name).capitalize(),
+                syntax.conjugate(fighter.owner is player.instance, verb),
+                target_name, location,
+                syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
+                damage), libtcod.grey)
+        else:
+            ui.message('%s %s %s for %s%d damage!' % (
+                syntax.name(fighter.owner.name).capitalize(),
+                syntax.conjugate(fighter.owner is player.instance, verb),
+                target_name,
+                syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
+                damage), libtcod.grey)
 
 def roll_hit_location(table):
     if table is None:
         table = 'default'
     return main.random_choice(hit_tables[table])
 
-def roll_location_effect(target, location):
+def roll_location_effect(inventory, location):
     location_effect = location_damage_tables[location]
     if location_effect.get('effect') is not None and location_effect.get('effect_chance'):
-        equipped = main.get_equipped_in_slot(target.fighter.inventory,location)
+        equipped = main.get_equipped_in_slot(inventory,location)
         location_resist = (equipped.armor_bonus if equipped is not None else 0) / consts.ARMOR_LOCATION_RESIST_FACTOR
         if location_effect['effect_chance'] < libtcod.random_get_float(0, 0.0, 1.0) and \
                         libtcod.random_get_float(0, 0.0, 1.0) > location_resist:

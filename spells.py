@@ -24,6 +24,7 @@ def cast_fireball(actor=None,target=None):
     if actor is None: #player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
         (x, y) = ui.target_tile()
+        actor = player.instance
     else:
         x = target.x
         y = target.y
@@ -36,7 +37,7 @@ def cast_fireball(actor=None,target=None):
                             syntax.name(obj.name).capitalize(),
                             syntax.conjugate(obj is player.instance, ('are','is')),
                             consts.FIREBALL_DAMAGE), libtcod.flame)
-            obj.fighter.take_damage(consts.FIREBALL_DAMAGE)
+            obj.fighter.take_damage(consts.FIREBALL_DAMAGE_RATIO * actor.fighter.spell_power)
     return 'success'
 
 

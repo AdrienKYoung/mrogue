@@ -37,7 +37,7 @@ class Equipment:
         self.break_chance = break_chance
         self.crit_bonus = crit_bonus
         self.ctrl_attack_desc = ctrl_attack_desc
-        self.weapon_dice = weapon_dice
+        self._weapon_dice = weapon_dice
         self.str_dice = str_dice
         self.on_hit = on_hit #expects list
         self.damage_type = damage_type
@@ -59,6 +59,15 @@ class Equipment:
             self.level_costs = level_costs
             self.spell_charges = {}
             self.refill_spell_charges()
+
+    @property
+    def weapon_dice(self):
+        if self._weapon_dice is not None:
+            d = self._weapon_dice.split('d')
+            dice_size = max(int(d[1]) + (2 * self.attack_damage_bonus), 1)
+            return "{}d{}".format(d[0],dice_size)
+        else:
+            return "+0"
 
     def toggle(self):
         if self.is_equipped:

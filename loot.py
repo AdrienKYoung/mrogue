@@ -509,7 +509,7 @@ proto = {
     'weapon_pickaxe': {
         'name'               : 'pickaxe',
         'category'           : 'weapon',
-        'subtype'        : 'axe',
+        'subtype'            : 'axe',
         'damage_type'        : 'stabbing',
         'char'               : 'T',
         'color'              : libtcodpy.yellow,
