@@ -5,6 +5,7 @@ import game
 import ui
 import effects
 import player
+import syntax
 
 class AI_Default:
 
@@ -14,28 +15,32 @@ class AI_Default:
     def act(self):
         monster = self.owner
         if fov.monster_can_see_object(monster, player.instance):
+            self.last_seen_position = (player.instance.x, player.instance.y)
 
             #Handle default ability use behavior
             for a in self.owner.fighter.abilities:
                 if a.current_cd <= 0:
                     #Use abilities when they're up
                     if a.use(self.owner) != 'didnt-take-turn':
-                        return
-
+                        return monster.ai.attack_speed
 
             #Handle moving
             if not is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y):
                 monster.move_astar(player.instance.x, player.instance.y)
+                return monster.ai.move_speed
 
             #Handle attacking
             elif player.instance.fighter.hp > 0:
                 monster.fighter.attack(player.instance)
-            self.last_seen_position = (player.instance.x, player.instance.y)
+                return monster.ai.attack_speed
         elif self.last_seen_position is not None and not\
                 (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
             result = monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
             if result == 'failure':
                 self.last_seen_position = None
+                return 1.0
+            return monster.ai.move_speed
+        return 1.0  # pass the turn
 
 
 class ReekerGasBehavior:
@@ -56,10 +61,12 @@ class ReekerGasBehavior:
                                     lambda o: o.fighter is not None and o.name != 'reeker' and o.name != 'blastcap'):
             if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
                 if fov.player_can_see(obj.x, obj.y):
-                    ui.message('A foul-smelling cloud of gas begins to form around the ' + obj.name, libtcod.fuchsia)
+                    ui.message('A foul-smelling cloud of gas begins to form around %s.' % syntax.name(obj.name), libtcod.fuchsia)
             else:
                 if fov.player_can_see(obj.x, obj.y):
-                    ui.message('The ' + obj.name + ' chokes on the foul gas.', libtcod.fuchsia)
+                    ui.message('%s %s on the foul gas.' % (
+                        syntax.name(obj.name).capitalize(),
+                        syntax.conjugate(obj is player.instance, ('choke', 'chokes'))), libtcod.fuchsia)
                 obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
 
 
@@ -110,6 +117,7 @@ class AI_Reeker:
                                           'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
                                           misc=ReekerGasBehavior())
                         game.current_map.add_object(puff)
+        return monster.ai.attack_speed
 
 
 class AI_TunnelSpider:
@@ -124,15 +132,15 @@ class AI_TunnelSpider:
         if self.state == 'resting':
             if fov.monster_can_see_object(monster, player.instance):
                 self.state = 'hunting'
-                self.act()
+                return 0.0
             elif object_at_tile(monster.x, monster.y, 'spiderweb') is None:
                 self.state = 'retreating'
-                self.act()
+                return 0.0
         elif self.state == 'retreating':
             self.closest_web = self.find_closest_web()
             if self.closest_web is None:
                 self.state = 'hunting'
-                self.act()
+                return 0.0
             else:
                 monster.move_astar(self.closest_web.x, self.closest_web.y)
                 if object_at_tile(monster.x, monster.y, 'spiderweb') is not None:
@@ -140,17 +148,20 @@ class AI_TunnelSpider:
         elif self.state == 'hunting':
             if is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y) and player.instance.fighter.hp > 0:
                 monster.fighter.attack(player.instance)
-                return
+                return monster.ai.attack_speed
             self.closest_web = self.find_closest_web()
             if self.closest_web is not None and monster.distance_to(self.closest_web) > consts.TUNNEL_SPIDER_MAX_WEB_DIST:
                 self.state = 'retreating'
-                self.act()
+                return 0.0
             elif fov.monster_can_see_object(monster, player.instance):
                     monster.move_astar(player.instance.x, player.instance.y)
                     self.last_seen_position = (player.instance.x, player.instance.y)
+                    return monster.ai.move_speed
             elif self.last_seen_position is not None and not \
                     (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
                 monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
+                return monster.ai.move_speed
+        return 1.0  # pass the turn
 
     def find_closest_web(self):
         closest_web = None
@@ -164,17 +175,25 @@ class AI_TunnelSpider:
 
 
 class AI_General:
-    def __init__(self, speed=1.0, behavior=AI_Default()):
+    def __init__(self, move_speed=1.0, attack_speed=1.0, behavior=AI_Default()):
         self.turn_ticker = 0.0
-        self.speed = speed
         self.behavior = behavior
+        self.move_speed = 1.0 / move_speed  # High speed = low delay.
+        self.attack_speed = 1.0 / attack_speed
 
     def take_turn(self):
-        self.turn_ticker += self.speed
-        while self.turn_ticker > 1.0:
-            if not (self.owner.fighter and (self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen'))):
-                self.behavior.act()
-            self.turn_ticker -= 1.0
+        #self.turn_ticker += self.speed
+        #while self.turn_ticker > 1.0:
+        #    if not (self.owner.fighter and (self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen'))):
+        #        self.behavior.act()
+        #    self.turn_ticker -= 1.0
+
+        while self.turn_ticker < 1.0:
+            if self.owner.fighter and (self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen')):
+                self.turn_ticker += 1.0
+            else:
+                self.turn_ticker += self.behavior.act()
+        self.turn_ticker -= 1.0
 
 
 class ConfusedMonster:
@@ -183,11 +202,16 @@ class ConfusedMonster:
         self.num_turns = num_turns
 
     def act(self):
+        obj = self.owner
         if self.num_turns > 0:
-            self.owner.move(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
+            obj.move(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
             self.num_turns -= 1
+            return obj.ai.move_speed
         else:
-            self.owner.ai.behavior = self.old_ai
-            if fov.player_can_see(self.owner.x, self.owner.y):
-                ui.message('The ' + self.owner.name + ' is no longer confused.', libtcod.light_grey)
+            obj.ai.behavior = self.old_ai
+            if fov.player_can_see(obj.x, obj.y):
+                ui.message('%s %s no longer confused.' % (
+                    syntax.name(obj.name).capitalize(),
+                    syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.light_grey)
+            return 0.0
 

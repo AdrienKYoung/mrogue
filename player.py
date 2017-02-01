@@ -97,8 +97,8 @@ loadouts = {
         """
     },
     'fanatic' : {
-        'str':12,
-        'agi':10,
+        'str':13,
+        'agi':9,
         'int':8,
         'spr':12,
         'con':8,

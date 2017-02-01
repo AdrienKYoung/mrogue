@@ -92,26 +92,38 @@ class Equipment:
             if player.instance.player_stats.str < self.str_requirement:
                 libtcod.console_set_default_foreground(console, libtcod.red)
             else:
-                libtcod.console_set_default_foreground(console, libtcod.green)
+                libtcod.console_set_default_foreground(console, libtcod.dark_green)
             libtcod.console_print(console, x, y + print_height, 'Strength Required: ' + str(self.str_requirement))
             print_height += 1
             libtcod.console_set_default_foreground(console, libtcod.white)
         libtcod.console_print(console, x, y + print_height, 'Slot: ' + self.slot)
-        print_height += 1
+        print_height += 2
         if self.level_progression is not None and self.level_progression != 0:
             libtcod.console_print(console, x, y + print_height, 'Level: ' + str(self.level) + '/' + str(self.max_level))
             print_height += 1
         if self.armor_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Armor: ' + str(self.armor_bonus))
             print_height += 1
-        if self.attack_damage_bonus != 0:
-            libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(self.attack_damage_bonus))
+        if self.weapon_dice is not None:
+            r = dice_range(self.weapon_dice)
+            libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(r[0]) + '-' + str(r[1]))
+            print_height += 1
+        if self.str_dice is not None:
+            r = dice_range(str(self.str_dice)+'d'+str(player.instance.player_stats.str))
+            libtcod.console_print(console, x, y + print_height, 'Strength Bonus: ' + str(r[0]) + '-' + str(r[1]))
             print_height += 1
         if self.accuracy_bonus != 0:
             acc_str = 'Accuracy: '
             if self.accuracy_bonus > 0:
                 acc_str += '+'
             libtcod.console_print(console, x, y + print_height, acc_str + str(self.accuracy_bonus))
+            print_height += 1
+        if self.attack_delay != 0:
+            attacks = max(round(float(player.instance.fighter.attack_speed) / float(self.attack_delay), 1), 1.0)
+            libtcod.console_print(console, x, y + print_height, 'Attack Speed: ' + str(attacks))
+            print_height += 1
+        if self.attack_damage_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(self.attack_damage_bonus))
             print_height += 1
         if self.evasion_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Evade: ' + str(self.evasion_bonus))
@@ -316,7 +328,7 @@ class GameObject:
             self.fighter.owner = self
         self.behavior = behavior
         if self.behavior:
-            self.behavior = ai.AI_General(update_speed, behavior)
+            self.behavior = ai.AI_General()
             self.behavior.owner = self
             self.behavior.behavior.owner = self
         self.item = item
@@ -1053,8 +1065,14 @@ def spawn_monster(name, x, y):
         behavior = None
         if p.get('ai'):
             behavior = p.get('ai')()
+
         monster = GameObject(x, y, p['char'], mod_tag + p['name'], p['color'], blocks=True, fighter=fighter_component,
-                             behavior=behavior, description=p['description'], on_create=p.get('on_create'), update_speed=p['speed'] * modifier.get('speed_bonus',1))
+                             behavior=behavior, description=p['description'], on_create=p.get('on_create'))
+
+        if monster.behavior:
+            monster.behavior.attack_speed = p.get('attack_speed', 1.0 * modifier.get('speed_bonus', 1.0))
+            monster.behavior.move_speed = p.get('move_speed', 1.0 * modifier.get('speed_bonus', 1.0))
+
         if p.get('essence'):
             monster.essence = p.get('essence')
         monster.elevation = current_map.tiles[x][y].elevation
@@ -1267,6 +1285,15 @@ def roll_dice(dice):
     for i in range(int(a)):
         r += libtcod.random_get_int(0,1,int(b))
     return r + int(c)
+
+
+def dice_range(dice):
+    c = 0
+    if '+' in dice:
+        dice, c = dice.split('+')
+    a,b = dice.split('d')
+    return int(a) + int(c), int(a) * int(b) + int(c)
+
 
 def find_closest_open_tile(x, y, exclude=[]):
     if in_bounds(x, y) and not is_blocked(x, y) and len(exclude) == 0:

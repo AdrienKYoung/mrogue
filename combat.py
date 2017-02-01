@@ -141,21 +141,25 @@ class Fighter:
         return self.attack_damage * (1.0 - self.damage_variance + libtcod.random_get_float(0, 0, 2 * self.damage_variance))
 
     def calculate_attack_count(self):
+
         if self.owner is player.instance:
-            weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
-            if weapon is None:
-                delay = 10
-            else:
-                delay = weapon.attack_delay
-            dm = divmod(self.attack_speed, delay)
-            attacks = dm[0]
-            remainder = float(dm[1]) / float(delay)
-            if libtcod.random_get_float(0, 0.0, 1.0) < remainder:
-                attacks += 1
-            attacks = max(attacks, 1)
-            return attacks
+            speed = self.attack_speed
         else:
-            return 1  # monsters get only 1
+            return 1  # monsters always get 1 attack per turn (though their turns may be faster)
+
+        weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
+        if weapon is None:
+            delay = 10
+        else:
+            delay = weapon.attack_delay
+
+        dm = divmod(speed, delay)
+        attacks = dm[0]
+        remainder = float(dm[1]) / float(delay)
+        if libtcod.random_get_float(0, 0.0, 1.0) < remainder:
+            attacks += 1
+        attacks = max(attacks, 1)
+        return attacks
 
     def attack(self, target):
         result = 'failed'
