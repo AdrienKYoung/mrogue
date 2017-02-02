@@ -440,6 +440,25 @@ damage_description_tables = {
         ('burn', 'burns'),
         ('immolate', 'immolates'),
         ('incinerate', 'incinerates')
+    ],
+    'water': [
+        ('splash','splashes'),
+        ('flood','floods'),
+        ('blast','blasts'),
+        ('drown','drowns')
+    ],
+    'ice': [
+        ('freeze','freezes'),
+        ('shatter','shatters')
+    ],
+    'earth': [
+        ('smash','smashes'),
+        ('crush','crushes')
+    ],
+    'air': [
+        ('slam','slams'),
+        ('shred','shreds'),
+        ('blast','blasts')
     ]
 }
 
