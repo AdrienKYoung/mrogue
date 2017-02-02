@@ -55,6 +55,7 @@ data = {
                              'vast depths of seawater, rolling with the tide', consts.DEEP_WATER_COST, jumpable=False, isWater=True),
     'mud': TileData(False, False, 'mud', 247, (94, 75, 47), (63, 50, 31),
                              'a thick puddle of mud that impedes movement - dodging attacks will be much more difficult here', consts.MUD_COST, isWater=True),
+    'lava': TileData(False,False,'lava',247,libtcod.yellow,libtcod.dark_red,'Boiling molten stone',consts.DEEP_WATER_COST,jumpable=True),
     'chasm': TileData(True, False, 'chasm', libtcod.CHAR_BLOCK1, (16, 16, 32), (0, 0, 16),
                              'a pit descending into darkness'),
     'grass floor': TileData(False, False, 'grass floor', ',', (4, 140, 13), (29, 71, 10),

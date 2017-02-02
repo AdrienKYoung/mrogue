@@ -525,7 +525,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
                                 fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
                                 target.fighter.getResists(), flat_bonus=fighter.damage_bonus)
         else:
-            damage = roll_damage_ex('+0', unarmed_str_dice, target.fighter.armor,
+            damage = roll_damage_ex('0d0', unarmed_str_dice, target.fighter.armor,
                                     fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
                                     target.fighter.getResists(), flat_bonus=fighter.damage_bonus)
 

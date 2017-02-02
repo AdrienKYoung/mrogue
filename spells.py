@@ -7,7 +7,8 @@ import ai
 import player
 import combat
 import syntax
-
+import world
+import terrain
 
 class Spell:
     def __init__(self, name, function, description, levels, int_requirement = 10):
@@ -19,9 +20,7 @@ class Spell:
         self.max_level = len(levels)
 
 def cast_fireball(actor=None,target=None):
-    spell = library['spell_fireball']
-    x = 0
-    y = 0
+    x,y = 0,0
     if actor is None: #player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
         (x, y) = ui.target_tile()
@@ -36,6 +35,99 @@ def cast_fireball(actor=None,target=None):
         if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
             combat.spell_attack_ex(actor.fighter,obj,50,None,'fireball','2d6',2,'fire',0)
     return 'success'
+
+def cast_heat_ray(actor=None,target=None):
+    line = None
+    if actor is None:  # player is casting
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(3, 'beam_interrupt')
+        actor = player.instance
+    else:
+        x = target.x
+        y = target.y
+    if x is None: return 'cancelled'
+    line = main.beam(player.instance.x, player.instance.y, x, y)
+    if line is None or len(line) < 1: return 'cancelled'
+
+    for obj in main.current_map.objects:
+        for l in line:
+            if obj.x == l[0] and obj.y == l[1] and obj.fighter:
+                combat.spell_attack_ex(actor.fighter, obj, 30, None, 'heat ray', '3d4', 1, 'fire', 0)
+    return 'success'
+
+def cast_flame_wall(actor=None,target=None):
+    x,y = 0,0
+    if actor is None: #player is casting
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile()
+        actor = player.instance
+    else:
+        x = target.x
+        y = target.y
+    main.create_fire(x,y,10)
+    return 'success'
+
+def cast_shatter_item(actor=None,target=None):
+    x, y = 0, 0
+    dc = 8
+    if actor is None:  # player is casting
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile()
+        if x is None:
+            return 'cancelled'
+        actor = player.instance
+        choices = main.get_objects(x,y)
+        if len(choices) > 1:
+            target = choices[ui.menu('Which target?',[i.name for i in choices],24)]
+        elif len(choices) > 0:
+            target = choices[0]
+        else:
+            return 'cancelled'
+        dc += 4
+    else:
+        x,y = target.x,target.y
+
+    if target is None:
+        return 'cancelled'
+    item = None
+    inventory = None
+    if target.fighter is not None:
+        inventory = target.fighter.inventory
+        if inventory is None or len(inventory) == 0:
+            if actor == player.instance:
+                ui.message('Target has no items',libtcod.light_blue)
+            return 'cancelled'
+        item = inventory[main.random_choice_index(inventory)]
+        dc += 5
+    elif target.item is not None:
+        item = target
+
+    if main.roll_dice('1d20') + main.roll_dice('1d{}'.format(actor.fighter.spell_power)) > dc:
+        ui.message("{} shatters into pieces!".format(item.name),libtcod.flame)
+        if inventory is not None:
+            inventory.remove(item)
+        item.destroy()
+        for obj in main.current_map.objects:
+            if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
+                combat.spell_attack_ex(actor.fighter, obj, 50, None, 'shrapnel', '4d4', 1, 'slashing', 0)
+        return 'success'
+    else:
+        ui.message("Shatter failed to break {}!".format(item),libtcod.yellow)
+        return 'success'
+
+def cast_magma_bolt(actor=None,target=None):
+    x, y = 0, 0
+    if actor is None:  # player is casting
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile()
+        actor = player.instance
+        if x is None: return 'cancelled'
+        target = main.get_monster_at_tile(x, y)
+    else:
+        x = target.x
+        y = target.y
+    combat.spell_attack_ex(actor.fighter, target, 40, None, 'fireball', '3d6', 3, 'fire', 0)
+    main.current_map.tiles[x][y] = main.Tile(terrain.data['lava'])
 
 
 def cast_confuse():
@@ -243,7 +335,7 @@ library = {
     #'ignite' : Spell('ignite', { 'fire' : 1 }, cast_ignite, '[1 fire]',"",0),
     'spell_heat_ray' : Spell(
         'heat ray',
-        cast_fireball,
+        cast_heat_ray,
         'Fire a ray of magical heat in a line',
         [
             {'stamina_cost':30,'charges':3},
@@ -254,7 +346,7 @@ library = {
 
     'spell_flame_wall' : Spell(
         'flame wall',
-        cast_fireball,
+        cast_flame_wall,
         'Create a wall of flames',
         [
             {'stamina_cost':40,'charges':1},
@@ -275,7 +367,7 @@ library = {
 
     'spell_shatter_item' : Spell(
         'shatter item',
-        cast_fireball,
+        cast_shatter_item,
         'Overheat items to shatter them',
         [
             {'stamina_cost':50,'charges':2}
@@ -285,7 +377,7 @@ library = {
 
     'spell_magma_bolt' : Spell(
         'magma bolt',
-        cast_fireball,
+        cast_magma_bolt,
         'Fire a bolt of roiling magma that melts floors',
         [
             {'stamina_cost':60,'charges':2},
