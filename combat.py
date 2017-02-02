@@ -15,7 +15,7 @@ class Fighter:
                  damage_variance=0.15, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
-                 damage_bonus=0, m_str_dice=0, m_str_size=0, monster_str_dice=None):
+                 damage_bonus=0, m_str_dice=0, m_str_size=0, monster_str_dice=None, spell_resist=0):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -29,6 +29,7 @@ class Fighter:
         self.base_attack_damage = attack_damage
         self.base_damage_variance = damage_variance
         self.base_spell_power = spell_power
+        self.base_spell_resist = spell_resist
         self.base_accuracy = accuracy
         self.max_breath = breath
         self.breath = breath
@@ -344,6 +345,14 @@ class Fighter:
             return self.base_spell_power + bonus
 
     @property
+    def spell_resist(self):
+        bonus = sum(equipment.spell_resist_bonus for equipment in main.get_all_equipped(self.inventory))
+        if self.owner.player_stats:
+            return self.base_spell_resist + self.owner.player_stats.wiz + bonus
+        else:
+            return self.base_spell_resist + bonus
+
+    @property
     def max_hp(self):
         bonus = sum(equipment.max_hp_bonus for equipment in main.get_all_equipped(self.inventory))
         return self.base_max_hp + bonus
@@ -564,6 +573,55 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
         ui.message('%s %s %s, but %s!' % (
                             syntax.name(fighter.owner.name).capitalize(),
                             syntax.conjugate(fighter.owner is player.instance, verb),
+                            syntax.name(target.name),
+                            syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
+        return 'miss'
+
+def spell_attack_ex(fighter, target, stamina_cost, accuracy, spell_name, base_damage, spell_dice, spell_element, spell_pierce):
+    # check stamina
+    if fighter.owner.name == 'player':
+        if fighter.stamina < stamina_cost:
+            ui.message("You don't have the energy to cast that spell!", libtcod.light_yellow)
+            return 'failed'
+        else:
+            fighter.adjust_stamina(-stamina_cost)
+
+    if accuracy is None or roll_to_hit(target, accuracy):
+        # Target was hit
+
+        damage_mod = 1
+
+        if target.fighter.has_status('stung'):
+            damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
+
+        damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice,fighter.spell_power), target.fighter.spell_resist,
+                                spell_pierce, spell_element, damage_mod, target.fighter.getResists(),
+                                target.fighter.getResists(), 0)
+
+        if damage > 0:
+            attack_text_ex(fighter,target,None,None,damage,spell_element,float(damage) / float(target.fighter.max_hp))
+
+            target.fighter.take_damage(damage)
+            weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
+            if weapon:
+                main.check_breakage(weapon)
+            return 'hit'
+        else:
+            verbs = damage_description_tables['deflected']
+            verb = verbs[libtcod.random_get_int(0, 0, len(verbs) - 1)]
+            ui.message('%s attack %s %s' % (
+                            syntax.name(fighter.owner.name, possesive=True).capitalize(),
+                            verb[0],
+                            syntax.name(target.name)), libtcod.grey)
+            weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
+            if weapon:
+                main.check_breakage(weapon)
+            return 'blocked'
+    else:
+        #ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
+        ui.message('%s %s %s, but %s!' % (
+                            syntax.name(fighter.owner.name).capitalize(),
+                            syntax.conjugate(fighter.owner is player.instance, ('attack', 'attacks')),
                             syntax.name(target.name),
                             syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
         return 'miss'

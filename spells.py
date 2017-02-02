@@ -19,6 +19,7 @@ class Spell:
         self.max_level = len(levels)
 
 def cast_fireball(actor=None,target=None):
+    spell = library['spell_fireball']
     x = 0
     y = 0
     if actor is None: #player is casting
@@ -29,15 +30,11 @@ def cast_fireball(actor=None,target=None):
         x = target.x
         y = target.y
     if x is None: return 'cancelled'
-    ui.message('The fireball explodes, burning everything within ' + str(consts.FIREBALL_RADIUS) + ' tiles!', libtcod.flame)
+    ui.message('The fireball explodes!', libtcod.flame)
     main.create_fire(x,y,10)
     for obj in main.current_map.objects:
         if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
-            ui.message('%s %s burned for %d damage!' % (
-                            syntax.name(obj.name).capitalize(),
-                            syntax.conjugate(obj is player.instance, ('are','is')),
-                            consts.FIREBALL_DAMAGE), libtcod.flame)
-            obj.fighter.take_damage(consts.FIREBALL_DAMAGE_RATIO * actor.fighter.spell_power)
+            combat.spell_attack_ex(actor.fighter,obj,50,None,'fireball','2d6',2,'fire',0)
     return 'success'
 
 

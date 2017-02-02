@@ -18,7 +18,7 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None,spell_list=None,level_progression=None,level_costs=None,resistances=[],
-                 crit_bonus=1.0,subtype=None):
+                 crit_bonus=1.0,subtype=None, spell_resist_bonus=0):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -27,6 +27,7 @@ class Equipment:
         self.armor_bonus = armor_bonus
         self.evasion_bonus = evasion_bonus
         self.spell_power_bonus = spell_power_bonus
+        self.spell_resist_bonus = spell_resist_bonus
         self.stamina_cost = stamina_cost
         self.str_requirement = str_requirement
         self.shred_bonus = shred_bonus
@@ -142,6 +143,9 @@ class Equipment:
             print_height += 1
         if self.spell_power_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Spell Power: ' + str(self.spell_power_bonus))
+            print_height += 1
+        if self.spell_resist_bonus != 0:
+            libtcod.console_print(console, x, y + print_height, 'Spell Resist: ' + str(self.spell_resist_bonus))
             print_height += 1
         if self.break_chance > 0:
             libtcod.console_print(console, x, y + print_height, 'It has a ' + str(self.break_chance) + '%%' + ' chance to break when used.')
