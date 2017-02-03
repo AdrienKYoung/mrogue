@@ -516,7 +516,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
             hit_type = 'bludgeoning'
 
         unarmed_str_dice = '1d{}'.format(fighter.attack_damage)
-        if fighter is not player.instance and weapon is None:
+        if fighter.owner is not player.instance and weapon is None:
             unarmed_str_dice = fighter.monster_str_dice
 
         if weapon is not None:
