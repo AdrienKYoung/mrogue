@@ -18,7 +18,7 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None,spell_list=None,level_progression=None,level_costs=None,resistances=[],
-                 crit_bonus=1.0,subtype=None, spell_resist_bonus=0):
+                 crit_bonus=1.0,subtype=None, spell_resist_bonus=0,starting_level=0):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -60,6 +60,8 @@ class Equipment:
             self.level_costs = level_costs
             self.spell_charges = {}
             self.refill_spell_charges()
+        for i in range(starting_level):
+            self.level_up(True)
 
     @property
     def weapon_dice(self):
@@ -202,17 +204,17 @@ class Equipment:
         #       actor.fighter.stamina >= level['stamina_cost'] and \
         #        self.spell_charges[spell_name] > 0
 
-    def level_up(self):
+    def level_up(self, force = False):
         if self.level >= self.max_level:
             ui.message('{} is already max level!'.format(self.owner.name))
 
-        if self.essence not in player.instance.essence:
+        if self.essence not in player.instance.essence and not force:
             ui.message("You don't have any " + self.essence + " essence.", libtcod.blue)
             return 'didnt-take-turn'
 
         cost = self.level_costs[self.level] #next level cost, no level-1
 
-        if collections.Counter(player.instance.essence)[self.essence] < cost:
+        if collections.Counter(player.instance.essence)[self.essence] < cost and not force:
             ui.message("You don't have enough " + self.essence + " essence.", libtcod.blue)
             return 'didnt-take-turn'
 
@@ -227,7 +229,8 @@ class Equipment:
                 ui.message('Upgraded spell ' + spells.library[spell].name.title() + " to level " + str(self.spell_list[spell]), libtcod.white)
             ui.message('')
         for i in range(cost):
-            player.instance.essence.remove(self.essence)
+            if self.essence in player.instance.essence:
+                player.instance.essence.remove(self.essence)
         self.level += 1
         return 'leveled-up'
 
@@ -1141,7 +1144,8 @@ def create_item(name, material=None, quality=None):
             level_costs=p.get('level_costs'),
             crit_bonus=p.get('crit_bonus',1.0),
             resistances=p.get('resistances',[]),
-            subtype=p.get('subtype')
+            subtype=p.get('subtype'),
+            starting_level=p.get('level',0)
         )
 
         if equipment_component.category == 'weapon':

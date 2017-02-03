@@ -804,6 +804,7 @@ proto = {
         'slot'          : 'left hand',
         'description'   : 'A basic book of fire magic',
         'essence':'fire',
+        'level' : 1,
         'spells': [
             'spell_heat_ray',
             'spell_flame_wall',
