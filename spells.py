@@ -126,8 +126,11 @@ def cast_magma_bolt(actor=None,target=None):
     else:
         x = target.x
         y = target.y
-    combat.spell_attack_ex(actor.fighter, target, 40, None, 'fireball', '3d6', 3, 'fire', 0)
-    main.current_map.tiles[x][y] = main.Tile(terrain.data['lava'])
+    if target is not None:
+        combat.spell_attack_ex(actor.fighter, target, 40, None, 'fireball', '3d6', 3, 'fire', 0)
+    main.current_map.tiles[x][y].tile_type = 'lava'
+    main.current_map.pathfinding.mark_impassable((x, y))
+    main.changed_tiles.append((x, y))
 
 
 def cast_confuse():
