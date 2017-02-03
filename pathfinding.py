@@ -5,30 +5,89 @@ import math
 import libtcodpy as libtcod
 
 MAX_EDGES_DISCOVERED = 100
+# Movement type flags:
+NORMAL = 1
+FLYING = 2
+AQUATIC = 4
+CLIMBING = 8
+TUNNELING = 16
+
+class Edge:
+    def __init__(self, coord):
+        self.coord = coord
+        self.weights = {
+            NORMAL : None,
+            FLYING : None,
+            AQUATIC : None,
+            CLIMBING : None,
+            TUNNELING : None
+        }
 
 class Graph:
     def __init__(self):
-        self.edges = {}
+        self.edges = { }
 
-
-    def initialize(self, dungeon_map):
+    def initialize(self):
 
         for y in range(consts.MAP_HEIGHT):
             for x in range(consts.MAP_WIDTH):
-                source_tile = dungeon_map[x][y]
+                self.edges[(x, y)] = []
                 for tile in main.adjacent_tiles_diagonal(x, y):
-                    neighbor_tile = dungeon_map[tile[0]][tile[1]]
-                    if not neighbor_tile.blocks:
-                        if neighbor_tile.elevation == source_tile.elevation or \
-                                        neighbor_tile.is_ramp or source_tile.is_ramp:
-                            if (x, y) in self.edges.keys():
-                                self.edges[(x, y)].append((tile[0], tile[1]))
-                            else:
-                                self.edges[(x, y)] = [(tile[0], tile[1])]
+                    self.edge_to((x, y), tile)
+
         for obj in main.current_map.objects:
             if obj.blocks:
                 self.mark_impassable((obj.x, obj.y))
 
+    def edge_to(self, source, neighbor):
+        if not source in self.edges:
+            self.edges[source] = []
+        edge = None
+        for e in self.edges[source]:
+            if e.coord == neighbor:
+                edge = e
+                break
+        if edge is None:
+            edge = Edge(neighbor)
+            self.edges[source].append(edge)
+
+        source_tile = main.current_map.tiles[source[0]][source[1]]
+        neighbor_tile = main.current_map.tiles[neighbor[0]][neighbor[1]]
+        if not neighbor_tile.blocks:
+            # If the tile is not blocked, that's all we care about for flying movement.
+            edge.weights[FLYING] = 1.0
+            if neighbor_tile.elevation == source_tile.elevation or neighbor_tile.is_ramp or source_tile.is_ramp:
+                # If these tiles are on the same elevation, or one of them is a ramp, we have normal connectivity
+                if neighbor_tile.is_water:
+                    # If this tile is a water space, it has normal movement costs for aquatic movement
+                    edge.weights[AQUATIC] = 1.0
+                    if not neighbor_tile.jumpable:
+                        # If this is deep water, it is very costly for normal movement
+                        edge.weights[NORMAL] = 5.0
+                    else:
+                        # If this is shallow water, it is slightly more costly than normal movement
+                        edge.weights[NORMAL] = 1.05
+                elif not neighbor_tile.is_pit:
+                    edge.weights[NORMAL] = 1.0
+            elif not neighbor_tile.is_pit:
+                # These tiles are separated by elevation. Climbing movement can cross, though a bit costly
+                edge.weights[CLIMBING] = 2.0
+        else:
+            # Tunneling can move through solid walls, slightly more costly than normal movement
+            edge.weights[TUNNELING] = 1.05
+
+    def mark_blocked(self, coord):
+        for adj in main.adjacent_tiles_diagonal(coord[0], coord[1]):
+            if adj in self.edges:
+                for e in self.edges[adj]:
+                    if e.coord == coord:
+                        for weight in e.weights.keys():
+                            e.weights[weight] = None
+                        break
+
+    def mark_unblocked(self, coord):
+        for adj in main.adjacent_tiles_diagonal(coord[0], coord[1]):
+            self.edge_to(adj, coord)
 
     # add an edge from the source tile to the neighbor tile (checking elevation rules). Assumes that 'neighbor' is passable
     def add_edge(self, source, neighbor):
@@ -48,26 +107,37 @@ class Graph:
 
     # for every adjacent tile, make sure that tile does not point to the now impassable tile
     def mark_impassable(self, coord):
-        for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
-            if tile in self.edges and coord in self.edges[tile]:
-                self.edges[tile].remove(coord)
+        return self.mark_blocked(coord)
+
+        #for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
+        #    if tile in self.edges and coord in self.edges[tile]:
+        #        self.edges[tile].remove(coord)
 
 
     # for every adjacent tile, make an edge to the now passable tile (if it follows elevation rules)
     def mark_passable(self, coord):
-        for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
-            self.add_edge(tile, coord)
+        return self.mark_unblocked(coord)
+        #for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
+        #    self.add_edge(tile, coord)
 
 
-    # Returns true if there is at least one adjacent tile with an edge leading to this tile
-    def is_accessible(self, coord):
-        for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
-            if tile in self.edges and coord in self.edges[tile]:
-                return True
+    # Returns true if there is at least one adjacent tile with an edge leading to this tile (following valid movement)
+    def is_accessible(self, coord, movement_type=NORMAL):
+        for adj in main.adjacent_tiles_diagonal(coord[0], coord[1]):
+            if adj in self.edges:
+                for e in self.edges[adj]:
+                    if e.coord == coord:
+                        for weight in e.weights.keys():
+                            if weight & movement_type == weight and e.weights[weight] is not None:
+                                return True
         return False
+        #for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
+        #    if tile in self.edges and coord in self.edges[tile]:
+        #       return True
+        #return False
 
 
-    def a_star_search(self, start, goal):
+    def a_star_search(self, start, goal, movement_type=NORMAL):
         discovered = 0
         closed_set = []
         open_set = [start]  # TODO: Use Priority Queue
@@ -99,18 +169,28 @@ class Graph:
             closed_set.append(current)
 
             if current in self.edges.keys():
-                for neighbor in self.edges[current]:
-                    if neighbor in closed_set:
-                        continue
-                    tentative_g_score = g_score[current] + Graph.dist_between(current, neighbor)
-                    if neighbor not in open_set:
-                        open_set.append(neighbor)
-                    elif tentative_g_score >= g_score[neighbor]:
+                for neighbor in self.edges[current]:  # 'neighbor' is an Edge
+                    w = None
+                    for weight in neighbor.weights.keys():
+                        if weight & movement_type == weight and neighbor.weights[weight] is not None:
+                            if w is None:
+                                w = neighbor.weights[weight]
+                            elif neighbor.weights[weight] < w:
+                                w = neighbor.weights[weight]
+                    if w is None:
                         continue
 
-                    came_from[neighbor] = current
-                    g_score[neighbor] = tentative_g_score
-                    f_score[neighbor] = g_score[neighbor] + Graph.heuristic(neighbor, goal)
+                    if neighbor.coord in closed_set:
+                        continue
+                    tentative_g_score = g_score[current] + Graph.dist_between(current, neighbor.coord)
+                    if neighbor.coord not in open_set:
+                        open_set.append(neighbor.coord)
+                    elif tentative_g_score >= g_score[neighbor.coord]:
+                        continue
+
+                    came_from[neighbor.coord] = current
+                    g_score[neighbor.coord] = tentative_g_score + w
+                    f_score[neighbor.coord] = g_score[neighbor.coord] + Graph.heuristic(neighbor.coord, goal) + w
 
         return 'failure'
 

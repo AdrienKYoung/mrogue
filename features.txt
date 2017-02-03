@@ -348,7 +348,8 @@ ENDFEATURE
 FEATURE beach_gate
 CATEGORY beach_hlink
 DEFINE # sea cliff
-FLAGS NOREFLECT
+FLAGS NOREFLECT NOELEV
+SCRIPT create_slopes
 ###
 ->-
 ---
@@ -361,7 +362,7 @@ CATEGORY badlands_hlink
 DEFINE # dark shale wall
 DEFINE . shale
 DEFINE - gnarled tree
-FLAGS NOREFLECT
+FLAGS NOREFLECT NOELEV
 SCRIPT create_slopes
  ###
 .->-.

@@ -8,6 +8,7 @@ import spells
 import fov
 import effects
 import syntax
+import pathfinding
 
 class Fighter:
 
@@ -195,7 +196,9 @@ class Fighter:
 
         # Manage breath/drowning
         tile = main.current_map.tiles[self.owner.x][self.owner.y]
-        if tile.is_water and not tile.jumpable:  # deep water / deep seawater7
+        if tile.is_water and not tile.jumpable \
+                and self.owner.movement_type & pathfinding.FLYING != pathfinding.FLYING \
+                and self.owner.movement_type & pathfinding.AQUATIC != pathfinding.AQUATIC:  # deep water / deep seawater
             if not (self.can_breath_underwater or self.has_status('waterbreathing')):
                 if self.breath > 0:
                     self.breath -= 1

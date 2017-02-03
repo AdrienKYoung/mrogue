@@ -1,7 +1,7 @@
 import game as main
 import ai
 import libtcodpy as libtcod
-
+import pathfinding
 
 # Monster Flags
 NO_CORPSE = 1
@@ -136,6 +136,28 @@ proto = {
         'shred': 1,
         'modifier_category':'goblin',
         'subtype':'goblin',
+    },
+    'monster_snow_kite': {
+        'name': 'snow kite',
+        'char': 'k',
+        'color': libtcod.lightest_azure,
+        'hp': 32,
+        'strength_dice' : '3d8',
+        'attack_bonus' : 0,
+        'armor': 1,
+        'evasion': 12,
+        'accuracy': 24,
+        'move_speed': 1.25,
+        'attack_speed': 1.0,
+        'difficulty': 2,
+        'ai': ai.AI_Default,
+        'description': 'A predatory bird with white plumage flecked with gray. It glides with grace on chill winds, '
+                       'searching for prey with its keen avian eyes.',
+        'resistances': [],
+        'essence': [(50, 'cold')],
+        'shred': 1,
+        'subtype':'beast',
+        'movement_type': pathfinding.FLYING
     },
     'monster_goblin_chief': {
         'name': 'goblin chief',

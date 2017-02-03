@@ -319,7 +319,7 @@ class GameObject:
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, behavior=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
-                 elevation=None, background_color=None):
+                 elevation=None, background_color=None, movement_type=0):
         self.x = x
         self.y = y
         self.char = char
@@ -366,6 +366,7 @@ class GameObject:
         else:
             self.elevation = elevation
         self.background_color = background_color
+        self.movement_type = movement_type
 
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
@@ -419,7 +420,7 @@ class GameObject:
                 obj.on_step(obj, self)
 
         # Update 'in-mud' state
-        if self.fighter:
+        if self.fighter and self.movement_type & pathfinding.FLYING != pathfinding.FLYING:
             if current_map.tiles[self.x][self.y].tile_type == 'mud' and not self.fighter.has_status('sluggish'):
                 self.fighter.apply_status_effect(effects.StatusEffect('sluggish', color=libtcod.sepia))
             elif current_map.tiles[self.x][self.y].tile_type != 'mud' and self.fighter.has_status('sluggish'):
@@ -433,9 +434,9 @@ class GameObject:
 
     def move(self, dx, dy):
 
-        blocked = is_blocked(self.x + dx, self.y + dy, self.elevation)
-        if blocked and current_map.tiles[self.x][self.y].is_ramp:
-            blocked = is_blocked(self.x + dx, self.y + dy)
+        blocked = is_blocked(self.x + dx, self.y + dy, from_coord=(self.x, self.y), movement_type=self.movement_type)
+        #if blocked and current_map.tiles[self.x][self.y].is_ramp:
+        #    blocked = is_blocked(self.x + dx, self.y + dy, from_coord=(self.x, self.y), movement_type=self.movement_type)
 
         if not blocked:
             if self.fighter is not None:
@@ -453,7 +454,9 @@ class GameObject:
                     door_interact(door)
                     return True
                 cost = current_map.tiles[self.x][self.y].stamina_cost
-                if cost > 0 and self is player.instance: # only the player cares about stamina costs (at least for now. I kind of like it this way) -T
+                if cost > 0 and self is player.instance\
+                        and self.movement_type & pathfinding.FLYING != pathfinding.FLYING\
+                        and self.movement_type & pathfinding.AQUATIC != pathfinding.AQUATIC:
                     if self.fighter.stamina >= cost:
                         self.fighter.adjust_stamina(-cost)
                     else:
@@ -509,7 +512,7 @@ class GameObject:
                 closest_adjacent = None
                 closest = 10000
                 for adj in adjacent_tiles_diagonal(target_x, target_y):
-                    if is_blocked(adj[0], adj[1], current_map.tiles[target_x][target_y].elevation):
+                    if is_blocked(adj[0], adj[1], from_coord=(target_x, target_y), movement_type=self.movement_type):
                         continue
                     dist = self.distance(adj[0], adj[1])
                     if dist < closest:
@@ -679,6 +682,10 @@ class Tile:
     @property
     def is_ramp(self):
         return terrain.data[self.tile_type].isRamp
+
+    @property
+    def is_pit(self):
+        return terrain.data[self.tile_type].isPit
 
                 
 #############################################
@@ -997,7 +1004,7 @@ def beam_interrupt(sourcex, sourcey, destx, desty):
     libtcod.line_init(sourcex, sourcey, destx, desty)
     line_x, line_y = libtcod.line_step()
     while line_x is not None:
-        if is_blocked(line_x, line_y, current_map.tiles[sourcex][sourcey].elevation):  # beam interrupt scans until it hits something
+        if is_blocked(line_x, line_y):  # beam interrupt scans until it hits something
             return line_x, line_y
         line_x, line_y = libtcod.line_step()
     return destx, desty
@@ -1016,23 +1023,51 @@ def closest_monster(max_range):
     return closest_enemy
 
 
-
 def in_bounds(x, y):
     return x >= 0 and y >= 0 and x < consts.MAP_WIDTH and y < consts.MAP_HEIGHT
 
 
-def is_blocked(x, y, elevation=None):
+def is_blocked(x, y, from_coord=None, movement_type=None):
 
-    if elevation is not None and current_map.tiles[x][y].elevation != elevation and not current_map.tiles[x][y].is_ramp:
-        return True
+    tile = current_map.tiles[x][y]
 
-    if current_map.tiles[x][y].blocks:
-        return True
+    from_tile = None
+    elevation = None
+    if from_coord is not None:
+        from_tile = current_map.tiles[from_coord[0]][from_coord[1]]
+        elevation = from_tile.elevation
 
+    if movement_type is None:
+        if elevation is not None and tile.elevation != elevation and not tile.is_ramp and not from_tile.is_ramp:
+            return True
+        if tile.blocks or tile.is_pit:
+            return True
+    else:
+        if tile.blocks:
+            if movement_type & pathfinding.TUNNELING != pathfinding.TUNNELING:
+                # If this is a solid block and we do not have the TUNNELING flag...
+                return True
+        elif tile.is_pit:
+            if movement_type & pathfinding.FLYING != pathfinding.FLYING:
+                # If this is a pit and we do not have the FLYING flag...
+                return True
+        elif elevation is not None and tile.elevation != elevation and not tile.is_ramp and not from_tile.is_ramp:
+            if movement_type & pathfinding.CLIMBING != pathfinding.CLIMBING and \
+                                    movement_type & pathfinding.FLYING != pathfinding.FLYING:
+                # If there is a cliff separating these tiles and we do not have the CLIMBING/FLYING flags...
+                return True
+        elif not tile.is_water:
+            if movement_type & pathfinding.NORMAL != pathfinding.NORMAL and \
+                                    movement_type & pathfinding.FLYING != pathfinding.FLYING:
+                # If this is not water and we do not have the NORMAL/FLYING flags...
+                return True
+
+    # If we did not find a blockage in terrain, check for blocking objects
     for object in current_map.objects:
         if object.blocks and object.x == x and object.y == y:
             return True
 
+    # No obstructions were found
     return False
 
 
@@ -1075,11 +1110,12 @@ def spawn_monster(name, x, y):
             behavior = p.get('ai')()
 
         monster = GameObject(x, y, p['char'], mod_tag + p['name'], p['color'], blocks=True, fighter=fighter_component,
-                             behavior=behavior, description=p['description'], on_create=p.get('on_create'))
+                             behavior=behavior, description=p['description'], on_create=p.get('on_create'),
+                             movement_type=p.get('movement_type', pathfinding.NORMAL))
 
         if monster.behavior:
-            monster.behavior.attack_speed = p.get('attack_speed', 1.0 * modifier.get('speed_bonus', 1.0))
-            monster.behavior.move_speed = p.get('move_speed', 1.0 * modifier.get('speed_bonus', 1.0))
+            monster.behavior.attack_speed = 1.0 / p.get('attack_speed', 1.0 * modifier.get('speed_bonus', 1.0))
+            monster.behavior.move_speed = 1.0 / p.get('move_speed', 1.0 * modifier.get('speed_bonus', 1.0))
 
         if p.get('essence'):
             monster.essence = p.get('essence')
@@ -1313,7 +1349,7 @@ def find_closest_open_tile(x, y, exclude=[]):
         neighbors.append(tile)
     while len(neighbors) > 0:
         tile = neighbors[0]
-        if in_bounds(tile[0], tile[1]) and not is_blocked(tile[0], tile[1], 0) and tile not in exclude:
+        if in_bounds(tile[0], tile[1]) and not is_blocked(tile[0], tile[1]) and tile not in exclude:
             return tile  # we found an open tile
         neighbors.remove(tile)
         explored.append(tile)
@@ -1534,7 +1570,7 @@ def enter_map(world_map, direction=None):
         generate_level(world_map)
 
     current_map.pathfinding = pathfinding.Graph()
-    current_map.pathfinding.initialize(current_map.tiles)
+    current_map.pathfinding.initialize()
 
     if direction is not None:
         for obj in current_map.objects:

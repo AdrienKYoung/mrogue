@@ -9,6 +9,7 @@ import combat
 import dungeon
 import spells
 import syntax
+import pathfinding
 
 class PlayerStats:
 
@@ -137,8 +138,10 @@ def create(loadout):
     loadout = loadouts[loadout]
     fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death)
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
-                        player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),int(loadout['agi']),int(loadout['con']))
-                        , description='An exile, banished to this forsaken island for your crimes. This place will surely be your grave.')
+                        player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),
+                        int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
+                        'island for your crimes. This place will surely be your grave.',
+                        movement_type=pathfinding.NORMAL)
     instance.level = 1
     instance.essence = []
     instance.known_spells = []
@@ -576,7 +579,10 @@ def jump(actor=None):
         if main.current_map.tiles[x][y].blocks:
             ui.message('There is something in the way.', libtcod.light_yellow)
             return 'didnt-take-turn'
-        elif main.is_blocked(x, y, instance.elevation) and main.current_map.tiles[x][y].elevation > instance.elevation:
+        elif main.current_map.tiles[x][y].is_pit:
+            ui.message("Your sense of self-preservation is kicking in - you really don't want to jump into a dark pit.", libtcod.light_yellow)
+            return 'didnt-take-turn'
+        elif main.is_blocked(x, y, from_coord=(instance.x, instance.y), movement_type=instance.movement_type) and main.current_map.tiles[x][y].elevation > instance.elevation:
             ui.message("You can't jump that high!", libtcod.light_yellow)
             return 'didnt-take-turn'
         else:
