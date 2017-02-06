@@ -37,7 +37,7 @@ class Graph:
 
         for obj in main.current_map.objects:
             if obj.blocks:
-                self.mark_impassable((obj.x, obj.y))
+                self.mark_blocked((obj.x, obj.y))
 
     def edge_to(self, source, neighbor):
         if not source in self.edges:
@@ -89,38 +89,6 @@ class Graph:
         for adj in main.adjacent_tiles_diagonal(coord[0], coord[1]):
             self.edge_to(adj, coord)
 
-    # add an edge from the source tile to the neighbor tile (checking elevation rules). Assumes that 'neighbor' is passable
-    def add_edge(self, source, neighbor):
-
-        source_tile = main.current_map.tiles[source[0]][source[1]]
-        neighbor_tile = main.current_map.tiles[neighbor[0]][neighbor[1]]
-
-        if source_tile.elevation != neighbor_tile.elevation:
-            if not (source_tile.is_ramp or neighbor_tile.is_ramp):
-                return
-
-        if source in self.edges.keys():
-            self.edges[source].append(neighbor)
-        else:
-            self.edges[source] = [neighbor]
-
-
-    # for every adjacent tile, make sure that tile does not point to the now impassable tile
-    def mark_impassable(self, coord):
-        return self.mark_blocked(coord)
-
-        #for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
-        #    if tile in self.edges and coord in self.edges[tile]:
-        #        self.edges[tile].remove(coord)
-
-
-    # for every adjacent tile, make an edge to the now passable tile (if it follows elevation rules)
-    def mark_passable(self, coord):
-        return self.mark_unblocked(coord)
-        #for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
-        #    self.add_edge(tile, coord)
-
-
     # Returns true if there is at least one adjacent tile with an edge leading to this tile (following valid movement)
     def is_accessible(self, coord, movement_type=NORMAL):
         for adj in main.adjacent_tiles_diagonal(coord[0], coord[1]):
@@ -131,10 +99,6 @@ class Graph:
                             if weight & movement_type == weight and e.weights[weight] is not None:
                                 return True
         return False
-        #for tile in main.adjacent_tiles_diagonal(coord[0], coord[1]):
-        #    if tile in self.edges and coord in self.edges[tile]:
-        #       return True
-        #return False
 
 
     def a_star_search(self, start, goal, movement_type=NORMAL):
@@ -178,6 +142,7 @@ class Graph:
                             elif neighbor.weights[weight] < w:
                                 w = neighbor.weights[weight]
                     if w is None:
+                        # no edge to this tile following valid movement
                         continue
 
                     if neighbor.coord in closed_set:

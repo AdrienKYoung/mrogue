@@ -173,7 +173,7 @@ class Fighter:
         result = 'failed'
         attacks = self.calculate_attack_count()
         for i in range(attacks):
-            result = attack_ex(self, target, self.calculate_attack_stamina_cost(), self.accuracy, self.attack_damage, self.damage_variance, self.on_hit,
+            result = attack_ex(self, target, self.calculate_attack_stamina_cost(), self.accuracy, self.attack_damage, None, self.on_hit,
                            None, self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
             if result == 'failed':
                 return result
@@ -485,7 +485,7 @@ def roll_damage(weapon, fighter):
         total_damage += libtcod.random_get_int(0, 1, fighter.attack_damage)
     return total_damage
 
-def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_variance, on_hit, verb, shred, guaranteed_shred, pierce):
+def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_multiplier, on_hit, verb, shred, guaranteed_shred, pierce):
     # check stamina
     if fighter.owner.name == 'player':
         if fighter.stamina < stamina_cost:
@@ -510,6 +510,9 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_var
 
         if target.fighter.has_status('stung'):
             damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
+
+        if damage_multiplier is not None:
+            damage_mod *= damage_multiplier
 
         # weapon-specific damage verbs
         hit_type = None
@@ -641,6 +644,7 @@ def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_
     if damage_dice == '+0':
         damage_dice = '0d0'
     damage = main.roll_dice(damage_dice) + main.roll_dice(stat_dice) + flat_bonus
+    damage = int(float(damage) * damage_mod)
 
     # calculate damage reduction
     effective_defense = defense - pierce
@@ -706,6 +710,8 @@ def roll_to_hit(target,  accuracy):
 
 def get_chance_to_hit(target, accuracy):
     if target.fighter.has_status('stunned'):
+        return 1.0
+    if target.behavior and (target.behavior.ai_state == 'resting' or target.behavior.ai_state == 'wandering'):
         return 1.0
     return 1.0 - float(target.fighter.evasion) / float(max(accuracy, target.fighter.evasion + 1))
 

@@ -402,7 +402,7 @@ def dig(dx, dy):
         main.current_map.tiles[dig_x][dig_y].tile_type = dungeon.branches[main.current_map.branch]['default_floor']
         changed_tiles.append((dig_x, dig_y))
         if main.pathfinding.map:
-            main.pathfinding.map.mark_passable((dig_x, dig_y))
+            main.pathfinding.map.mark_unblocked((dig_x, dig_y))
         fov.set_fov_properties(dig_x, dig_y, False)
         fov.set_fov_recompute()
         main.check_breakage(main.get_equipped_in_slot(instance.fighter.inventory, 'right hand'))
@@ -418,7 +418,7 @@ def reach_attack(dx, dy):
     target = main.get_monster_at_tile(target_space[0], target_space[1])
     if target is not None:
         result = combat.attack_ex(instance.fighter, target, instance.fighter.calculate_attack_stamina_cost(), instance.fighter.accuracy,
-                             instance.fighter.attack_damage * 1.5, instance.fighter.damage_variance, None, ('reach-attack', 'reach-attacks'),
+                             instance.fighter.attack_damage, 1.5, None, ('reach-attack', 'reach-attacks'),
                              instance.fighter.attack_shred, instance.fighter.attack_guaranteed_shred, instance.fighter.attack_pierce)
         if result != 'failed' and target.fighter:
             ui.select_monster(target)
@@ -449,7 +449,7 @@ def cleave_attack(dx, dy):
             target = main.get_monster_at_tile(tile[0], tile[1])
             if target and target.fighter:
                 combat.attack_ex(instance.fighter, target, 0, instance.fighter.accuracy, instance.fighter.attack_damage,
-                                 instance.fighter.damage_variance, None, ('cleave', 'cleaves'), instance.fighter.attack_shred,
+                                 None, None, ('cleave', 'cleaves'), instance.fighter.attack_shred,
                                  instance.fighter.attack_guaranteed_shred + 1, instance.fighter.attack_pierce)
         return 'cleaved'
     else:
@@ -463,7 +463,7 @@ def bash_attack(dx, dy):
     target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
     if target is not None:
         result = combat.attack_ex(instance.fighter, target, consts.BASH_STAMINA_COST, instance.fighter.accuracy * consts.BASH_ACC_MOD,
-                                 instance.fighter.attack_damage * consts.BASH_DMG_MOD, instance.fighter.damage_variance,
+                                 instance.fighter.attack_damage, consts.BASH_DMG_MOD,
                                  None, ('bash', 'bashes'), instance.fighter.attack_shred + 1, instance.fighter.attack_guaranteed_shred,
                                  instance.fighter.attack_pierce)
         if result == 'hit' and target.fighter:
@@ -599,8 +599,8 @@ def jump(actor=None):
                     instance.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
 
                     combat.attack_ex(instance.fighter, jump_attack_target, 0, instance.fighter.accuracy * consts.JUMP_ATTACK_ACC_MOD,
-                                             instance.fighter.attack_damage * consts.JUMP_ATTACK_DMG_MOD,
-                                             instance.fighter.damage_variance, instance.fighter.on_hit, 'jump-attacks',
+                                             instance.fighter.attack_damage,
+                                             consts.JUMP_ATTACK_DMG_MOD, instance.fighter.on_hit, ('jump-attack','jump-attacks'),
                                              instance.fighter.attack_shred, instance.fighter.attack_guaranteed_shred,
                                              instance.fighter.attack_pierce)
 

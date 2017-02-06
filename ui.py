@@ -384,6 +384,10 @@ def render_side_panel(acc_mod=1.0):
     if selected_monster is not None and selected_monster.fighter is not None:
         drawHeight = consts.SIDE_PANEL_HEIGHT - 16
         libtcod.console_print(side_panel, 2, drawHeight, selected_monster.name.title())
+        drawHeight += 1
+        libtcod.console_set_default_foreground(side_panel, libtcod.gray)
+        if selected_monster.behavior:
+            libtcod.console_print(side_panel, 2, drawHeight, selected_monster.behavior.ai_state.capitalize())
         drawHeight += 2
         render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
                    libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)

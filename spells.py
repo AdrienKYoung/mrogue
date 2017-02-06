@@ -129,7 +129,7 @@ def cast_magma_bolt(actor=None,target=None):
     if target is not None:
         combat.spell_attack_ex(actor.fighter, target, 40, None, 'fireball', '3d6', 3, 'fire', 0)
     main.current_map.tiles[x][y].tile_type = 'lava'
-    main.current_map.pathfinding.mark_impassable((x, y))
+    main.current_map.pathfinding.mark_blocked((x, y))
     main.changed_tiles.append((x, y))
 
 
@@ -185,7 +185,7 @@ def cast_shielding():
 def cast_frog_tongue(frog, target):
 
     ui.message("The frog's tongue lashes out at you!", libtcod.dark_green)
-    result = combat.attack_ex(frog.fighter, target, 0, consts.FROG_TONGUE_ACC, consts.FROG_TONGUE_DMG, 0, None, ('pull', 'pulls'), 0, 0, 0)
+    result = combat.attack_ex(frog.fighter, target, 0, consts.FROG_TONGUE_ACC, consts.FROG_TONGUE_DMG, None, None, ('pull', 'pulls'), 0, 0, 0)
     if result == 'hit':
         beam = main.beam(frog.x, frog.y, target.x, target.y)
         pull_to = beam[max(len(beam) - 3, 0)]

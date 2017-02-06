@@ -404,8 +404,8 @@ class GameObject:
 
         # Update the pathfinding map - mark our previous space as passable and our new space as impassable
         if current_map.pathfinding and self.blocks:
-            current_map.pathfinding.mark_impassable((x, y))
-            current_map.pathfinding.mark_passable((self.x, self.y))
+            current_map.pathfinding.mark_blocked((x, y))
+            current_map.pathfinding.mark_unblocked((self.x, self.y))
 
         # Update the object's position/elevation
         self.x = x
@@ -525,7 +525,7 @@ class GameObject:
                     target_x = closest_adjacent[0]
                     target_y = closest_adjacent[1]
 
-            path = current_map.pathfinding.a_star_search((self.x, self.y), (target_x, target_y))
+            path = current_map.pathfinding.a_star_search((self.x, self.y), (target_x, target_y), self.movement_type)
 
             if consts.DEBUG_DRAW_PATHS:
                 pathfinding.draw_path(path)
@@ -535,7 +535,7 @@ class GameObject:
                 x, y = path[1]
                 if x or y:
                     if current_map.tiles[x][y].blocks:
-                        current_map.pathfinding.mark_impassable((x, y))  # bandaid fix - hopefully paths will self-correct now
+                        current_map.pathfinding.mark_blocked((x, y))  # bandaid fix - hopefully paths will self-correct now
                     else:
                         self.move_towards(x, y)
             else:
@@ -607,7 +607,7 @@ class GameObject:
         if self.blocks_sight:
             fov.set_fov_properties(self.x, self.y, current_map.tiles[self.x][self.y].blocks_sight, self.elevation)
         if self.blocks and current_map.pathfinding:
-            current_map.pathfinding.mark_passable((self.x, self.y))
+            current_map.pathfinding.mark_unblocked((self.x, self.y))
         changed_tiles.append((self.x, self.y))
         current_map.objects.remove(self)
 
@@ -944,7 +944,7 @@ def monster_death(monster):
         monster.color = libtcod.darker_red
         monster.blocks = False
         if current_map.pathfinding:
-            current_map.pathfinding.mark_passable((monster.x, monster.y))
+            current_map.pathfinding.mark_unblocked((monster.x, monster.y))
         monster.behavior = None
         monster.name = 'remains of ' + monster.name
         monster.send_to_back()

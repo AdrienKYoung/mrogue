@@ -11,25 +11,41 @@ class AI_Default:
 
     def __init__(self):
         self.last_seen_position = None
+        self.wander_destination = None
 
-    def act(self):
+    def act(self, ai_state):
+        if ai_state == 'pursuing':
+            return self.pursue()
+        elif ai_state == 'wandering':
+            return self.wander()
+        else:
+            return self.rest()
+
+    def rest(self):
         monster = self.owner
         if fov.monster_can_see_object(monster, player.instance):
-            self.last_seen_position = (player.instance.x, player.instance.y)
+            self.last_seen_position = player.instance.x, player.instance.y
+            monster.behavior.ai_state = 'pursuing'
+            return 0.0
+        return 1.0
 
-            #Handle default ability use behavior
-            for a in self.owner.fighter.abilities:
+    def pursue(self):
+        monster = self.owner
+        if fov.monster_can_see_object(monster, player.instance):
+            self.last_seen_position = player.instance.x, player.instance.y
+            # Handle default ability use behavior
+            for a in monster.fighter.abilities:
                 if a.current_cd <= 0:
-                    #Use abilities when they're up
-                    if a.use(self.owner) != 'didnt-take-turn':
+                    # Use abilities when they're up
+                    if a.use(monster) != 'didnt-take-turn':
                         return monster.behavior.attack_speed
 
-            #Handle moving
+            # Handle moving
             if not is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y):
                 monster.move_astar(player.instance.x, player.instance.y)
                 return monster.behavior.move_speed
 
-            #Handle attacking
+            # Handle attacking
             elif player.instance.fighter.hp > 0:
                 monster.fighter.attack(player.instance)
                 return monster.behavior.attack_speed
@@ -40,7 +56,150 @@ class AI_Default:
                 self.last_seen_position = None
                 return 1.0
             return monster.behavior.move_speed
-        return 1.0  # pass the turn
+        else:
+            monster.behavior.ai_state = 'wandering'
+            return 0.0
+
+    def wander(self):
+        monster = self.owner
+        if fov.monster_can_see_object(monster, player.instance):
+            self.last_seen_position = player.instance.x, player.instance.y
+            self.wander_destination = None
+            monster.behavior.ai_state = 'pursuing'
+            return 0.0
+        else:
+            if self.wander_destination is None or \
+                    (monster.x == self.wander_destination[0] and monster.y == self.wander_destination[1]):
+                rand_pos = libtcod.random_get_int(0, 0, consts.MAP_WIDTH), libtcod.random_get_int(0, 0, consts.MAP_HEIGHT)
+                self.wander_destination = game.find_closest_open_tile(rand_pos[0], rand_pos[1])
+            monster.move_astar(self.wander_destination[0], self.wander_destination[1])
+            return monster.behavior.move_speed
+
+
+class AI_Reeker:
+
+    def act(self, ai_state):
+        monster = self.owner
+        monster.behavior.ai_state = 'idle'
+        if fov.player_can_see(monster.x, monster.y):
+            for i in range(consts.REEKER_PUFF_MAX):
+                if libtcod.random_get_int(0, 0, 10) < 3:
+                    # create puff
+                    position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
+                    puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
+                                clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
+                    if not game.current_map.tiles[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
+                                                        lambda o: o.name == 'reeker gas' or o.name == 'reeker')) == 0:
+                        puff = GameObject(puff_pos[0], puff_pos[1], libtcod.CHAR_BLOCK3,
+                                          'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
+                                          misc=ReekerGasBehavior())
+                        game.current_map.add_object(puff)
+        return monster.behavior.attack_speed
+
+
+class AI_TunnelSpider:
+
+    def __init__(self):
+        self.closest_web = None
+        self.last_seen_position = None
+
+    def act(self, ai_state):
+        monster = self.owner
+        if ai_state == 'resting':
+            if fov.monster_can_see_object(monster, player.instance):
+                monster.behavior.ai_state = 'pursuing'
+                return 0.0
+            elif object_at_tile(monster.x, monster.y, 'spiderweb') is None:
+                monster.behavior.ai_state = 'retreating'
+                return 0.0
+            else:
+                return 1.0
+        elif ai_state == 'retreating':
+            self.closest_web = self.find_closest_web()
+            if self.closest_web is None:
+                monster.behavior.ai_state = 'pursuing'
+                return 0.0
+            else:
+                monster.move_astar(self.closest_web.x, self.closest_web.y)
+                if object_at_tile(monster.x, monster.y, 'spiderweb') is not None:
+                    monster.behavior.ai_state = 'resting'
+                return monster.behavior.move_speed
+        elif ai_state == 'pursuing':
+            if is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y) and player.instance.fighter.hp > 0:
+                monster.fighter.attack(player.instance)
+                return monster.behavior.attack_speed
+            self.closest_web = self.find_closest_web()
+            if self.closest_web is not None and monster.distance_to(self.closest_web) > consts.TUNNEL_SPIDER_MAX_WEB_DIST:
+                monster.behavior.ai_state = 'retreating'
+                return 0.0
+            elif fov.monster_can_see_object(monster, player.instance):
+                monster.move_astar(player.instance.x, player.instance.y)
+                self.last_seen_position = (player.instance.x, player.instance.y)
+                return monster.behavior.move_speed
+            elif self.last_seen_position is not None and not \
+                    (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
+                monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
+                return monster.behavior.move_speed
+            else:
+                monster.behavior.ai_state = 'retreating'
+                return 0.0
+        else:
+            monster.behavior.ai_state = 'resting'
+            return 1.0  # pass the turn
+
+    def find_closest_web(self):
+        closest_web = None
+        closest_dist = consts.TUNNEL_SPIDER_MAX_WEB_DIST
+        for obj in game.current_map.objects:
+            if obj.name == 'spiderweb':
+                if closest_web is None or self.owner.distance_to(obj) < closest_dist:
+                    closest_web = obj
+                    closest_dist = self.owner.distance_to(obj)
+        return closest_web
+
+
+class ConfusedMonster:
+    def __init__(self, old_ai, num_turns=consts.CONFUSE_NUM_TURNS):
+        self.old_ai = old_ai
+        self.num_turns = num_turns
+
+    def act(self, ai_state):
+        obj = self.owner
+        obj.behavior.ai_state = 'wandering'
+        if self.num_turns > 0:
+            obj.move(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
+            self.num_turns -= 1
+            return obj.behavior.move_speed
+        else:
+            obj.behavior.behavior = self.old_ai
+            if fov.player_can_see(obj.x, obj.y):
+                ui.message('%s %s no longer confused.' % (
+                    syntax.name(obj.name).capitalize(),
+                    syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.light_grey)
+            return 0.0
+
+
+class AI_General:
+    def __init__(self, move_speed=1.0, attack_speed=1.0, behavior=AI_Default()):
+        self.turn_ticker = 0.0
+        self.behavior = behavior
+        self.move_speed = 1.0 / move_speed  # High speed = low delay.
+        self.attack_speed = 1.0 / attack_speed
+        self.ai_state = 'resting'
+
+    def take_turn(self):
+        #self.turn_ticker += self.speed
+        #while self.turn_ticker > 1.0:
+        #    if not (self.owner.fighter and (self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen'))):
+        #        self.behavior.act()
+        #    self.turn_ticker -= 1.0
+
+        while self.turn_ticker < 1.0:
+            if self.owner.fighter and (self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen')):
+                self.turn_ticker += 1.0
+            else:
+                self.turn_ticker += self.behavior.act(self.ai_state)
+        self.turn_ticker -= 1.0
 
 
 class ReekerGasBehavior:
@@ -98,120 +257,3 @@ class FireBehavior:
                     if game.current_map.tiles[tile[0]][tile[1]].flammable:
                         if libtcod.random_get_int(0, 0, 8) == 0:
                             game.create_fire(tile[0], tile[1], 10)
-
-
-class AI_Reeker:
-
-    def act(self):
-        monster = self.owner
-        if fov.player_can_see(monster.x, monster.y):
-            for i in range(consts.REEKER_PUFF_MAX):
-                if libtcod.random_get_int(0, 0, 10) < 3:
-                    # create puff
-                    position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
-                    puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
-                                clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
-                    if not game.current_map.tiles[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
-                                                        lambda o: o.name == 'reeker gas' or o.name == 'reeker')) == 0:
-                        puff = GameObject(puff_pos[0], puff_pos[1], libtcod.CHAR_BLOCK3,
-                                          'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
-                                          misc=ReekerGasBehavior())
-                        game.current_map.add_object(puff)
-        return monster.behavior.attack_speed
-
-
-class AI_TunnelSpider:
-
-    def __init__(self):
-        self.closest_web = None
-        self.state = 'resting'
-        self.last_seen_position = None
-
-    def act(self):
-        monster = self.owner
-        if self.state == 'resting':
-            if fov.monster_can_see_object(monster, player.instance):
-                self.state = 'hunting'
-                return 0.0
-            elif object_at_tile(monster.x, monster.y, 'spiderweb') is None:
-                self.state = 'retreating'
-                return 0.0
-        elif self.state == 'retreating':
-            self.closest_web = self.find_closest_web()
-            if self.closest_web is None:
-                self.state = 'hunting'
-                return 0.0
-            else:
-                monster.move_astar(self.closest_web.x, self.closest_web.y)
-                if object_at_tile(monster.x, monster.y, 'spiderweb') is not None:
-                    self.state = 'resting'
-        elif self.state == 'hunting':
-            if is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y) and player.instance.fighter.hp > 0:
-                monster.fighter.attack(player.instance)
-                return monster.behavior.attack_speed
-            self.closest_web = self.find_closest_web()
-            if self.closest_web is not None and monster.distance_to(self.closest_web) > consts.TUNNEL_SPIDER_MAX_WEB_DIST:
-                self.state = 'retreating'
-                return 0.0
-            elif fov.monster_can_see_object(monster, player.instance):
-                    monster.move_astar(player.instance.x, player.instance.y)
-                    self.last_seen_position = (player.instance.x, player.instance.y)
-                    return monster.behavior.move_speed
-            elif self.last_seen_position is not None and not \
-                    (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
-                monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
-                return monster.behavior.move_speed
-        return 1.0  # pass the turn
-
-    def find_closest_web(self):
-        closest_web = None
-        closest_dist = consts.TUNNEL_SPIDER_MAX_WEB_DIST
-        for obj in game.current_map.objects:
-            if obj.name == 'spiderweb':
-                if closest_web is None or self.owner.distance_to(obj) < closest_dist:
-                    closest_web = obj
-                    closest_dist = self.owner.distance_to(obj)
-        return closest_web
-
-
-class AI_General:
-    def __init__(self, move_speed=1.0, attack_speed=1.0, behavior=AI_Default()):
-        self.turn_ticker = 0.0
-        self.behavior = behavior
-        self.move_speed = 1.0 / move_speed  # High speed = low delay.
-        self.attack_speed = 1.0 / attack_speed
-
-    def take_turn(self):
-        #self.turn_ticker += self.speed
-        #while self.turn_ticker > 1.0:
-        #    if not (self.owner.fighter and (self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen'))):
-        #        self.behavior.act()
-        #    self.turn_ticker -= 1.0
-
-        while self.turn_ticker < 1.0:
-            if self.owner.fighter and (self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen')):
-                self.turn_ticker += 1.0
-            else:
-                self.turn_ticker += self.behavior.act()
-        self.turn_ticker -= 1.0
-
-
-class ConfusedMonster:
-    def __init__(self, old_ai, num_turns=consts.CONFUSE_NUM_TURNS):
-        self.old_ai = old_ai
-        self.num_turns = num_turns
-
-    def act(self):
-        obj = self.owner
-        if self.num_turns > 0:
-            obj.move(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
-            self.num_turns -= 1
-            return obj.behavior.move_speed
-        else:
-            obj.behavior.behavior = self.old_ai
-            if fov.player_can_see(obj.x, obj.y):
-                ui.message('%s %s no longer confused.' % (
-                    syntax.name(obj.name).capitalize(),
-                    syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.light_grey)
-            return 0.0
-
