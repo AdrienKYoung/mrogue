@@ -969,14 +969,18 @@ def choose_random_tile(tile_list, exclusive=True):
         tile_list.remove(chosen_tile)
     return chosen_tile
 
-def create_voronoi(h,w,n):
-    result = [[0 for x in range(w)] for y in range(h)] #initialize result
-    features = [(random.randint(0,w),random.randint(0,w)) for i in range(n)] #create random feature points
+def create_voronoi(h,w,m,n,features=[]):
+    result = [[0 for x in range(w)] for y in range(h)]
+    # create random feature points
+    f = [(random.randint(0,w),random.randint(0,w)) for i in range(m)] + features
     for x in range(w):
         for y in range(h):
-            dist = [math.sqrt((x-x2) ** 2 + (y-y2) ** 2) for (x2,y2) in features]
+            # build a list of distances to each feature. little optimization here, don't sqrt values until they're needed
+            dist = [math.fabs((x-x2) ** 2 + (y-y2) ** 2) for (x2,y2) in f]
             dist.sort()
-            result[x][y] = abs(4 - int(math.ceil(dist[0]+dist[1])/4))
+            dist = [math.sqrt(a) for a in dist[:n]]
+            #Sum the n closest features
+            result[x][y] = math.ceil(math.fsum(dist)/n)
     return result
 
 def create_coastline(height):
@@ -1098,12 +1102,12 @@ def make_rooms_and_corridors():
         main.spawn_monster(boss, sample[1].center()[0], sample[1].center()[1])
 
 def make_map_forest():
-    noise = create_voronoi(50,50,10)
+    noise = create_voronoi(50,50,20,2)
     room = Room()
     room.set_pos(0,0)
     for x in range(50):
         for y in range(50):
-            room.set_tile(x,y,default_floor,noise[x][y])
+            room.set_tile(x,y,default_floor,abs(int(math.ceil(4 - noise[x][y] / 2))))
     apply_room(room)
     create_slopes()
 
