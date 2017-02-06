@@ -969,6 +969,15 @@ def choose_random_tile(tile_list, exclusive=True):
         tile_list.remove(chosen_tile)
     return chosen_tile
 
+def create_voronoi(h,w,n):
+    result = [[0 for x in range(w)] for y in range(h)] #initialize result
+    features = [(random.randint(0,w),random.randint(0,w)) for i in range(n)] #create random feature points
+    for x in range(w):
+        for y in range(h):
+            dist = [math.sqrt((x-x2) ** 2 + (y-y2) ** 2) for (x2,y2) in features]
+            dist.sort()
+            result[x][y] = abs(4 - int(math.ceil(dist[0]+dist[1])/4))
+    return result
 
 def create_coastline(height):
     shore_noise = libtcod.noise_new(1)
@@ -1088,6 +1097,15 @@ def make_rooms_and_corridors():
     if boss is not None:
         main.spawn_monster(boss, sample[1].center()[0], sample[1].center()[1])
 
+def make_map_forest():
+    noise = create_voronoi(50,50,10)
+    room = Room()
+    room.set_pos(0,0)
+    for x in range(50):
+        for y in range(50):
+            room.set_tile(x,y,default_floor,noise[x][y])
+    apply_room(room)
+    create_slopes()
 
 def make_map_marsh():
 

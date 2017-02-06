@@ -46,6 +46,7 @@ def initialize_world():
     world_maps = {}
 
     world_maps['beach'] = Map('beach')
+    world_maps['forest'] = Map('forest')
 
     for y in range(2):
         for x in range(3):

@@ -80,5 +80,22 @@ branches = {
         ],
         'generate':mapgen.make_map_marsh,
         'connect':['beach', 'garden', 'goblin']
+    },
+    'forest': {
+        'name'          :"the frozen forest",
+        'default_wall'  : 'mossy stone wall',
+        'default_floor' : 'damp soil',
+        'default_ramp'  : 'stone ramp',
+        'scaling'       : 0,
+        'loot':{},
+        'loot_level':0,
+        'loot_dice':'1d4',
+        'encounter_dice':'1d4+5',
+        'xp_amount':7,
+        'encounter_range':6,
+        'monsters':[
+            {'encounter':['monster_cockroach'], 'party':'2d2+2'},
+        ],
+        'generate':mapgen.make_map_forest,
     }
 }
