@@ -1102,7 +1102,7 @@ def make_rooms_and_corridors():
         main.spawn_monster(boss, sample[1].center()[0], sample[1].center()[1])
 
 def make_map_forest():
-    sizex,sizey = consts.MAP_WIDTH - 2,consts.MAP_HEIGHT - 2
+    sizex,sizey = consts.MAP_WIDTH - 1,consts.MAP_HEIGHT - 1
     noise = create_voronoi(sizex,sizey,15,2)
     room = Room()
     room.set_pos(0,0)

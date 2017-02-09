@@ -610,12 +610,13 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
         if max_range is not None:
             for draw_x in range(consts.MAP_WIDTH):
                 for draw_y in range(consts.MAP_HEIGHT):
-                    if round((player.instance.distance(draw_x + offsetx, draw_y + offsety))) > max_range:
+                    if round((player.instance.distance(draw_x, draw_y))) > max_range:
                         libtcod.console_put_char_ex(overlay, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.black)
                     else:
                         libtcod.console_put_char_ex(overlay, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.magenta)
-            libtcod.console_blit(overlay, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0,
-                                 consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 0, 0.2)
+            libtcod.console_blit(overlay, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0,
+                                 consts.MAP_VIEWPORT_X - offsetx, consts.MAP_VIEWPORT_Y - offsety, 0, 0.2)
+
         # Render cursor
         libtcod.console_set_default_background(overlay, libtcod.magenta)
         libtcod.console_clear(overlay)
@@ -631,7 +632,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
         libtcod.console_blit(overlay, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X,
                              consts.MAP_VIEWPORT_Y, 0, 0.5)
 
-        if main.key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4:
+        if key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4:
             x -= 1
         if key.vk == libtcod.KEY_RIGHT or key.vk == libtcod.KEY_KP6:
             x += 1
@@ -907,7 +908,7 @@ def display_fading_text(text, display_time, fade_time):
     overlay_text = text
 
 
-overlay = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
+overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
 panel = libtcod.console_new(consts.PANEL_WIDTH, consts.PANEL_HEIGHT)
 side_panel = libtcod.console_new(consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
 window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)

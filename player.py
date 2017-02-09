@@ -57,10 +57,8 @@ loadouts = {
             'equipment_leather_armor',
             'equipment_iron_helm'
         ],
-        'description' : """
-        Balanced melee fighter. Starts with good weapon and armor.
-        Charm channels essence to imbue temporary weapon effects.
-        """
+        'description' : "Balanced melee fighter. Starts with good weapon and armor. Charm channels essence to imbue "
+                        "temporary weapon effects."
     },
     'rogue' : {
         'str':10,
@@ -73,10 +71,8 @@ loadouts = {
             'weapon_dagger',
             'equipment_leather_armor'
         ],
-        'description' : """
-        Nimble melee fighter. Starts with excellent agility.
-        Charm channels essence to curse enemies with negative effects.
-        """
+        'description' : "Nimble melee fighter. Starts with excellent agility. "
+                        "Charm channels essence to curse enemies with negative effects."
     },
     'wanderer' : {
         'str':10,
@@ -92,10 +88,8 @@ loadouts = {
             'potion_lesser_air',
             'potion_lesser_water'
         ],
-        'description' : """
-        Generalist class with great stats, especially spirit. Starts with no gear.
-        Charm channels essence to bless self with beneficial effects.
-        """
+        'description' : "Generalist class with great stats, especially spirit. Starts with no gear. "
+                        "Charm channels essence to bless self with beneficial effects."
     },
     'fanatic' : {
         'str':13,
@@ -107,10 +101,8 @@ loadouts = {
             'charm_resistance',
             'weapon_coal_mace'
         ],
-        'description' : """
-        Offensive melee fighter. Starts with no armor and a mace.
-        Charm channels essence to bless self with elemental resistance.
-        """
+        'description' : "Offensive melee fighter. Starts with no armor and a mace. "
+                        "Charm channels essence to bless self with elemental resistance."
     },
     'wizard' : {
         'str':6,
@@ -123,10 +115,8 @@ loadouts = {
             'book_lesser_fire',
             'potion_lesser_fire'
         ],
-        'description' : """
-        Fragile in melee, but have access to powerful offensive magic. Starts with a tome.
-        Charm channels essence to summon elementals
-        """
+        'description' : "Fragile in melee, but have access to powerful offensive magic. "
+                        "Starts with a tome. Charm channels essence to summon elementals"
     },
 }
 

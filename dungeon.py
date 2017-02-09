@@ -83,9 +83,9 @@ branches = {
     },
     'forest': {
         'name'          :"the frozen forest",
-        'default_wall'  : 'mossy stone wall',
-        'default_floor' : 'damp soil',
-        'default_ramp'  : 'stone ramp',
+        'default_wall'  : 'pine tree',
+        'default_floor' : 'snowy ground',
+        'default_ramp'  : 'snowy slope',
         'scaling'       : 0,
         'loot':{},
         'loot_level':0,
