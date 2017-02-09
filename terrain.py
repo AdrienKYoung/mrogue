@@ -70,6 +70,17 @@ data = {
                              'a ramp', isRamp=True),
     'shale slope': TileData(False, False, 'shale slope', '/', (48, 48, 48), (31, 31, 31),
                              'a smooth slope of shale', isRamp=True),
+    'frozen soil': TileData(False, False,'frozen soil','.',(128, 96, 0), (20, 20, 20),'Soil packed hard by frost',
+                            isFloor=True),
+    'snow drift': TileData(False, False, 'snow drift', '~', libtcod.white, libtcod.light_gray,
+                             'pristine, waist deep powdered snow. It will be difficult to move through until it has been crushed down.',
+                           consts.SNOW_COST, isFloor=True),
+    'snowy ground': TileData(False, False, 'snow drift', '.', libtcod.white, libtcod.sepia,
+                             'trampled snow, mixed with dirt', isFloor=True),
+    'barren tree': TileData(True, True, 'barren tree', chr(157), libtcod.sepia,libtcod.white,
+                             'a frozen, barren tree', flammable=True, isWall=True),
+    'pine tree': TileData(True, True, 'pine tree', libtcod.CHAR_ARROW2_N, libtcod.dark_green,libtcod.white,
+                             'a pine tree, its needles ever green', flammable=True, isWall=True),
 }
 
 # flags

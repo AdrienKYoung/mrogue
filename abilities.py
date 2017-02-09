@@ -34,19 +34,22 @@ class Ability:
 
 
 class Perk:
-    def __init__(self, name, description, category=None, on_tick=None, requirements_fnc=None, requirements_str='No Requirements'):
+    def __init__(self, name, description, category=None, on_tick=None, requirements_fnc=None, requirements_str='No Requirements', sp_cost=20):
         self.name = name
         self.description = description
         self.category = category
         self.on_tick = on_tick
         self.requirements_fnc = requirements_fnc
         self.requirements_str = requirements_str
+        self.sp_cost = sp_cost
 
     def on_tick(self):
         if self.on_tick:
             self.on_tick()
 
     def meets_requirements(self):
+        if player.instance.skill_points < self.sp_cost:
+            return False #Not enough SP
         if self.requirements_fnc:
             return self.requirements_fnc
         else:

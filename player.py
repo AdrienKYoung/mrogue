@@ -146,6 +146,7 @@ def create(loadout):
     instance.essence = []
     instance.known_spells = []
     instance.action_queue = []
+    instance.skill_points = 0
 
     for item in loadout['inventory']:
         i = None
@@ -251,7 +252,7 @@ def handle_keys():
             if key_char == 'a':
                 return ui.show_ability_screen()
             if key_char == 'l': # TEMPORARY
-                ui.skill_menu()
+                purchase_skill()
                 return 'didnt-take-turn'
             if mouse.rbutton_pressed:
                 offsetx, offsety = instance.x - consts.MAP_VIEWPORT_WIDTH / 2, instance.y - consts.MAP_VIEWPORT_HEIGHT / 2
@@ -332,6 +333,7 @@ def level_up():
     learned_skills = main.learned_skills
 
     instance.level += 1
+    instance.skill_points += instance.player_stats.wiz
     ui.message('You grow stronger! You have reached level ' + str(instance.level) + '!', libtcod.green)
     choice = None
     while choice == None:
@@ -355,12 +357,21 @@ def level_up():
     elif choice == 4:
         instance.player_stats.wiz += 1
 
-    if instance.level % 3 == 0:
-        skill = ui.skill_menu(add_skill=True)
-        if skill is not None and skill not in learned_skills:
-            learned_skills.append(skill)
+    purchase_skill()
 
     instance.fighter.heal(instance.fighter.max_hp / 2)
+
+def purchase_skill():
+    learned_skills = main.learned_skills
+
+    skill = ui.skill_menu()
+    if skill is not None and skill not in learned_skills:
+        if skill.sp_cost > instance.skill_points:
+            ui.message("You don't have enough skill points.", libtcod.light_blue)
+        else:
+            learned_skills.append(skill)
+            instance.skill_points -= skill.sp_cost
+            ui.message("Learned skill {}".format(skill.name.title()),libtcod.white)
 
 def on_death(instance):
     ui.message("You're dead, sucka.", libtcod.grey)

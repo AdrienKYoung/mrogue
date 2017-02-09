@@ -305,6 +305,7 @@ def render_side_panel(acc_mod=1.0):
     # Level/XP
     libtcod.console_print(side_panel, 2, 11, 'Lvl: ' + str(player.instance.level))
     libtcod.console_print(side_panel, 2, 12, 'XP:  ' + str(player.instance.fighter.xp))
+    libtcod.console_print(side_panel, 2, 13, 'SP:  ' + str(player.instance.skill_points))
 
     # Mana
     libtcod.console_print(side_panel, 2, 14, 'Essence:')
@@ -620,7 +621,7 @@ def inspect_inventory():
             return inspect_inventory()
     return 'didnt-take-turn'
 
-def skill_menu(add_skill=False):
+def skill_menu():
 
     scroll_height = 0
     selected_index = 1
@@ -662,10 +663,7 @@ def skill_menu(add_skill=False):
 
         # Print header and borders
         libtcod.console_set_default_foreground(window, libtcod.white)
-        if add_skill:
-            title_text = 'Your skills have increased. Choose a skill to learn:'
-        else:
-            title_text = 'Browsing skills...'
+        title_text = 'Browsing skills...'
         libtcod.console_print(window, 1, 1, title_text)
         y = 0
         draw_border(window, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 5)
@@ -698,7 +696,7 @@ def skill_menu(add_skill=False):
                         else:
                             libtcod.console_set_default_foreground(sub_window, libtcod.gray)
 
-                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, skill.name.title())
+                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, "{} ({})".format(skill.name.title(),skill.sp_cost))
                     for s in main.learned_skills:
                         if s.name == skill.name:
                             libtcod.console_set_default_foreground(sub_window, libtcod.dark_blue)
@@ -740,7 +738,7 @@ def skill_menu(add_skill=False):
         if key.vk == libtcod.KEY_ESCAPE:
             return None
         # Enter select
-        elif key.vk == libtcod.KEY_ENTER and add_skill:
+        elif key.vk == libtcod.KEY_ENTER:
             if menu_lines[selected_index].meets_requirements() and menu_lines[selected_index] not in main.learned_skills:
                 return menu_lines[selected_index] # returns a Perk object
         # Down arrow increments selection index

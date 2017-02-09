@@ -1102,11 +1102,12 @@ def make_rooms_and_corridors():
         main.spawn_monster(boss, sample[1].center()[0], sample[1].center()[1])
 
 def make_map_forest():
-    noise = create_voronoi(50,50,20,2)
+    sizex,sizey = consts.MAP_WIDTH - 2,consts.MAP_HEIGHT - 2
+    noise = create_voronoi(sizex,sizey,15,2)
     room = Room()
     room.set_pos(0,0)
-    for x in range(50):
-        for y in range(50):
+    for x in range(sizex):
+        for y in range(sizey):
             room.set_tile(x,y,default_floor,abs(int(math.ceil(4 - noise[x][y] / 2))))
     apply_room(room)
     create_slopes()
