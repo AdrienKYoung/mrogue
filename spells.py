@@ -33,7 +33,7 @@ def cast_fireball(actor=None,target=None):
     main.create_fire(x,y,10)
     for obj in main.current_map.objects:
         if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
-            combat.spell_attack_ex(actor.fighter,obj,50,None,'fireball','2d6',2,'fire',0)
+            combat.spell_attack_ex(actor.fighter,obj,None,'fireball','2d6',2,'fire',0)
     return 'success'
 
 def cast_heat_ray(actor=None,target=None):
@@ -52,7 +52,7 @@ def cast_heat_ray(actor=None,target=None):
     for obj in main.current_map.objects:
         for l in line:
             if obj.x == l[0] and obj.y == l[1] and obj.fighter:
-                combat.spell_attack_ex(actor.fighter, obj, 30, None, 'heat ray', '3d4', 1, 'fire', 0)
+                combat.spell_attack_ex(actor.fighter, obj, None, 'heat ray', '3d4', 1, 'fire', 0)
     return 'success'
 
 def cast_flame_wall(actor=None,target=None):
@@ -109,7 +109,7 @@ def cast_shatter_item(actor=None,target=None):
         item.destroy()
         for obj in main.current_map.objects:
             if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
-                combat.spell_attack_ex(actor.fighter, obj, 50, None, 'shrapnel', '4d4', 1, 'slashing', 0)
+                combat.spell_attack_ex(actor.fighter, obj, None, 'shrapnel', '4d4', 1, 'slashing', 0)
         return 'success'
     else:
         ui.message("Shatter failed to break {}!".format(item),libtcod.yellow)
@@ -127,7 +127,7 @@ def cast_magma_bolt(actor=None,target=None):
         x = target.x
         y = target.y
     if target is not None:
-        combat.spell_attack_ex(actor.fighter, target, 40, None, 'fireball', '3d6', 3, 'fire', 0)
+        combat.spell_attack_ex(actor.fighter, target, None, 'fireball', '3d6', 3, 'fire', 0)
     main.current_map.tiles[x][y].tile_type = 'lava'
     main.current_map.pathfinding.mark_blocked((x, y))
     main.changed_tiles.append((x, y))

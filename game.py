@@ -302,7 +302,7 @@ class Item:
                 options.append('Equip')
             if self.owner.equipment.level_progression:
                 cost = self.owner.equipment.level_costs[self.owner.equipment.level]
-                options.append('Level up ' + ('*') * cost)
+                options.append('Imbue ' + ('*') * cost)
         options.append('Drop')
         return options
 
@@ -1525,6 +1525,7 @@ def render_map():
 def render_all():
 
     if not in_game:
+        render_main_menu_splash()
         return
 
     libtcod.console_set_default_background(0, libtcod.black)
@@ -1537,6 +1538,19 @@ def render_all():
     ui.render_message_panel()
 
     ui.render_ui_overlay()
+
+
+def render_main_menu_splash():
+    img = libtcod.image_load('menu_background.png')
+    libtcod.console_set_default_background(0, libtcod.black)
+    libtcod.console_clear(0)
+    libtcod.image_blit_2x(img, 0, 0, 0)
+    libtcod.console_set_default_foreground(0, libtcod.light_yellow)
+    libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT / 2 - 8, libtcod.BKGND_NONE,
+                             libtcod.CENTER,
+                             'MAGIC-ROGUELIKE')
+    libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.CENTER,
+                             'by Tyler Soberanis and Adrien Young')
 
 
 def use_stairs(stairs):
@@ -1595,17 +1609,9 @@ def generate_level(world_map):
 
 def main_menu():
     mapgen.load_features_from_file('features.txt')
-    img = libtcod.image_load('menu_background.png')
 
     while not libtcod.console_is_window_closed():
-        libtcod.console_set_default_background(0, libtcod.black)
-        libtcod.console_clear(0)
-        libtcod.image_blit_2x(img, 0, 0, 0)
-        libtcod.console_set_default_foreground(0, libtcod.light_yellow)
-        libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT /2 - 8, libtcod.BKGND_NONE, libtcod.CENTER,
-            'MAGIC-ROGUELIKE')
-        libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.CENTER,
-            'by Tyler Soberanis and Adrien Young')
+        render_main_menu_splash()
 
         choice = ui.menu('', ['NEW GAME', 'CONTINUE', 'QUIT'], 24, x_center=consts.SCREEN_WIDTH / 2)
         
@@ -1624,14 +1630,18 @@ def main_menu():
 
 
 def new_game():
-    global game_state, dungeon_level, memory, in_game, changed_tiles, learned_skills
+    global game_state, dungeon_level, memory, in_game, changed_tiles, learned_skills, current_map
 
     confirm = False
     loadout = None
+    current_map = None
 
     while not confirm:
         options = list(player.loadouts.keys())
         choice = ui.menu('Select your starting class',options,30,x_center=consts.SCREEN_WIDTH / 2)
+        if choice is None:
+            main_menu()
+            return
         loadout = options[choice]
         confirm = ui.menu('Confirm starting as ' + loadout + " " + player.loadouts[loadout]['description'],['Start','Back'],30,x_center=consts.SCREEN_WIDTH / 2) == 0
 

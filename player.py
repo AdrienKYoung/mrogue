@@ -281,18 +281,42 @@ def cast_spell():
         ui.message("You have no spells available", libtcod.light_blue)
         return 'didnt-take-turn'
     else:
-        names = []
-        ops = []
+        letter_index = ord('a')
+        ops = {}
+        sp = {}
         for spell,level in left_hand.get_active_spells().items():
             spell_data = spells.library[spell]
-            stamina_cost = spell_data.levels[level-1]['stamina_cost']
-            spell_charges = left_hand.spell_charges[spell]
-            max_spell_charges = spell_data.levels[level-1]['charges']
-            names.append(spell_data.name.title() + '[' + str(stamina_cost) + ']' + " " + str(spell_charges) + "/" + str(max_spell_charges))
-            ops.append(spell)
-        selection = ui.menu('Cast which spell?', names, 30)
+            ops[chr(letter_index)] = [
+                {
+                    'category' : 'spell',
+                    'text' : spell_data.name.title()
+                },
+                {
+                    'category': 'stamina',
+                    'text': '[%d]' % spell_data.levels[level-1]['stamina_cost'],
+                    'color': libtcod.dark_green
+                },
+                {
+                    'category': 'charges',
+                    'text': '%d/%d' % (left_hand.spell_charges[spell], spell_data.levels[level-1]['charges']),
+                    'color': libtcod.yellow
+                }
+            ]
+            sp[chr(letter_index)] = spell
+            letter_index += 1
+        selection = ui.menu_ex('Cast which spell?', ops, 50, return_as_char=True)
+        #names = []
+        #ops = []
+        #for spell,level in left_hand.get_active_spells().items():
+        #    spell_data = spells.library[spell]
+        #    stamina_cost = spell_data.levels[level-1]['stamina_cost']
+        #    spell_charges = left_hand.spell_charges[spell]
+        #    max_spell_charges = spell_data.levels[level-1]['charges']
+        #    names.append(spell_data.name.title() + '[' + str(stamina_cost) + ']' + " " + str(spell_charges) + "/" + str(max_spell_charges))
+        #    ops.append(spell)
+        #selection = ui.menu('Cast which spell?', names, 30)
         if selection is not None:
-            s = ops[selection]
+            s = sp[selection]
             if left_hand.can_cast(s,instance):
                 if spells.library[s].function() == 'success':
                     left_hand.spell_charges[s] -= 1
@@ -409,11 +433,14 @@ def dig(dx, dy):
 
     dig_x = instance.x + dx
     dig_y = instance.y + dy
+    change_type = dungeon.branches[main.current_map.branch]['default_floor']
+    if main.current_map.tiles[dig_x][dig_y].elevation != main.current_map.tiles[instance.x][instance.y].elevation:
+        change_type = dungeon.branches[main.current_map.branch]['default_ramp']
     if main.current_map.tiles[dig_x][dig_y].diggable:
-        main.current_map.tiles[dig_x][dig_y].tile_type = dungeon.branches[main.current_map.branch]['default_floor']
+        main.current_map.tiles[dig_x][dig_y].tile_type = change_type
         changed_tiles.append((dig_x, dig_y))
-        if main.pathfinding.map:
-            main.pathfinding.map.mark_unblocked((dig_x, dig_y))
+        if main.current_map.pathfinding:
+            main.current_map.pathfinding.mark_unblocked((dig_x, dig_y))
         fov.set_fov_properties(dig_x, dig_y, False)
         fov.set_fov_recompute()
         main.check_breakage(main.get_equipped_in_slot(instance.fighter.inventory, 'right hand'))

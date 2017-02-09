@@ -583,14 +583,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
                             syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
-def spell_attack_ex(fighter, target, stamina_cost, accuracy, spell_name, base_damage, spell_dice, spell_element, spell_pierce):
-    # check stamina
-    if fighter.owner.name == 'player':
-        if fighter.stamina < stamina_cost:
-            ui.message("You don't have the energy to cast that spell!", libtcod.light_yellow)
-            return 'failed'
-        else:
-            fighter.adjust_stamina(-stamina_cost)
+def spell_attack_ex(fighter, target, accuracy, spell_name, base_damage, spell_dice, spell_element, spell_pierce):
 
     if accuracy is None or roll_to_hit(target, accuracy):
         # Target was hit

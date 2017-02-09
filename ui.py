@@ -17,43 +17,131 @@ def menu(header, options, width, x_center=None, render_func=None):
 
     if len(options) > 26: raise ValueError('Cannot have a menu with more than 26 options.')
 
+    options_ex = {}
+    letter_index = ord('a')
+    for option in options:
+        options_ex[chr(letter_index)] = [{
+            'text' : option
+        }]
+        letter_index += 1
+
+    return menu_ex(header, options_ex, width, x_center, render_func)
+
+# example menu options data:
+#
+#menu_options = {
+#       'a' : [  #<= indexed by key, value is a list of dictionaries
+#           {
+#               'category' : 'name',  #<= The column for this item
+#               'text' : 'fire brand',  #<= The text for this item
+#               'color' : libtcod.grey,  #<= The color of this item
+#           },
+#           {
+#               'category' : 'essence cost',
+#               'text' : '**',
+#               'color' : libtcod.red,
+#           }
+#        ]
+#    }
+def menu_ex(header, options, width, x_center=None, render_func=None, return_as_char=False):
+    # Prepare header spacing
+    if header is None:
+        header = ''
     no_header = False
     header_height = libtcod.console_get_height_rect(main.con, 0, 0, width - 2, consts.SCREEN_HEIGHT, header)
     if header == '':
         header_height = 0
         no_header = True
 
-    height = len(options) + header_height + 2
+    height = len(options.keys()) + header_height + 2
     if not no_header:
         height += 1
-    width += 2
 
     libtcod.console_clear(window)
     main.render_all()
     libtcod.console_flush()
 
+    # Print header
     libtcod.console_set_default_foreground(window, libtcod.white)
     libtcod.console_print_rect_ex(window, 1, 1, width - 2, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
 
-    y = header_height + 1
+    draw_height = header_height + 1
     if not no_header:
-        y += 1
+        draw_height += 1
 
+    # Run Render Function if there is one (used for descriptions)
     if render_func is not None:
-        h = render_func(window, 1, y, width - 2)
-        y += h + 1
+        h = render_func(window, 1, draw_height, width - 2)
+        draw_height += h + 1
         height += h + 1
 
-    letter_index = ord('a')
+    categories = []
+    col_widths = {}
+    for option in options.values():
+        for item in option:
+            if 'category' in item.keys() and item['category'] not in categories:
+                categories.append(item['category'])
+    if len(categories) > 1:
+        # If there is more than one category, we need to print column headers and decide column width
+        for category in categories:
+            col_widths[category] = len(category) + 2
+            for option in options.values():
+                for item in option:
+                    if 'category' in item.keys() and \
+                                    item['category'] == category and \
+                                    len(item['text']) + 2 > col_widths[category]:
+                        col_widths[category] = len(item['text']) + 2
+        # column widths have been established - print column headers
+        libtcod.console_set_default_foreground(window, libtcod.white)
+        x = 0
+        for category in categories:
+            libtcod.console_print(window, 5 + x, draw_height, category.title())
+            x += col_widths[category]
+        draw_height += 1
+        libtcod.console_set_default_foreground(window, libtcod.gray)
+        for i in range(4 + sum(col_widths.values())):
+            libtcod.console_put_char(window, 1 + i, draw_height, 196)
+        draw_height += 1
+        height += 2
 
-    for option_text in options:
-        text = '(' + chr(letter_index) + ') ' + option_text
-        libtcod.console_print_ex(window, 1, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
-        y += 1
+    # Print options list
+    letter_index = ord('a')
+    while letter_index <= ord('z'):
+        index = chr(letter_index)
+        if index in options.keys():
+            if options[index] is None or len(options[index]) == 0:
+                continue
+            # Print letter index
+            libtcod.console_set_default_foreground(window, libtcod.white)
+            libtcod.console_print(window, 1, draw_height, '(%s)' % index)
+            # Print category items
+            if len(options[index]) > 1:
+                for item in options[index]:
+                    if 'text' not in item.keys():
+                        continue
+                    x = 0
+                    for category in categories:
+                        if 'category' in item.keys() and item['category'] == category:
+                            if 'color' in item.keys():
+                                libtcod.console_set_default_foreground(window, item['color'])
+                            else:
+                                libtcod.console_set_default_foreground(window, libtcod.white)
+                            libtcod.console_print(window, 5 + x, draw_height, item['text'])
+                        x += col_widths[category]
+            elif 'text' in options[index][0]:
+                if 'color' in options[index][0].keys():
+                    libtcod.console_set_default_foreground(window, options[index][0]['color'])
+                else:
+                    libtcod.console_set_default_foreground(window, libtcod.white)
+                libtcod.console_print(window, 5, draw_height, options[index][0]['text'])
+
+            draw_height += 1
         letter_index += 1
 
+    # Draw Border
     draw_border(window, 0, 0, width, height)
 
+    # Blit the window to the screen
     if x_center is None:
         x = consts.MAP_VIEWPORT_X + consts.MAP_VIEWPORT_WIDTH / 2 - width / 2
     else:
@@ -61,15 +149,19 @@ def menu(header, options, width, x_center=None, render_func=None):
     y = consts.SCREEN_HEIGHT / 2 - height / 2
     libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 1.0)
     libtcod.console_flush()
+
+    # Handle input and return index
     key = libtcod.console_wait_for_keypress(True)
+    if chr(key.c) in options.keys():
+        if return_as_char:
+            return chr(key.c)
+        else:
+            index = key.c - ord('a')
+            if 0 <= index < len(options): return index
+            else: return None
+    else:
+        return None
 
-    if key.vk == libtcod.KEY_ENTER and key.lalt:
-        # Alt+Enter: toggle fullscreen
-        libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
-
-    index = key.c - ord('a')
-    if index >= 0 and index < len(options): return index
-    return None
 
 def inventory_menu(header):
 
@@ -613,7 +705,7 @@ def inspect_inventory():
             elif options[menu_choice] == 'Equip' or options[menu_choice] == 'Unequip':
                 chosen_item.owner.equipment.toggle()
                 return 'equipped-item'
-            elif 'Level up' in options[menu_choice]: #has some extra text about the level cost, so use in
+            elif 'Imbue' in options[menu_choice]: #has some extra text about the level cost, so use in
                 chosen_item.owner.equipment.level_up()
             else:
                 return inspect_inventory()
