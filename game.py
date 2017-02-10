@@ -1633,6 +1633,7 @@ def main_menu():
                 continue
             play_game()
         elif choice == 2:
+            print('Quitting game...')
             break
 
 

@@ -235,6 +235,7 @@ proto = {
         'attributes':['ability_grapel'],
         'essence': [(10, 'water'), (10, 'life')],
         'subtype':'beast',
+        'movement_type': pathfinding.NORMAL | pathfinding.AQUATIC
     },
     'monster_necroling': {
         'name': 'necroling',

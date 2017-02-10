@@ -155,7 +155,7 @@ class Graph:
 
                     came_from[neighbor.coord] = current
                     g_score[neighbor.coord] = tentative_g_score + w
-                    f_score[neighbor.coord] = g_score[neighbor.coord] + Graph.heuristic(neighbor.coord, goal) + w
+                    f_score[neighbor.coord] = g_score[neighbor.coord] + Graph.dist_between(neighbor.coord, goal)
 
         return 'failure'
 

@@ -88,6 +88,16 @@ table = {
         #'tome_mend',
         #'tome_ignite',
         'book_lesser_fire'
+    ],
+
+    'gems_1': [
+        'gem_lesser_fire',
+        'gem_lesser_water',
+        'gem_lesser_earth',
+        'gem_lesser_air',
+        'gem_lesser_cold',
+        'gem_lesser_life',
+        'gem_lesser_arcane',
     ]
 }
 
@@ -176,7 +186,8 @@ item_categories = {
     'scroll' : { 'plural' : 'scrolls' },
     'potion' : { 'plural' : 'potions' },
     'book' : { 'plural' : 'books' },
-    'charm' : { 'plural' : 'charms'}
+    'charm' : { 'plural' : 'charms'},
+    'gem' : { 'plural' : 'gems'}
 }
 
 weapon_qualities = {
@@ -349,50 +360,87 @@ proto = {
                           ' armor and temporarily enhancing its effectiveness'
     },
 
-    'potion_lesser_fire': {
-        'name'          : 'Potion of Raging Flames',
+    # GEMS
+    'gem_lesser_fire': {
+        'name'          : 'Rough Ruby',
         'type'          : 'item',
-        'category'      : 'potion',
-        'char'          : '!',
-        'color'         : libtcodpy.yellow,
+        'category'      : 'gem',
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['fire'],
         'on_use'        : spells.cast_potion_essence('fire'), #not a bug, returns a lambda
-        'description'   : 'The essence of fires burns within this potion, and drinking it will bestow a single fire essence.'
+        'description'   : 'The essence of fire burns within this gemstone. Absorbing it will bestow a single fire essence.'
     },
-    'potion_lesser_earth': {
-        'name'          : 'Potion of Waking Stone',
+    'gem_lesser_earth': {
+        'name'          : 'Rough Garnet',
         'type'          : 'item',
-        'category'      : 'potion',
-        'char'          : '!',
-        'color'         : libtcodpy.yellow,
+        'category'      : 'gem',
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['earth'],
         'on_use'        : spells.cast_potion_essence('earth'), #not a bug, returns a lambda
-        'description'   : 'The essence of stone imbues potion, and drinking it will bestow a single earth essence.'
+        'description'   : 'The essence of earth resonates within this gemstone. Absorbing it will bestow a single earth essence.'
     },
-    'potion_lesser_life': {
-        'name'          : 'Potion of Fairy Blossoms',
+    'gem_lesser_life': {
+        'name'          : 'Rough Emerald',
         'type'          : 'item',
         'category'      : 'potion',
-        'char'          : '!',
-        'color'         : libtcodpy.yellow,
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['life'],
         'on_use'        : spells.cast_potion_essence('life'), #not a bug, returns a lambda
-        'description'   : 'The essence of life blesses this potion, and drinking it will bestow a single life essence.'
+        'description'   : 'The essence of life emanates from this gemstone. Absorbing it will bestow a single life essence.'
     },
-    'potion_lesser_air': {
-        'name'          : 'Potion of Gentle Breeze',
+    'gem_lesser_air': {
+        'name'          : 'Rough Quartz',
         'type'          : 'item',
-        'category'      : 'potion',
-        'char'          : '!',
-        'color'         : libtcodpy.yellow,
+        'category'      : 'gem',
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['air'],
         'on_use'        : spells.cast_potion_essence('air'), #not a bug, returns a lambda
-        'description'   : 'The essence of air swirls in this potion, and drinking it will bestow a single air essence.'
+        'description'   : 'The essence of air swirls in this crystal. Absorbing it will bestow a single air essence.'
     },
-    'potion_lesser_water': {
-        'name'          : 'Potion of Crashing Waves',
+    'gem_lesser_water': {
+        'name'          : 'Rough Aquamarine',
         'type'          : 'item',
-        'category'      : 'potion',
-        'char'          : '!',
-        'color'         : libtcodpy.yellow,
+        'category'      : 'gem',
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['water'],
         'on_use'        : spells.cast_potion_essence('water'), #not a bug, returns a lambda
-        'description'   : 'The essence of water is mixed into this potion, and drinking it will bestow a single water essence.'
+        'description'   : 'The essence of water flows through this gemstone. Absorbing it will bestow a single water essence.'
+    },
+    'gem_lesser_cold': {
+        'name'          : 'Rough Zircon',
+        'type'          : 'item',
+        'category'      : 'gem',
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['cold'],
+        'on_use'        : spells.cast_potion_essence('cold'), #not a bug, returns a lambda
+        'description'   : 'The essence of cold chills the surface of this gemstone. Absorbing it will bestow a single cold essence.'
+    },
+    'gem_lesser_arcane': {
+        'name'          : 'Rough Amethyst',
+        'type'          : 'item',
+        'category'      : 'gem',
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['arcane'],
+        'on_use'        : spells.cast_potion_essence('arcane'), #not a bug, returns a lambda
+        'description'   : 'The essence of arcane hums within this gemstone. Absorbing it will bestow a single arcane essence.'
+    },
+    'gem_lesser_radiance': {
+        'name'          : 'Rough Diamond',
+        'type'          : 'item',
+        'category'      : 'gem',
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['radiant'],
+        'on_use'        : spells.cast_potion_essence('radiant'), #not a bug, returns a lambda
+        'description'   : 'The essence of radiance shines through this gemstone. Absorbing it will bestow a single radiant essence.'
+    },
+    'gem_lesser_dark': {
+        'name'          : 'Rough Onyx',
+        'type'          : 'item',
+        'category'      : 'gem',
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['dark'],
+        'on_use'        : spells.cast_potion_essence('dark'), #not a bug, returns a lambda
+        'description'   : 'The essence of dark envelops this gemstone. Absorbing it will bestow a single dark essence.'
     },
 
     #TOMES

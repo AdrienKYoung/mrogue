@@ -400,5 +400,6 @@ essence_colors = {
     'air' : libtcod.light_sky,
     'cold' : libtcod.lightest_azure,
     'radiant' : libtcod.lighter_yellow,
+    'arcane' : libtcod.fuchsia,
     'void' : libtcod.darker_crimson
 }

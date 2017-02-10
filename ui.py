@@ -462,7 +462,7 @@ def render_side_panel(acc_mod=1.0):
                 libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
             else:
                 libtcod.console_set_default_foreground(side_panel, libtcod.gray)
-            libtcod.console_print(side_panel, 4, drawHeight, line.capitalize())
+            libtcod.console_print(side_panel, 4, drawHeight, line.title())
             drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
         if end < len(objects_here) - 1:
