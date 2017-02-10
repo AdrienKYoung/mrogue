@@ -2,7 +2,6 @@ import libtcodpy as libtcod
 import math
 import shelve
 import consts
-import terrain
 import world
 import syntax
 import collections
@@ -434,7 +433,8 @@ class GameObject:
 
     def move(self, dx, dy):
 
-        blocked = is_blocked(self.x + dx, self.y + dy, from_coord=(self.x, self.y), movement_type=self.movement_type)
+        x,y = self.x + dx, self.y + dy
+        blocked = is_blocked(x,y, from_coord=(self.x, self.y), movement_type=self.movement_type)
         #if blocked and current_map.tiles[self.x][self.y].is_ramp:
         #    blocked = is_blocked(self.x + dx, self.y + dy, from_coord=(self.x, self.y), movement_type=self.movement_type)
 
@@ -449,7 +449,7 @@ class GameObject:
                                     syntax.conjugate(self is player.instance, ('struggle', 'struggles'))))
                     web.destroy()
                     return True
-                door = object_at_tile(self.x + dx, self.y + dy, 'door')
+                door = object_at_tile(x,y, 'door')
                 if door is not None and door.closed:
                     door_interact(door)
                     return True
@@ -465,7 +465,9 @@ class GameObject:
                 else:
                     self.fighter.adjust_stamina(consts.STAMINA_REGEN_MOVE)     # gain stamina for moving across normal terrain
 
-            self.set_position(self.x + dx, self.y + dy)
+            if current_map.tiles[self.x][self.y].on_step is not None:
+                current_map.tiles[self.x][self.y].on_step(x,y,self)
+            self.set_position(x,y)
             return True
 
     def draw(self, console):
@@ -687,6 +689,10 @@ class Tile:
     def is_pit(self):
         return terrain.data[self.tile_type].isPit
 
+    @property
+    def on_step(self):
+        return terrain.data[self.tile_type].on_step
+
                 
 #############################################
 # General Functions
@@ -719,7 +725,8 @@ def step_on_blightweed(weed, obj):
             if fov.player_can_see(obj.x, obj.y):
                 ui.message('The blightweed thorns shred %s armor!' % syntax.name(obj.name, possesive=True), libtcod.desaturated_red)
 
-
+def step_on_snow_drift(x,y,obj):
+    current_map.tiles[x][y].tile_type = 'snowy ground'
 
 def adjacent_tiles_orthogonal(x, y):
     adjacent = []
@@ -1765,6 +1772,7 @@ import ui
 import ai
 import player
 import combat
+import terrain
 
 # Globals
 

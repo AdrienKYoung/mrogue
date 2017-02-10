@@ -1103,12 +1103,17 @@ def make_rooms_and_corridors():
 
 def make_map_forest():
     sizex,sizey = consts.MAP_WIDTH - 1,consts.MAP_HEIGHT - 1
-    noise = create_voronoi(sizex,sizey,15,2)
+    link_locations = [(consts.MAP_WIDTH/2,1),(1,consts.MAP_HEIGHT/2),(consts.MAP_WIDTH/2,consts.MAP_HEIGHT-1),(consts.MAP_WIDTH-1,consts.MAP_HEIGHT/2)]
+    noise = create_voronoi(sizex,sizey,15,2,link_locations)
     room = Room()
     room.set_pos(0,0)
     for x in range(sizex):
         for y in range(sizey):
-            room.set_tile(x,y,default_floor,abs(int(math.ceil(4 - noise[x][y] / 2))))
+            elevation = abs(int(math.ceil(4 - noise[x][y] / 2)))
+            tile = 'snowy ground'
+            if elevation == 0:
+                tile = 'snow drift'
+            room.set_tile(x,y,tile,elevation)
     apply_room(room)
     create_slopes()
 

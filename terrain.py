@@ -1,12 +1,13 @@
 import consts
 import libtcodpy as libtcod
+import game as main
 
 class TileData:
 
     def __init__(self, blocks, blocks_sight, name, char,
                  foreground_color, background_color, description='unremarkable terrain', stamina_cost=0, jumpable=True,
                  burnTemp=0, flammable=False, diggable=False, isWall = False, isFloor = False, isWater = False,
-                 isRamp=False, isPit=False):
+                 isRamp=False, isPit=False, on_step=None):
         self.blocks = blocks
         self.blocks_sight = blocks_sight
         self.name = name
@@ -24,6 +25,7 @@ class TileData:
         self.isWater = isWater
         self.isRamp = isRamp
         self.isPit = isPit
+        self.on_step = on_step
 
 data = {
     'stone floor': TileData(False, False, 'stone floor', '.', (128, 96, 0), (64, 48, 0),
@@ -76,8 +78,8 @@ data = {
                             isRamp=True),
     'snow drift': TileData(False, False, 'snow drift', '~', libtcod.white, libtcod.light_gray,
                              'pristine, waist deep powdered snow. It will be difficult to move through until it has been crushed down.',
-                           consts.SNOW_COST, isFloor=True),
-    'snowy ground': TileData(False, False, 'snow drift', '.', libtcod.white, libtcod.sepia,
+                           consts.SNOW_COST, isFloor=True, on_step=main.step_on_snow_drift),
+    'snowy ground': TileData(False, False, 'snowy ground', '.', libtcod.white, libtcod.sepia,
                              'trampled snow, mixed with dirt', isFloor=True),
     'snowy slope': TileData(False, False, 'snowy slope', '/', libtcod.white, libtcod.sepia,
                              'a slope covered in snow', isRamp=True),
