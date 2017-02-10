@@ -465,9 +465,11 @@ class GameObject:
                 else:
                     self.fighter.adjust_stamina(consts.STAMINA_REGEN_MOVE)     # gain stamina for moving across normal terrain
 
-            if current_map.tiles[self.x][self.y].on_step is not None:
-                current_map.tiles[self.x][self.y].on_step(x,y,self)
+                if current_map.tiles[x][y].on_step is not None:
+                    current_map.tiles[x][y].on_step(x,y,self)
+
             self.set_position(x,y)
+
             return True
 
     def draw(self, console):
@@ -1303,10 +1305,14 @@ def create_fire(x,y,temp):
     component = ai.FireBehavior(temp)
     obj = GameObject(x,y,libtcod.CHAR_ARROW2_N,'Fire',libtcod.red,misc=component)
     current_map.add_object(obj)
-    if temp > 4 and not tile.is_ramp:
+    if temp > 4:
+        if tile.is_ramp:
+            scorch = 'scorched ramp'
+        else:
+            scorch = 'scorched floor'
         if tile.blocks:
             fov.set_fov_properties(x, y, False)
-        current_map.tiles[x][y].tile_type = 'scorched floor'
+        current_map.tiles[x][y].tile_type = scorch
     for obj in get_objects(x, y, condition=lambda o: o.burns):
         obj.destroy()
     changed_tiles.append((x, y))

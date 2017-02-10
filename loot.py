@@ -847,7 +847,7 @@ proto = {
         'name'          : 'Lesser Book of Fire',
         'category'      : 'book',
         'char'          : '#',
-        'color'         : libtcodpy.red,
+        'color'         : libtcodpy.flame,
         'type'          : 'item',
         'slot'          : 'left hand',
         'description'   : 'A basic book of fire magic',
