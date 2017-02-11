@@ -156,7 +156,7 @@ class Room:
                 tile_type = default_wall
             elif tile_type == 'ramp':
                 tile_type = default_ramp
-            if not terrain.data[tile_type].blocks and tile not in self.data.keys():
+            if not terrain.data[tile_type].blocks and not terrain.data[tile_type].isPit and tile not in self.data.keys():
                 return_tiles.append(tile)
             if tile in self.data.keys() and self.data[tile] == '>':
                 return_tiles.append(tile)
@@ -172,7 +172,7 @@ class Room:
                 tile_type = default_wall
             elif tile_type == 'ramp':
                 tile_type = default_ramp
-            if terrain.data[tile_type].blocks or tile in self.data.keys():
+            if terrain.data[tile_type].blocks or terrain.data[tile_type].isPit or tile in self.data.keys():
                 return_tiles.append(tile)
         return return_tiles
 
@@ -1353,6 +1353,7 @@ def make_map(_map):
     map = _map
 
     map.objects = [player.instance]
+    map.fighters = [player.instance]
 
     default_floor = dungeon.branches[map.branch]['default_floor']
     default_wall = dungeon.branches[map.branch]['default_wall']

@@ -11,6 +11,7 @@ class Map:
             self.name += '_%d' % depth
         self.tiles = None
         self.objects = None
+        self.fighters = None
         self.difficulty = difficulty
         self.pathfinding = None
 
@@ -22,6 +23,8 @@ class Map:
         if not isinstance(object, main.GameObject):
             raise ValueError("{} is not a game object!".format(object))
         self.objects.append(object)
+        if object.fighter:
+            self.fighters.append(object)
 
 
 def opposite(direction):

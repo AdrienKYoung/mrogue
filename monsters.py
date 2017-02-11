@@ -2,6 +2,7 @@ import game as main
 import ai
 import libtcodpy as libtcod
 import pathfinding
+import combat
 
 # Monster Flags
 NO_CORPSE = 1
@@ -338,6 +339,7 @@ proto = {
         'resistances': ['confusion', 'stunned'],
         'death_function': main.blastcap_explode,
         'subtype':'plant',
+        'team' : 'neutral'
     },
     'monster_golem': {
         'name': 'golem',
@@ -465,7 +467,158 @@ proto = {
         'shred': 3,
         'essence': [(15, 'fire')],
         'subtype':'undead',
-    }
+    },
+    'monster_fire_elemental': {
+        'name': 'fire elemental',
+        'char': 'E',
+        'color': libtcod.flame,
+        'hp': 32,
+        'strength_dice' : '3d8',
+        'attack_bonus' : 0,
+        'armor': 1,
+        'evasion': 12,
+        'accuracy': 22,
+        'move_speed': 1.0,
+        'attack_speed': 1.8,
+        'difficulty': 3,
+        'ai': ai.AI_Default,
+        'description': 'A roaring vortex of living flame.'
+                       'It fights with searing fury, leaving its victims charred and burned',
+        'resistances': ['fire'],
+        'shred': 3,
+        'subtype':'elemental',
+        'on_hit': combat.on_hit_burn
+    },
+    'monster_earth_elemental': {
+        'name': 'earth elemental',
+        'char': 'E',
+        'color': libtcod.sepia,
+        'hp': 80,
+        'strength_dice' : '2d12',
+        'attack_bonus' : 0,
+        'armor': 4,
+        'evasion': 8,
+        'accuracy': 20,
+        'move_speed': 0.5,
+        'attack_speed': 0.5,
+        'difficulty': 2,
+        'ai': ai.AI_Default,
+        'description': 'A form of stone, sand, and soil given life.'
+                       'Attacks hardly phase it as it lumbers steadily forward.',
+        'resistances': ['earth'],
+        'shred': 2,
+        'subtype':'elemental',
+    },
+    'monster_air_elemental': {
+        'name': 'air elemental',
+        'char': 'E',
+        'color': libtcod.light_sky,
+        'hp': 36,
+        'strength_dice' : '2d8',
+        'attack_bonus' : 0,
+        'armor': 1,
+        'evasion': 18,
+        'accuracy': 24,
+        'move_speed': 2.2,
+        'attack_speed': 1.2,
+        'difficulty': 2,
+        'ai': ai.AI_Default,
+        'description': 'A playful spirit made of whirling gusts of wind.'
+                       'It moves swiftly, leaving swirling dust and leaves in its wake.',
+        'resistances': ['air'],
+        'shred': 1,
+        'subtype':'elemental',
+        'movement_type' : pathfinding.FLYING
+    },
+    'monster_water_elemental': {
+        'name': 'water elemental',
+        'char': 'E',
+        'color': libtcod.azure,
+        'hp': 55,
+        'strength_dice' : '3d4',
+        'attack_bonus' : 0,
+        'armor': 2,
+        'evasion': 12,
+        'accuracy': 16,
+        'move_speed': 1.0,
+        'attack_speed': 1.0,
+        'difficulty': 2,
+        'ai': ai.AI_Default,
+        'description': 'An amorphous being of pure water.'
+                       'Anything caught in its flows will struggle to move or evade attacks.',
+        'resistances': ['water'],
+        'shred': 2,
+        'subtype':'elemental',
+        'movement_type' : pathfinding.AQUATIC | pathfinding.NORMAL,
+        'on_tick' : main.water_elemental_tick
+    },
+    'monster_ice_elemental': {
+        'name': 'ice elemental',
+        'char': 'E',
+        'color': libtcod.lightest_azure,
+        'hp': 20,
+        'strength_dice' : '3d8',
+        'attack_bonus' : 10,
+        'armor': 2,
+        'evasion': 12,
+        'accuracy': 18,
+        'move_speed': 1.0,
+        'attack_speed': 1.0,
+        'difficulty': 2,
+        'ai': ai.AI_Default,
+        'description': 'A frigid creature made of blue glacial ice.'
+                       'Heat drains away in its presence, leaving an aura of winter in its absence.',
+        'resistances': ['cold'],
+        'shred': 2,
+        'pierce': 1,
+        'subtype':'elemental',
+    },
+    'monster_lifeplant': {
+        'name': 'lifeplant',
+        'char': chr(5),
+        'color': libtcod.green,
+        'hp': 50,
+        'body_type': 'plant',
+        'strength_dice' : '0d0',
+        'attack_bonus' : 0,
+        'armor': 0,
+        'evasion': 0,
+        'accuracy': 0,
+        'move_speed': 1.0,
+        'attack_speed': 1.0,
+        'difficulty': 1,
+        'ai': ai.AI_Lifeplant,
+        'description': 'A twisting, climbing vine adorned with golden flowers.'
+                       'It glows with a soft warmth - those close enough to touch'
+                       ' it can feel that warmth flow through them, healing their wounds.',
+        'resistances': [],
+        'shred': 3,
+        'subtype':'plant',
+    },
+    'monster_arcane_construct': {
+        'name': 'arcane construct',
+        'char': 'A',
+        'color': libtcod.fuchsia,
+        'hp': 20,
+        'strength_dice' : '0d0',
+        'attack_bonus' : 0,
+        'spell_power' : 8,
+        'armor': 1,
+        'evasion': 16,
+        'accuracy': 26,
+        'move_speed': 1.0,
+        'attack_speed': 0.4,
+        'difficulty': 2,
+        'ai': ai.AI_Default,
+        'attributes': ['ability_cast_arcane_arrow'],
+        'description': 'An artificial construct of glowing geometric shapes and symbols of power, '
+                       'vibrating with arcane energy.'
+                       'It bombards its enemies with magical energy from a distance.',
+        'resistances': ['cold'],
+        'shred': 0,
+        'subtype':'elemental',
+        'movement_type' : pathfinding.FLYING
+    },
 }
 
 modifiers = {

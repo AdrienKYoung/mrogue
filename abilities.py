@@ -17,9 +17,9 @@ class Ability:
         self.cooldown = cooldown
         self.current_cd = 0
 
-    def use(self, actor = None):
+    def use(self, actor=None, target=None):
         if self.current_cd < 1:
-            result = self.function(actor)
+            result = self.function(actor, target)
             if result != 'didnt-take-turn':
                 self.current_cd = self.cooldown
         else:
@@ -56,11 +56,11 @@ class Perk:
             return True  # Default to True if no requirements
 
 
-def ability_attack(actor=None):
+def ability_attack(actor=None, target=None):
     x,y = ui.target_tile(max_range=1)
     target = None
-    for object in main.current_map.objects:
-        if object.x == x and object.y == y and object.fighter is not None:
+    for object in main.current_map.fighters:
+        if object.x == x and object.y == y:
             target = object
             break
     if target is not None and target is not player.instance:
@@ -69,11 +69,11 @@ def ability_attack(actor=None):
             return result
     return 'didnt-take-turn'
 
-def ability_attack_reach(actor=None):
+def ability_attack_reach(actor=None, target=None):
     x, y = ui.target_tile(max_range=1)
     target = None
-    for object in main.current_map.objects:
-        if object.x == x and object.y == y and object.fighter is not None:
+    for object in main.current_map.fighters:
+        if object.x == x and object.y == y:
             target = object
             break
     if target is not None and target is not player.instance:
@@ -82,11 +82,11 @@ def ability_attack_reach(actor=None):
             return result
     return 'didnt-take-turn'
 
-def ability_bash_attack(actor=None):
+def ability_bash_attack(actor=None, target=None):
     x,y = ui.target_tile(max_range=1)
     target = None
-    for object in main.current_map.objects:
-        if object.x == x and object.y == y and object.fighter is not None:
+    for object in main.current_map.fighters:
+        if object.x == x and object.y == y:
             target = object
             break
     if target is not None and target is not player.instance:
@@ -95,20 +95,20 @@ def ability_bash_attack(actor=None):
             return result
     return 'didnt-take-turn'
 
-def ability_berserk_self(actor=None):
+def ability_berserk_self(actor=None, target=None):
     if actor is not None and actor.fighter is not None:
         if not actor.fighter.has_status('berserk') and not actor.fighter.has_status('exhausted'):
             actor.fighter.apply_status_effect(effects.berserk())
             if actor is not player.instance:
                 ui.message('%s %s!' % (
                                 syntax.name(actor.name).capitalize(),
-                                syntax.conjugate(actor is player.instance, ('roar', 'roars'))), libtcod.red)
+                                syntax.conjugate(False, ('roar', 'roars'))), libtcod.red)
         else:
             if actor is player.instance:
                 ui.message("You cannot go berserk right now.", libtcod.yellow)
             return 'didnt-take-turn'
 
-def ability_spawn_vermin(actor=None):
+def ability_spawn_vermin(actor=None, target=None):
     #Filthy hackery to add some state
     if not hasattr(actor, 'summons'):
         actor.summons = []
@@ -134,28 +134,33 @@ def ability_spawn_vermin(actor=None):
                 actor.summons.append(spawn)
                 summon_tiles.remove(pos)
 
-def ability_grapel(actor=None):
+def ability_grapel(actor=None, target=None):
     #Blame the Bleshib
-    if actor.distance_to(player.instance) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, player.instance):
-        if player.instance.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, player.instance.x, player.instance.y) == \
-                (player.instance.x, player.instance.y):
-            spells.cast_frog_tongue(actor, player.instance)
+    if actor.distance_to(target) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, target):
+        if target.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, target.x, target.y) == (target.x, target.y):
+            spells.cast_frog_tongue(actor, target)
             return
         else:
             return 'didnt-take-turn'
     else:
         return 'didnt-take-turn'
 
-def ability_fireball(actor=None):
-    if fov.monster_can_see_object(actor, player.instance) and \
-            main.beam_interrupt(actor.x, actor.y, player.instance.x, player.instance.y):
-            spells.cast_fireball(actor,player.instance)
+def ability_fireball(actor=None, target=None):
+    if fov.monster_can_see_object(actor, target) and main.beam_interrupt(actor.x, actor.y, target.x, target.y):
+            spells.cast_fireball(actor, target)
             return 'cast-spell'
     else:
         return 'didnt-take-turn'
 
 
-def ability_raise_zombie(actor=None):
+def ability_arcane_arrow(actor=None, target=None):
+    if spells.cast_arcane_arrow(actor, target) == 'cancelled':
+        return 'didnt-take-turn'
+    else:
+        return 'cast-spell'
+
+
+def ability_raise_zombie(actor=None, target=None):
 
     check_corpse = main.adjacent_tiles_diagonal(actor.x, actor.y)
     check_corpse.append((actor.x, actor.y))
@@ -201,6 +206,12 @@ data = {
         'name': 'Grapel',
         'function': ability_grapel,
         'cooldown': consts.FROG_TONGUE_COOLDOWN
+    },
+
+    'ability_cast_arcane_arrow': {
+        'name': 'Arcane Arrow',
+        'function': ability_arcane_arrow,
+        'cooldown': 0
     },
 
     'ability_raise_zombie': {

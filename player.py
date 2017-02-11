@@ -111,7 +111,7 @@ loadouts = {
         'spr':10,
         'con':8,
         'inventory':[
-            #'charm_summon',
+            'charm_summoning',
             'book_lesser_fire',
             'gem_lesser_fire'
         ],
@@ -126,7 +126,7 @@ def create(loadout):
     global instance
 
     loadout = loadouts[loadout]
-    fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death)
+    fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death, team='ally')
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),
                         int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
@@ -408,9 +408,13 @@ def move_or_attack(dx, dy, ctrl=False):
     else:
         target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
         if target is not None:
-            success = instance.fighter.attack(target) != 'failed'
-            if success and target.fighter:
-                ui.select_monster(target)
+            if target.fighter.team == 'ally':
+                value = instance.swap_positions(target)
+                return value
+            else:
+                success = instance.fighter.attack(target) != 'failed'
+                if success and target.fighter:
+                    ui.select_monster(target)
         else:
             value = instance.move(dx, dy)
             return value
@@ -514,6 +518,7 @@ def bash_attack(dx, dy):
                         against = obj.name
                         break
 
+
             if stun:
                 #  stun the target
                 if target.fighter.apply_status_effect(effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
@@ -608,7 +613,7 @@ def jump(actor=None):
             ui.message('There is something in the way.', libtcod.light_yellow)
             return 'didnt-take-turn'
         elif main.current_map.tiles[x][y].is_pit:
-            ui.message("Your sense of self-preservation is kicking in - you really don't want to jump into a dark pit.", libtcod.light_yellow)
+            ui.message("You really don't want to jump into this bottomless pit.", libtcod.light_yellow)
             return 'didnt-take-turn'
         elif main.is_blocked(x, y, from_coord=(instance.x, instance.y), movement_type=instance.movement_type) and main.current_map.tiles[x][y].elevation > instance.elevation:
             ui.message("You can't jump that high!", libtcod.light_yellow)
@@ -619,7 +624,10 @@ def jump(actor=None):
                 if obj.x == x and obj.y == y and obj.blocks:
                     jump_attack_target = obj
                     break
-            if jump_attack_target is not None:
+            if jump_attack_target is not None and not jump_attack_target.fighter:
+                ui.message('There is something in the way.', libtcod.light_yellow)
+                return 'didnt-take-turn'
+            elif jump_attack_target is not None and jump_attack_target is not instance:
                 # Jump attack
                 land = main.land_next_to_target(jump_attack_target.x, jump_attack_target.y, instance.x, instance.y)
                 if land is not None:

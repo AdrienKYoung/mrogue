@@ -73,6 +73,12 @@ def swiftness(duration=30):
 def serenity(duration=30):
     return StatusEffect('serenity', duration, libtcod.light_blue, evasion_mod=1.5, accuracy_mod=1.5, message='Your mind becomes calm.')
 
+def sluggish(duration=5):
+    return StatusEffect('sluggish', duration, libtcod.sepia, message='Your reaction time slows...')
+
+def slowed(duration=10):
+    return StatusEffect('slowed', duration, libtcod.dark_blue, message='Your pace slows...')
+
 def resistant(element=None,effect=None,color=None,duration=99):
     if element is not None:
         return StatusEffect('resist ' + element,duration,spells.essence_colors[element],resistance_mod=[element],

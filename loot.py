@@ -382,7 +382,7 @@ proto = {
     'gem_lesser_life': {
         'name'          : 'Rough Emerald',
         'type'          : 'item',
-        'category'      : 'potion',
+        'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['life'],
         'on_use'        : spells.cast_potion_essence('life'), #not a bug, returns a lambda
@@ -839,6 +839,16 @@ proto = {
         'color'         : libtcodpy.yellow,
         'on_use'        : spells.cast_charm_blessing,
         'description'   : 'When infused with essence, this charm grants magical blessings.'
+    },
+
+    'charm_summoning' : {
+        'name'          : 'Charm of Summoning',
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : spells.cast_charm_summoning,
+        'description'   : 'When infused with essence, this charm summons an elemental being as an ally.'
     },
 
     #Books

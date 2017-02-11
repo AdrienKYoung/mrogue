@@ -246,8 +246,8 @@ def target_next_monster():
         main.changed_tiles.append((selected_monster.x, selected_monster.y))
 
     nearby = []
-    for obj in main.current_map.objects:
-        if fov.player_can_see(obj.x, obj.y) and obj.fighter and obj is not player.instance:
+    for obj in main.current_map.fighters:
+        if fov.player_can_see(obj.x, obj.y) and obj is not player.instance:
             nearby.append((obj.distance_to(player.instance), obj))
     nearby.sort(key=lambda m: m[0])
 
@@ -287,12 +287,11 @@ def mouse_select_monster():
         (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
         monster = None
-        for obj in main.current_map.objects:
-            if obj.x == x and obj.y == y and (
-                fov.player_can_see(obj.x, obj.y) or (obj.always_visible and main.current_map.tiles[obj.x][obj.y].explored)):
-                if hasattr(obj, 'fighter') and obj.fighter and not obj is player.instance:
-                    monster = obj
-                    break
+        for obj in main.current_map.fighters:
+            if obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y) or (obj.always_visible and
+                                       main.current_map.tiles[obj.x][obj.y].explored)) and obj is not player.instance:
+                monster = obj
+                break
         if monster is not None:
             select_monster(monster)
 
@@ -480,10 +479,20 @@ def render_side_panel(acc_mod=1.0):
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
         if selected_monster.behavior:
-            libtcod.console_print(side_panel, 2, drawHeight, selected_monster.behavior.ai_state.capitalize())
+            if selected_monster.fighter.team == 'ally':
+                ai_state_text = 'Ally'
+            else:
+                ai_state_text = selected_monster.behavior.ai_state.capitalize()
+            libtcod.console_print(side_panel, 2, drawHeight, ai_state_text)
         drawHeight += 2
+        if selected_monster.fighter.team == 'ally':
+            health_bar_color = libtcod.darker_blue
+            health_bar_bkgnd_color = libtcod.darkest_blue
+        else:
+            health_bar_color = libtcod.dark_red
+            health_bar_bkgnd_color = libtcod.darker_red
         render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
-                   libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)
+                   health_bar_color, health_bar_bkgnd_color, align=libtcod.LEFT)
         libtcod.console_set_default_foreground(side_panel, libtcod.white)
         armor_string = 'AR:' + str(selected_monster.fighter.armor)
         if selected_monster.fighter.shred > 0:
@@ -906,6 +915,35 @@ def display_fading_text(text, display_time, fade_time):
     fade_value = fade_time
     display_ticker = display_time
     overlay_text = text
+
+
+def render_projectile(start, end, color, character=None):
+
+    if character is None: bolt_char = chr(7)
+    else: bolt_char = character
+    bolt = main.GameObject(start[0], start[1], bolt_char, 'bolt', color=color)
+
+    line = main.beam(start[0], start[1], end[0], end[1])
+    main.current_map.add_object(bolt)
+    prev = line[0][0], line[0][1]
+
+    for p in line:
+        bolt.set_position(p[0], p[1])
+        if character is None:
+            if bolt.x == prev[0] and bolt.y == prev[1]:
+                pass
+            elif bolt.x == prev[0] and bolt.y != prev[1]:
+                bolt.char = chr(179)  # vertical line
+            elif bolt.x != prev[0] and bolt.y == prev[1]:
+                bolt.char = chr(196)  # horizontal line
+            elif (bolt.y - prev[1]) / (bolt.x - prev[0]) < 0:
+                bolt.char = '/'
+            else:
+                bolt.char = '\\'
+        main.render_map()
+        libtcod.console_flush()
+        prev = bolt.x, bolt.y
+    bolt.destroy()
 
 
 overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)

@@ -23,6 +23,8 @@ def cast_fireball(actor=None,target=None):
     x,y = 0,0
     if actor is None: #player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        ui.render_message_panel()
+        libtcod.console_flush()
         (x, y) = ui.target_tile()
         actor = player.instance
     else:
@@ -31,27 +33,61 @@ def cast_fireball(actor=None,target=None):
     if x is None: return 'cancelled'
     ui.message('The fireball explodes!', libtcod.flame)
     main.create_fire(x,y,10)
-    for obj in main.current_map.objects:
-        if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
+    for obj in main.current_map.fighters:
+        if obj.distance(x, y) <= consts.FIREBALL_RADIUS:
             combat.spell_attack_ex(actor.fighter,obj,None,'fireball','2d6',2,'fire',0)
     return 'success'
 
-def cast_heat_ray(actor=None,target=None):
-    line = None
-    if actor is None:  # player is casting
+
+def cast_arcane_arrow(actor=None, target=None):
+    x, y = 0, 0
+    if actor is None or actor is player.instance:  # player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        (x, y) = ui.target_tile(3, 'beam_interrupt')
+        ui.render_message_panel()
+        libtcod.console_flush()
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        (x, y) = ui.target_tile(consts.TORCH_RADIUS, 'beam_interrupt', default_target=default_target)
         actor = player.instance
     else:
         x = target.x
         y = target.y
     if x is None: return 'cancelled'
-    line = main.beam(player.instance.x, player.instance.y, x, y)
+    line = main.beam(actor.x, actor.y, x, y)
     if line is None or len(line) < 1: return 'cancelled'
 
-    for obj in main.current_map.objects:
+    ui.render_projectile((actor.x, actor.y), (x, y), libtcod.fuchsia, None)
+
+    for l in line:
+        for obj in main.current_map.fighters:
+            if obj.x == l[0] and obj.y == l[1]:
+                combat.spell_attack_ex(actor.fighter, obj, 30, 'arcane arrow', '3d6', 1, 'arcane', 0)
+                return 'success'
+    return 'failure'
+
+
+def cast_heat_ray(actor=None,target=None):
+    line = None
+    if actor is None:  # player is casting
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        ui.render_message_panel()
+        libtcod.console_flush()
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        (x, y) = ui.target_tile(3, 'beam_interrupt', default_target=default_target)
+        actor = player.instance
+    else:
+        x = target.x
+        y = target.y
+    if x is None: return 'cancelled'
+    line = main.beam(actor.x, actor.y, x, y)
+    if line is None or len(line) < 1: return 'cancelled'
+
+    for obj in main.current_map.fighters:
         for l in line:
-            if obj.x == l[0] and obj.y == l[1] and obj.fighter:
+            if obj.x == l[0] and obj.y == l[1]:
                 combat.spell_attack_ex(actor.fighter, obj, None, 'heat ray', '3d4', 1, 'fire', 0)
     return 'success'
 
@@ -59,6 +95,8 @@ def cast_flame_wall(actor=None,target=None):
     x,y = 0,0
     if actor is None: #player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        ui.render_message_panel()
+        libtcod.console_flush()
         (x, y) = ui.target_tile()
         actor = player.instance
     else:
@@ -72,6 +110,8 @@ def cast_shatter_item(actor=None,target=None):
     dc = 8
     if actor is None:  # player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        ui.render_message_panel()
+        libtcod.console_flush()
         (x, y) = ui.target_tile()
         if x is None:
             return 'cancelled'
@@ -107,8 +147,8 @@ def cast_shatter_item(actor=None,target=None):
         if inventory is not None:
             inventory.remove(item)
         item.destroy()
-        for obj in main.current_map.objects:
-            if obj.distance(x, y) <= consts.FIREBALL_RADIUS and obj.fighter:
+        for obj in main.current_map.fighters:
+            if obj.distance(x, y) <= consts.FIREBALL_RADIUS:
                 combat.spell_attack_ex(actor.fighter, obj, None, 'shrapnel', '4d4', 1, 'slashing', 0)
         return 'success'
     else:
@@ -119,6 +159,8 @@ def cast_magma_bolt(actor=None,target=None):
     x, y = 0, 0
     if actor is None:  # player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        ui.render_message_panel()
+        libtcod.console_flush()
         (x, y) = ui.target_tile()
         actor = player.instance
         if x is None: return 'cancelled'
@@ -135,6 +177,8 @@ def cast_magma_bolt(actor=None,target=None):
 
 def cast_confuse():
     ui.message('Choose a target with left-click, or right-click to cancel.', libtcod.white)
+    ui.render_message_panel()
+    libtcod.console_flush()
     monster = main.target_monster(consts.CONFUSE_RANGE)
     if monster is None or monster.behavior is None: return 'cancelled'
     else:
@@ -308,6 +352,89 @@ def cast_charm_blessing():
     player.instance.fighter.apply_status_effect(charm_blessing_effects[essence]['buff']())
     player.instance.essence.remove(essence)
 
+charm_summoning_summons = {
+    'fire': {
+        'summon': 'monster_fire_elemental',
+        'duration': 15,
+        'description':"Summon a fire elemental. It's attacks are deadly, but it won't last long in this world."
+    },
+    'earth': {
+        'summon': 'monster_earth_elemental',
+        'duration': 30,
+        'description':"Summon an earth elemental. It moves slowly, but is very durable."
+    },
+    'air': {
+        'summon': 'monster_air_elemental',
+        'duration': 30,
+        'description':"Summon an air elemental. It flies and moves quickly, but inflicts little damage."
+    },
+    'water': {
+        'summon': 'monster_water_elemental',
+        'duration': 30,
+        'description': "Summon a water elemental. It does not attack, but rather disables nearby foes."
+    },
+    'life': {
+        'summon': 'monster_lifeplant',
+        'duration': 15,
+        'description': "Summon a lifeplant. It will slowly heal nearby creatures over time."
+    },
+    'cold': {
+        'summon': 'monster_ice_elemental',
+        'duration': 30,
+        'description': "Summon an ice elemental. It deals heavy damage, but is fragile."
+    },
+    'arcane': {
+        'summon': 'monster_arcane_construct',
+        'duration': 30,
+        'description': "Summon an Arcane Construct. This artificial can fire magical energy from a distance, but is fragile."
+    },
+    'radiant': { #TODO: make divine servant
+        'summon': 'monster_divine_servant',
+        'duration': 150,
+        'description': "Summon a Divine Servant. This heavenly creature will swear to protect you."
+    },
+    'dark': { #TODO: make shadow demon
+        'summon': 'monster_shadow_demon',
+        'duration': 150,
+        'description': "Summon a Shadow Demon. This vicious creature of darkness will not bend to the will of mortals."
+    },
+    'void': { #TODO: make void horror
+        'summon': 'monster_void_horror',
+        'duration': 300,
+        'description': "Who can tell what horrors this might summon? I hope you know what you're doing."
+    }
+}
+
+def cast_charm_summoning():
+    adj = main.adjacent_tiles_diagonal(player.instance.x, player.instance.y)
+
+    # Get viable summoning position. Return failure if no position is available
+    summon_positions = []
+    for tile in adj:
+        if not main.is_blocked(tile[0], tile[1]):
+            summon_positions.append(tile)
+    if len(summon_positions) == 0:
+        ui.message('There is no room to summon an ally here.')
+        return
+    summon_pos = summon_positions[libtcod.random_get_int(0, 0, len(summon_positions) - 1)]
+
+    # Select essence
+    essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
+    player.instance.essence.remove(essence)
+
+    # Select monster type - default to goblin
+    summon_type = 'monster_goblin'
+    import monsters
+    if essence in charm_summoning_summons.keys() and charm_summoning_summons[essence]['summon'] in monsters.proto.keys():
+        summon_type = charm_summoning_summons[essence]['summon']
+    summon = main.spawn_monster(summon_type, summon_pos[0], summon_pos[1], team='ally')
+    summon.behavior.follow_target = player.instance
+
+    # Set summon duration
+    t = charm_summoning_summons[essence]['duration']
+    summon.summon_time = t + libtcod.random_get_int(0, 0, t)
+
+
 charm_resist_extra_resists = {
     'fire':['burning'],
     'water':['exhaustion'],
@@ -315,7 +442,10 @@ charm_resist_extra_resists = {
     'earth':['stun'],
     'life':['poison'],
     'dark':['rot'],
-    'ice':['freeze']
+    'ice':['freeze'],
+    'arcane':['silence'],
+    'radiant':['judgement'],
+    'void':[]
 }
 
 def cast_charm_resist():

@@ -318,7 +318,7 @@ class GameObject:
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, behavior=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
-                 elevation=None, background_color=None, movement_type=0):
+                 elevation=None, background_color=None, movement_type=0, summon_time = None):
         self.x = x
         self.y = y
         self.char = char
@@ -366,6 +366,7 @@ class GameObject:
             self.elevation = elevation
         self.background_color = background_color
         self.movement_type = movement_type
+        self.summon_time = summon_time
 
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
@@ -388,29 +389,35 @@ class GameObject:
 
     def set_position(self, x, y):
 
+        old_x = self.x
+        old_y = self.y
+
         # If the object is not moving, skip this function.
-        if self.x == x and self.y == y:
+        if old_x == x and old_y == y:
             return
-
-        # Update the tile we left for the renderer
-        global changed_tiles
-        changed_tiles.append((self.x, self.y))
-
-        # Update fov maps (if this object affects fov)
-        if self.blocks_sight:
-            fov.set_fov_properties(self.x, self.y, current_map.tiles[self.x][self.y].blocks_sight, self.elevation)
-            fov.set_fov_properties(x, y, True, self.elevation)
-
-        # Update the pathfinding map - mark our previous space as passable and our new space as impassable
-        if current_map.pathfinding and self.blocks:
-            current_map.pathfinding.mark_blocked((x, y))
-            current_map.pathfinding.mark_unblocked((self.x, self.y))
 
         # Update the object's position/elevation
         self.x = x
         self.y = y
         old_elev = self.elevation
         self.elevation = current_map.tiles[x][y].elevation
+
+        # Update the tile we left for the renderer
+        global changed_tiles
+        changed_tiles.append((old_x, old_y))
+
+        # Update fov maps (if this object affects fov)
+        if self.blocks_sight:
+            fov.set_fov_properties(old_x, old_y, current_map.tiles[old_x][old_y].blocks_sight, self.elevation)
+            fov.set_fov_properties(x, y, True, self.elevation)
+
+        # Update the pathfinding map - update our previous space and mark our new space as impassable
+        if current_map.pathfinding and self.blocks:
+            if is_blocked(old_x, old_y):
+                current_map.pathfinding.mark_blocked((old_x, old_y))
+            else:
+                current_map.pathfinding.mark_unblocked((old_x, old_y))
+            current_map.pathfinding.mark_blocked((x, y))
 
         # Check for objects with 'stepped_on' functions on our new space (xp, essence, traps, etc)
         stepped_on = get_objects(self.x, self.y, lambda o: o.on_step)
@@ -431,12 +438,18 @@ class GameObject:
                 fov.set_view_elevation(self.elevation)
             fov.set_fov_recompute()
 
+    def swap_positions(self, target):
+        target_pos = target.x, target.y
+        target.set_position(self.x, self.y)
+        value = self.move(target_pos[0] - self.x, target_pos[1] - self.y)
+        if not value:
+            target.set_position(target_pos[0], target_pos[1])
+        return value
+
     def move(self, dx, dy):
 
         x,y = self.x + dx, self.y + dy
         blocked = is_blocked(x,y, from_coord=(self.x, self.y), movement_type=self.movement_type)
-        #if blocked and current_map.tiles[self.x][self.y].is_ramp:
-        #    blocked = is_blocked(self.x + dx, self.y + dy, from_coord=(self.x, self.y), movement_type=self.movement_type)
 
         if not blocked:
             if self.fighter is not None:
@@ -471,6 +484,7 @@ class GameObject:
             self.set_position(x,y)
 
             return True
+        return False
 
     def draw(self, console):
         if fov.player_can_see(self.x, self.y):
@@ -594,11 +608,22 @@ class GameObject:
         return math.sqrt((self.x - x) ** 2 + (self.y - y) ** 2)
         
     def send_to_back(self):
-        global current_map
+        if self not in current_map.objects:
+            return
         current_map.objects.remove(self)
         current_map.objects.insert(0, self)
 
     def on_tick(self, object=None):
+        if self.summon_time:
+            self.summon_time -= 1
+            if self.summon_time <= 0:
+                if fov.player_can_see(self.x, self.y):
+                    ui.message('%s fades away as %s returns to the world from whence %s came.' %
+                               (syntax.name(self.name).capitalize(),
+                                syntax.pronoun(self.name),
+                                syntax.pronoun(self.name)), libtcod.gray)
+                self.destroy()
+                return
         if self.on_tick_specified:
             self.on_tick_specified(object)
         if self.fighter:
@@ -613,6 +638,8 @@ class GameObject:
         if self.blocks and current_map.pathfinding:
             current_map.pathfinding.mark_unblocked((self.x, self.y))
         changed_tiles.append((self.x, self.y))
+        if self in current_map.fighters:
+            current_map.fighters.remove(self)
         current_map.objects.remove(self)
 
 
@@ -764,9 +791,10 @@ def blastcap_explode(blastcap):
     global changed_tiles
 
     blastcap.fighter = None
+    current_map.fighters.remove(blastcap)
     ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
-    for obj in current_map.objects:
-        if obj.fighter and is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
+    for obj in current_map.fighters:
+        if is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
             if obj.fighter.apply_status_effect(effects.StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
                 ui.message('%s %s stunned!' % (
                                 syntax.name(obj.name).capitalize(),
@@ -813,6 +841,13 @@ def object_at_tile(x, y, name):
         if obj.x == x and obj.y == y and obj.name == name:
             return obj
     return None
+
+
+def water_elemental_tick(elemental):
+    for obj in current_map.fighters:
+        if obj.fighter.team != elemental.fighter.team and is_adjacent_diagonal(obj.x, obj.y, elemental.x, elemental.y):
+            obj.fighter.apply_status_effect(effects.sluggish(duration=3))
+            obj.fighter.apply_status_effect(effects.slowed(duration=3))
 
 
 # on_create function of tunnel spiders. Creates a web at the spiders location and several random adjacent spaces
@@ -927,6 +962,7 @@ def bomb_beetle_death(beetle):
     beetle.description = 'The explosive carapace of a blast beetle. In a few turns, it will explode!'
     beetle.bomb_timer = 3
     beetle.on_tick = bomb_beetle_corpse_tick
+    current_map.fighters.remove(beetle)
 
     if ui.selected_monster is beetle:
         changed_tiles.append((beetle.x, beetle.y))
@@ -948,6 +984,10 @@ def monster_death(monster):
 
     if monster.fighter.monster_flags & monsters.NO_CORPSE == monsters.NO_CORPSE:
         monster.destroy()
+    elif monster.summon_time is not None:
+        monster.destroy()
+        ui.message('%s corpse fades into the world from whence it came.' %
+                   syntax.pronoun(monster.name, possesive=True).capitalize(), libtcod.gray)
     else:
         monster.char = '%'
         monster.color = libtcod.darker_red
@@ -957,6 +997,7 @@ def monster_death(monster):
         monster.behavior = None
         monster.name = 'remains of ' + monster.name
         monster.send_to_back()
+        current_map.fighters.remove(monster)
     monster.fighter = None
 
     if ui.selected_monster is monster:
@@ -970,15 +1011,15 @@ def target_monster(max_range=None):
         (x, y) = ui.target_tile(max_range)
         if x is None:
             return None
-        for obj in current_map.objects:
-            if obj.x == x and obj.y == y and obj.fighter and obj is not player.instance:
+        for obj in current_map.fighters:
+            if obj.x == x and obj.y == y and obj is not player.instance:
                 return obj
         return None
 
 
 def get_monster_at_tile(x, y):
-    for obj in current_map.objects:
-        if obj.x == x and obj.y == y and obj.fighter and obj is not player.instance:
+    for obj in current_map.fighters:
+        if obj.x == x and obj.y == y and obj is not player.instance:
             return obj
     return None
 
@@ -1023,8 +1064,8 @@ def closest_monster(max_range):
     closest_enemy = None
     closest_dist = max_range + 1
 
-    for object in current_map.objects:
-        if object.fighter and not object == player.instance and fov.player_can_see(object.x, object.y):
+    for object in current_map.fighters:
+        if object is not player.instance and fov.player_can_see(object.x, object.y):
             dist = player.instance.distance_to(object)
             if dist < closest_dist:
                 closest_dist = dist
@@ -1033,7 +1074,7 @@ def closest_monster(max_range):
 
 
 def in_bounds(x, y):
-    return x >= 0 and y >= 0 and x < consts.MAP_WIDTH and y < consts.MAP_HEIGHT
+    return 0 <= x < consts.MAP_WIDTH and 0 <= y < consts.MAP_HEIGHT
 
 
 def is_blocked(x, y, from_coord=None, movement_type=None):
@@ -1084,7 +1125,7 @@ def get_room_spawns(room):
     return [[k, libtcod.random_get_int(0, v[0], v[1])] for (k, v) in room['spawns'].items()]
 
 
-def spawn_monster(name, x, y):
+def spawn_monster(name, x, y, team='enemy'):
     if consts.DEBUG_NO_MONSTERS:
         return None
     if not is_blocked(x, y):
@@ -1103,7 +1144,7 @@ def spawn_monster(name, x, y):
         fighter_component = combat.Fighter( hp=int(p['hp'] * modifier.get('hp_bonus',1)),
                                             armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
                                             accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
-                                            death_function=death,
+                                            death_function=death, spell_power=p.get('spell_power', 0),
                                             can_breath_underwater=True, resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
                                             weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
                                             inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
@@ -1111,7 +1152,8 @@ def spawn_monster(name, x, y):
                                             base_guaranteed_shred=p.get('guaranteed_shred', 0),
                                             base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
                                             monster_flags=p.get('flags', 0),subtype=p.get('subtype'),damage_bonus=p.get('attack_bonus', 0),
-                                            monster_str_dice=p.get('strength_dice'))
+                                            monster_str_dice=p.get('strength_dice'), team=p.get('team', team))
+
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
         behavior = None
@@ -1120,7 +1162,7 @@ def spawn_monster(name, x, y):
 
         monster = GameObject(x, y, p['char'], mod_tag + p['name'], p['color'], blocks=True, fighter=fighter_component,
                              behavior=behavior, description=p['description'], on_create=p.get('on_create'),
-                             movement_type=p.get('movement_type', pathfinding.NORMAL))
+                             movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'))
 
         if monster.behavior:
             monster.behavior.attack_speed = 1.0 / p.get('attack_speed', 1.0 * modifier.get('speed_bonus', 1.0))
@@ -1629,8 +1671,8 @@ def main_menu():
         choice = ui.menu('', ['NEW GAME', 'CONTINUE', 'QUIT'], 24, x_center=consts.SCREEN_WIDTH / 2)
         
         if choice == 0: #new game
-            new_game()
-            play_game()
+            if new_game() != 'cancelled':
+                play_game()
         elif choice == 1:
             try:
                 load_game()
@@ -1640,7 +1682,7 @@ def main_menu():
             play_game()
         elif choice == 2:
             print('Quitting game...')
-            break
+            return
 
 
 def new_game():
@@ -1654,8 +1696,7 @@ def new_game():
         options = list(player.loadouts.keys())
         choice = ui.menu('Select your starting class',options,36,x_center=consts.SCREEN_WIDTH / 2)
         if choice is None:
-            main_menu()
-            return
+            return 'cancelled'
         loadout = options[choice]
         confirm = ui.menu('Confirm starting as ' + loadout.title() + ":\n\n" + player.loadouts[loadout]['description'],
                           ['Start','Back'],36,x_center=consts.SCREEN_WIDTH / 2) == 0

@@ -7,48 +7,112 @@ import effects
 import player
 import syntax
 
+def acquire_target(monster, priority=None):
+    if not monster.fighter:
+        return None
+
+    if priority is not None:
+        if monster.fighter.team != priority.fighter.team and fov.monster_can_see_object(monster, priority):
+            return priority
+
+    closest = None
+    closest_dist = 10000
+    if monster.fighter.team == 'ally':
+        target_team = 'enemy'
+    elif monster.fighter.team == 'enemy':
+        target_team = 'ally'
+    else:  # Neutral fighters acquire no targets
+        return None
+    for o in game.current_map.fighters:
+        if o.fighter.team == target_team and o.fighter.hp > 0 and fov.monster_can_see_object(monster, o):
+            dist = monster.distance_to(o)
+            if closest is None or dist < closest_dist:
+                closest = o
+                closest_dist = dist
+    return closest
+
+
+def aggro_on_hit(monster, attacker):
+    if attacker is not None and fov.monster_can_see_object(monster, attacker) and libtcod.random_get_int(0, 0, 1) == 1:
+        # 50% chance to aggro onto the attacker
+        monster.behavior.behavior.target = attacker
+        monster.behavior.behavior.last_seen_position = attacker.x, attacker.y
+        monster.behavior.ai_state = 'pursuing'
+
+
 class AI_Default:
 
     def __init__(self):
         self.last_seen_position = None
         self.wander_destination = None
+        self.target = None
 
     def act(self, ai_state):
         if ai_state == 'pursuing':
             return self.pursue()
         elif ai_state == 'wandering':
             return self.wander()
+        elif ai_state == 'following':
+            return self.follow()
         else:
             return self.rest()
 
+    def follow(self):
+        monster = self.owner
+        target = acquire_target(monster)
+        if target is not None:
+            self.last_seen_position = target.x, target.y
+            self.target = target
+            monster.behavior.ai_state = 'pursuing'
+            return 0.0
+        if monster.behavior.follow_target is None:
+            monster.behavior.ai_state = 'resting'
+            return 0.0
+        monster.move_astar(monster.behavior.follow_target.x, monster.behavior.follow_target.y)
+        return monster.behavior.move_speed
+
     def rest(self):
         monster = self.owner
-        if fov.monster_can_see_object(monster, player.instance):
-            self.last_seen_position = player.instance.x, player.instance.y
+        if monster.behavior.follow_target is not None:
+            monster.behavior.ai_state = 'following'
+            return 0.0
+        target = acquire_target(monster)
+        if target is not None:
+            self.last_seen_position = target.x, target.y
+            self.target = target
             monster.behavior.ai_state = 'pursuing'
             return 0.0
         return 1.0
 
     def pursue(self):
         monster = self.owner
-        if fov.monster_can_see_object(monster, player.instance):
-            self.last_seen_position = player.instance.x, player.instance.y
+        if self.target is None or self.target.fighter is None or self.target.fighter.hp <= 0:
+            if monster.behavior.follow_target is not None:
+                monster.behavior.ai_state = 'following'
+            else:
+                monster.behavior.ai_state = 'wandering'
+            self.target = None
+            self.last_seen_position = None
+            return 0.0
+        if fov.monster_can_see_object(monster, self.target):
+            self.last_seen_position = self.target.x, self.target.y
             # Handle default ability use behavior
             for a in monster.fighter.abilities:
                 if a.current_cd <= 0:
                     # Use abilities when they're up
-                    if a.use(monster) != 'didnt-take-turn':
+                    if a.use(monster, self.target) != 'didnt-take-turn':
                         return monster.behavior.attack_speed
 
             # Handle moving
-            if not is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y):
-                monster.move_astar(player.instance.x, player.instance.y)
+            if not is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y):
+                monster.move_astar(self.target.x, self.target.y)
                 return monster.behavior.move_speed
 
             # Handle attacking
-            elif player.instance.fighter.hp > 0:
-                monster.fighter.attack(player.instance)
+            else:
+                monster.fighter.attack(self.target)
                 return monster.behavior.attack_speed
+
         elif self.last_seen_position is not None and not\
                 (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
             result = monster.move_astar(self.last_seen_position[0], self.last_seen_position[1])
@@ -62,8 +126,10 @@ class AI_Default:
 
     def wander(self):
         monster = self.owner
-        if fov.monster_can_see_object(monster, player.instance):
-            self.last_seen_position = player.instance.x, player.instance.y
+        target = acquire_target(monster)
+        if target is not None:
+            self.last_seen_position = target.x, target.y
+            self.target = target
             self.wander_destination = None
             monster.behavior.ai_state = 'pursuing'
             return 0.0
@@ -75,6 +141,8 @@ class AI_Default:
             monster.move_astar(self.wander_destination[0], self.wander_destination[1])
             return monster.behavior.move_speed
 
+    def on_get_hit(self, attacker):
+        aggro_on_hit(self.owner, attacker)
 
 class AI_Reeker:
 
@@ -97,16 +165,30 @@ class AI_Reeker:
         return monster.behavior.attack_speed
 
 
+class AI_Lifeplant:
+
+    def act(self, ai_state):
+        monster = self.owner
+        for obj in game.current_map.fighters:
+            if is_adjacent_diagonal(obj.x, obj.y, monster.x, monster.y):
+                obj.fighter.heal(libtcod.random_get_int(0, 1, 2))
+        return monster.behavior.attack_speed
+
+
 class AI_TunnelSpider:
 
     def __init__(self):
         self.closest_web = None
         self.last_seen_position = None
+        self.target = None
 
     def act(self, ai_state):
         monster = self.owner
         if ai_state == 'resting':
-            if fov.monster_can_see_object(monster, player.instance):
+            target = acquire_target(monster)
+            if target is not None:
+                self.last_seen_position = target.x, target.y
+                self.target = target
                 monster.behavior.ai_state = 'pursuing'
                 return 0.0
             elif object_at_tile(monster.x, monster.y, 'spiderweb') is None:
@@ -125,16 +207,21 @@ class AI_TunnelSpider:
                     monster.behavior.ai_state = 'resting'
                 return monster.behavior.move_speed
         elif ai_state == 'pursuing':
-            if is_adjacent_diagonal(monster.x, monster.y, player.instance.x, player.instance.y) and player.instance.fighter.hp > 0:
-                monster.fighter.attack(player.instance)
+            if self.target is None or self.target.fighter is None or self.target.fighter.hp <= 0:
+                monster.behavior.ai_state = 'resting'
+                self.target = None
+                self.last_seen_position = None
+                return 0.0
+            if is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y) and self.target.fighter.hp > 0:
+                monster.fighter.attack(self.target)
                 return monster.behavior.attack_speed
             self.closest_web = self.find_closest_web()
             if self.closest_web is not None and monster.distance_to(self.closest_web) > consts.TUNNEL_SPIDER_MAX_WEB_DIST:
                 monster.behavior.ai_state = 'retreating'
                 return 0.0
-            elif fov.monster_can_see_object(monster, player.instance):
-                monster.move_astar(player.instance.x, player.instance.y)
-                self.last_seen_position = (player.instance.x, player.instance.y)
+            elif fov.monster_can_see_object(monster, self.target):
+                monster.move_astar(self.target.x, self.target.y)
+                self.last_seen_position = self.target.x, self.target.y
                 return monster.behavior.move_speed
             elif self.last_seen_position is not None and not \
                     (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):
@@ -146,6 +233,9 @@ class AI_TunnelSpider:
         else:
             monster.behavior.ai_state = 'resting'
             return 1.0  # pass the turn
+
+    def on_get_hit(self, attacker):
+        aggro_on_hit(self.owner, attacker)
 
     def find_closest_web(self):
         closest_web = None
@@ -183,9 +273,10 @@ class AI_General:
     def __init__(self, move_speed=1.0, attack_speed=1.0, behavior=AI_Default()):
         self.turn_ticker = 0.0
         self.behavior = behavior
-        self.move_speed = 1.0 / move_speed  # High speed = low delay.
-        self.attack_speed = 1.0 / attack_speed
+        self.base_move_speed = 1.0 / move_speed  # High speed = low delay.
+        self.base_attack_speed = 1.0 / attack_speed
         self.ai_state = 'resting'
+        self.follow_target = None
 
     def take_turn(self):
         #self.turn_ticker += self.speed
@@ -201,6 +292,25 @@ class AI_General:
                 self.turn_ticker += self.behavior.act(self.ai_state)
         self.turn_ticker -= 1.0
 
+    def get_hit(self, attacker):
+        if hasattr(self.behavior, 'on_get_hit') and self.behavior.on_get_hit is not None:
+            self.behavior.on_get_hit(attacker)
+
+    @property
+    def move_speed(self):
+        monster = self.owner
+        speed = self.base_move_speed
+        if monster.fighter and monster.fighter.has_status('slowed'):
+            speed *= 2.0
+        return speed
+
+    @property
+    def attack_speed(self):
+        monster = self.owner
+        speed = self.base_move_speed
+        if monster.fighter and monster.fighter.has_status('exhausted'):
+            speed *= 2.0
+        return speed
 
 class ReekerGasBehavior:
     def __init__(self):

@@ -16,7 +16,8 @@ class Fighter:
                  damage_variance=0.15, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
-                 damage_bonus=0, m_str_dice=0, m_str_size=0, monster_str_dice=None, spell_resist=0):
+                 damage_bonus=0, m_str_dice=0, m_str_size=0, monster_str_dice=None, spell_resist=0, team='enemy',
+                 on_get_hit=None):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -49,6 +50,8 @@ class Fighter:
         self.hit_table = hit_table
         self.monster_flags = monster_flags
         self.subtype = subtype
+        self.team = team
+        self.on_get_hit = on_get_hit
 
         self.base_damage_bonus = damage_bonus
         self.m_str_dice = m_str_dice
@@ -100,11 +103,12 @@ class Fighter:
         if self.stamina > self.max_stamina:
             self.stamina = self.max_stamina
 
-    def take_damage(self, damage):
+    def take_damage(self, damage, attacker=None):
         if self.owner == player.instance and consts.DEBUG_INVINCIBLE:
             damage = 0
 
         if damage > 0:
+            self.get_hit(attacker)
             self.hp -= damage
             if self.hp <= 0:
                 self.drop_essence()
@@ -115,6 +119,12 @@ class Fighter:
                     player.instance.fighter.xp += self.xp
             self.time_since_last_damaged = 0
         return damage
+
+    def get_hit(self, attacker):
+        if self.owner.behavior:
+            self.owner.behavior.get_hit(attacker)
+        if self.on_get_hit:
+            self.on_get_hit(self.owner, attacker)
 
     def drop_essence(self):
         if hasattr(self.owner, 'essence') and self.owner is not player.instance:
@@ -471,6 +481,12 @@ damage_description_tables = {
         ('slam','slams'),
         ('shred','shreds'),
         ('blast','blasts')
+    ],
+    'arcane': [
+        ('dazzle', 'dazzles'),
+        ('zap', 'zaps'),
+        ('blast', 'blasts'),
+        ('disintegrate', 'disintegrates'),
     ]
 }
 
@@ -566,7 +582,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
             #ui.message('The ' + fighter.owner.name.title() + "'s attack " + verb + ' the ' + target.name + '!', libtcod.grey)
             ui.message('%s attack %s %s' % (
                             syntax.name(fighter.owner.name, possesive=True).capitalize(),
-                            verb[0],
+                            verb[1],
                             syntax.name(target.name)), libtcod.grey)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
@@ -708,7 +724,7 @@ def get_chance_to_hit(target, accuracy):
         return 1.0
     return 1.0 - float(target.fighter.evasion) / float(max(accuracy, target.fighter.evasion + 1))
 
-def on_hit_stun(attacker,target):
+def on_hit_stun(attacker, target):
     scaling_factor = 1
     if(attacker is player.instance):
         scaling_factor = attacker.player_stats.str / 10
@@ -716,6 +732,10 @@ def on_hit_stun(attacker,target):
         if attacker == player.instance:
             ui.message("Your " + main.get_equipped_in_slot(player.instance.fighter.inventory,'right hand').owner.name.title() + " rings out!",libtcod.blue)
         target.fighter.apply_status_effect(effects.stunned())
+
+def on_hit_burn(attacker, target):
+    if libtcod.random_get_int(0, 1, 10) <= 7:
+        target.fighter.apply_status_effect(effects.burning())
 
 def mul(sequence):
     return reduce(lambda x,y: x * y,sequence,1)
