@@ -320,7 +320,7 @@ def message(new_msg, color=libtcod.white):
     new_msg_lines = textwrap.wrap(new_msg, consts.MSG_WIDTH)
 
     for line in new_msg_lines:
-        if len(game_msgs) == consts.MSG_HEIGHT:
+        if len(game_msgs) == consts.MSG_HEIGHT + 1:
             del game_msgs[0]
         game_msgs.append((line, color))
 
@@ -545,7 +545,7 @@ def render_message_panel():
     libtcod.console_set_default_foreground(panel, libtcod.light_grey)
     libtcod.console_print_ex(panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, get_names_under_mouse())
 
-    draw_border(panel, 0, 0, consts.PANEL_WIDTH, consts.PANEL_HEIGHT)
+    draw_border(panel, 0, 0, consts.PANEL_WIDTH, consts.PANEL_HEIGHT + 1)
 
     libtcod.console_blit(panel, 0, 0, consts.PANEL_WIDTH, consts.PANEL_HEIGHT, 0, consts.PANEL_X, consts.PANEL_Y)
 
@@ -610,8 +610,8 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
     while True:
         libtcod.console_flush()
         libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)
-        main.render_map()
         render_side_panel(acc_mod=acc_mod)
+        main.render_map()
 
         # Render range shading
         libtcod.console_clear(overlay)
@@ -623,8 +623,10 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
                         libtcod.console_put_char_ex(overlay, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.black)
                     else:
                         libtcod.console_put_char_ex(overlay, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.magenta)
-            libtcod.console_blit(overlay, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0,
-                                 consts.MAP_VIEWPORT_X - offsetx, consts.MAP_VIEWPORT_Y - offsety, 0, 0.2)
+            libtcod.console_blit(overlay, player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2,
+                                 player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2,
+                                 consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0,
+                                 consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 0.0, 0.2)
 
         # Render cursor
         libtcod.console_set_default_background(overlay, libtcod.magenta)
