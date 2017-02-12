@@ -107,11 +107,11 @@ class Equipment:
             libtcod.console_print(console, x, y + print_height, 'Armor: ' + str(self.armor_bonus))
             print_height += 1
         if self.weapon_dice != '+0':
-            r = dice_range(self.weapon_dice)
+            r = dice_range(self.weapon_dice, normalize_size=4)
             libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(r[0]) + '-' + str(r[1]))
             print_height += 1
         if self.str_dice is not None and self.str_dice > 0:
-            r = dice_range(str(self.str_dice)+'d'+str(player.instance.player_stats.str))
+            r = dice_range(str(self.str_dice)+'d'+str(player.instance.player_stats.str), normalize_size=4)
             libtcod.console_print(console, x, y + print_height, 'Strength Bonus: ' + str(r[0]) + '-' + str(r[1]))
             print_height += 1
         if self.accuracy_bonus != 0:
@@ -1375,24 +1375,45 @@ def door_interact(door):
     ui.message('Something is blocking the door.')
     return 'didnt-take-turn'
 
-def roll_dice(dice):
-    c = 0
-    if '+' in dice:
-        dice,c = dice.split('+')
 
-    a,b = dice.split('d')
-    r = 0
-    for i in range(int(a)):
-        r += libtcod.random_get_int(0,1,int(b))
-    return r + int(c)
-
-
-def dice_range(dice):
+def unpack_dice(dice, normalize_size=None):
     c = 0
     if '+' in dice:
         dice, c = dice.split('+')
-    a,b = dice.split('d')
-    return int(a) + int(c), int(a) * int(b) + int(c)
+
+    a, b = dice.split('d')
+    flat_bonus = int(c)
+
+    if normalize_size is None:
+        dice_count = int(a)
+        dice_size = int(b)
+        remainder = 0
+    else:
+        dice_count = int(a) * (int(b) / normalize_size)
+        dice_size = normalize_size
+        remainder = int(b) % normalize_size
+    return dice_count, dice_size, remainder, flat_bonus
+
+
+def roll_dice(dice, normalize_size=None):
+    dice_count, dice_size, remainder, flat_bonus = unpack_dice(dice, normalize_size)
+
+    r = 0
+    for i in range(dice_count):
+        r += libtcod.random_get_int(0,1,dice_size)
+    if remainder > 0:
+        r += libtcod.random_get_int(0, 1, remainder)
+    return r + flat_bonus
+
+
+def dice_range(dice, normalize_size=None):
+    dice_count, dice_size, remainder, flat_bonus = unpack_dice(dice, normalize_size)
+
+    remainder_min = 0
+    if remainder > 0:
+        remainder_min = 1
+
+    return dice_count + remainder_min + flat_bonus, dice_count * dice_size + remainder + flat_bonus
 
 
 def find_closest_open_tile(x, y, exclude=[]):
