@@ -981,13 +981,13 @@ def examine(x=None, y=None):
                 menu(desc, ['back'], 50)
 
 def show_ability_screen():
-    opts = [abilities.default_abilities['attack']]
+    opts = [player.default_abilities['attack']]
     # Weapon ability, or bash if none
     weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
     if weapon is not None and weapon.owner.item.ability is not None:
         opts.append(weapon.owner.item.ability)
     else:
-        opts.append(abilities.default_abilities['bash'])
+        opts.append(player.default_abilities['bash'])
     # Other equipment abilities
     for i in main.get_all_equipped(player.instance.fighter.inventory):
         if i is not weapon and i.owner.item.ability is not None:
