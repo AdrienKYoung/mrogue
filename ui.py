@@ -562,10 +562,8 @@ def render_action_panel():
         # Header
         libtcod.console_print(action_panel, 1, draw_height, 'ACTIONS')
         draw_height += 2
-
+        # Actions
         libtcod.console_print(action_panel, 1, draw_height, '(a) Abilities')
-        draw_height += 2
-        libtcod.console_print(action_panel, 1, draw_height, '(b) Inventory')
         draw_height += 2
         libtcod.console_print(action_panel, 1, draw_height, '(i) Inventory')
         draw_height += 2
@@ -575,11 +573,9 @@ def render_action_panel():
         draw_height += 2
         libtcod.console_print(action_panel, 1, draw_height, '(p) Perks')
         draw_height += 2
-        libtcod.console_print(action_panel, 1, draw_height, '(c) Character \n    Info')
-        draw_height += 3
-        libtcod.console_print(action_panel, 1, draw_height, '(x) Examine')
-        draw_height += 2
         libtcod.console_print(action_panel, 1, draw_height, '(v) Jump')
+        draw_height += 2
+        libtcod.console_print(action_panel, 1, draw_height, '(x) Examine')
         draw_height += 2
         # Get/Interact
         items_here = main.get_objects(player.instance.x, player.instance.y, condition=lambda o: o.item)
@@ -608,6 +604,9 @@ def render_action_panel():
             draw_height += 2
             libtcod.console_print(action_panel, 1, draw_height, '(m) Meditate')
             draw_height += 2
+        # Character Info
+        libtcod.console_print(action_panel, 1, draw_height, '(c) Character \n    Info')
+        draw_height += 3
         # Hide Panel
         libtcod.console_print(action_panel, 1, draw_height, '(A) Hide Panel')
         draw_height += 2
