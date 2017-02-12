@@ -1,11 +1,13 @@
 import libtcodpy as libtcod
 import game as main
 import spells
+import ui
+import player
 
 class StatusEffect:
-    def __init__(self, name, time_limit=None, color=libtcod.white, on_apply=None, on_end=None, on_tick=None, message=None,
+    def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
                  attack_power_mod=1.0,armor_mod=1.0,shred_mod=1.0,pierce_mod=1.0,attack_speed_mod=1.0,evasion_mod=1.0,spell_power_mod=1.0,
-                 accuracy_mod=1.0, resistance_mod=[],weakness_mod=[]):
+                 accuracy_mod=1.0, resistance_mod=[],weakness_mod=[], stacks=1):
         self.name = name
         self.time_limit = time_limit
         self.color = color
@@ -23,10 +25,12 @@ class StatusEffect:
         self.resistance_mod = resistance_mod
         self.weakness_mod = weakness_mod
         self.accuracy_mod = accuracy_mod
+        self.stacking_behavior = stacking_behavior
+        self.stacks = stacks
 
 
-def burning(duration = 8):
-    return StatusEffect('burning', duration, libtcod.red, on_tick=fire_tick, message="You are on fire!")
+def burning(duration = 6, stacks = 1):
+    return StatusEffect('burning', duration, libtcod.red, stacking_behavior='stack-refresh', stacks=stacks, on_tick=fire_tick, message="You are on fire!")
 
 def exhausted(duration = 5):
     return StatusEffect('exhausted',duration,libtcod.yellow, message="You feel exhausted!")
@@ -87,17 +91,20 @@ def resistant(element=None,effect=None,color=None,duration=99):
         return StatusEffect('resist ' + effect, duration, color, resistance_mod=[effect],
                             message='You feel more resistant!')
 
-def fire_tick(object=None):
-    if object is None or object.fighter is None or \
-                    main.current_map.tiles[object.x][object.y].is_water:
-        object.fighter.remove_status('burning')
-    object.fighter.take_damage(5)
+def fire_tick(effect,object=None):
+    if object is not None or object.fighter is not None:
+        if main.current_map.tiles[object.x][object.y].is_water:
+            object.fighter.remove_status('burning')
+        damage = effect.stacks * 3
+        if object is player.instance:
+            ui.message("You burn for {} damage!".format(damage),libtcod.flame)
+        object.fighter.take_damage(damage)
 
-def regeneration_tick(object=None):
+def regeneration_tick(effect,object=None):
     if object is not None or object.fighter is not None:
         object.fighter.heal(3)
 
-def poison_tick(object=None):
+def poison_tick(effect,object=None):
     if object is not None or object.fighter is not None:
         object.fighter.take_damage(2)
 

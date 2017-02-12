@@ -6,8 +6,8 @@ import spells
 import monsters
 import fov
 import ui
-import player
 import syntax
+import player
 
 class Ability:
     def __init__(self, name, description, function, cooldown):
@@ -225,12 +225,6 @@ data = {
         'function': ability_fireball,
         'cooldown': 20
     }
-}
-
-default_abilities = {
-    'attack' : Ability('Attack','Attack an enemy',ability_attack,0),
-    'bash' : Ability('Bash','Knock an enemy back',ability_bash_attack,0),
-    'jump' : Ability('Jump','Jump to a tile',player.jump,0)
 }
 
 skill_list = [

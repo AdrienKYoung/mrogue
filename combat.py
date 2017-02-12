@@ -6,7 +6,6 @@ import consts
 import player
 import spells
 import fov
-import effects
 import syntax
 import pathfinding
 
@@ -225,7 +224,7 @@ class Fighter:
         removed_effects = []
         for effect in self.status_effects:
             if effect.on_tick is not None:
-                effect.on_tick(object=self.owner)
+                effect.on_tick(effect, object=self.owner)
             if effect.time_limit is not None:
                 effect.time_limit -= 1
                 if effect.time_limit == 0:
@@ -250,12 +249,25 @@ class Fighter:
                                     self.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
                 return False
         # check for existing matching effects
+        add_effect = True
         for effect in self.status_effects:
             if effect.name == new_effect.name:
-                # refresh the effect
-                effect.time_limit = new_effect.time_limit
-                return True
-        self.status_effects.append(new_effect)
+                if 'refresh' in new_effect.stacking_behavior:
+                    # refresh the effect
+                    effect.time_limit = new_effect.time_limit
+                    add_effect = False
+                if 'stack' in new_effect.stacking_behavior:
+                    #add to current stack
+                    effect.stacks += new_effect.stacks
+                    add_effect = False
+                if 'unique' == new_effect.stacking_behavior:
+                    add_effect = False
+                    supress_message = True
+                if 'duplicate' == new_effect.stacking_behavior:
+                    add_effect = True
+
+        if add_effect:
+            self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
             new_effect.on_apply(self.owner)
         if new_effect.message is not None and self.owner is player.instance and not supress_message:
@@ -408,6 +420,7 @@ hit_tables = {
     }
 }
 
+import effects
 location_damage_tables = {
     'body' : {
         'damage':1.0,

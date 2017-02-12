@@ -5,9 +5,9 @@ import textwrap
 import fov
 import loot
 import spells
-import abilities
 import player
 import combat
+import abilities
 
 def msgbox(text, width=50):
     menu(text, [], width)
@@ -439,6 +439,8 @@ def render_side_panel(acc_mod=1.0):
         for effect in player.instance.fighter.status_effects:
             libtcod.console_set_default_foreground(side_panel, effect.color)
             effect_str = effect.name
+            if effect.stacks > 1:
+                effect_str += ' x' + str(effect.stacks)
             if effect.time_limit is not None:
                 effect_str += ' (' + str(effect.time_limit) + ')'
             libtcod.console_print(side_panel, 2, drawHeight, effect_str.capitalize())

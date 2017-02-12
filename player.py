@@ -661,3 +661,10 @@ def jump(actor=None):
 
     ui.message('Out of range.', libtcod.white)
     return 'didnt-take-turn'
+
+import abilities
+default_abilities = {
+    'attack' : abilities.Ability('Attack','Attack an enemy',abilities.ability_attack,0),
+    'bash' : abilities.Ability('Bash','Knock an enemy back',abilities.ability_bash_attack,0),
+    'jump' : abilities.Ability('Jump','Jump to a tile',jump,0)
+}

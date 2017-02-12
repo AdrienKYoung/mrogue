@@ -1,10 +1,9 @@
 import libtcodpy
-import spells
 import game as main
-import abilities
 import player
 import combat
 import dungeon
+import spells
 
 table = {
     'weapons_0': [
