@@ -1592,6 +1592,8 @@ def render_all():
 
     ui.render_message_panel()
 
+    ui.render_action_panel()
+
     ui.render_ui_overlay()
 
 

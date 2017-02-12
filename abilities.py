@@ -227,11 +227,11 @@ data = {
     }
 }
 
-default_abilities = [
-    Ability('Attack','Attack an enemy',ability_attack,0),
-    Ability('Bash','Knock an enemy back',ability_bash_attack,0),
-    Ability('Jump','Jump to a tile',player.jump,0)
-]
+default_abilities = {
+    'attack' : Ability('Attack','Attack an enemy',ability_attack,0),
+    'bash' : Ability('Bash','Knock an enemy back',ability_bash_attack,0),
+    'jump' : Ability('Jump','Jump to a tile',player.jump,0)
+}
 
 skill_list = [
     Perk('Iron Skin', 'You gain 3 armor while not wearing armor', category='unarmed', requirements_str='Level 2'),

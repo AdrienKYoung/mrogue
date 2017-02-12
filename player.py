@@ -209,7 +209,7 @@ def handle_keys():
                 return pick_up_item()
             if key_char == 'i':
                 return ui.inspect_inventory()
-            if key_char == 'o':
+            if key_char == 'e':
                 chosen_item = ui.inventory_menu('Use which item?')
                 if chosen_item is not None:
                     use_result = chosen_item.use()
@@ -233,15 +233,19 @@ def handle_keys():
                 return cast_spell()
             if key_char == 'v':
                 return jump()
-            if key_char == 'e':
+            if key_char == 'x':
                 ui.examine()
             if key.vk == libtcod.KEY_TAB:
                 ui.target_next_monster()
             if key_char == 'm':
                 return meditate()
             if key_char == 'a':
-                return ui.show_ability_screen()
-            if key_char == 'l': # TEMPORARY
+                if key.shift:
+                    ui.show_action_panel = not ui.show_action_panel
+                    return 'didnt-take-turn'
+                else:
+                    return ui.show_ability_screen()
+            if key_char == 'p': # TEMPORARY
                 purchase_skill()
                 return 'didnt-take-turn'
             if mouse.rbutton_pressed:
@@ -260,6 +264,7 @@ def do_queued_action(action):
         book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
         if book is not None and hasattr(book, 'spell_list'):
             book.refill_spell_charges()
+            ui.message('Your spells have recharged.', libtcod.dark_cyan)
         return
 
     elif action == 'channel-meditate':
@@ -344,19 +349,18 @@ def check_level_up():
         instance.fighter.xp = instance.fighter.xp - next
 
 def level_up():
-    learned_skills = main.learned_skills
 
     instance.level += 1
     instance.skill_points += instance.player_stats.wiz
     ui.message('You grow stronger! You have reached level ' + str(instance.level) + '!', libtcod.green)
     choice = None
-    while choice == None:
-        choice = ui.menu('Level up! Choose a stat to raise:\n',
-        ['Constitution (+20 HP, from ' + str(instance.fighter.base_max_hp) + ')',
-            'Strength (+1 attack, from ' + str(instance.fighter.base_power) + ')',
-            'Agility (+1 defense, from ' + str(instance.fighter.base_defense) + ')',
-            'Intelligence (increases spell damage)',
-            'Wisdom (increases spell slots, spell utility)'
+    while choice is None:
+        choice = ui.menu('Level up! Choose a stat to raise:\n', [
+            'Constitution',
+            'Strength',
+            'Agility',
+            'Intelligence',
+            'Wisdom'
          ], consts.LEVEL_SCREEN_WIDTH)
 
     if choice == 0:
@@ -582,6 +586,10 @@ def replace_essence(essence):
 
 
 def meditate():
+    book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
+    if book is None or not hasattr(book, 'spell_list'):
+        ui.message('Without access to magic, you have no need of meditation.', libtcod.dark_cyan)
+        return 'didnt-take-turn'
     ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)
     for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
         instance.action_queue.append('channel-meditate')

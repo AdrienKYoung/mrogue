@@ -98,12 +98,16 @@ def cast_flame_wall(actor=None,target=None):
         ui.render_message_panel()
         libtcod.console_flush()
         (x, y) = ui.target_tile()
+        if x is None:
+            return 'cancelled'
         actor = player.instance
     else:
         x = target.x
         y = target.y
-    main.create_fire(x,y,10)
-    return 'success'
+    if x is not None:
+        main.create_fire(x,y,10)
+        return 'success'
+    return 'failure'
 
 def cast_shatter_item(actor=None,target=None):
     x, y = 0, 0

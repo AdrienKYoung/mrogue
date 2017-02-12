@@ -550,6 +550,83 @@ def render_message_panel():
     libtcod.console_blit(panel, 0, 0, consts.PANEL_WIDTH, consts.PANEL_HEIGHT, 0, consts.PANEL_X, consts.PANEL_Y)
 
 
+def render_action_panel():
+    libtcod.console_set_default_background(action_panel, libtcod.black)
+    libtcod.console_clear(action_panel)
+
+    if show_action_panel:
+
+        draw_height = 1
+        libtcod.console_set_default_foreground(action_panel, libtcod.white)
+
+        # Header
+        libtcod.console_print(action_panel, 1, draw_height, 'ACTIONS')
+        draw_height += 2
+
+        libtcod.console_print(action_panel, 1, draw_height, '(a) Abilities')
+        draw_height += 2
+        libtcod.console_print(action_panel, 1, draw_height, '(b) Inventory')
+        draw_height += 2
+        libtcod.console_print(action_panel, 1, draw_height, '(i) Inventory')
+        draw_height += 2
+        libtcod.console_print(action_panel, 1, draw_height, '(e) Use Item')
+        draw_height += 2
+        libtcod.console_print(action_panel, 1, draw_height, '(d) Drop Item')
+        draw_height += 2
+        libtcod.console_print(action_panel, 1, draw_height, '(p) Perks')
+        draw_height += 2
+        libtcod.console_print(action_panel, 1, draw_height, '(c) Character \n    Info')
+        draw_height += 3
+        libtcod.console_print(action_panel, 1, draw_height, '(x) Examine')
+        draw_height += 2
+        libtcod.console_print(action_panel, 1, draw_height, '(v) Jump')
+        draw_height += 2
+        # Get/Interact
+        items_here = main.get_objects(player.instance.x, player.instance.y, condition=lambda o: o.item)
+        if len(items_here) > 0:
+            libtcod.console_print(action_panel, 1, draw_height, '(g) Pick Up Item')
+            draw_height += 2
+        else:
+            essence_here = main.get_objects(player.instance.x, player.instance.y,
+                                            condition=lambda o: hasattr(o, 'essence_type'))
+            if len(essence_here) > 0:
+                libtcod.console_print(action_panel, 1, draw_height, '(g) Pick Up Essence')
+                draw_height += 2
+            else:
+                interactable_here = main.get_objects(player.instance.x, player.instance.y,
+                                                     condition=lambda o: o.interact, distance=1)
+                if len(interactable_here) > 0:
+                    libtcod.console_print(action_panel, 1, draw_height, '(g) ')
+                    text = 'Use %s' % interactable_here[0].name.title()
+                    h = libtcod.console_get_height_rect(action_panel, 5, 0, consts.ACTION_MENU_WIDTH - 6, 3, text)
+                    libtcod.console_print_rect(action_panel, 5, draw_height, consts.ACTION_MENU_WIDTH - 6, h, text)
+                    draw_height += h + 1
+        # Spells
+        left_hand = main.get_equipped_in_slot(player.instance.fighter.inventory, 'left hand')
+        if hasattr(left_hand, 'spell_list') and len(left_hand.spell_list) > 0:
+            libtcod.console_print(action_panel, 1, draw_height, '(z) Cast Spell')
+            draw_height += 2
+            libtcod.console_print(action_panel, 1, draw_height, '(m) Meditate')
+            draw_height += 2
+        # Hide Panel
+        libtcod.console_print(action_panel, 1, draw_height, '(A) Hide Panel')
+        draw_height += 2
+
+
+        draw_border(action_panel, 0, 0, consts.ACTION_MENU_WIDTH, consts.ACTION_MENU_HEIGHT)
+
+        libtcod.console_blit(action_panel, 0, 0, consts.ACTION_MENU_WIDTH, consts.ACTION_MENU_HEIGHT, 0, consts.ACTION_MENU_X, consts.ACTION_MENU_Y)
+
+    else:
+        draw_border(action_panel, 0, consts.ACTION_MENU_HEIGHT - 3, consts.ACTION_MENU_WIDTH, 3)
+
+        libtcod.console_set_default_foreground(action_panel, libtcod.white)
+        libtcod.console_print_ex(action_panel, consts.ACTION_MENU_WIDTH / 2 - 2, consts.ACTION_MENU_HEIGHT - 2, libtcod.BKGND_DEFAULT, libtcod.CENTER, '(A) Actions')
+
+        libtcod.console_blit(action_panel, 0, consts.ACTION_MENU_HEIGHT - 3, consts.ACTION_MENU_WIDTH, 3, 0,
+                             consts.ACTION_MENU_X, consts.ACTION_MENU_Y + consts.ACTION_MENU_HEIGHT - 3)
+
+
 def render_ui_overlay():
     global display_ticker, overlay_text
 
@@ -606,6 +683,11 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
     offsetx, offsety = player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2, player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2
     selected_x = x
     selected_y = y
+    libtcod.console_set_default_background(0, libtcod.black)
+    libtcod.console_clear(0)
+    main.render_map()
+    render_side_panel()
+    render_message_panel()
 
     while True:
         libtcod.console_flush()
@@ -898,12 +980,19 @@ def examine(x=None, y=None):
                 menu(desc, ['back'], 50)
 
 def show_ability_screen():
-    opts = []
-    for a in abilities.default_abilities:
-        opts.append(a)
-    for i in player.instance.fighter.inventory:
-        if i.item.ability is not None:
-            opts.append(i.item.ability)
+    opts = [abilities.default_abilities['attack']]
+    # Weapon ability, or bash if none
+    weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
+    if weapon is not None and weapon.owner.item.ability is not None:
+        opts.append(weapon.owner.item.ability)
+    else:
+        opts.append(abilities.default_abilities['bash'])
+    # Other equipment abilities
+    for i in main.get_all_equipped(player.instance.fighter.inventory):
+        if i is not weapon and i.owner.item.ability is not None:
+            opts.append(i.owner.item.ability)
+    # Perk abilities
+    #TODO: Perk abilities
     index = menu('Abilities',[opt.name for opt in opts],20)
     if index is not None:
         choice = opts[index]
@@ -947,10 +1036,11 @@ def render_projectile(start, end, color, character=None):
         prev = bolt.x, bolt.y
     bolt.destroy()
 
-
+show_action_panel = True
 overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
 panel = libtcod.console_new(consts.PANEL_WIDTH, consts.PANEL_HEIGHT)
 side_panel = libtcod.console_new(consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
+action_panel = libtcod.console_new(consts.ACTION_MENU_WIDTH, consts.ACTION_MENU_HEIGHT)
 window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 selected_monster = None
 game_msgs = []
