@@ -269,6 +269,10 @@ def do_queued_action(action):
 
     elif action == 'channel-meditate':
         instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
+    elif action == 'channel-cast':
+        instance.fighter.adjust_stamina(consts.STAMINA_REGEN_CHANNEL)
+    elif callable(action):
+        action()
 
 def cast_spell():
     left_hand = main.get_equipped_in_slot(instance.fighter.inventory,'left hand')
@@ -595,6 +599,11 @@ def meditate():
         instance.action_queue.append('channel-meditate')
     instance.action_queue.append('finish-meditate')
     return 'start-meditate'
+
+def delay(duration,action,delay_action='delay'):
+    for i in range(duration):
+        instance.action_queue.append(delay_action)
+    instance.action_queue.append(action)
 
 def jump(actor=None):
     if not main.current_map.tiles[instance.x][instance.y].jumpable:

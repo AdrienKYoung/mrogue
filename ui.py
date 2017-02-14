@@ -324,6 +324,11 @@ def message(new_msg, color=libtcod.white):
             del game_msgs[0]
         game_msgs.append((line, color))
 
+def message_flush(new_msg, color=libtcod.white):
+    message(new_msg,color)
+    render_message_panel()
+    libtcod.console_flush()
+
 
 def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, align=libtcod.CENTER):
     bar_width = int(float(value) / maximum * total_width)

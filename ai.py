@@ -46,6 +46,8 @@ class AI_Default:
         self.last_seen_position = None
         self.wander_destination = None
         self.target = None
+        self._queued_action = None
+        self._delay_turns = 0
 
     def act(self, ai_state):
         if ai_state == 'pursuing':
@@ -54,6 +56,8 @@ class AI_Default:
             return self.wander()
         elif ai_state == 'following':
             return self.follow()
+        elif ai_state == 'channeling':
+            return self.channel()
         else:
             return self.rest()
 
@@ -141,8 +145,29 @@ class AI_Default:
             monster.move_astar(self.wander_destination[0], self.wander_destination[1])
             return monster.behavior.move_speed
 
+    def channel(self):
+        monster = self.owner
+        if self._delay_turns < 1:
+            self._queued_action()
+            if monster.behavior.follow_target is not None:
+                monster.behavior.ai_state = 'following'
+            target = acquire_target(monster)
+            if target is not None:
+                self.last_seen_position = target.x, target.y
+                self.target = target
+                monster.behavior.ai_state = 'pursuing'
+            else:
+                monster.behavior.ai_state = 'resting'
+        self._delay_turns -= 1
+        return 1.0
+
     def on_get_hit(self, attacker):
         aggro_on_hit(self.owner, attacker)
+
+    def queue_action(self,action,delay):
+        self._queued_action = action
+        self._delay_turns = delay
+        self.owner.behavior.ai_state = 'channeling'
 
 class AI_Reeker:
 

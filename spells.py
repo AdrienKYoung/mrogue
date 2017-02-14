@@ -11,7 +11,7 @@ import world
 import terrain
 
 class Spell:
-    def __init__(self, name, function, description, levels, int_requirement = 10):
+    def __init__(self, name, function, description, levels, int_requirement = 10, cast_time=0):
         self.name = name
         self.function = function
         self.description = description
@@ -19,14 +19,26 @@ class Spell:
         self.int_requirement = int_requirement
         self.max_level = len(levels)
 
+def channel_spell(actor,delay,spell_name,spell_delegate):
+    is_player = actor is player.instance
+    ui.message_flush(syntax.conjugate(is_player,['You begin',actor.name.capitalize() + ' begins']) + ' to cast ' + spell_name)
+    if is_player:
+        player.delay(delay,spell_delegate,'channel-spell')
+    else:
+        actor.behavior.behavior.queue_action(spell_delegate,delay)
+
 def cast_fireball(actor=None,target=None):
-    x,y = 0,0
-    if actor is None: #player is casting
-        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        ui.render_message_panel()
-        libtcod.console_flush()
-        (x, y) = ui.target_tile()
+    cast_time = 2
+    if actor is None:
         actor = player.instance
+        cast_time = main.clamp(cast_time - int((actor.player_stats.int - 10) / 5),0,5)
+    channel_spell(actor,cast_time,'fireball',lambda: continuation_fireball(actor,target))
+
+def continuation_fireball(actor,target):
+    x,y = 0,0
+    if actor is player.instance: #player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile()
     else:
         x = target.x
         y = target.y
@@ -348,6 +360,26 @@ charm_blessing_effects = {
     'life': {
         'buff':effects.regeneration,
         'description':'Regenerate your wounds over time.'
+    },
+    'cold': {
+        'buff':effects.regeneration,
+        'description': ""
+    },
+    'arcane': {
+        'buff':effects.regeneration,
+        'description': ""
+    },
+    'radiant': {
+        'buff':effects.regeneration,
+        'description': ""
+    },
+    'dark': {
+        'buff':effects.regeneration,
+        'description': ""
+    },
+    'void': {
+        'buff':effects.regeneration,
+        'description': ""
     }
 }
 
@@ -467,9 +499,6 @@ def cast_potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
 
 library = {
-    #'manabolt' : Spell('manabolt', { 'normal' : 1 }, cast_manabolt, '[1 normal]',"",0),
-    #'mend' : Spell('mend', { 'life' : 1 }, cast_mend, '[1 life]',"",0),
-    #'ignite' : Spell('ignite', { 'fire' : 1 }, cast_ignite, '[1 fire]',"",0),
     'spell_heat_ray' : Spell(
         'heat ray',
         cast_heat_ray,
