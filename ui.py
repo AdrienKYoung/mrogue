@@ -253,6 +253,9 @@ def target_next_monster():
         selected_monster = None
         return
     else:
+        if selected_monster not in main.current_map.fighters:
+            select_monster(nearby[0][1])
+            return
         i = 0
         while nearby[i][1] is not selected_monster:
             i += 1

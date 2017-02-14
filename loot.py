@@ -412,7 +412,7 @@ proto = {
         'char'          : chr(4),
         'color'         : spells.essence_colors['arcane'],
         'on_use'        : actions.potion_essence('arcane'), #not a bug, returns a lambda
-        'description'   : 'The essence of arcane hums within this gemstone. Absorbing it will bestow a single arcane essence.'
+        'description'   : 'The essence of arcana hums within this gemstone. Absorbing it will bestow a single arcane essence.'
     },
     'gem_lesser_radiance': {
         'name'          : 'Rough Diamond',

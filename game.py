@@ -647,6 +647,8 @@ class GameObject:
         if self in current_map.fighters:
             current_map.fighters.remove(self)
         current_map.objects.remove(self)
+        if self is ui.selected_monster:
+            ui.target_next_monster()
 
 
 class Tile:
@@ -1734,6 +1736,7 @@ def new_game():
 
     in_game = True
     player.create(loadout)
+    ui.selected_monster = None
 
     import world
     world.initialize_world()

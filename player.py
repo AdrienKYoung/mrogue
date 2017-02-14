@@ -114,7 +114,13 @@ loadouts = {
         'inventory':[
             'charm_summoning',
             'book_lesser_fire',
-            'gem_lesser_fire'
+            'gem_lesser_fire',
+            'gem_lesser_water',
+            'gem_lesser_earth',
+            'gem_lesser_air',
+            'gem_lesser_cold',
+            'gem_lesser_life',
+            'gem_lesser_arcane',
         ],
         'description' : "Fragile in melee, but have access to powerful offensive magic. "
                         "Starts with a tome. Charm channels essence to summon elementals"
