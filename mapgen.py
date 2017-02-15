@@ -1106,7 +1106,7 @@ def make_map_forest():
     link_locations = [(consts.MAP_WIDTH/2,1),(1,consts.MAP_HEIGHT/2),(consts.MAP_WIDTH/2,consts.MAP_HEIGHT-1),(consts.MAP_WIDTH-1,consts.MAP_HEIGHT/2)]
     noise = create_voronoi(sizex,sizey,15,2,link_locations)
     room = Room()
-    room.set_pos(0,0)
+    room.set_pos(1,1)
     for x in range(sizex):
         for y in range(sizey):
             elevation = abs(int(math.ceil(4 - noise[x][y] / 2)))
@@ -1116,6 +1116,18 @@ def make_map_forest():
             room.set_tile(x,y,tile,elevation)
     apply_room(room)
     create_slopes()
+
+    for i in range(0, 10 + libtcod.random_get_int(0, 0, 10)):
+        start = (libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 3),
+                 libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 3))
+        create_terrain_patch(start, default_wall, 40, 80)
+
+    tree_count = libtcod.random_get_int(0, 5, 20)
+    for i in range(tree_count):
+        tree_pos = (
+        libtcod.random_get_int(0, 1, consts.MAP_WIDTH - 2), libtcod.random_get_int(0, 1, consts.MAP_HEIGHT - 2))
+        if not map.tiles[tree_pos[0]][tree_pos[1]].is_water:
+            change_map_tile(tree_pos[0], tree_pos[1], 'barren tree')
 
 def make_map_marsh():
 
