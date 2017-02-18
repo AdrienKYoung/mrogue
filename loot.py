@@ -492,6 +492,24 @@ proto = {
         'str_dice'           : 2,
         'attack_delay'       : 14
     },
+    'weapon_greatsword': { #called a spadone or montante in historical circles, but no one will recognize that
+        'name'               : 'greatsword',
+        'category'           : 'weapon',
+        'subtype'            : 'sword',
+        'damage_type'        : 'slashing',
+        'char'               : '/',
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               :'two hand',
+        'description'        : 'A huge greatsword, made for fighting many foes at once.',
+        'stamina_cost'       : 12,
+        'str_requirement'    : 15,
+        'shred'              : 2,
+        'accuracy'           : 1,
+        'weapon_dice'        : '3d6',
+        'str_dice'           : 3,
+        'attack_delay'       : 14
+    },
     'weapon_dagger': {
         'name'               : 'dagger',
         'category'           : 'weapon',
@@ -511,11 +529,11 @@ proto = {
         'attack_delay'       : 12,
         'crit_bonus'         : 3.0
     },
-    'weapon_messer': {
+    'weapon_messer': { #lit. german: 'knife'. no english period term
         'name'               : 'messer',
         'category'           : 'weapon',
         'damage_type'        : 'slashing',
-        'subtype'        : 'knife',
+        'subtype'            : 'knife',
         'char'               : '-',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -551,6 +569,28 @@ proto = {
                                'damage to enemies exactly 2 spaces away.',
         'weapon_dice'        : '2d5',
         'str_dice'           : 1,
+        'attack_delay'       : 14
+    },
+    'weapon_halberd': {
+        'name'               : 'halberd',
+        'category'           : 'weapon',
+        'subtype'            : 'polearm',
+        'damage_type'        : 'slashing',
+        'char'               : libtcodpy.CHAR_ARROW_N,
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               :'two hand',
+        'description'        : 'A superior two-handed polearm with a spike, axe and hook on its head.',
+        'stamina_cost'       : 12,
+        'str_requirement'    : 14,
+        'pierce'             : 1,
+        'shred'              : 0,
+        'accuracy'           : 2,
+        'ctrl_attack'        : player.reach_attack, #could use a special reach attack that cleaves
+        'ctrl_attack_desc'   : 'Reach-Attack - attack an enemy up to 2 spaces away in this direction. Deals 50% more '
+                               'damage to enemies exactly 2 spaces away.',
+        'weapon_dice'        : '3d6',
+        'str_dice'           : 3,
         'attack_delay'       : 14
     },
     'weapon_pickaxe': {
@@ -596,10 +636,30 @@ proto = {
         'str_dice'           : 2,
         'attack_delay'       : 16
     },
+    'weapon_dane_axe': {
+        'name'               : 'dane axe',
+        'category'           : 'weapon',
+        'subtype'            : 'axe',
+        'damage_type'        : 'slashing',
+        'char'               : 'P',
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               : 'two hand',
+        'description'        : 'A massive, two handed axe made for smashing shields and armor.',
+        'stamina_cost'       : 12,
+        'str_requirement'    : 16,
+        'shred'              : 3,
+        'accuracy'           : 3,
+        'ctrl_attack'        : player.cleave_attack,
+        'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.',
+        'weapon_dice'        : '2d10',
+        'str_dice'           : 3,
+        'attack_delay'       : 16
+    },
     'weapon_mace': {
         'name'               : 'mace',
         'category'           : 'weapon',
-        'subtype'        : 'club',
+        'subtype'            : 'club',
         'damage_type'        : 'bludgeoning',
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
@@ -615,11 +675,31 @@ proto = {
         'on_hit'             : [combat.on_hit_stun],
         'attack_delay'       : 18
     },
+    'weapon_warhammer': {
+        'name'               : 'warhammer',
+        'category'           : 'weapon',
+        'subtype'            : 'club',
+        'damage_type'        : 'bludgeoning',
+        'char'               : chr(157),
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               : 'two hand',
+        'description'        : 'A heavy hammer head mounted to a haft. Made for slaying armored foes outright.',
+        'stamina_cost'       : 15,
+        'str_requirement'    : 16,
+        'shred'              : 2,
+        'pierce'             : 3,
+        'accuracy'           : 1,
+        'weapon_dice'        : '1d8',
+        'str_dice'           : 4,
+        'on_hit'             : [combat.on_hit_stun],
+        'attack_delay'       : 20
+    },
     'weapon_coal_mace': {
         'name'               : 'coal-brazer mace',
         'category'           : 'weapon',
         'damage_type'        : 'fire',
-        'subtype'        : 'club',
+        'subtype'            : 'club',
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -645,6 +725,7 @@ proto = {
         'armor_bonus'   : 1,
         'slot'          : 'left hand',
         'description'   : 'An iron kite shield.',
+        'ability'       : 'block', #not implemented
         'evasion_bonus' : -2
 
     },
