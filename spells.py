@@ -126,9 +126,9 @@ library = {
         actions.heat_ray,
         'Fire a ray of magical heat in a line',
         [
-            {'stamina_cost':30,'charges':3},
-            {'stamina_cost':25,'charges':4},
-            {'stamina_cost':20,'charges':5}
+            {'stamina_cost':20,'charges':3},
+            {'stamina_cost':15,'charges':4},
+            {'stamina_cost':10,'charges':5}
         ],
         10),
 

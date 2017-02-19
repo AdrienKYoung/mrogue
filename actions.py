@@ -8,6 +8,14 @@ def channel(actor,delay,spell_name,delegate):
     else:
         actor.behavior.behavior.queue_action(delegate,delay)
 
+def get_cast_time(actor,spell_name):
+    base = abilities.data.get(spell_name).get('cast_time',0)
+    if actor is None:
+        actor = player.instance
+        return main.clamp(base - int((actor.player_stats.int - 10) / 5), 0, 5)
+    else:
+        return base
+
 def attack(actor=None, target=None):
     x,y = ui.target_tile(max_range=1)
     target = None
@@ -119,17 +127,14 @@ def raise_zombie(actor=None, target=None):
 
 
 def fireball(actor=None, target=None):
-    cast_time = 2
-    if actor is None:
-        actor = player.instance
-        cast_time = main.clamp(cast_time - int((actor.player_stats.int - 10) / 5), 0, 5)
-    channel(actor, cast_time, 'fireball', lambda: _continuation_fireball(actor, target))
+    channel(actor, get_cast_time(actor,'ability_fireball'), 'fireball', lambda: _continuation_fireball(actor, target))
 
 def _continuation_fireball(actor, target):
     x, y = 0, 0
+    spell = abilities.data['ability_fireball']
     if actor is player.instance:  # player is casting
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        (x, y) = ui.target_tile()
+        (x, y) = ui.target_tile(max_range=spell['range'])
     else:
         x = target.x
         y = target.y
@@ -137,11 +142,12 @@ def _continuation_fireball(actor, target):
     ui.message('The fireball explodes!', libtcod.flame)
     main.create_fire(x, y, 10)
     for obj in main.current_map.fighters:
-        if obj.distance(x, y) <= consts.FIREBALL_RADIUS:
+        if obj.distance(x, y) <= spell['radius']:
             combat.spell_attack(actor.fighter, obj, 'ability_fireball')
     return 'success'
 
 def arcane_arrow(actor=None, target=None):
+    spell = abilities.data['ability_arcane_arrow']
     x, y = 0, 0
     if actor is None or actor is player.instance:  # player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
@@ -150,7 +156,7 @@ def arcane_arrow(actor=None, target=None):
         default_target = None
         if ui.selected_monster is not None:
             default_target = ui.selected_monster.x, ui.selected_monster.y
-        (x, y) = ui.target_tile(consts.TORCH_RADIUS, 'beam_interrupt', default_target=default_target)
+        (x, y) = ui.target_tile(spell['range'], 'beam_interrupt', default_target=default_target)
         actor = player.instance
     else:
         x = target.x
@@ -164,12 +170,13 @@ def arcane_arrow(actor=None, target=None):
     for l in line:
         for obj in main.current_map.fighters:
             if obj.x == l[0] and obj.y == l[1]:
-                combat.spell_attack_ex(actor.fighter, obj, 30, 'arcane arrow', '3d6', 1, 'arcane', 0)
+                combat.spell_attack(actor.fighter, obj,'ability_arcane_arrow')
                 return 'success'
     return 'failure'
 
 
 def heat_ray(actor=None, target=None):
+    spell = abilities.data['ability_heat_ray']
     line = None
     if actor is None:  # player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
@@ -178,7 +185,7 @@ def heat_ray(actor=None, target=None):
         default_target = None
         if ui.selected_monster is not None:
             default_target = ui.selected_monster.x, ui.selected_monster.y
-        (x, y) = ui.target_tile(3, 'beam_interrupt', default_target=default_target)
+        (x, y) = ui.target_tile(spell['range'], 'beam_interrupt', default_target=default_target)
         actor = player.instance
     else:
         x = target.x
@@ -190,7 +197,7 @@ def heat_ray(actor=None, target=None):
     for obj in main.current_map.fighters:
         for l in line:
             if obj.x == l[0] and obj.y == l[1]:
-                combat.spell_attack_ex(actor.fighter, obj, None, 'heat ray', '3d4', 1, 'fire', 0)
+                combat.spell_attack(actor.fighter, obj,'ability_heat_ray')
     return 'success'
 
 
@@ -265,12 +272,13 @@ def shatter_item(actor=None, target=None):
 
 
 def magma_bolt(actor=None, target=None):
+    spell = abilities.data['ability_magma_bolt']
     x, y = 0, 0
     if actor is None:  # player is casting
         ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
         ui.render_message_panel()
         libtcod.console_flush()
-        (x, y) = ui.target_tile()
+        (x, y) = ui.target_tile(max_range=spell['range'])
         actor = player.instance
         if x is None: return 'cancelled'
         target = main.get_monster_at_tile(x, y)
@@ -278,7 +286,7 @@ def magma_bolt(actor=None, target=None):
         x = target.x
         y = target.y
     if target is not None:
-        combat.spell_attack_ex(actor.fighter, target, None, 'fireball', '3d6', 3, 'fire', 0)
+        combat.spell_attack(actor.fighter, target,'ability_magma_bolt')
     main.current_map.tiles[x][y].tile_type = 'lava'
     main.current_map.pathfinding.mark_blocked((x, y))
     main.changed_tiles.append((x, y))
@@ -332,40 +340,6 @@ def frog_tongue(frog, target):
         beam = main.beam(frog.x, frog.y, target.x, target.y)
         pull_to = beam[max(len(beam) - 3, 0)]
         target.set_position(pull_to[0], pull_to[1])
-
-
-def manabolt():
-    default = None
-    if ui.selected_monster is not None:
-        default = ui.selected_monster.x, ui.selected_monster.y
-    target = ui.target_tile(consts.MANABOLT_RANGE, 'beam_interrupt', acc_mod=consts.MANABOLT_ACC,
-                            default_target=default)
-    if target[0] is not None:
-        # visual effect
-        bolt = main.GameObject(player.instance.x, player.instance.y, 7, 'bolt', color=libtcod.light_blue)
-        line = main.beam(player.instance.x, player.instance.y, target[0], target[1])
-        main.current_map.add_object(bolt)
-        for p in line:
-            bolt.set_position(p[0], p[1])
-            main.render_map()
-            libtcod.console_flush()
-        bolt.destroy()
-        # game effect
-        monster = main.get_monster_at_tile(target[0], target[1])
-        if monster is not None:
-            if combat.roll_to_hit(monster, player.instance.fighter.accuracy * consts.MANABOLT_ACC):
-                ui.message(
-                    'The manabolt strikes %s, dealing %d damage!' % (syntax.name(monster.name), consts.MANABOLT_DMG),
-                    libtcod.light_blue)
-                monster.fighter.take_damage(consts.MANABOLT_DMG)
-            else:
-                ui.message('The manabolt misses %s.' % syntax.name(monster.name), libtcod.gray)
-        else:
-            ui.message('The manabolt hits the %s.' % main.current_map.tiles[target[0]][target[1]].tile_type,
-                       libtcod.light_blue)
-        return True
-    return False
-
 
 def ignite():
     target = ui.target_tile(consts.IGNITE_RANGE)

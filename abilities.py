@@ -53,12 +53,6 @@ data = {
         'cooldown': 3
     },
 
-    'ability_cast_arcane_arrow': {
-        'name': 'Arcane Arrow',
-        'function': actions.arcane_arrow,
-        'cooldown': 0
-    },
-
     'ability_raise_zombie': {
         'name': 'Raise Zombie',
         'function' : actions.raise_zombie,
@@ -72,7 +66,43 @@ data = {
         'element':'fire',
         'dice' : 2,
         'base_damage' : '2d6',
-        'pierce': 0
+        'pierce': 1,
+        'cast_time':2,
+        'range':8,
+        'radius':2
+    },
+
+    'ability_heat_ray': {
+        'name': 'heat ray',
+        'function': actions.heat_ray,
+        'cooldown': 5,
+        'element':'fire',
+        'dice' : 1,
+        'base_damage' : '3d4',
+        'pierce': 0,
+        'range':3
+    },
+
+    'ability_magma_bolt': {
+        'name': 'heat ray',
+        'function': actions.magma_bolt,
+        'cooldown': 10,
+        'element':'fire',
+        'dice' : 3,
+        'base_damage' : '3d6',
+        'pierce': 1,
+        'range':10
+    },
+
+    'ability_arcane_arrow': {
+        'name': 'arcane arrow',
+        'function': actions.arcane_arrow,
+        'cooldown': 0,
+        'element':'fire',
+        'dice' : 1,
+        'base_damage' : '3d6',
+        'pierce': 0,
+        'range':5
     }
 }
 
