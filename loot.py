@@ -4,6 +4,7 @@ import player
 import combat
 import dungeon
 import spells
+import actions
 
 table = {
     'weapons_0': [
@@ -286,21 +287,11 @@ weapon_materials = {
 proto = {
 
     #SCROLLS
-    'scroll_lightning': {
-        'name'          : 'Scroll of Lightning Bolt',
-        'category'      : 'scroll',
-        'char'          : '#',
-        'on_use'        : spells.cast_lightning,
-        'color'         : libtcodpy.yellow,
-        'type'          : 'item',
-        'description'   : 'Strikes the nearest foe with a powerful bolt'
-    },
-
     'scroll_fireball': {
         'name'          : 'Scroll of Fireball',
         'category'      : 'scroll',
         'char'          : '#',
-        'on_use'        : spells.cast_fireball,
+        'on_use'        : actions.fireball,
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'description'   : 'Fires a flaming projectile at a target that explodes on impact'
@@ -311,7 +302,7 @@ proto = {
         'category'      : 'scroll',
         'char'          : '#',
         'color'         : libtcodpy.yellow,
-        'on_use'        : spells.cast_confuse,
+        'on_use'        : actions.confuse,
         'type'          : 'item',
         'description'   : 'Inflicts confusion on an enemy, causing them to move about erratically.'
     },
@@ -321,7 +312,7 @@ proto = {
         'category' : 'scroll',
         'char' : '#',
         'color': libtcodpy.yellow,
-        'on_use' : spells.cast_forge,
+        'on_use' : actions.forge,
         'type' : 'item',
         'description' : 'Upgrades the quality of your held weapon.'
     },
@@ -332,7 +323,7 @@ proto = {
         'category'      : 'potion',
         'char'          : '!',
         'color'         : libtcodpy.yellow,
-        'on_use'        : spells.cast_heal,
+        'on_use'        : actions.heal,
         'type'          : 'item',
         'description'   : 'Potion that heals wounds when consumed'
     },
@@ -342,7 +333,7 @@ proto = {
         'category'      : 'potion',
         'char'          : '!',
         'color'         : libtcodpy.yellow,
-        'on_use'        : spells.cast_waterbreathing,
+        'on_use'        : actions.waterbreathing,
         'type'          : 'item',
         'description'   : "Drinking this potion causes temporary gills to form on the drinker's throat, allowing him or "
                           "her to breath water like a fish."
@@ -353,7 +344,7 @@ proto = {
         'category'      : 'potion',
         'char'          : '!',
         'color'         : libtcodpy.yellow,
-        'on_use'        : spells.cast_shielding,
+        'on_use'        : actions.shielding,
         'type'          : 'item',
         'description'   : 'This oily metallic potion bolsters the defenses of anyone who drinks it, repairing shreded'
                           ' armor and temporarily enhancing its effectiveness'
@@ -366,7 +357,7 @@ proto = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['fire'],
-        'on_use'        : spells.cast_potion_essence('fire'), #not a bug, returns a lambda
+        'on_use'        : actions.potion_essence('fire'), #not a bug, returns a lambda
         'description'   : 'The essence of fire burns within this gemstone. Absorbing it will bestow a single fire essence.'
     },
     'gem_lesser_earth': {
@@ -375,7 +366,7 @@ proto = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['earth'],
-        'on_use'        : spells.cast_potion_essence('earth'), #not a bug, returns a lambda
+        'on_use'        : actions.potion_essence('earth'), #not a bug, returns a lambda
         'description'   : 'The essence of earth resonates within this gemstone. Absorbing it will bestow a single earth essence.'
     },
     'gem_lesser_life': {
@@ -384,7 +375,7 @@ proto = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['life'],
-        'on_use'        : spells.cast_potion_essence('life'), #not a bug, returns a lambda
+        'on_use'        : actions.potion_essence('life'), #not a bug, returns a lambda
         'description'   : 'The essence of life emanates from this gemstone. Absorbing it will bestow a single life essence.'
     },
     'gem_lesser_air': {
@@ -393,7 +384,7 @@ proto = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['air'],
-        'on_use'        : spells.cast_potion_essence('air'), #not a bug, returns a lambda
+        'on_use'        : actions.potion_essence('air'), #not a bug, returns a lambda
         'description'   : 'The essence of air swirls in this crystal. Absorbing it will bestow a single air essence.'
     },
     'gem_lesser_water': {
@@ -402,7 +393,7 @@ proto = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['water'],
-        'on_use'        : spells.cast_potion_essence('water'), #not a bug, returns a lambda
+        'on_use'        : actions.potion_essence('water'), #not a bug, returns a lambda
         'description'   : 'The essence of water flows through this gemstone. Absorbing it will bestow a single water essence.'
     },
     'gem_lesser_cold': {
@@ -411,7 +402,7 @@ proto = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['cold'],
-        'on_use'        : spells.cast_potion_essence('cold'), #not a bug, returns a lambda
+        'on_use'        : actions.potion_essence('cold'), #not a bug, returns a lambda
         'description'   : 'The essence of cold chills the surface of this gemstone. Absorbing it will bestow a single cold essence.'
     },
     'gem_lesser_arcane': {
@@ -420,7 +411,7 @@ proto = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['arcane'],
-        'on_use'        : spells.cast_potion_essence('arcane'), #not a bug, returns a lambda
+        'on_use'        : actions.potion_essence('arcane'), #not a bug, returns a lambda
         'description'   : 'The essence of arcane hums within this gemstone. Absorbing it will bestow a single arcane essence.'
     },
     'gem_lesser_radiance': {
@@ -429,7 +420,7 @@ proto = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['radiant'],
-        'on_use'        : spells.cast_potion_essence('radiant'), #not a bug, returns a lambda
+        'on_use'        : actions.potion_essence('radiant'), #not a bug, returns a lambda
         'description'   : 'The essence of radiance shines through this gemstone. Absorbing it will bestow a single radiant essence.'
     },
     'gem_lesser_dark': {
@@ -438,39 +429,8 @@ proto = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['dark'],
-        'on_use'        : spells.cast_potion_essence('dark'), #not a bug, returns a lambda
+        'on_use'        : actions.potion_essence('dark'), #not a bug, returns a lambda
         'description'   : 'The essence of dark envelops this gemstone. Absorbing it will bestow a single dark essence.'
-    },
-
-    #TOMES
-    'tome_manabolt': {
-        'name'          : 'Tome of Manabolt',
-        'category'      : 'book',
-        'char'          : '=',
-        'color'         : libtcodpy.yellow,
-        'learn_spell'   : 'manabolt',
-        'type'          : 'item',
-        'description'   : "A weathered book that holds the secrets of Manabolt."
-    },
-
-    'tome_mend': {
-        'name'          : 'Tome of Mend',
-        'category'      : 'book',
-        'char'          : '=',
-        'color'         : libtcodpy.yellow,
-        'learn_spell'   : 'mend',
-        'type'          : 'item',
-        'description'   : "A weathered book that holds the secrets of Mend."
-    },
-
-    'tome_ignite': {
-        'name'          : 'Tome of Ignite',
-        'category'      : 'book',
-        'char'          : '=',
-        'color'         : libtcodpy.yellow,
-        'learn_spell'   : 'ignite',
-        'type'          : 'item',
-        'description'   : "A weathered book that holds the secrets of Ignite."
     },
 
     #WEAPONS
@@ -500,10 +460,10 @@ proto = {
         'char'               : '/',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'slot'               :'two hand',
+        'slot'               :'both hands',
         'description'        : 'A huge greatsword, made for fighting many foes at once.',
         'stamina_cost'       : 12,
-        'str_requirement'    : 15,
+        'str_requirement'    : 16,
         'shred'              : 2,
         'accuracy'           : 1,
         'weapon_dice'        : '3d6',
@@ -579,10 +539,10 @@ proto = {
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'slot'               :'two hand',
+        'slot'               :'both hands',
         'description'        : 'A superior two-handed polearm with a spike, axe and hook on its head.',
         'stamina_cost'       : 12,
-        'str_requirement'    : 14,
+        'str_requirement'    : 16,
         'pierce'             : 1,
         'shred'              : 0,
         'accuracy'           : 2,
@@ -609,7 +569,7 @@ proto = {
         'pierce'             : 1,
         'shred'              : 1,
         'accuracy'           : -3,
-        'ctrl_attack'        : player.dig,
+        'ctrl_attack'        : actions.dig,
         'ctrl_attack_desc'   : 'Dig - dig through walls in this direction.',
         'break'              : 5.0,
         'weapon_dice'        : '1d4',
@@ -644,10 +604,10 @@ proto = {
         'char'               : 'P',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'slot'               : 'two hand',
+        'slot'               : 'both hands',
         'description'        : 'A massive, two handed axe made for smashing shields and armor.',
         'stamina_cost'       : 12,
-        'str_requirement'    : 16,
+        'str_requirement'    : 18,
         'shred'              : 3,
         'accuracy'           : 3,
         'ctrl_attack'        : player.cleave_attack,
@@ -683,10 +643,10 @@ proto = {
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'slot'               : 'two hand',
+        'slot'               : 'both hands',
         'description'        : 'A heavy hammer head mounted to a haft. Made for slaying armored foes outright.',
         'stamina_cost'       : 15,
-        'str_requirement'    : 16,
+        'str_requirement'    : 20,
         'shred'              : 2,
         'pierce'             : 3,
         'accuracy'           : 1,
@@ -907,7 +867,7 @@ proto = {
         'category'      : 'charm',
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
-        'on_use'        : spells.cast_charm_resist,
+        'on_use'        : actions.charm_resist,
         'description'   : 'When infused with essence, this charm grants resistance to that type of essence.'
     },
 
@@ -917,7 +877,7 @@ proto = {
         'category'      : 'charm',
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
-        'on_use'        : spells.cast_charm_blessing,
+        'on_use'        : actions.charm_blessing,
         'description'   : 'When infused with essence, this charm grants magical blessings.'
     },
 
@@ -927,7 +887,7 @@ proto = {
         'category'      : 'charm',
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
-        'on_use'        : spells.cast_charm_summoning,
+        'on_use'        : actions.charm_summoning,
         'description'   : 'When infused with essence, this charm summons an elemental being as an ally.'
     },
 

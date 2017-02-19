@@ -78,9 +78,15 @@ class Equipment:
             self.equip()
             
     def equip(self):
-        old_equipment = get_equipped_in_slot(player.instance.fighter.inventory, self.slot)
-        if old_equipment is not None:
-            old_equipment.dequip()
+        if self.slot == 'both hands':
+            rh = get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
+            lh = get_equipped_in_slot(player.instance.fighter.inventory, 'left hand')
+            if rh is not None: rh.dequip()
+            if lh is not None: lh.dequip()
+        else:
+            old_equipment = get_equipped_in_slot(player.instance.fighter.inventory, self.slot)
+            if old_equipment is not None:
+                old_equipment.dequip()
         self.is_equipped = True
         ui.message('Equipped ' + self.owner.name + ' on ' + self.slot + '.', libtcod.orange)
         
@@ -880,8 +886,10 @@ def get_all_equipped(equipped_list):
 
 def get_equipped_in_slot(equipped_list,slot):
     for obj in equipped_list:
-        if obj.equipment and obj.equipment.is_equipped and obj.equipment.slot == slot:
-            return obj.equipment
+        if obj.equipment and obj.equipment.is_equipped:
+            if obj.equipment.slot == slot or (obj.equipment.slot == 'both hands' and
+                                                      (slot == 'right hand' or slot == 'left hand')):
+                return obj.equipment
     return None
 
 
@@ -1144,7 +1152,7 @@ def spawn_monster(name, x, y, team='enemy'):
         fighter_component = combat.Fighter( hp=int(p['hp'] * modifier.get('hp_bonus',1)),
                                             armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
                                             accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
-                                            death_function=death, spell_power=p.get('spell_power', 0),
+                                            death_function=death, spell_power=p.get('spell_power', 0) * modifier.get('spell_power_bonus',1),
                                             can_breath_underwater=True, resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
                                             weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
                                             inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
@@ -1830,6 +1838,7 @@ def play_game():
 
 
 # my modules
+import actions
 import loot
 import spells
 import monsters

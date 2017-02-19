@@ -3,11 +3,9 @@ import libtcodpy as libtcod
 import consts
 import textwrap
 import fov
-import loot
-import spells
 import player
 import combat
-import abilities
+import perks
 
 def msgbox(text, width=50):
     menu(text, [], width)
@@ -164,7 +162,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
 
 
 def inventory_menu(header):
-
+    import loot
     libtcod.console_clear(window)
     main.render_all()
     libtcod.console_flush()
@@ -367,6 +365,8 @@ def draw_border(console, x0, y0, width, height, foreground=libtcod.gray, backgro
     libtcod.console_put_char(console, x0, y0 + height - 1, 4, libtcod.BKGND_SET)
 
 def render_side_panel(acc_mod=1.0):
+    import loot
+    import spells
     global selected_monster
 
     libtcod.console_set_default_background(side_panel, libtcod.black)
@@ -829,12 +829,12 @@ def skill_menu():
     key = main.key
 
 
-    for skill in abilities.skill_list:
+    for skill in perks.list:
         if not skill.category in skill_categories:
             skill_categories.append(skill.category)
             menu_lines.append(None)
         menu_lines.append(skill)
-    sub_height = len(skill_categories) + len(abilities.skill_list)
+    sub_height = len(skill_categories) + len(perks.list)
     scroll_limit = sub_height - (consts.MAP_VIEWPORT_HEIGHT - 10)
 
     sub_window = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, sub_height)
@@ -872,8 +872,8 @@ def skill_menu():
             libtcod.console_print_ex(sub_window, 3, y, libtcod.black, libtcod.LEFT, skill_category.title())
             y += 1
             # Draw all skills in category
-            for i in range(len(abilities.skill_list)):
-                skill = abilities.skill_list[i]
+            for i in range(len(perks.list)):
+                skill = perks.list[i]
                 if skill.category == skill_category:
 
                     if y == selected_index:
@@ -986,13 +986,14 @@ def examine(x=None, y=None):
                 menu(desc, ['back'], 50)
 
 def show_ability_screen():
-    opts = [player.default_abilities['attack']]
+    import abilities
+    opts = [abilities.default_abilities['attack']]
     # Weapon ability, or bash if none
     weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
     if weapon is not None and weapon.owner.item.ability is not None:
         opts.append(weapon.owner.item.ability)
     else:
-        opts.append(player.default_abilities['bash'])
+        opts.append(abilities.default_abilities['bash'])
     # Other equipment abilities
     for i in main.get_all_equipped(player.instance.fighter.inventory):
         if i is not weapon and i.owner.item.ability is not None:

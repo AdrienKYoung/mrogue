@@ -1,6 +1,5 @@
 import libtcodpy as libtcod
 import game as main
-import spells
 import ui
 import player
 
@@ -84,6 +83,7 @@ def slowed(duration=10):
     return StatusEffect('slowed', duration, libtcod.dark_blue, message='Your pace slows...')
 
 def resistant(element=None,effect=None,color=None,duration=99):
+    import spells
     if element is not None:
         return StatusEffect('resist ' + element,duration,spells.essence_colors[element],resistance_mod=[element],
                             message='You feel more resistant!')

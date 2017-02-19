@@ -2,7 +2,6 @@ import game as main
 import libtcodpy as libtcod
 import math
 import consts
-import ui
 import fov
 import effects
 import combat
@@ -10,6 +9,7 @@ import dungeon
 import spells
 import syntax
 import pathfinding
+import ui
 
 class PlayerStats:
 
@@ -53,6 +53,7 @@ loadouts = {
         'con':12,
         'inventory':[
             #'charm_magic_weapon',
+            'weapon_halberd',
             'weapon_longsword',
             'equipment_leather_armor',
             'equipment_iron_helm'
@@ -429,29 +430,6 @@ def move_or_attack(dx, dy, ctrl=False):
 
     return success
 
-
-def dig(dx, dy):
-    changed_tiles = main.changed_tiles
-
-    dig_x = instance.x + dx
-    dig_y = instance.y + dy
-    change_type = dungeon.branches[main.current_map.branch]['default_floor']
-    if main.current_map.tiles[dig_x][dig_y].elevation != main.current_map.tiles[instance.x][instance.y].elevation:
-        change_type = dungeon.branches[main.current_map.branch]['default_ramp']
-    if main.current_map.tiles[dig_x][dig_y].diggable:
-        main.current_map.tiles[dig_x][dig_y].tile_type = change_type
-        changed_tiles.append((dig_x, dig_y))
-        if main.current_map.pathfinding:
-            main.current_map.pathfinding.mark_unblocked((dig_x, dig_y))
-        fov.set_fov_properties(dig_x, dig_y, False)
-        fov.set_fov_recompute()
-        main.check_breakage(main.get_equipped_in_slot(instance.fighter.inventory, 'right hand'))
-        return 'success'
-    else:
-        ui.message('You cannot dig there.', libtcod.lightest_gray)
-        return 'failed'
-
-
 def reach_attack(dx, dy):
 
     target_space = instance.x + 2 * dx, instance.y + 2 * dy
@@ -670,10 +648,3 @@ def jump(actor=None):
 
     ui.message('Out of range.', libtcod.white)
     return 'didnt-take-turn'
-
-import abilities
-default_abilities = {
-    'attack' : abilities.Ability('Attack','Attack an enemy',abilities.ability_attack,0),
-    'bash' : abilities.Ability('Bash','Knock an enemy back',abilities.ability_bash_attack,0),
-    'jump' : abilities.Ability('Jump','Jump to a tile',jump,0)
-}

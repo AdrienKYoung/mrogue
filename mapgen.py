@@ -4,7 +4,6 @@ import libtcodpy as libtcod
 import random
 import math
 import terrain
-import loot
 import Queue
 import pathfinding
 import world
@@ -556,6 +555,7 @@ def apply_object(x, y, data):
         map.add_object(new_obj)
 
 def apply_item(x, y, data):
+    import loot
     loot_level = None
     category = None
     item_id = None

@@ -4,10 +4,10 @@ import math
 import ui
 import consts
 import player
-import spells
 import fov
 import syntax
 import pathfinding
+import abilities
 
 class Fighter:
 
@@ -126,6 +126,7 @@ class Fighter:
             self.on_get_hit(self.owner, attacker)
 
     def drop_essence(self):
+        import spells
         if hasattr(self.owner, 'essence') and self.owner is not player.instance:
             roll = libtcod.random_get_int(0, 1, 100)
             total = 0
@@ -373,7 +374,7 @@ class Fighter:
     def spell_resist(self):
         bonus = sum(equipment.spell_resist_bonus for equipment in main.get_all_equipped(self.inventory))
         if self.owner.player_stats:
-            return self.base_spell_resist + self.owner.player_stats.wiz + bonus
+            return self.base_spell_resist + int(self.owner.player_stats.wiz/4) + bonus
         else:
             return self.base_spell_resist + bonus
 
@@ -612,7 +613,17 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
                             syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
-def spell_attack_ex(fighter, target, accuracy, spell_name, base_damage, spell_dice, spell_element, spell_pierce):
+def spell_attack(fighter,target,spell_name):
+    config = abilities.data[spell_name]
+    spell_attack_ex(fighter,target,
+                    config.get('accuracy'),
+                    config.get('base_damage','0d0'),
+                    config.get('dice',0),
+                    config['element'],
+                    config.get('peirce',0))
+
+
+def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_element, spell_pierce):
 
     if accuracy is None or roll_to_hit(target, accuracy):
         # Target was hit
@@ -680,7 +691,7 @@ def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_
             reduction_factor += 0.5 * consts.ARMOR_REDUCTION_STEP * (
                 effective_defense - consts.ARMOR_REDUCTION_DROPOFF)
         # Apply damage reduction
-        damage = math.ceil(damage * reduction_factor)
+        damage = math.ceil(damage * 1-reduction_factor)
         # After reduction, apply a flat reduction that is a random amount from 0 to the target's armor value
         damage = max(0, damage - libtcod.random_get_int(0, 0, effective_defense))
 
