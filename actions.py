@@ -415,6 +415,14 @@ def forge():
         ui.message('Your hands tingle briefly. This magic was only intended for weapons!', libtcod.orange)
     return True
 
+def aquatic(target):
+    import pathfinding
+    target.movement_type = target.movement_type | pathfinding.AQUATIC
+
+def flight(target):
+    import pathfinding
+    target.movement_type = target.movement_type | pathfinding.FLYING
+
 def potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
 

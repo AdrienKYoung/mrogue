@@ -126,19 +126,13 @@ class Fighter:
             self.on_get_hit(self.owner, attacker)
 
     def drop_essence(self):
-        import spells
         if hasattr(self.owner, 'essence') and self.owner is not player.instance:
             roll = libtcod.random_get_int(0, 1, 100)
             total = 0
             for m in self.owner.essence:
                 total += m[0]
                 if roll < total + total * main.skill_value('essence_hunter'):
-                    essence_pickup = main.GameObject(self.owner.x, self.owner.y, '*', 'mote of ' + m[1] + ' essence',
-                                             spells.essence_colors[m[1]],
-                                             description='A colored orb that glows with elemental potential.',
-                                             on_step=player.pick_up_essence, on_tick=main.expire_out_of_vision)
-                    essence_pickup.essence_type = m[1]
-                    main.current_map.add_object(essence_pickup)
+                    main.spawn_essence(self.owner.x, self.owner.y,m[1])
                     return
 
     def calculate_attack_stamina_cost(self):
@@ -209,7 +203,8 @@ class Fighter:
         if tile.is_water and not tile.jumpable \
                 and self.owner.movement_type & pathfinding.FLYING != pathfinding.FLYING \
                 and self.owner.movement_type & pathfinding.AQUATIC != pathfinding.AQUATIC:  # deep water / deep seawater
-            if not (self.can_breath_underwater or self.has_status('waterbreathing')):
+            if not (self.can_breath_underwater or self.has_status('waterbreathing') or
+                    self is player.instance and main.has_skill('aquatic')):
                 if self.breath > 0:
                     self.breath -= 1
                 else:
@@ -217,7 +212,15 @@ class Fighter:
                     ui.message('%s %s, suffering %d damage!' % (syntax.name(self.owner.name).capitalize(),
                                              syntax.conjugate(self.owner is player.instance,
                                              ('drown', 'drowns')), drown_damage), libtcod.blue)
+
                     self.take_damage(drown_damage)
+                    if self.hp < 1 and main.has_skill('grip_of_the_depths'):
+                        player.instance.fighter.adjust_stamina('50')
+                        if main.roll_dice('1d20') > 18:
+                            main.spawn_essence(self.owner.x,self.owner.y,'water')
+
+
+
         elif self.breath < self.max_breath:
             self.breath += 1
 
@@ -243,6 +246,9 @@ class Fighter:
 
     def apply_status_effect(self, new_effect,supress_message=False):
         # check for immunity
+        if new_effect.name == 'burning' and self.owner is player.instance and main.has_skill('pyromaniac'):
+            return False
+
         for resist in self.resistances:
             if resist == new_effect.name:
                 if fov.player_can_see(self.owner.x, self.owner.y):
@@ -635,6 +641,12 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
 
         if target.fighter.has_status('stung'):
             damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
+
+        if fighter.owner is player.instance and main.has_skill('searing_mind'):
+            damage_mod *= 1.1
+
+        if target is player.instance and main.has_skill('solace') and player.is_meditating:
+            damage_mod *= 0.5
 
         damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice,
                                 fighter.spell_power + main.skill_value("{}_affinity".format(spell_element))),

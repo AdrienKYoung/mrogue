@@ -185,7 +185,7 @@ class Equipment:
     def can_cast(self, spell_name, actor):
         sl = self.spell_list[spell_name]
         if actor is player.instance:
-            if player.instance.player_stats.int < spells.library[spell_name].int_requirement:
+            if player.instance.player_stats.int < spells.library[spell_name].int_requirement - skill_value('scholar'):
                 ui.message("This spell is too difficult for you to understand.", libtcod.blue)
                 return False
         level = spells.library[spell_name].levels[sl-1]
@@ -434,6 +434,12 @@ class GameObject:
             elif current_map.tiles[self.x][self.y].tile_type != 'mud' and self.fighter.has_status('sluggish'):
                 self.fighter.remove_status('sluggish')
 
+        if self is player.instance and has_skill('aquatic'):
+            if current_map.tiles[self.x][self.y].is_water and not self.fighter.has_status('agile'):
+                self.fighter.apply_status_effect(effects.StatusEffect('agile', color=libtcod.light_blue))
+            elif not current_map.tiles[self.x][self.y].is_water and self.fighter.has_status('agile'):
+                self.fighter.remove_status('agile')
+
         # If the player moved, recalculate field of view, checking for elevation changes
         if self is player.instance:
             if old_elev != self.elevation:
@@ -469,9 +475,12 @@ class GameObject:
                     door_interact(door)
                     return True
                 cost = current_map.tiles[self.x][self.y].stamina_cost
+                swim = current_map.tiles[self.x][self.y].is_water \
+                        and (self.movement_type & pathfinding.AQUATIC == pathfinding.AQUATIC)
+
                 if cost > 0 and self is player.instance\
-                        and self.movement_type & pathfinding.FLYING != pathfinding.FLYING\
-                        and self.movement_type & pathfinding.AQUATIC != pathfinding.AQUATIC:
+                        and self.movement_type & pathfinding.FLYING != pathfinding.FLYING \
+                        and not swim:
                     if self.fighter.stamina >= cost:
                         self.fighter.adjust_stamina(-cost)
                     else:
@@ -1213,6 +1222,13 @@ def create_ability(name):
     else:
         return None
 
+def spawn_essence(x,y,type):
+    essence_pickup = GameObject(x,y, '*', 'mote of ' + type + ' essence',
+                    spells.essence_colors[type],
+                    description='A colored orb that glows with elemental potential.',
+                    on_step=player.pick_up_essence, on_tick=expire_out_of_vision)
+    essence_pickup.essence_type = type
+    current_map.add_object(essence_pickup)
 
 def create_item(name, material=None, quality=None):
     p = loot.proto[name]
@@ -1364,6 +1380,12 @@ def create_fire(x,y,temp):
     tile = current_map.tiles[x][y]
     if tile.is_water or (tile.blocks and not tile.flammable):
         return
+    current = object_at_tile(x,y,'Fire')
+    if current is not None:
+        if current.misc.temperature < temp:
+            current.misc.temperature = temp
+        return
+
     component = ai.FireBehavior(temp)
     obj = GameObject(x,y,libtcod.CHAR_ARROW2_N,'Fire',libtcod.red,misc=component)
     current_map.add_object(obj)

@@ -123,7 +123,7 @@ def create(loadout):
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),
                         int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
                         'island for your crimes. This place will surely be your grave.',
-                        movement_type=pathfinding.NORMAL)
+                        movement_type=pathfinding.NORMAL, on_tick=on_tick)
     instance.level = 1
     instance.essence = []
     instance.known_spells = []
@@ -667,6 +667,11 @@ def level_spell_mastery():
         instance.memory.add_spell(spell_list[choice][0],spell_list[choice][1])
     else:
         return 'failed'
+
+def on_tick(this):
+    if main.has_skill('pyromaniac'):
+        main.create_fire(this.x,this.y,10)
+
 
 import game as main
 import libtcodpy as libtcod

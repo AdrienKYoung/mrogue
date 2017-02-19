@@ -1,4 +1,5 @@
 import player
+import actions
 
 def meets_requirements(perk):
     return True #TODO: actually check this
@@ -297,9 +298,10 @@ perk_list = {
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'water_affinity_5',
-        'category' : 'Water Magic'
+        'category' : 'Water Magic',
+        'on_aquire': lambda: actions.aquatic(player.instance)
     },
-    'stonecloak' : {
+    'stonecloak' : {  #todo
         'name' : 'Stonecloak',
         'description' : ['Gain temporary armor whenever you cast a spell'],
         'max_rank' : 1,
@@ -307,7 +309,7 @@ perk_list = {
         'requires' : 'earth_affinity_3',
         'category' : 'Earth Magic'
     },
-    'earthmeld' : {
+    'earthmeld' : {  #todo
         'name' : 'Earthmeld',
         'description' : ['You may move into walls (if you are not currently standing in a wall)'],
         'max_rank' : 1,
@@ -315,7 +317,7 @@ perk_list = {
         'requires' : 'earth_affinity_5',
         'category' : 'Earth Magic'
     },
-    'tailwind' : {
+    'tailwind' : {  #todo
         'name' : 'Tailwind',
         'description' : ['After you cast a spell, if your next action is a move, it does not cost an action.'],
         'max_rank' : 1,
@@ -329,9 +331,10 @@ perk_list = {
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'air_affinity_5',
-        'category' : 'Air Magic'
+        'category' : 'Air Magic',
+        'on_aquire': lambda: actions.flight(player.instance)
     },
-    'vitality' : {
+    'vitality' : {  #todo
         'name' : 'Vitality',
         'description' : ['Healing effects are 25%% more effective'],
         'max_rank' : 1,
@@ -339,7 +342,7 @@ perk_list = {
         'requires' : 'life_affinity_3',
         'category' : 'Life Magic'
     },
-    'resurrection' : {
+    'resurrection' : {  #todo
         'name' : 'Resurrection',
         'description' : ['Upon death, resurrect with full health, once...'],
         'max_rank' : 1,
@@ -347,7 +350,7 @@ perk_list = {
         'requires' : 'life_affinity_5',
         'category' : 'Life Magic'
     },
-    'spellshards' : {
+    'spellshards' : {  #todo
         'name' : 'Spellshards',
         'description' : ['Damage dealt by your spells has +2 shred'],
         'max_rank' : 1,
@@ -355,7 +358,7 @@ perk_list = {
         'requires' : 'cold_affinity_3',
         'category' : 'Cold Magic'
     },
-    'frostbite' : {
+    'frostbite' : {  #todo
         'name' : 'Frostbite',
         'description' : ['All visible enemies below 50%% health are slowed'],
         'max_rank' : 1,
@@ -363,7 +366,7 @@ perk_list = {
         'requires' : 'cold_affinity_5',
         'category' : 'Cold Magic'
     },
-    'blood_magic' : {
+    'blood_magic' : {  #todo
         'name' : 'Blood Magic',
         'description' : ['You can cast spells without the required stamina, at the cost of health.'],
         'max_rank' : 1,
@@ -371,7 +374,7 @@ perk_list = {
         'requires' : 'blood_affinity_3',
         'category' : 'Dark Magic'
     },
-    'lichform' : {
+    'lichform' : {  #todo
         'name' : 'Lichform',
         'description' : ['Sacrifice 30%% of your maximum health. Gain immunity to status effects, resistance to all '
                          'damage types, and immunity to dark magic.'],
@@ -380,7 +383,7 @@ perk_list = {
         'requires' : 'dark_affinity_5',
         'category' : 'Dark Magic'
     },
-    'guardian_of_light' : {
+    'guardian_of_light' : {  #todo
         'name' : 'Guardian of Light',
         'description' : ['You and your allies have +2 armor'],
         'max_rank' : 1,
@@ -388,7 +391,7 @@ perk_list = {
         'requires' : 'radiant_affinity_3',
         'category' : 'Radiant Magic'
     },
-    'heir_to_the_heavens' : {
+    'heir_to_the_heavens' : {  #todo
         'name' : 'Heir to the Heavens',
         'description' : ['Whenever you take critical damage, a Daeva is summoned to aid you'],
         'max_rank' : 1,
@@ -396,7 +399,7 @@ perk_list = {
         'requires' : 'radiant_affinity_5',
         'category' : 'Radiant Magic'
     },
-    'gaze_into_the_void' : {
+    'gaze_into_the_void' : {  #todo
         'name' : 'Gaze Into the Void',
         'description' : ['Gain 3 Void essence'],
         'max_rank' : 1,
@@ -404,7 +407,7 @@ perk_list = {
         'requires' : 'void_affinity_3',
         'category' : 'Void Magic'
     },
-    'ravager' : {
+    'ravager' : {  #todo
         'name' : 'Ravager',
         'description' : ['Deal 10%% more damage to unarmored enemies',
                          'Deal 20%% more damage to unarmored enemies',
@@ -415,7 +418,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Martial'
     },
-    'adrenaline' : {
+    'adrenaline' : {  #todo
         'name' : 'Adrenaline',
         'description' : ['Chance to gain stamina upon taking damage. Chances increases as health decreases'],
         'max_rank' : 1,
@@ -423,7 +426,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Martial'
     },
-    'combat_training' : {
+    'combat_training' : {  #todo
         'name' : 'Combat Training',
         'description' : ['Attacks cost 10%% less stamina',
                          'Attacks cost 20%% less stamina',
@@ -434,7 +437,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Martial'
     },
-    'dagger_mastery' : {
+    'dagger_mastery' : {  #todo
         'name' : 'Dagger Mastery',
         'description' : ['Gain 2 extra attack damage when wielding daggers',
                          'Gain 4 extra attack damage when wielding daggers',
@@ -449,7 +452,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Daggers'
     },
-    'sword_mastery' : {
+    'sword_mastery' : {  #todo
         'name' : 'Sword Mastery',
         'description' : ['Gain 2 extra attack damage when wielding swords',
                          'Gain 4 extra attack damage when wielding swords',
@@ -464,7 +467,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Swords'
     },
-    'axe_mastery' : {
+    'axe_mastery' : {  #todo
         'name' : 'Axe Mastery',
         'description' : ['Gain 2 extra attack damage when wielding axes',
                          'Gain 4 extra attack damage when wielding axes',
@@ -479,7 +482,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Axes'
     },
-    'polearm_mastery' : {
+    'polearm_mastery' : {  #todo
         'name' : 'Polearm Mastery',
         'description' : ['Gain 2 extra attack damage when wielding polearms',
                          'Gain 4 extra attack damage when wielding polearms',
@@ -494,7 +497,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Polearms'
     },
-    'mace_mastery' : {
+    'mace_mastery' : {  #todo
         'name' : 'Mace Mastery',
         'description' : ['Gain 2 extra attack damage when wielding maces',
                          'Gain 4 extra attack damage when wielding maces',
@@ -509,7 +512,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Maces'
     },
-    'unarmed_mastery' : {
+    'unarmed_mastery' : {  #todo
         'name' : 'Unarmed Mastery',
         'description' : ['Gain 2 extra attack damage when not wielding a weapon',
                          'Gain 4 extra attack damage when not wielding a weapon',
@@ -524,7 +527,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Unarmed Combat'
     },
-    'pommel_strike' : {
+    'pommel_strike' : {  #todo
         'name' : 'Pommel Strike',
         'description' : ['Ability (requires sword): Make an attack with +2 shred'],
         'max_rank' : 1,
@@ -532,7 +535,7 @@ perk_list = {
         'requires' : 'sword_mastery_3',
         'category' : 'Swords'
     },
-    'blade_dance' : {
+    'blade_dance' : {  #todo
         'name' : 'Blade Dance',
         'description' : ['Ability (requires sword): Swap places with an adjacent monster and make an attack against it'],
         'max_rank' : 1,
@@ -540,7 +543,7 @@ perk_list = {
         'requires' : 'sword_mastery_5',
         'category' : 'Swords'
     },
-    'riposte' : {
+    'riposte' : {  #todo
         'name' : 'Riposte',
         'description' : ['Attacks against an enemy that missed you last turn are critical hits'],
         'max_rank' : 1,
@@ -548,7 +551,7 @@ perk_list = {
         'requires' : 'sword_mastery_7',
         'category' : 'Swords'
     },
-    'find_the_gap' : {
+    'find_the_gap' : {  #todo
         'name' : 'Find the Gap',
         'description' : ['Your attacks with daggers gain pierce 1'],
         'max_rank' : 1,
@@ -556,7 +559,7 @@ perk_list = {
         'requires' : 'dagger_mastery_3',
         'category' : 'Daggers'
     },
-    'cut_and_run' : {
+    'cut_and_run' : {  #todo
         'name' : 'Cut and Run',
         'description' : ['After damaging an enemy with a dagger, if your next action is a move, '
                          'it does not cost an action'],
@@ -565,7 +568,7 @@ perk_list = {
         'requires' : 'dagger_mastery_5',
         'category' : 'Daggers'
     },
-    'death_from_above' : {
+    'death_from_above' : {  #todo
         'name' : 'Death from Above',
         'description' : ['Your jump attacks have no accuracy penalty and deal 50% more damage'],
         'max_rank' : 1,
@@ -573,7 +576,7 @@ perk_list = {
         'requires' : 'dagger_mastery_7',
         'category' : 'Daggers'
     },
-    'wild_swings' : {
+    'wild_swings' : {  #todo
         'name' : 'Wild Swings',
         'description' : ['Dealing damage with axes deals 1d6 damage to enemies adjacent to the target'],
         'max_rank' : 1,
@@ -581,7 +584,7 @@ perk_list = {
         'requires' : 'axe_mastery_3',
         'category' : 'Axes'
     },
-    'skullsplitter' : {
+    'skullsplitter' : {  #todo
         'name' : 'Skullsplitter',
         'description' : ['Ability (requires axe): Attack a single target for massive bonus damage that increases the '
                          'closer the target is to death'],
@@ -590,7 +593,7 @@ perk_list = {
         'requires' : 'axe_mastery_5',
         'category' : 'Axes'
     },
-    'lord_of_the_fray' : {
+    'lord_of_the_fray' : {  #todo
         'name' : 'Lord of the Fray',
         'description' : ['Gain increased attack damage for each adjacent enemy'],
         'max_rank' : 1,
@@ -598,7 +601,7 @@ perk_list = {
         'requires' : 'axe_mastery_7',
         'category' : 'Axes'
     },
-    'sweep' : {
+    'sweep' : {  #todo
         'name' : 'Sweep',
         'description' : ['Ability (requires polearm): Attack all enemies at a range of exactly 2'],
         'max_rank' : 1,
@@ -606,7 +609,7 @@ perk_list = {
         'requires' : 'polearm_mastery_3',
         'category' : 'Polearms'
     },
-    'vanguard' : {
+    'vanguard' : {  #todo
         'name' : 'Vanguard',
         'description' : ['Get a free attack on enemies that move into a space adjacent to you when '
                          'you are wielding a spear'],
@@ -615,7 +618,7 @@ perk_list = {
         'requires' : 'polearm_mastery_5',
         'category' : 'Polearms'
     },
-    'heart_seeking_strike' : {
+    'heart_seeking_strike' : {  #todo
         'name' : 'Heart Seeking Strike',
         'description' : ['Chance to instantly slay weak enemies with melee attacks'],
         'max_rank' : 1,
@@ -623,7 +626,7 @@ perk_list = {
         'requires' : 'polearm_mastery_7',
         'category' : 'Polearms'
     },
-    'ringing_blows' : {
+    'ringing_blows' : {  #todo
         'name' : 'Ringing Blows',
         'description' : ['Increased chance to stun with maces. Stuns inflicted by mace hits last 1 more turn'],
         'max_rank' : 1,
@@ -631,7 +634,7 @@ perk_list = {
         'requires' : 'mace_mastery_3',
         'category' : 'Maces'
     },
-    'crush' : {
+    'crush' : {  #todo
         'name' : 'Crush',
         'description' : ["Ability (requires mace): Make an attack that gains damage and shred "
                          "for each point of your target's armor"],
@@ -640,7 +643,7 @@ perk_list = {
         'requires' : 'mace_mastery_5',
         'category' : 'Maces'
     },
-    'rising_storm' : {
+    'rising_storm' : {  #todo
         'name' : 'Rising Storm',
         'description' : ['If you have not attacked in the last 3 turns, your next attack deals bonus damage'],
         'max_rank' : 1,
@@ -648,7 +651,7 @@ perk_list = {
         'requires' : 'mace_mastery_7',
         'category' : 'Maces'
     },
-    'martial_paragon' : {
+    'martial_paragon' : {  #todo
         'name' : 'Martial Paragon',
         'description' : ['Your weapon attacks have increase strength bonuses'],
         'max_rank' : 1,
@@ -656,7 +659,7 @@ perk_list = {
         'requires' : None, #ToDo: check for one of several learned skills
         'category' : 'Martial'
     },
-    'steel_fist' : {
+    'steel_fist' : {  #todo
         'name' : 'Steel Fist',
         'description' : ['Your unarmed attacks deal 1d6 weapon damage and have two strength dice'],
         'max_rank' : 1,
@@ -664,7 +667,7 @@ perk_list = {
         'requires' : 'unarmed_mastery_1',
         'category' : 'Unarmed Combat'
     },
-    'flying_knee_smash' : {
+    'flying_knee_smash' : {  #todo
         'name' : 'Flying Knee Smash',
         'description' : ['Your jump attacks made while unarmed deal double damage'],
         'max_rank' : 1,
@@ -672,7 +675,7 @@ perk_list = {
         'requires' : 'unarmed_mastery_3',
         'category' : 'Unarmed Combat'
     },
-    'essence_fist' : {
+    'essence_fist' : {  #todo
         'name' : 'Essence Fist',
         'description' : ['Ability: Consume an essence to deal high elemental damage on your next unarmed attack'],
         'max_rank' : 1,
@@ -680,7 +683,7 @@ perk_list = {
         'requires' : 'unarmed_mastery_5',
         'category' : 'Unarmed Combat'
     },
-    'fist_of_foretold_demise' : {
+    'fist_of_foretold_demise' : {  #todo
         'name' : 'Fist of Foretold Demise',
         'description' : ['Your unarmed attacks inflict 1d2 doom stacks (kills instantly at 13 stacks)'],
         'max_rank' : 1,

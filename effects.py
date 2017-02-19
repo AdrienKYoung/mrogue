@@ -82,6 +82,9 @@ def sluggish(duration=5):
 def slowed(duration=10):
     return StatusEffect('slowed', duration, libtcod.dark_blue, message='Your pace slows...')
 
+def agile(duration=30):
+    return StatusEffect('agile', duration, libtcod.light_blue, evasion_mod=1.5,message='You speed up.')
+
 def resistant(element=None,effect=None,color=None,duration=99):
     import spells
     if element is not None:
