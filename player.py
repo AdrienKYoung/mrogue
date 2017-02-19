@@ -299,17 +299,17 @@ def cast_spell():
         selection = ui.menu_ex('Cast which spell?', ops, 50, return_as_char=True)
         if selection is not None:
             s = sp[selection]
-            if instance.memory.can_cast(s,instance):
-                if spells.library[s].function() == 'success':
-                    instance.memory.spell_charges[s] -= 1
-                    level = instance.memory.spell_list[s]
-                    instance.fighter.adjust_stamina(-spells.library[s].levels[level-1]['stamina_cost'])
-                    return 'cast-spell'
-            if left_hand.can_cast(s,instance):
+            if left_hand is not None and left_hand.can_cast(s,instance):
                 if spells.library[s].function() == 'success':
                     left_hand.spell_charges[s] -= 1
                     level = left_hand.spell_list[s]
                     instance.fighter.adjust_stamina(-spells.library[s].levels[level-1]['stamina_cost'])
+                    return 'cast-spell'
+            if instance.memory.can_cast(s, instance):
+                if spells.library[s].function() == 'success':
+                    instance.memory.spell_charges[s] -= 1
+                    level = instance.memory.spell_list[s]
+                    instance.fighter.adjust_stamina(-spells.library[s].levels[level - 1]['stamina_cost'])
                     return 'cast-spell'
                 else:
                     return 'didnt-take-turn'
@@ -568,7 +568,7 @@ def replace_essence(essence):
 def meditate():
     global is_meditating
     book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
-    if book is None or not hasattr(book, 'spell_list'):
+    if (book is None or not hasattr(book, 'spell_list')) and len(instance.memory.spell_list) == 0:
         ui.message('Without access to magic, you have no need of meditation.', libtcod.dark_cyan)
         return 'didnt-take-turn'
     ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)
@@ -585,6 +585,7 @@ def _do_meditate():
     is_meditating = False
     if book is not None and hasattr(book, 'spell_list'):
         book.refill_spell_charges()
+        instance.memory.refill_spell_charges()
         ui.message('Your spells have recharged.', libtcod.dark_cyan)
 
 def delay(duration,action,delay_action='delay'):
