@@ -140,10 +140,10 @@ def _continuation_fireball(actor, target):
         y = target.y
     if x is None: return 'cancelled'
     ui.message('The fireball explodes!', libtcod.flame)
-    main.create_fire(x, y, 10)
     for obj in main.current_map.fighters:
         if obj.distance(x, y) <= spell['radius']:
             combat.spell_attack(actor.fighter, obj, 'ability_fireball')
+            obj.fighter.apply_status_effect(effects.burning())
     return 'success'
 
 def arcane_arrow(actor=None, target=None):

@@ -209,13 +209,66 @@ library = {
     'spell_magma_bolt' : Spell(
         'magma bolt',
         actions.magma_bolt,
-        'Fire a bolt of roiling magma that melts floors',
+        'Fire a bolt of boiling magma that melts floors',
         [
             {'stamina_cost':60,'charges':2},
             {'stamina_cost':50,'charges':3},
             {'stamina_cost':40,'charges':4}
         ],
-        10)
+        10),
+
+    'spell_frozen_orb' : Spell(
+        'frost orb',
+        actions.magma_bolt,
+        'Fires an orb of frost that slows struck targets.',
+        [
+            {'stamina_cost':25,'charges':3},
+            {'stamina_cost':20,'charges':4},
+            {'stamina_cost':15,'charges':5}
+        ],
+        10),
+
+    'spell_flash_frost' : Spell(
+        'flash frost',
+        actions.magma_bolt,
+        'Attempts to freeze a target solid with a burst of magical ice.',
+        [
+            {'stamina_cost':40,'charges':1},
+            {'stamina_cost':40,'charges':2},
+        ],
+        11),
+
+    'spell_ice_shards' : Spell(
+        'ice shards',
+        actions.magma_bolt,
+        'Sends out a blast of sharp ice shards',
+        [
+            {'stamina_cost':40,'charges':2},
+            {'stamina_cost':35,'charges':3},
+            {'stamina_cost':30,'charges':4}
+        ],
+        12),
+
+    'spell_snowstorm' : Spell(
+        'snowstorm',
+        actions.magma_bolt,
+        'Summons a whirling ice storm, which inhibits movement and sight.',
+        [
+            {'stamina_cost':45,'charges':1},
+            {'stamina_cost':35,'charges':2}
+        ],
+        14),
+
+    'spell_avalanche' : Spell(
+        'avalanche',
+        actions.magma_bolt,
+        'Summons an avalanche to bury your enemies.',
+        [
+            {'stamina_cost':70,'charges':1},
+            {'stamina_cost':45,'charges':1},
+            {'stamina_cost':45,'charges':2}
+        ],
+        16)
 }
 
 essence_colors = {
