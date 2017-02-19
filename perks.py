@@ -301,7 +301,7 @@ perk_list = {
         'category' : 'Water Magic',
         'on_aquire': lambda: actions.aquatic(player.instance)
     },
-    'stonecloak' : {  #todo
+    'stonecloak' : {
         'name' : 'Stonecloak',
         'description' : ['Gain temporary armor whenever you cast a spell'],
         'max_rank' : 1,
@@ -317,7 +317,7 @@ perk_list = {
         'requires' : 'earth_affinity_5',
         'category' : 'Earth Magic'
     },
-    'tailwind' : {  #todo
+    'tailwind' : {
         'name' : 'Tailwind',
         'description' : ['After you cast a spell, if your next action is a move, it does not cost an action.'],
         'max_rank' : 1,
@@ -334,7 +334,7 @@ perk_list = {
         'category' : 'Air Magic',
         'on_aquire': lambda: actions.flight(player.instance)
     },
-    'vitality' : {  #todo
+    'vitality' : {
         'name' : 'Vitality',
         'description' : ['Healing effects are 25%% more effective'],
         'max_rank' : 1,
@@ -342,15 +342,16 @@ perk_list = {
         'requires' : 'life_affinity_3',
         'category' : 'Life Magic'
     },
-    'resurrection' : {  #todo
+    'resurrection' : {
         'name' : 'Resurrection',
         'description' : ['Upon death, resurrect with full health, once...'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'life_affinity_5',
-        'category' : 'Life Magic'
+        'category' : 'Life Magic',
+        'on_aquire': lambda: actions.auto_res(player.instance)
     },
-    'spellshards' : {  #todo
+    'spellshards' : {
         'name' : 'Spellshards',
         'description' : ['Damage dealt by your spells has +2 shred'],
         'max_rank' : 1,

@@ -263,8 +263,11 @@ def do_queued_action(action):
 
 def cast_spell():
     result = _cast_spell()
-    if result == 'cast-spell' and main.has_skill('stonecloak'):
-        instance.fighter.apply_status_effect(effects.stoneskin(5),True)
+    if result == 'cast-spell':
+        if main.has_skill('stonecloak'):
+            instance.fighter.apply_status_effect(effects.stoneskin(5),True)
+        if main.has_skill('tailwind'):
+            instance.fighter.apply_status_effect(effects.free_move(),True)
     return result
 
 def _cast_spell():
@@ -401,10 +404,15 @@ def purchase_skill():
             ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
 def on_death(instance):
-    ui.message("You're dead, sucka.", libtcod.grey)
-    main.game_state = 'dead'
-    instance.char = '%'
-    instance.color = libtcod.darker_red
+    if instance.fighter.has_status('auto-res'):
+        instance.fighter.remove_status('auto-res')
+        instance.fighter.heal(instance.fighter.max_hp)
+        ui.message("Not today, death.", libtcod.green)
+    else:
+        ui.message("You're dead, sucka.", libtcod.dark_red)
+        main.game_state = 'dead'
+        instance.char = '%'
+        instance.color = libtcod.darker_red
 
 def move_or_attack(dx, dy, ctrl=False):
 
@@ -430,6 +438,9 @@ def move_or_attack(dx, dy, ctrl=False):
                     ui.select_monster(target)
         else:
             value = instance.move(dx, dy)
+            if value and instance.fighter.has_status('free move'):
+                instance.fighter.remove_status('free move')
+                return False
             return value
 
     return success
@@ -572,23 +583,23 @@ def replace_essence(essence):
 
 
 def meditate():
-    global is_meditating
     book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
     if (book is None or not hasattr(book, 'spell_list')) and len(instance.memory.spell_list) == 0:
         ui.message('Without access to magic, you have no need of meditation.', libtcod.dark_cyan)
         return 'didnt-take-turn'
     ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)
-    is_meditating = True
+
+    if main.has_skill('solace'):
+        instance.fighter.apply_status_effect(effects.solace(),True)
+
     for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
         instance.action_queue.append('wait')
     instance.action_queue.append(_do_meditate)
     return 'start-meditate'
 
 def _do_meditate():
-    global is_meditating
     instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
     book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
-    is_meditating = False
     if book is not None and hasattr(book, 'spell_list'):
         book.refill_spell_charges()
         instance.memory.refill_spell_charges()

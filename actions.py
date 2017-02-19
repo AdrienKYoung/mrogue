@@ -423,6 +423,9 @@ def flight(target):
     import pathfinding
     target.movement_type = target.movement_type | pathfinding.FLYING
 
+def auto_res(target):
+    target.fighter.apply_status_effect(effects.auto_res(),True)
+
 def potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
 

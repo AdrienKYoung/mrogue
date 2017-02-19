@@ -186,6 +186,8 @@ class Fighter:
         return result
 
     def heal(self, amount):
+        if self.owner is player.instance and main.has_skill('vitality'):
+            amount *= 1.25
         self.hp += amount
         if self.hp > self.max_hp:
             self.hp = self.max_hp
@@ -547,7 +549,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
         if target.fighter.has_status('stung'):
             damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
 
-        if target is player.instance and main.has_skill('solace') and player.is_meditating:
+        if target.fighter.has_status('solace'):
             damage_mod *= 0.5
 
         if damage_multiplier is not None:
@@ -629,10 +631,11 @@ def spell_attack(fighter,target,spell_name):
                     config.get('base_damage','0d0'),
                     config.get('dice',0),
                     config['element'],
-                    config.get('peirce',0))
+                    config.get('peirce',0),
+                    config.get('shred',0))
 
 
-def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_element, spell_pierce):
+def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_element, spell_pierce, spell_shred = 0):
 
     if accuracy is None or roll_to_hit(target, accuracy):
         # Target was hit
@@ -645,7 +648,7 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
         if fighter.owner is player.instance and main.has_skill('searing_mind'):
             damage_mod *= 1.1
 
-        if target is player.instance and main.has_skill('solace') and player.is_meditating:
+        if target.fighter.has_status('solace'):
             damage_mod *= 0.5
 
         damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice,
@@ -655,11 +658,15 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
 
         if damage > 0:
             attack_text_ex(fighter,target,None,None,damage,spell_element,float(damage) / float(target.fighter.max_hp))
-
             target.fighter.take_damage(damage)
-            weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
-            if weapon:
-                main.check_breakage(weapon)
+            # Shred armor
+
+            if fighter.owner is player.instance and main.has_skill('spellshards'):
+                spell_shred += 2
+
+            for i in range(spell_shred):
+                if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
+                    target.fighter.shred += 1
             return 'hit'
         else:
             verbs = damage_description_tables['deflected']

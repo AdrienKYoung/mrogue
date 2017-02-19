@@ -85,6 +85,15 @@ def slowed(duration=10):
 def agile(duration=30):
     return StatusEffect('agile', duration, libtcod.light_blue, evasion_mod=1.5,message='You speed up.')
 
+def free_move(duration=None):
+    return StatusEffect('free move', duration, libtcod.blue)
+
+def solace(duration=None):
+    return StatusEffect('solace', duration, libtcod.blue)
+
+def auto_res(duration=None):
+    return StatusEffect('auto-res', duration, libtcod.light_blue)
+
 def resistant(element=None,effect=None,color=None,duration=99):
     import spells
     if element is not None:
