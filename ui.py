@@ -868,12 +868,12 @@ def skill_menu():
         # Draw scrollable menu
         for skill_category in skill_categories:
             # Draw category dividers
-            libtcod.console_set_default_foreground(sub_window, libtcod.gray)
+            libtcod.console_set_default_foreground(sub_window, libtcod.light_gray)
             for i in range(consts.MAP_VIEWPORT_WIDTH):
                 libtcod.console_put_char_ex(sub_window, i, y, libtcod.CHAR_HLINE, libtcod.gray, libtcod.black)
             libtcod.console_put_char_ex(sub_window, 0, y, 199, libtcod.gray, libtcod.black)
             libtcod.console_put_char_ex(sub_window, consts.MAP_VIEWPORT_WIDTH - 1, y, 182, libtcod.gray, libtcod.black)
-            libtcod.console_print_ex(sub_window, 3, y, libtcod.black, libtcod.LEFT, skill_category.title())
+            libtcod.console_print_ex(sub_window, 3, y, libtcod.black, libtcod.LEFT, skill_category.upper())
             y += 1
             # Draw all skills in category
             for i in range(len(perks.perk_keys)):
@@ -891,12 +891,12 @@ def skill_menu():
                         if k in main.learned_skills.keys():
                             libtcod.console_set_default_foreground(sub_window, libtcod.white)
                         elif skill['sp_cost'] <= player.instance.skill_points:
-                            libtcod.console_set_default_foreground(sub_window, libtcod.gray)
+                            libtcod.console_set_default_foreground(sub_window, libtcod.dark_gray)
                         else:
                             libtcod.console_set_default_foreground(sub_window, libtcod.darker_red)
 
-
-                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, "{} ({})".format(skill['name'].title(),skill['sp_cost']))
+                    name_string = "({}) {}".format(skill['sp_cost'],skill['name'].title())
+                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, name_string)
                     for s in main.learned_skills.keys():
                         if s == k:
                             rank = main.learned_skills[s]
@@ -908,7 +908,7 @@ def skill_menu():
                                     tag_text = ' [RANK %s]' % str(rank)
                             else:
                                 tag_text = ' [LEARNED]'
-                            libtcod.console_print_ex(sub_window, 6 + len(skill['name']), y, libtcod.BKGND_SET, libtcod.LEFT, tag_text)
+                            libtcod.console_print_ex(sub_window, 6 + len(name_string), y, libtcod.BKGND_SET, libtcod.LEFT, tag_text)
                             break
                     y += 1
         # Blit sub_window to window. Select based on scroll height
