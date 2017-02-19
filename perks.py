@@ -29,6 +29,8 @@ perk_keys = [
     'sorcery',
     'archmage',
     'essence_hunter',
+    'spell_mastery',
+    'solace',
     'fire_affinity',
     'water_affinity',
     'earth_affinity',
@@ -201,6 +203,27 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : None,
         'category' : 'Void Magic'
+    },
+    'spell_mastery' : {
+        'name' : 'Spell Mastery',
+        'description' : ['Choose a max-level spell that you can cast from your equipped spellbook. The spell is'
+                         ' memorized (can be cast at max level even without the appropriate spellbook equipped)',
+                         'Choose a max-level spell that you can cast from your equipped spellbook. The spell is'
+                         ' memorized (can be cast at max level even without the appropriate spellbook equipped)',
+                         'Choose a max-level spell that you can cast from your equipped spellbook. The spell is'
+                         ' memorized (can be cast at max level even without the appropriate spellbook equipped)'],
+        'max_rank' : 3,
+        'sp_cost' : 20,
+        'requires' : None,
+        'category' : 'Magic'
+    },
+    'solace' : {
+        'name' : 'Solace',
+        'description' : ['You take 50%% reduced damage while meditating'],
+        'max_rank' : 1,
+        'sp_cost' : 20,
+        'requires' : None,
+        'category' : 'Magic'
     },
 }
 
