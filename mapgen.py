@@ -286,16 +286,30 @@ def create_room_cellular_automata(width, height):
                 else:
                     continue
     #Step 3: fill all connected tiles. Replace tiles not connected to the largest section with wall
+    fill_pockets(room=room)
+
+    return room
+
+
+def fill_pockets(room=None):
+    if room is None:
+        tiles = {}
+        for x in range(consts.MAP_WIDTH):
+            for y in range(consts.MAP_HEIGHT):
+                tiles[(x, y)] = map.tiles[x][y].tile_type
+    else:
+        tiles = room.tiles
+
     done = False
     filled_lists = []
-    for y in range(height):
-        for x in range(width):
-            if room.tiles[(x, y)] == default_floor:
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            if tiles[(x, y)] != default_wall:
                 if len(filled_lists) > 0:
                     for list in filled_lists:
                         if (x, y) in list:
                             continue
-                new_list = flood_fill(room, filled_lists, x, y)
+                new_list = flood_fill(tiles, filled_lists, x, y)
                 filled_lists.append(new_list)
     longest = 0
     longest_list = None
@@ -306,18 +320,18 @@ def create_room_cellular_automata(width, height):
     for list in filled_lists:
         if list is not longest_list:
             for tile in list:
-                room.tiles[tile] = default_wall
+                if room is None:
+                    change_map_tile(tile[0], tile[1], default_wall)
+                else:
+                    room.tiles[tile] = default_wall
 
-    return room
-
-
-def flood_fill(room, filled_lists, x, y):
+def flood_fill(tiles, filled_lists, x, y):
     new_list = []
     Q = Queue.Queue()
     Q.put((x, y))
     while not Q.empty():
         n = Q.get()
-        if room.tiles[n] == default_wall or n in new_list:
+        if tiles[n] == default_wall or n in new_list:
             continue
         already_filled = False
         for list in filled_lists:
@@ -326,21 +340,21 @@ def flood_fill(room, filled_lists, x, y):
                 break
         if not already_filled:
             new_list.append(n)
-            if (n[0] - 1, n[1]) in room.tiles:
+            if (n[0] - 1, n[1]) in tiles:
                 Q.put((n[0] - 1, n[1]))
-            if (n[0] + 1, n[1]) in room.tiles:
+            if (n[0] + 1, n[1]) in tiles:
                 Q.put((n[0] + 1, n[1]))
-            if (n[0], n[1] - 1) in room.tiles:
+            if (n[0], n[1] - 1) in tiles:
                 Q.put((n[0], n[1] - 1))
-            if (n[0], n[1] + 1) in room.tiles:
+            if (n[0], n[1] + 1) in tiles:
                 Q.put((n[0], n[1] + 1))
-            if (n[0] - 1, n[1] - 1) in room.tiles:
+            if (n[0] - 1, n[1] - 1) in tiles:
                 Q.put((n[0] - 1, n[1] - 1))
-            if (n[0] - 1, n[1] + 1) in room.tiles:
+            if (n[0] - 1, n[1] + 1) in tiles:
                 Q.put((n[0] - 1, n[1] + 1))
-            if (n[0] + 1, n[1] + 1) in room.tiles:
+            if (n[0] + 1, n[1] + 1) in tiles:
                 Q.put((n[0] + 1, n[1] + 1))
-            if (n[0] + 1, n[1] - 1) in room.tiles:
+            if (n[0] + 1, n[1] - 1) in tiles:
                 Q.put((n[0] + 1, n[1] - 1))
     return new_list
 
@@ -618,7 +632,7 @@ def change_map_tile(x, y, tile_type, no_overwrite=False, hard_override=False):
         map.tiles[x][y].no_overwrite = no_overwrite
 
 
-def create_wandering_tunnel(x1, y1, x2, y2, tile_type=default_floor):
+def create_wandering_tunnel(x1, y1, x2, y2, tile_type=default_floor, wide=True):
     current_x = x1
     current_y = y1
     xdir = 0
@@ -649,7 +663,7 @@ def create_wandering_tunnel(x1, y1, x2, y2, tile_type=default_floor):
             current_y += ydir
         # replace terrain at current tile with floor
         change_map_tile(current_x, current_y, tile_type)
-        if libtcod.random_get_int(0, 0, 1) == 0 or move == 'xy':
+        if wide and (libtcod.random_get_int(0, 0, 1) == 0 or move == 'xy'):
             change_map_tile(current_x - 1, current_y, tile_type)
             change_map_tile(current_x + 1, current_y, tile_type)
             change_map_tile(current_x, current_y - 1, tile_type)
@@ -969,19 +983,22 @@ def choose_random_tile(tile_list, exclusive=True):
         tile_list.remove(chosen_tile)
     return chosen_tile
 
-def create_voronoi(h,w,m,n,features=[]):
+def create_voronoi(h,w,m,n,features=[], max_dist=8.0, border=4):
     result = [[0 for x in range(w)] for y in range(h)]
     # create random feature points
-    f = [(random.randint(0,w),random.randint(0,w)) for i in range(m)] + features
+    f = [(random.randint(border,w - (1 + border)),random.randint(border,h - (1 + border))) for i in range(m)] + features
     for x in range(w):
         for y in range(h):
-            # build a list of distances to each feature. little optimization here, don't sqrt values until they're needed
+            # Build a list of distances to each feature. little optimization here, don't sqrt values until they're needed
             dist = [math.fabs((x-x2) ** 2 + (y-y2) ** 2) for (x2,y2) in f]
             dist.sort()
             dist = [math.sqrt(a) for a in dist[:n]]
-            #Sum the n closest features
+            # Sum the n closest features
             result[x][y] = math.ceil(math.fsum(dist)/n)
-    return result
+            # Scale result to a 0.0 to 1.0 scale where 1.0 is 0 dist from feature point and 0.0 is max_dist or greater
+            # distance from a feature point
+            result[x][y] = main.clamp((float(max_dist - result[x][y]) / max_dist), 0.0, 1.0)
+    return result, f
 
 def create_coastline(height):
     shore_noise = libtcod.noise_new(1)
@@ -1102,20 +1119,60 @@ def make_rooms_and_corridors():
         main.spawn_monster(boss, sample[1].center()[0], sample[1].center()[1])
 
 def make_map_forest():
+
     sizex,sizey = consts.MAP_WIDTH - 1,consts.MAP_HEIGHT - 1
     link_locations = [(consts.MAP_WIDTH/2,1),(1,consts.MAP_HEIGHT/2),(consts.MAP_WIDTH/2,consts.MAP_HEIGHT-1),(consts.MAP_WIDTH-1,consts.MAP_HEIGHT/2)]
-    noise = create_voronoi(sizex,sizey,15,2,link_locations)
+    noise = create_voronoi(sizex,sizey,10,1,link_locations, max_dist=12.0)
     room = Room()
     room.set_pos(1,1)
     for x in range(sizex):
         for y in range(sizey):
-            elevation = abs(int(math.ceil(4 - noise[x][y] / 2)))
-            tile = 'snowy ground'
-            if elevation == 0:
-                tile = 'snow drift'
-            room.set_tile(x,y,tile,elevation)
+            #elevation = abs(int(math.ceil(4 - noise[x][y] / 2)))
+            chance = noise[0][x][y]
+            if libtcod.random_get_float(0, 0.0, 1.0) < chance:
+                if libtcod.random_get_float(0, 0.0, 1.0) > chance:
+                    tile = 'snow drift'
+                else:
+                    tile = 'snowy ground'
+            else:
+                tile = 'pine tree'
+            room.set_tile(x, y, tile)
+
+            #tile = 'snowy ground'
+            #if elevation == 0:
+            #    tile = 'snow drift'
+            #room.set_tile(x,y,tile,elevation)
     apply_room(room)
-    create_slopes()
+
+    # create tunnels to connect feature points to closet two neighbors
+    connected = []
+    for f in noise[1]:
+        connected.append(f)
+        dist = [(math.fabs((f[0] - x2) ** 2 + (f[1] - y2) ** 2), (x2, y2)) for (x2, y2) in noise[1]]
+        dist.sort(key=lambda o: o[0])
+        links = 0
+        for neighbor in dist:
+            if neighbor[1] not in connected and neighbor[1] != f:
+                create_wandering_tunnel(f[0], f[1], neighbor[1][0], neighbor[1][1], tile_type=default_floor, wide=False)
+                connected.append(neighbor[1])
+                links += 1
+                if links >= 2:
+                    break
+        # if no connection was made
+        if links == 0:
+            neighbor = dist[1]
+            create_wandering_tunnel(f[0], f[1], neighbor[1][0], neighbor[1][1], tile_type=default_floor, wide=False)
+            connected.append(neighbor[1])
+    open_tiles = []
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            if not map.tiles[x][y].blocks:
+                open_tiles.append((x, y))
+    # flood fill to remove isolated pockets
+    fill_pockets()
+
+    for f in noise[1]:
+        change_map_tile(f[0], f[1], 'deep water')
 
     for i in range(0, 10 + libtcod.random_get_int(0, 0, 10)):
         start = (libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 3),
