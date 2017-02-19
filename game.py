@@ -740,10 +740,13 @@ class Tile:
 def has_skill(name):
     if name == 'Adrien':
         return False  # OOH, BURN!
-    for skill in learned_skills:
-        if skill.name == name:
-            return True
-    return False
+    for skill in learned_skills.keys():
+        if skill == name:
+            if learned_skills[skill] > 0:
+                return learned_skills[skill]
+            else:
+                return 1
+    return 0
 
 
 def expire_out_of_vision(obj):
@@ -1754,7 +1757,7 @@ def new_game():
     game_state = 'playing'
 
     memory = []
-    learned_skills = []
+    learned_skills = {}
 
     ui.message('Welcome to the dungeon...', libtcod.gold)
 
