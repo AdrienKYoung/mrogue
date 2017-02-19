@@ -22,8 +22,133 @@ class Perk:
         else:
             return True  # Default to True if no requirements
 
+perk_list = {
+    'sorcery' : {
+        'name' : 'Sorcery',
+        'description' : ['Your spells have 33% more spell charges',
+                         'Your spells have 66% more spell charges',
+                         'Your spells have 100% more spell charges'],
+        'max_rank' : 3,
+        'requires' : None
+    },
+    'archmage' : {
+        'name' : 'Archmage',
+        'description' : 'Reduce all spell cast times by one step',
+        'max_rank' : 1,
+        'requires': 'sorcery_3'
+    },
+    'essence_hunter' : {
+        'name' : 'Essence Hunter',
+        'description' : ['Enemies killed by spells are 10%% more likely to drop essence',
+                         'Enemies killed by spells are 15%% more likely to drop essence',
+                         'Enemies killed by spells are 20%% more likely to drop essence'],
+        'max_rank' : 3,
+        'requires' : None
+    },
+    'fire_affinity' : {
+        'name' : 'Fire Affinity',
+        'description' : ['You have 2 extra spellpower when casting Fire spells',
+                         'You have 4 extra spellpower when casting Fire spells',
+                         'You have 6 extra spellpower when casting Fire spells',
+                         'You have 8 extra spellpower when casting Fire spells',
+                         'You have 10 extra spellpower when casting Fire spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+    'water_affinity' : {
+        'name' : 'Water Affinity',
+        'description' : ['You have 2 extra spellpower when casting Water spells',
+                         'You have 4 extra spellpower when casting Water spells',
+                         'You have 6 extra spellpower when casting Water spells',
+                         'You have 8 extra spellpower when casting Water spells',
+                         'You have 10 extra spellpower when casting Water spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+    'earth_affinity' : {
+        'name' : 'Earth Affinity',
+        'description' : ['You have 2 extra spellpower when casting Earth spells',
+                         'You have 4 extra spellpower when casting Earth spells',
+                         'You have 6 extra spellpower when casting Earth spells',
+                         'You have 8 extra spellpower when casting Earth spells',
+                         'You have 10 extra spellpower when casting Earth spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+    'air_affinity' : {
+        'name' : 'Air Affinity',
+        'description' : ['You have 2 extra spellpower when casting Air spells',
+                         'You have 4 extra spellpower when casting Air spells',
+                         'You have 6 extra spellpower when casting Air spells',
+                         'You have 8 extra spellpower when casting Air spells',
+                         'You have 10 extra spellpower when casting Air spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+    'life_affinity' : {
+        'name' : 'Life Affinity',
+        'description' : ['You have 2 extra spellpower when casting Life spells',
+                         'You have 4 extra spellpower when casting Life spells',
+                         'You have 6 extra spellpower when casting Life spells',
+                         'You have 8 extra spellpower when casting Life spells',
+                         'You have 10 extra spellpower when casting Life spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+    'cold_affinity' : {
+        'name' : 'Cold Affinity',
+        'description' : ['You have 2 extra spellpower when casting Cold spells',
+                         'You have 4 extra spellpower when casting Cold spells',
+                         'You have 6 extra spellpower when casting Cold spells',
+                         'You have 8 extra spellpower when casting Cold spells',
+                         'You have 10 extra spellpower when casting Cold spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+    'arcane_affinity' : {
+        'name' : 'Arcane Affinity',
+        'description' : ['You have 2 extra spellpower when casting Arcane spells',
+                         'You have 4 extra spellpower when casting Arcane spells',
+                         'You have 6 extra spellpower when casting Arcane spells',
+                         'You have 8 extra spellpower when casting Arcane spells',
+                         'You have 10 extra spellpower when casting Arcane spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+    'dark_affinity' : {
+        'name' : 'Dark Affinity',
+        'description' : ['You have 2 extra spellpower when casting Dark spells',
+                         'You have 4 extra spellpower when casting Dark spells',
+                         'You have 6 extra spellpower when casting Dark spells',
+                         'You have 8 extra spellpower when casting Dark spells',
+                         'You have 10 extra spellpower when casting Dark spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+    'radiant_affinity' : {
+        'name' : 'Radiant Affinity',
+        'description' : ['You have 2 extra spellpower when casting Radiant spells',
+                         'You have 4 extra spellpower when casting Radiant spells',
+                         'You have 6 extra spellpower when casting Radiant spells',
+                         'You have 8 extra spellpower when casting Radiant spells',
+                         'You have 10 extra spellpower when casting Radiant spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+    'void_affinity' : {
+        'name' : 'Void Affinity',
+        'description' : ['You have 2 extra spellpower when casting Void spells',
+                         'You have 4 extra spellpower when casting Void spells',
+                         'You have 6 extra spellpower when casting Void spells',
+                         'You have 8 extra spellpower when casting Void spells',
+                         'You have 10 extra spellpower when casting Void spells'],
+        'max_rank' : 5,
+        'requires' : None
+    },
+}
+
 list = [
-    Perk('Iron Skin', 'You gain 3 armor while not wearing armor', category='unarmed', requirements_str='Level 2'),
+    Perk('Sorcery I', ''),
     #Perk('Test0', 'Test0 Description', category='unarmed'),
     #Perk('Test1', 'Test1 Description', category='unarmed'),
     #Perk('Test2', 'Test2 Description', category='unarmed'),

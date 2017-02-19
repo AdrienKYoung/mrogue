@@ -11,6 +11,49 @@ class Spell:
         self.int_requirement = int_requirement
         self.max_level = len(levels)
 
+charm_battle_effects = {
+    'fire' : {
+        'weapon' : 'weapon_battleaxe_of_pure_fire',
+        'description' : 'Summon a battleaxe of pure flame, cleaving and burning all in its path'
+    },
+    'earth' : {
+        'weapon' : None,
+        'description' : 'Summon a crystal warhammer, crushing its foes when wielded with strength'
+    },
+    'air' : {
+        'weapon' : None,
+        'description' : 'Summon a storm mace, booming with thunder it chain-lightning arcs through its victims'
+    },
+    'water' : {
+        'weapon' : None,
+        'description' : 'Summon a trident of raging water, threatening foes from a distance and hindering their movements'
+    },
+    'life' : {
+        'weapon' : None,
+        'description' : "Summon a lifedrinker dagger, sustaining the life of it's weilder with the pain of others"
+    },
+    'cold' : {
+        'weapon' : None,
+        'description' : 'Summon a frozen blade, inflicting merciless wounds on individual targets'
+    },
+    'arcane' : {
+        'weapon' : None,
+        'description' : 'Summon a staff of force, humming with arcane energy that sends its targets flying'
+    },
+    'radiant' : {
+        'weapon' : None,
+        'description' : 'Summon a greatsword of virtue, a weapon of pure light that strikes down the undeserving'
+    },
+    'dark' : {
+        'weapon' : None,
+        'description' : "Summon a reaper's scythe, a grim weapon that raises those it kills as zombies"
+    },
+    'void' : {
+        'weapon' : None,
+        'description' : 'Summon a claw of the Ancient One'
+    },
+}
+
 charm_blessing_effects = {
     'fire': {
         'buff':effects.berserk,

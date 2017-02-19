@@ -646,7 +646,8 @@ class GameObject:
         changed_tiles.append((self.x, self.y))
         if self in current_map.fighters:
             current_map.fighters.remove(self)
-        current_map.objects.remove(self)
+        if self in current_map.objects:
+            current_map.objects.remove(self)
         if self is ui.selected_monster:
             ui.target_next_monster()
 
@@ -1280,12 +1281,12 @@ def create_item(name, material=None, quality=None):
                      }
                 )
             equipment_component.quality = quality
-            equipment_component.attack_damage_bonus += loot.weapon_qualities[quality]['dmg']
-            equipment_component.accuracy_bonus += loot.weapon_qualities[quality]['acc']
-            equipment_component.shred_bonus += loot.weapon_qualities[quality].get('shred', 0)
-            equipment_component.pierce_bonus += loot.weapon_qualities[quality].get('pierce', 0)
-            equipment_component.guaranteed_shred_bonus += loot.weapon_qualities[quality].get('autoshred', 0)
-            equipment_component.break_chance += loot.weapon_qualities[quality].get('break', 0.0)
+            equipment_component.attack_damage_bonus += loot.qualities[quality]['dmg']
+            equipment_component.accuracy_bonus += loot.qualities[quality]['acc']
+            equipment_component.shred_bonus += loot.qualities[quality].get('shred', 0)
+            equipment_component.pierce_bonus += loot.qualities[quality].get('pierce', 0)
+            equipment_component.guaranteed_shred_bonus += loot.qualities[quality].get('autoshred', 0)
+            equipment_component.break_chance += loot.qualities[quality].get('break', 0.0)
 
     go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))
@@ -1319,12 +1320,12 @@ def set_quality(equipment, quality):
     equipment.owner.name = p['name']
     # assign quality
     equipment.quality = quality
-    equipment.attack_damage_bonus += loot.weapon_qualities[quality]['dmg']
-    equipment.accuracy_bonus += loot.weapon_qualities[quality]['acc']
-    equipment.shred_bonus += loot.weapon_qualities[quality].get('shred', 0)
-    equipment.pierce_bonus += loot.weapon_qualities[quality].get('pierce', 0)
-    equipment.guaranteed_shred_bonus += loot.weapon_qualities[quality].get('autoshred', 0)
-    equipment.break_chance = loot.weapon_qualities[quality].get('break', 0.0)
+    equipment.attack_damage_bonus += loot.qualities[quality]['dmg']
+    equipment.accuracy_bonus += loot.qualities[quality]['acc']
+    equipment.shred_bonus += loot.qualities[quality].get('shred', 0)
+    equipment.pierce_bonus += loot.qualities[quality].get('pierce', 0)
+    equipment.guaranteed_shred_bonus += loot.qualities[quality].get('autoshred', 0)
+    equipment.break_chance = loot.qualities[quality].get('break', 0.0)
     # update name
     go = equipment.owner
     if hasattr(equipment, 'material'):

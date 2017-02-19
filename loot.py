@@ -190,41 +190,59 @@ item_categories = {
     'gem' : { 'plural' : 'gems'}
 }
 
-weapon_qualities = {
+qualities = {
     'broken' : {
         'dmg' : -3,
         'acc' : -3,
         'shred' : -1,
-        'color' : libtcodpy.desaturated_red
+        'color' : libtcodpy.desaturated_red,
+        'ev' : -5,
+        'ar' : -1,
+        'weight' : 0
     },
     'crude' : {
         'dmg' : -2,
         'acc' : -1,
         'break' : 5.0,
-        'color' : libtcodpy.dark_sepia
+        'color' : libtcodpy.dark_sepia,
+        'ev' : -1,
+        'ar' : 0,
+        'weight' : 1
     },
     '' : { # standard
         'dmg' : 0,
         'acc' : 0,
-        'color' : libtcodpy.light_gray
+        'color' : libtcodpy.light_gray,
+        'ev' : 0,
+        'ar' : 0,
+        'weight' : 0
     },
     'military' : {
         'dmg' : 1,
         'acc' : 1,
-        'color' : libtcodpy.dark_orange
+        'color' : libtcodpy.dark_orange,
+        'ev' : 0,
+        'ar' : 0,
+        'weight' : -1
     },
     'fine' : {
         'dmg' : 2,
         'acc' : 2,
         'break' : -1.5,
-        'color' : libtcodpy.sea
+        'color' : libtcodpy.sea,
+        'ev' : 1,
+        'ar' : 0,
+        'weight' : -2
     },
     'masterwork' : {
         'dmg' : 3,
         'acc' : 3,
         'shred' : 1,
         'break' : -10.0,
-        'color' : libtcodpy.green
+        'color' : libtcodpy.green,
+        'ev' : 2,
+        'ar' : 0,
+        'weight' : -3
     },
     'artifact' : {
         'dmg' : 5,
@@ -232,7 +250,10 @@ weapon_qualities = {
         'shred' : 1,
         'peirce' : 1,
         'break' : -1000.0,
-        'color' : libtcodpy.yellow
+        'color' : libtcodpy.yellow,
+        'ev' : 3,
+        'ar' : 1,
+        'weight' : -5
     },
 }
 
@@ -282,6 +303,32 @@ weapon_materials = {
         'autoshred' : 1,
         'break' : -5.0
     },
+    '' : {
+        'dmg' : 0,
+        'acc' : 0,
+        'shred' : 0
+    },
+}
+
+armor_materials = {
+    'rst_slashing' :
+        {'adjective' : 'reinforced'},
+    'rst_piercing' :
+        {'adjective' : 'hardened'},
+    'rst_bludgeoning' :
+        {'adjective' : 'padded'},
+    'rst_fire' :
+        {'adjective' : 'fire-proof'},
+    'rst_electric' :
+        {'adjective' : 'insulated'},
+    'rst_cold' :
+        {'adjective' : 'fur-lined'},
+    'rst_spell' :
+        {'adjective' : 'enchanted'},
+    'rst_dark' :
+        {'adjective' : 'blessed'},
+    'rst_radiant' :
+        {'adjective' : 'infernal'},
 }
 
 proto = {
@@ -675,6 +722,28 @@ proto = {
         'attack_delay'       : 22
     },
 
+    'weapon_battleaxe_of_pure_fire': {
+        'name'               : 'battleaxe of pure fire',
+        'category'           : 'weapon',
+        'damage_type'        : 'fire',
+        'subtype'            : 'axe',
+        'char'               : 'P',
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               : 'both hands',
+        'description'        : 'A battleaxe of pure flame, cleaving and burning all in its path.',
+        'stamina_cost'       : 12,
+        'str_requirement'    : 0,
+        'shred'              : 3,
+        'accuracy'           : 3,
+        'ctrl_attack'        : player.cleave_attack,
+        'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.',
+        'weapon_dice'        : '2d12',
+        'str_dice'           : 3,
+        'on_hit'             : [combat.on_hit_burn],
+        'attack_delay'       : 16
+    },
+
     #ARMOR
     'equipment_shield': {
         'name'          : 'Shield',
@@ -860,6 +929,16 @@ proto = {
     },
 
     #Charms
+
+    'charm_battle' : {
+        'name'          : 'Charm of Battle',
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : actions.charm_battle,
+        'description'   : 'When infused with essence, this charm summons an elemental weapon.'
+    },
 
     'charm_resistance' : {
         'name'          : 'Charm of Resistance',

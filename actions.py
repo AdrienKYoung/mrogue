@@ -430,6 +430,9 @@ def charm_resist():
     player.instance.essence.remove(essence)
 
 def charm_summoning():
+    if len(player.instance.essence) < 1:
+        ui.message("You don't have any essence.", libtcod.light_blue)
+        return 'didnt-take-turn'
     adj = main.adjacent_tiles_diagonal(player.instance.x, player.instance.y)
 
     # Get viable summoning position. Return failure if no position is available
@@ -459,9 +462,26 @@ def charm_summoning():
     summon.summon_time = t + libtcod.random_get_int(0, 0, t)
 
 def charm_blessing():
+    if len(player.instance.essence) < 1:
+        ui.message("You don't have any essence.", libtcod.light_blue)
+        return 'didnt-take-turn'
     essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
     player.instance.fighter.apply_status_effect(spells.charm_blessing_effects[essence]['buff']())
     player.instance.essence.remove(essence)
+
+def charm_battle():
+    if len(player.instance.essence) < 1:
+        ui.message("You don't have any essence.", libtcod.light_blue)
+        return 'didnt-take-turn'
+    essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
+    import loot
+    summoned_weapon = main.create_item(spells.charm_battle_effects[essence]['weapon'], material='', quality='')
+    if summoned_weapon is None:
+        return
+    equipped_weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
+    if equipped_weapon is not None:
+        equipped_weapon.dequip()
+    summoned_weapon.item.pick_up()
 
 import libtcodpy as libtcod
 import game as main

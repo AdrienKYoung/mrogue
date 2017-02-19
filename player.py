@@ -52,10 +52,11 @@ loadouts = {
         'spr':10,
         'con':12,
         'inventory':[
-            #'charm_magic_weapon',
             ['weapon_longsword','weapon_hatchet','weapon_mace'],
+            'charm_battle',
             'equipment_leather_armor',
-            'equipment_iron_helm'
+            'equipment_iron_helm',
+            'gem_lesser_fire'
         ],
         'description' : "Balanced melee fighter. Starts with good weapon and armor. Charm channels essence to imbue "
                         "temporary weapon effects."
