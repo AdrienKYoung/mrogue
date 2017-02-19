@@ -510,7 +510,7 @@ damage_description_tables = {
         ('blast', 'blasts'),
         ('disintegrate', 'disintegrates'),
     ],
-    'electric': [
+    'lightning': [
         ('shock', 'shocks'),
         ('zap', 'zaps'),
         ('jolt', 'jolts'),
@@ -819,11 +819,11 @@ def on_hit_chain_lightning(attacker, target, damage, zapped=None):
         zapped.append(target)
     if target.fighter is None:
         return
-    damage = roll_damage_ex('1d10', '0d0', target.fighter.spell_resist, 5, 'electric', 1.0,
+    damage = roll_damage_ex('1d10', '0d0', target.fighter.spell_resist, 5, 'lightning', 1.0,
                             target.fighter.getResists(), target.fighter.getWeaknesses())
 
     if damage > 0:
-        attack_text_ex(attacker.fighter, target, None, None, damage, 'electric', float(damage) / float(target.fighter.max_hp))
+        attack_text_ex(attacker.fighter, target, None, None, damage, 'lightning', float(damage) / float(target.fighter.max_hp))
 
         target.fighter.take_damage(damage)
         for adj in main.adjacent_tiles_diagonal(target.x, target.y):

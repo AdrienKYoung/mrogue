@@ -763,7 +763,7 @@ proto = {
     'weapon_storm_mace': {
         'name'               : 'storm mace',
         'category'           : 'weapon',
-        'damage_type'        : 'electric',
+        'damage_type'        : 'lightning',
         'subtype'            : 'club',
         'char'               : chr(157),
         'color'              : libtcodpy.light_sky,
