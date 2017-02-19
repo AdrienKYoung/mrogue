@@ -262,12 +262,18 @@ def do_queued_action(action):
         action()
 
 def cast_spell():
+    result = _cast_spell()
+    if result == 'cast-spell' and main.has_skill('stonecloak'):
+        instance.fighter.apply_status_effect(effects.stoneskin(5),True)
+    return result
+
+def _cast_spell():
     #Complicated because arcane mastery
     m_spells = [(s[0],s[1],instance.memory.spell_charges[s[0]]) for s in instance.memory.spell_list.items()]
     left_hand = main.get_equipped_in_slot(instance.fighter.inventory,'left hand')
 
     if hasattr(left_hand, 'spell_list') and len(left_hand.spell_list) > 0:
-        m_spells += [(s[0],s[1],left_hand.spell_charges[s[0]]) for s in left_hand.spell_list.items()]
+        m_spells += [(s[0],s[1],left_hand.spell_charges[s[0]]) for s in left_hand.spell_list.items() if s[1] > 0]
 
     if len(m_spells) < 1:
         ui.message("You have no spells available", libtcod.light_blue)

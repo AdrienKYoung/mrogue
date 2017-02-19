@@ -430,13 +430,13 @@ class GameObject:
         # Update 'in-mud' state
         if self.fighter and self.movement_type & pathfinding.FLYING != pathfinding.FLYING:
             if current_map.tiles[self.x][self.y].tile_type == 'mud' and not self.fighter.has_status('sluggish'):
-                self.fighter.apply_status_effect(effects.StatusEffect('sluggish', color=libtcod.sepia))
+                self.fighter.apply_status_effect(effects.sluggish(None),False)
             elif current_map.tiles[self.x][self.y].tile_type != 'mud' and self.fighter.has_status('sluggish'):
                 self.fighter.remove_status('sluggish')
 
         if self is player.instance and has_skill('aquatic'):
             if current_map.tiles[self.x][self.y].is_water and not self.fighter.has_status('agile'):
-                self.fighter.apply_status_effect(effects.StatusEffect('agile', color=libtcod.light_blue))
+                self.fighter.apply_status_effect(effects.agile(None),False)
             elif not current_map.tiles[self.x][self.y].is_water and self.fighter.has_status('agile'):
                 self.fighter.remove_status('agile')
 
