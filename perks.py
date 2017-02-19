@@ -29,7 +29,8 @@ perk_list = {
                          'Your spells have 66% more spell charges',
                          'Your spells have 100% more spell charges'],
         'max_rank' : 3,
-        'requires' : None
+        'requires' : None,
+        'valies'   : [0.33,0.66,1.0]
     },
     'archmage' : {
         'name' : 'Archmage',
@@ -43,7 +44,8 @@ perk_list = {
                          'Enemies killed by spells are 15%% more likely to drop essence',
                          'Enemies killed by spells are 20%% more likely to drop essence'],
         'max_rank' : 3,
-        'requires' : None
+        'requires' : None,
+        'values'   : [0.1,0.15,0.2]
     },
     'fire_affinity' : {
         'name' : 'Fire Affinity',
@@ -53,7 +55,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Fire spells',
                          'You have 10 extra spellpower when casting Fire spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
     'water_affinity' : {
         'name' : 'Water Affinity',
@@ -63,7 +66,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Water spells',
                          'You have 10 extra spellpower when casting Water spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
     'earth_affinity' : {
         'name' : 'Earth Affinity',
@@ -73,7 +77,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Earth spells',
                          'You have 10 extra spellpower when casting Earth spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
     'air_affinity' : {
         'name' : 'Air Affinity',
@@ -83,7 +88,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Air spells',
                          'You have 10 extra spellpower when casting Air spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
     'life_affinity' : {
         'name' : 'Life Affinity',
@@ -93,7 +99,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Life spells',
                          'You have 10 extra spellpower when casting Life spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
     'cold_affinity' : {
         'name' : 'Cold Affinity',
@@ -103,7 +110,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Cold spells',
                          'You have 10 extra spellpower when casting Cold spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
     'arcane_affinity' : {
         'name' : 'Arcane Affinity',
@@ -113,7 +121,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Arcane spells',
                          'You have 10 extra spellpower when casting Arcane spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
     'dark_affinity' : {
         'name' : 'Dark Affinity',
@@ -123,7 +132,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Dark spells',
                          'You have 10 extra spellpower when casting Dark spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
     'radiant_affinity' : {
         'name' : 'Radiant Affinity',
@@ -133,7 +143,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Radiant spells',
                          'You have 10 extra spellpower when casting Radiant spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
     'void_affinity' : {
         'name' : 'Void Affinity',
@@ -143,7 +154,8 @@ perk_list = {
                          'You have 8 extra spellpower when casting Void spells',
                          'You have 10 extra spellpower when casting Void spells'],
         'max_rank' : 5,
-        'requires' : None
+        'requires' : None,
+        'values'   : [2,4,6,8,10]
     },
 }
 

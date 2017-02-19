@@ -11,6 +11,11 @@ class Spell:
         self.int_requirement = int_requirement
         self.max_level = len(levels)
 
+    def max_spell_charges(self,level):
+        import game
+        base = self.levels[level-1]['charges']
+        return int(base + base * game.skill_value('sorcery'))
+
 charm_battle_effects = {
     'fire' : {
         'weapon' : 'weapon_battleaxe_of_pure_fire',

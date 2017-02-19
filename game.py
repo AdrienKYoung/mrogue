@@ -227,7 +227,7 @@ class Equipment:
             spell = self.level_progression[self.level]
             self.spell_list[spell] += 1
             #refill spell charges for that spell
-            self.spell_charges[spell] = spells.library[spell].levels[self.spell_list[spell]-1]['charges']
+            self.spell_charges[spell] = spells.library[spell].max_spell_charges(self.spell_list[spell])
             if self.spell_list[spell] == 1:
                 ui.message('Learned spell ' + spells.library[spell].name.title(), libtcod.white)
             else:
@@ -242,8 +242,7 @@ class Equipment:
     def refill_spell_charges(self):
         #on medidate, item create, and potions(?)
         for spell,level in self.get_active_spells().items():
-            spell_level = spells.library[spell].levels[level-1]
-            self.spell_charges[spell] = spell_level['charges']
+            self.spell_charges[spell] = spells.library[spell].max_spell_charges(level)
 
 class Item:
     def __init__(self, category, use_function=None, type='item', ability=None):
@@ -748,6 +747,16 @@ def has_skill(name):
                 return 1
     return 0
 
+def skill_value(name):
+    import perks
+    if name == 'tyler':
+        return 0 #REKT
+    else:
+        v = has_skill(name)
+        if v > 0:
+            return perks.perk_list['values'][v]
+        else:
+            return 0
 
 def expire_out_of_vision(obj):
     if not fov.player_can_see(obj.x, obj.y):
@@ -1738,6 +1747,7 @@ def new_game():
         confirm = ui.menu('Confirm starting as ' + loadout.title() + ":\n\n" + player.loadouts[loadout]['description'],
                           ['Start','Back'],36,x_center=consts.SCREEN_WIDTH / 2) == 0
 
+    learned_skills = {}
     player.create(loadout)
     in_game = True
     ui.selected_monster = None
@@ -1757,7 +1767,6 @@ def new_game():
     game_state = 'playing'
 
     memory = []
-    learned_skills = {}
 
     ui.message('Welcome to the dungeon...', libtcod.gold)
 

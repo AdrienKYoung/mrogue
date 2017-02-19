@@ -309,23 +309,13 @@ def cast_spell():
                 },
                 {
                     'category': 'charges',
-                    'text': '%d/%d' % (left_hand.spell_charges[spell], spell_data.levels[level-1]['charges']),
+                    'text': '%d/%d' % (left_hand.spell_charges[spell], spell_data.max_spell_charges(level)),
                     'color': libtcod.yellow
                 }
             ]
             sp[chr(letter_index)] = spell
             letter_index += 1
         selection = ui.menu_ex('Cast which spell?', ops, 50, return_as_char=True)
-        #names = []
-        #ops = []
-        #for spell,level in left_hand.get_active_spells().items():
-        #    spell_data = spells.library[spell]
-        #    stamina_cost = spell_data.levels[level-1]['stamina_cost']
-        #    spell_charges = left_hand.spell_charges[spell]
-        #    max_spell_charges = spell_data.levels[level-1]['charges']
-        #    names.append(spell_data.name.title() + '[' + str(stamina_cost) + ']' + " " + str(spell_charges) + "/" + str(max_spell_charges))
-        #    ops.append(spell)
-        #selection = ui.menu('Cast which spell?', names, 30)
         if selection is not None:
             s = sp[selection]
             if left_hand.can_cast(s,instance):

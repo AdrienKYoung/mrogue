@@ -360,6 +360,7 @@ proto = {
         'description': 'A servant of dark magic',
         'resistances': ['dark','madness'],
         'attributes': ['ability_fireball'],
+        'essence': [(15, 'fire'),(10, 'arcane')],
         'shred': 0,
         'equipment': [{'none':30,'weapon_dagger':30,'weapon_messer':30},{'none':90,'book_lesser_fire':10},{'equipment_witch_hat':100}],
         'subtype':'human',

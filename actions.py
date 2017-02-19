@@ -12,7 +12,7 @@ def get_cast_time(actor,spell_name):
     base = abilities.data.get(spell_name).get('cast_time',0)
     if actor is None:
         actor = player.instance
-        return main.clamp(base - int((actor.player_stats.int - 10) / 5), 0, 5)
+        return main.clamp(base - int((actor.player_stats.int - 10) / 5) - main.has_skill('archmage'), 0, 5)
     else:
         return base
 

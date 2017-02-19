@@ -132,7 +132,7 @@ class Fighter:
             total = 0
             for m in self.owner.essence:
                 total += m[0]
-                if roll < total:
+                if roll < total + total * main.skill_value('essence_hunter'):
                     essence_pickup = main.GameObject(self.owner.x, self.owner.y, '*', 'mote of ' + m[1] + ' essence',
                                              spells.essence_colors[m[1]],
                                              description='A colored orb that glows with elemental potential.',
@@ -633,9 +633,10 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
         if target.fighter.has_status('stung'):
             damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
 
-        damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice,fighter.spell_power), target.fighter.spell_resist,
-                                spell_pierce, spell_element, damage_mod, target.fighter.getResists(),
-                                target.fighter.getResists(), 0)
+        damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice,
+                                fighter.spell_power + main.skill_value("{}_affinity".format(spell_element))),
+                                target.fighter.spell_resist, spell_pierce, spell_element, damage_mod,
+                                target.fighter.getResists(), target.fighter.getResists(), 0)
 
         if damage > 0:
             attack_text_ex(fighter,target,None,None,damage,spell_element,float(damage) / float(target.fighter.max_hp))
