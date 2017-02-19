@@ -359,7 +359,7 @@ perk_list = {
         'requires' : 'cold_affinity_3',
         'category' : 'Cold Magic'
     },
-    'frostbite' : {  #todo
+    'frostbite' : {
         'name' : 'Frostbite',
         'description' : ['All visible enemies below 50%% health are slowed'],
         'max_rank' : 1,
@@ -375,14 +375,15 @@ perk_list = {
         'requires' : 'blood_affinity_3',
         'category' : 'Dark Magic'
     },
-    'lichform' : {  #todo
+    'lichform' : {
         'name' : 'Lichform',
-        'description' : ['Sacrifice 30%% of your maximum health. Gain immunity to status effects, resistance to all '
+        'description' : ['Sacrifice 30%% of your maximum health. Gain resistance to all status effects and'
                          'damage types, and immunity to dark magic.'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'dark_affinity_5',
-        'category' : 'Dark Magic'
+        'category' : 'Dark Magic',
+        'on_aquire': lambda: actions.lichform(player.instance)
     },
     'guardian_of_light' : {  #todo
         'name' : 'Guardian of Light',
@@ -392,7 +393,7 @@ perk_list = {
         'requires' : 'radiant_affinity_3',
         'category' : 'Radiant Magic'
     },
-    'heir_to_the_heavens' : {  #todo
+    'heir_to_the_heavens' : {
         'name' : 'Heir to the Heavens',
         'description' : ['Whenever you take critical damage, a Daeva is summoned to aid you'],
         'max_rank' : 1,

@@ -98,11 +98,23 @@ data = {
         'name': 'arcane arrow',
         'function': actions.arcane_arrow,
         'cooldown': 0,
-        'element':'fire',
+        'element':'lightning',
         'dice' : 1,
         'base_damage' : '3d6',
         'pierce': 0,
         'range':5
+    },
+
+    'ability_smite': {
+        'name': 'smite',
+        'function': actions.smite,
+        'cooldown': 10,
+        'element':'radiant',
+        'dice' : 2,
+        'base_damage' : '3d6',
+        'pierce': 3,
+        'shred' : 2,
+        'range':10
     }
 }
 

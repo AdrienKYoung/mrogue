@@ -117,7 +117,7 @@ def create(loadout):
     global instance
 
     loadout = loadouts[loadout]
-    fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death, team='ally')
+    fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death, on_get_hit=on_get_hit, team='ally')
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),
                         int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
@@ -687,6 +687,23 @@ def level_spell_mastery():
 def on_tick(this):
     if main.has_skill('pyromaniac'):
         main.create_fire(this.x,this.y,10)
+    if main.has_skill('frostbite'):
+        for enemy in main.get_visible_units_ex(lambda f: f.fighter.team != 'ally'):
+            if enemy.fighter.hp < enemy.fighter.max_hp / 2:
+                enemy.fighter.apply_status_effect(effects.slowed(2),True)
+    if main.has_skill('heir_to_the_heavens'):
+        if hasattr(instance,'heir_to_the_heavens_cd'):
+            instance.heir_to_the_heavens_cd -= 1
+
+def on_get_hit(this,other,damage):
+    if main.has_skill('heir_to_the_heavens'):
+        if not hasattr(instance,'heir_to_the_heavens_cd'):
+            instance.heir_to_the_heavens_cd = 0
+        if (this.fighter.hp <= (damage * 2) or this.fighter.hp < (this.fighter.max_hp * 0.2)) and instance.heir_to_the_heavens_cd < 1:
+            if actions.summon_guardian_angel() != 'failed':
+                instance.heir_to_the_heavens_cd = 70
+                instance.fighter.apply_status_effect(effects.invulnerable(1),True)
+
 
 
 import game as main
@@ -700,3 +717,4 @@ import syntax
 import pathfinding
 import ui
 import perks
+import actions

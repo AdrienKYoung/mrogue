@@ -161,7 +161,7 @@ class AI_Default:
         self._delay_turns -= 1
         return 1.0
 
-    def on_get_hit(self, attacker):
+    def on_get_hit(self, attacker,damage):
         aggro_on_hit(self.owner, attacker)
 
     def queue_action(self,action,delay):
@@ -259,7 +259,7 @@ class AI_TunnelSpider:
             monster.behavior.ai_state = 'resting'
             return 1.0  # pass the turn
 
-    def on_get_hit(self, attacker):
+    def on_get_hit(self, attacker,damage):
         aggro_on_hit(self.owner, attacker)
 
     def find_closest_web(self):
@@ -319,7 +319,7 @@ class AI_General:
 
     def get_hit(self, attacker):
         if hasattr(self.behavior, 'on_get_hit') and self.behavior.on_get_hit is not None:
-            self.behavior.on_get_hit(attacker)
+            self.behavior.on_get_hit(attacker,0)
 
     @property
     def move_speed(self):

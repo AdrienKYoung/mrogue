@@ -107,7 +107,7 @@ class Fighter:
             damage = 0
 
         if damage > 0:
-            self.get_hit(attacker)
+            self.get_hit(attacker,damage)
             self.hp -= damage
             if self.hp <= 0:
                 self.drop_essence()
@@ -119,11 +119,11 @@ class Fighter:
             self.time_since_last_damaged = 0
         return damage
 
-    def get_hit(self, attacker):
+    def get_hit(self, attacker,damage):
         if self.owner.behavior:
             self.owner.behavior.get_hit(attacker)
         if self.on_get_hit:
-            self.on_get_hit(self.owner, attacker)
+            self.on_get_hit(self.owner, attacker,damage)
 
     def drop_essence(self):
         if hasattr(self.owner, 'essence') and self.owner is not player.instance:
@@ -205,7 +205,7 @@ class Fighter:
         if tile.is_water and not tile.jumpable \
                 and self.owner.movement_type & pathfinding.FLYING != pathfinding.FLYING \
                 and self.owner.movement_type & pathfinding.AQUATIC != pathfinding.AQUATIC:  # deep water / deep seawater
-            if not (self.can_breath_underwater or self.has_status('waterbreathing') or
+            if not (self.can_breath_underwater or self.has_status('waterbreathing') or self.has_status('lichform') or
                     self is player.instance and main.has_skill('aquatic')):
                 if self.breath > 0:
                     self.breath -= 1
@@ -381,6 +381,7 @@ class Fighter:
     @property
     def spell_resist(self):
         bonus = sum(equipment.spell_resist_bonus for equipment in main.get_all_equipped(self.inventory))
+        bonus = int(bonus * mul(effect.spell_resist_mod for effect in self.status_effects))
         if self.owner.player_stats:
             return self.base_spell_resist + int(self.owner.player_stats.wiz/4) + bonus
         else:
@@ -485,36 +486,19 @@ damage_description_tables = {
         ('immolate', 'immolates'),
         ('incinerate', 'incinerates')
     ],
-    'water': [
-        ('splash','splashes'),
-        ('flood','floods'),
-        ('blast','blasts'),
-        ('drown','drowns')
-    ],
-    'ice': [
+    'cold': [
         ('freeze','freezes'),
         ('shatter','shatters')
-    ],
-    'earth': [
-        ('smash','smashes'),
-        ('crush','crushes')
-    ],
-    'air': [
-        ('slam','slams'),
-        ('shred','shreds'),
-        ('blast','blasts')
-    ],
-    'arcane': [
-        ('dazzle', 'dazzles'),
-        ('zap', 'zaps'),
-        ('blast', 'blasts'),
-        ('disintegrate', 'disintegrates'),
     ],
     'lightning': [
         ('shock', 'shocks'),
         ('zap', 'zaps'),
         ('jolt', 'jolts'),
         ('electrocute', 'electrocutes'),
+    ],
+    'radiant': [
+        ('smite', 'smites'),
+        ('disintegrate', 'disintegrates'),
     ]
 }
 
@@ -567,6 +551,14 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
             hit_type = weapon.damage_type
         else:
             hit_type = 'bludgeoning'
+
+            # dark immunity
+        if target.fighter.has_status('lichform') and hit_type == 'dark':
+            ui.message('%s %s unnaffected by dark energy!' % (
+                syntax.name(target.name),
+                syntax.conjugate(fighter.owner is player.instance, ('are', 'is'))),
+                       libtcod.darker_crimson)
+            return
 
         unarmed_str_dice = '1d{}'.format(fighter.attack_damage)
         if fighter.owner is not player.instance and weapon is None:
@@ -642,6 +634,13 @@ def spell_attack(fighter,target,spell_name):
 
 
 def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_element, spell_pierce, spell_shred = 0):
+    #dark immunity
+    if target.fighter.has_status('lichform') and spell_element == 'dark':
+        ui.message('%s %s unnaffected by dark energy!' % (
+            syntax.name(target.name),
+            syntax.conjugate(fighter.owner is player.instance, ('are', 'is'))),
+            libtcod.darker_crimson)
+        return
 
     if accuracy is None or roll_to_hit(target, accuracy):
         # Target was hit

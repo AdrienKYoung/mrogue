@@ -229,11 +229,11 @@ class Equipment:
             self.spell_list[spell] += 1
             #refill spell charges for that spell
             self.spell_charges[spell] = spells.library[spell].max_spell_charges(self.spell_list[spell])
-            if self.spell_list[spell] == 1:
-                ui.message('Learned spell ' + spells.library[spell].name.title(), libtcod.white)
-            else:
-                ui.message('Upgraded spell ' + spells.library[spell].name.title() + " to level " + str(self.spell_list[spell]), libtcod.white)
-            ui.message('')
+            if not force:
+                if self.spell_list[spell] == 1:
+                    ui.message('Learned spell ' + spells.library[spell].name.title(), libtcod.white)
+                else:
+                    ui.message('Upgraded spell ' + spells.library[spell].name.title() + " to level " + str(self.spell_list[spell]), libtcod.white)
         for i in range(cost):
             if self.essence in player.instance.essence:
                 player.instance.essence.remove(self.essence)
@@ -1576,6 +1576,12 @@ def get_description(obj):
         return obj.description.capitalize()
     else:
         return ""
+
+def get_visible_units():
+    return [f for f in current_map.fighters if fov.player_can_see(f.x,f.y)]
+
+def get_visible_units_ex(predicate):
+    return [f for f in current_map.fighters if fov.player_can_see(f.x,f.y) and predicate(f)]
 
 
 def land_next_to_target(target_x, target_y, source_x, source_y):

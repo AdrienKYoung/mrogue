@@ -521,7 +521,7 @@ proto = {
         'move_speed': 1.0,
         'attack_speed': 0.4,
         'ai': ai.AI_Default,
-        'attributes': ['ability_cast_arcane_arrow'],
+        'attributes': ['ability_arcane_arrow'],
         'description': 'An artificial construct of glowing geometric shapes and symbols of power, '
                        'vibrating with arcane energy.'
                        'It bombards its enemies with magical energy from a distance.',
@@ -529,6 +529,28 @@ proto = {
         'shred': 0,
         'subtype':'elemental',
         'movement_type' : pathfinding.FLYING
+    },
+    'monster_guardian_angel': {
+        'name': 'guardian angel',
+        'char': 'A',
+        'color': libtcod.light_yellow,
+        'hp': 50,
+        'strength_dice' : '3d8',
+        'attack_bonus' : 0,
+        'spell_power': 50,
+        'armor': 3,
+        'evasion': 12,
+        'accuracy': 25,
+        'move_speed': 1.0,
+        'attack_speed': 1.8,
+        'ai': ai.AI_Default,
+        'attributes': ['ability_smite'],
+        'description': 'A mighty warrior angel in radiant golden armor.',
+        'resistances': ['radiant','dark'],
+        'shred': 2,
+        'subtype':'angel',
+        'equipment': [{'weapon_greatsword':30,'weapon_halberd':30,'weapon_warhammer':30},{'equipment_plate_armor':100}],
+        'movement_type': pathfinding.FLYING
     },
 }
 

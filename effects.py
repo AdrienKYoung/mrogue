@@ -5,7 +5,7 @@ import player
 
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
-                 attack_power_mod=1.0,armor_mod=1.0,shred_mod=1.0,pierce_mod=1.0,attack_speed_mod=1.0,evasion_mod=1.0,spell_power_mod=1.0,
+                 attack_power_mod=1.0,armor_mod=1.0,shred_mod=1.0,pierce_mod=1.0,attack_speed_mod=1.0,evasion_mod=1.0,spell_power_mod=1.0, spell_resist_mod=1.0,
                  accuracy_mod=1.0, resistance_mod=[],weakness_mod=[], stacks=1):
         self.name = name
         self.time_limit = time_limit
@@ -21,6 +21,7 @@ class StatusEffect:
         self.attack_speed_mod = attack_speed_mod
         self.evasion_mod = evasion_mod
         self.spell_power_mod = spell_power_mod
+        self.spell_resist_mod = spell_resist_mod
         self.resistance_mod = resistance_mod
         self.weakness_mod = weakness_mod
         self.accuracy_mod = accuracy_mod
@@ -80,7 +81,7 @@ def sluggish(duration=5):
     return StatusEffect('sluggish', duration, libtcod.sepia, message='Your reaction time slows...')
 
 def slowed(duration=10):
-    return StatusEffect('slowed', duration, libtcod.dark_blue, message='Your pace slows...')
+    return StatusEffect('slowed', duration, libtcod.yellow, message='Your pace slows...')
 
 def agile(duration=30):
     return StatusEffect('agile', duration, libtcod.light_blue, evasion_mod=1.5,message='You speed up.')
@@ -92,7 +93,13 @@ def solace(duration=None):
     return StatusEffect('solace', duration, libtcod.blue)
 
 def auto_res(duration=None):
-    return StatusEffect('auto-res', duration, libtcod.light_blue)
+    return StatusEffect('auto-res', duration, libtcod.light_blue, message="You are blessed by life itself!")
+
+def lichform(duration=None):
+    return StatusEffect('lichform',None,libtcod.darker_crimson,spell_resist_mod=1.5,resistance_mod=
+        ['fire','cold','lightning','poison','radiant','dark','void',
+         'stunned','slowed','burning','judgement','confusion','frozen','immobilized','exhausted','rot','frostbite'],
+        message="Dark magic infuses your soul as you sacrifice your body to undeath!")
 
 def resistant(element=None,effect=None,color=None,duration=99):
     import spells

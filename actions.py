@@ -174,6 +174,23 @@ def arcane_arrow(actor=None, target=None):
                 return 'success'
     return 'failure'
 
+def smite(actor=None, target=None):
+    spell = abilities.data['ability_smite']
+    x, y = 0, 0
+    if actor is None or actor is player.instance:  # player is casting
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        ui.render_message_panel()
+        libtcod.console_flush()
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        target = main.get_monster_at_tile(*ui.target_tile(spell['range'],'pick', default_target=default_target))
+        actor = player.instance
+
+    if target is None: return 'cancelled'
+
+    combat.spell_attack(actor.fighter, target,'ability_smite')
+    return 'success'
 
 def heat_ray(actor=None, target=None):
     spell = abilities.data['ability_heat_ray']
@@ -426,7 +443,34 @@ def flight(target):
     target.movement_type = target.movement_type | pathfinding.FLYING
 
 def auto_res(target):
-    target.fighter.apply_status_effect(effects.auto_res(),True)
+    target.fighter.apply_status_effect(effects.auto_res())
+
+def lichform(target):
+    target.fighter.max_hp = int(target.fighter.max_hp * 0.7)
+    target.fighter.hp = min(target.fighter.hp,target.fighter.max_hp)
+    target.fighter.apply_status_effect(effects.lichform())
+
+def summon_guardian_angel():
+    adj = main.adjacent_tiles_diagonal(player.instance.x, player.instance.y)
+
+    # Get viable summoning position. Return failure if no position is available
+    summon_positions = []
+    for tile in adj:
+        if not main.is_blocked(tile[0], tile[1]):
+            summon_positions.append(tile)
+    if len(summon_positions) == 0:
+        return 'failed'
+    summon_pos = summon_positions[libtcod.random_get_int(0, 0, len(summon_positions) - 1)]
+
+    # Select monster type - default to goblin
+    summon_type = 'monster_guardian_angel'
+    summon = main.spawn_monster(summon_type, summon_pos[0], summon_pos[1], team='ally')
+    summon.behavior.follow_target = player.instance
+
+    # Set summon duration
+    summon.summon_time = 30 + libtcod.random_get_int(0, 0, 15)
+    ui.message('Your prayers have been answered!',libtcod.light_blue)
+    return 'success'
 
 def potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
