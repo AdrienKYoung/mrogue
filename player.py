@@ -154,7 +154,7 @@ def create(loadout):
             idx = ui.menu("Choose a starting item",[loot.proto[a]['name'].title() for a in item],30,x_center=consts.SCREEN_WIDTH / 2)
             prototype = item[idx]
 
-        if 'weapon' in item:
+        if 'weapon' in prototype:
             i = main.create_item(prototype, material='iron', quality='')
         else:
             i = main.create_item(prototype)
