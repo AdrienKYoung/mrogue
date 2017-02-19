@@ -754,7 +754,7 @@ def skill_value(name):
     else:
         v = has_skill(name)
         if v > 0:
-            return perks.perk_list['values'][v]
+            return perks.perk_list[name]['values'][v - 1]
         else:
             return 0
 

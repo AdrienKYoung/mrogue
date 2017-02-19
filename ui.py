@@ -832,12 +832,13 @@ def skill_menu():
     key = main.key
 
 
-    for skill in perks.list:
-        if not skill.category in skill_categories:
-            skill_categories.append(skill.category)
+    for k in perks.perk_keys:
+        skill = perks.perk_list[k]
+        if not skill['category'] in skill_categories:
+            skill_categories.append(skill['category'])
             menu_lines.append(None)
-        menu_lines.append(skill)
-    sub_height = len(skill_categories) + len(perks.list)
+        menu_lines.append(k)
+    sub_height = len(skill_categories) + len(perks.perk_keys)
     scroll_limit = sub_height - (consts.MAP_VIEWPORT_HEIGHT - 10)
 
     sub_window = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, sub_height)
@@ -875,9 +876,10 @@ def skill_menu():
             libtcod.console_print_ex(sub_window, 3, y, libtcod.black, libtcod.LEFT, skill_category.title())
             y += 1
             # Draw all skills in category
-            for i in range(len(perks.list)):
-                skill = perks.list[i]
-                if skill.category == skill_category:
+            for i in range(len(perks.perk_keys)):
+                k = perks.perk_keys[i]
+                skill = perks.perk_list[k]
+                if skill['category'] == skill_category:
 
                     if y == selected_index:
                         libtcod.console_set_default_background(sub_window, libtcod.white)
@@ -886,24 +888,44 @@ def skill_menu():
                             libtcod.console_put_char_ex(sub_window, j, y, ' ', libtcod.black, libtcod.white)
                     else:
                         libtcod.console_set_default_background(sub_window, libtcod.black)
-                        if skill.meets_requirements():
+                        if k in main.learned_skills.keys():
                             libtcod.console_set_default_foreground(sub_window, libtcod.white)
-                        else:
+                        elif skill['sp_cost'] <= player.instance.skill_points:
                             libtcod.console_set_default_foreground(sub_window, libtcod.gray)
+                        else:
+                            libtcod.console_set_default_foreground(sub_window, libtcod.darker_red)
 
-                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, "{} ({})".format(skill.name.title(),skill.sp_cost))
-                    for s in main.learned_skills:
-                        if s.name == skill.name:
+
+                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, "{} ({})".format(skill['name'].title(),skill['sp_cost']))
+                    for s in main.learned_skills.keys():
+                        if s == k:
+                            rank = main.learned_skills[s]
                             libtcod.console_set_default_foreground(sub_window, libtcod.dark_blue)
-                            libtcod.console_print_ex(sub_window, 6 + len(skill.name), y, libtcod.BKGND_SET, libtcod.LEFT, ' [LEARNED]')
+                            if perks.perk_list[s]['max_rank'] > 1:
+                                if rank == perks.perk_list[s]['max_rank']:
+                                    tag_text = ' [MASTERED]'
+                                else:
+                                    tag_text = ' [RANK %s]' % str(rank)
+                            else:
+                                tag_text = ' [LEARNED]'
+                            libtcod.console_print_ex(sub_window, 6 + len(skill['name']), y, libtcod.BKGND_SET, libtcod.LEFT, tag_text)
                             break
                     y += 1
         # Blit sub_window to window. Select based on scroll height
         libtcod.console_blit(sub_window, 0, scroll_height, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 10, window, 0, 4, 1.0, 1.0)
 
         # print description
+        selected_skill = menu_lines[selected_index]
         libtcod.console_set_default_foreground(window, libtcod.white)
-        libtcod.console_print_rect(window, 1, consts.MAP_VIEWPORT_HEIGHT - 5, consts.MAP_VIEWPORT_WIDTH - 2, 5, menu_lines[selected_index].description)
+        rank = main.has_skill(selected_skill)
+        max_rank = perks.perk_list[selected_skill]['max_rank']
+        if rank == max_rank:
+            desc_index = max_rank - 1
+        else:
+            desc_index = rank
+        desc = perks.perk_list[selected_skill]['description'][desc_index]
+
+        libtcod.console_print_rect(window, 1, consts.MAP_VIEWPORT_HEIGHT - 5, consts.MAP_VIEWPORT_WIDTH - 2, 5, desc)
 
         # print scroll bar
         libtcod.console_set_default_foreground(window, libtcod.gray)
@@ -934,10 +956,11 @@ def skill_menu():
             return None
         # Enter select
         elif key.vk == libtcod.KEY_ENTER:
-            if menu_lines[selected_index].meets_requirements() and menu_lines[selected_index] not in main.learned_skills:
-                return menu_lines[selected_index] # returns a Perk object
+            if perks.meets_requirements(menu_lines[selected_index]) and \
+                            main.has_skill(menu_lines[selected_index]) < perks.perk_list[menu_lines[selected_index]]['max_rank']:
+                return menu_lines[selected_index] # returns a Perk name
         # Down arrow increments selection index
-        elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_KP2 or key.vk == libtcod.KEY_KP6:
+        elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_RIGHT or key.vk == libtcod.KEY_KP2 or key.vk == libtcod.KEY_KP6:
             #selected_index = min(selected_index + 1, len(menu_lines) - 1)
             new_index = None
             while new_index is None:
@@ -950,7 +973,7 @@ def skill_menu():
             elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
                 scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
         # Up arrow decrements selection index
-        elif key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_KP8 or key.vk == libtcod.KEY_KP4:
+        elif key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP8 or key.vk == libtcod.KEY_KP4:
             #selected_index = max(selected_index - 1, 0)
             new_index = None
             while new_index is None:

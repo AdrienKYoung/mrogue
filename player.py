@@ -10,6 +10,7 @@ import spells
 import syntax
 import pathfinding
 import ui
+import perks
 
 class PlayerStats:
 
@@ -144,7 +145,7 @@ def create(loadout):
     instance.essence = []
     instance.known_spells = []
     instance.action_queue = []
-    instance.skill_points = 0
+    instance.skill_points = 100
 
     for item in loadout['inventory']:
         i = None
@@ -389,13 +390,17 @@ def purchase_skill():
     learned_skills = main.learned_skills
 
     skill = ui.skill_menu()
-    if skill is not None and skill not in learned_skills:
-        if skill.sp_cost > instance.skill_points:
+    if skill is not None:
+        cost = perks.perk_list[skill]['sp_cost']
+        if cost > instance.skill_points:
             ui.message("You don't have enough skill points.", libtcod.light_blue)
         else:
-            learned_skills.append(skill)
-            instance.skill_points -= skill.sp_cost
-            ui.message("Learned skill {}".format(skill.name.title()),libtcod.white)
+            if skill in learned_skills.keys():
+                learned_skills[skill] += 1
+            else:
+                learned_skills[skill] = 1
+            instance.skill_points -= cost
+            ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
 def on_death(instance):
     ui.message("You're dead, sucka.", libtcod.grey)
