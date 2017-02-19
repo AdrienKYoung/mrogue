@@ -53,8 +53,7 @@ loadouts = {
         'con':12,
         'inventory':[
             #'charm_magic_weapon',
-            'weapon_halberd',
-            'weapon_longsword',
+            ['weapon_longsword','weapon_hatchet','weapon_mace'],
             'equipment_leather_armor',
             'equipment_iron_helm'
         ],
@@ -130,6 +129,7 @@ loadouts = {
 instance = None
 
 def create(loadout):
+    import loot
     global instance
 
     loadout = loadouts[loadout]
@@ -147,11 +147,15 @@ def create(loadout):
 
     for item in loadout['inventory']:
         i = None
+        prototype = item
+        if not isinstance(item,basestring):
+            idx = ui.menu("Choose a starting item",[loot.proto[a]['name'].title() for a in item],30,x_center=consts.SCREEN_WIDTH / 2)
+            prototype = item[idx]
 
         if 'weapon' in item:
-            i = main.create_item(item, material='iron', quality='')
+            i = main.create_item(prototype, material='iron', quality='')
         else:
-            i = main.create_item(item)
+            i = main.create_item(prototype)
 
         instance.fighter.inventory.append(i)
         if i.equipment is not None:

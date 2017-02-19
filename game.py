@@ -1734,8 +1734,8 @@ def new_game():
         confirm = ui.menu('Confirm starting as ' + loadout.title() + ":\n\n" + player.loadouts[loadout]['description'],
                           ['Start','Back'],36,x_center=consts.SCREEN_WIDTH / 2) == 0
 
-    in_game = True
     player.create(loadout)
+    in_game = True
     ui.selected_monster = None
 
     import world

@@ -304,7 +304,7 @@ def fill_pockets(room=None):
     filled_lists = []
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
-            if tiles[(x, y)] != default_wall:
+            if (x, y) in tiles.keys() and tiles[(x, y)] != default_wall:
                 if len(filled_lists) > 0:
                     for list in filled_lists:
                         if (x, y) in list:
