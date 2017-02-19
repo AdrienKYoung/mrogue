@@ -244,6 +244,12 @@ class Equipment:
         for spell,level in self.get_active_spells().items():
             self.spell_charges[spell] = spells.library[spell].max_spell_charges(level)
 
+    def add_spell(self,spell,level):
+        self.spell_list[spell] = level
+        self.flat_spell_list.append(spell)
+        self.spell_charges[spell] = spells.library[spell].max_spell_charges(self.spell_list[spell])
+
+
 class Item:
     def __init__(self, category, use_function=None, type='item', ability=None):
         self.category = category
@@ -262,13 +268,6 @@ class Item:
                 equipment = self.owner.equipment
                 if equipment and get_equipped_in_slot(player.instance.fighter.inventory,equipment.slot) is None:
                     equipment.equip()
-        elif self.type == 'spell':
-            if len(memory) >= player.instance.player_stats.max_memory:
-                ui.message('You cannot hold any more spells in your memory!', libtcod.purple)
-            else:
-                memory.append(self.owner)
-                self.owner.destroy()
-                ui.message(str(self.owner.name) + ' has been added to your memory.', libtcod.purple)
             
     def use(self):
         if self.owner.equipment:
@@ -278,8 +277,6 @@ class Item:
             if self.use_function() != 'cancelled':
                 if self.type == 'item' and self.category != 'charm':
                     player.instance.fighter.inventory.remove(self.owner)
-                elif self.type == 'spell':
-                    memory.remove(self.owner)
             else:
                 return 'cancelled'
         else:
@@ -305,7 +302,7 @@ class Item:
             else:
                 options.append('Equip')
             if self.owner.equipment.level_progression:
-                cost = self.owner.equipment.level_costs[self.owner.equipment.level]
+                cost = self.owner.equipment.level_costs[self.owner.equipment.level-1]
                 options.append('Imbue ' + ('*') * cost)
         options.append('Drop')
         return options
@@ -1732,7 +1729,7 @@ def main_menu():
 
 
 def new_game():
-    global game_state, dungeon_level, memory, in_game, changed_tiles, learned_skills, current_map
+    global game_state, dungeon_level, in_game, changed_tiles, learned_skills, current_map
 
     confirm = False
     loadout = None
@@ -1766,7 +1763,7 @@ def new_game():
     # initialize_fov()
     game_state = 'playing'
 
-    memory = []
+    player.instance.memory = Equipment(None,'tome',spell_list=[])
 
     ui.message('Welcome to the dungeon...', libtcod.gold)
 

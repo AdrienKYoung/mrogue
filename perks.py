@@ -244,7 +244,8 @@ perk_list = {
         'max_rank' : 3,
         'sp_cost' : 20,
         'requires' : None,
-        'category' : 'Magic'
+        'category' : 'Magic',
+        'on_aquire' : player.level_spell_mastery
     },
     'solace' : {
         'name' : 'Solace',

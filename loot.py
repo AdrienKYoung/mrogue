@@ -991,11 +991,11 @@ proto = {
         ],
         'levels': [
             'spell_heat_ray', 'spell_flame_wall', 'spell_heat_ray', 'spell_fireball', 'spell_shatter_item',
-            'spell_fireball', 'spell_magma_bolt', 'spell_heat_ray', 'spell_fireball', 'spell_magma_bolt',
-            'spell_shatter_item', 'spell_magma_bolt'
+            'spell_fireball', 'spell_magma_bolt', 'spell_heat_ray','spell_flame_wall', 'spell_fireball',
+            'spell_magma_bolt', 'spell_shatter_item', 'spell_magma_bolt'
         ],
         'level_costs': [
-            1,1,1,2,2,2,3,3,3,4,4,4
+            1,1,1,2,2,2,3,3,3,3,4,4,4
         ]
     },
 }

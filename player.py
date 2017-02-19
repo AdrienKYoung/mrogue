@@ -1,17 +1,3 @@
-import game as main
-import libtcodpy as libtcod
-import math
-import consts
-import fov
-import effects
-import combat
-import dungeon
-import spells
-import syntax
-import pathfinding
-import ui
-import perks
-
 class PlayerStats:
 
     def __init__(self, int=10, wiz=10, str=10, agi=10, con=10):
@@ -36,10 +22,6 @@ class PlayerStats:
     @property
     def agi(self):
         return self.base_agi
-
-    @property
-    def max_memory(self):
-        return 3 + int(math.floor(self.wiz / 4))
 
     @property
     def max_essence(self):
@@ -129,6 +111,7 @@ loadouts = {
 }
 
 instance = None
+is_meditating = False
 
 def create(loadout):
     import loot
@@ -271,16 +254,7 @@ def handle_keys():
             return 'didnt-take-turn'
 
 def do_queued_action(action):
-
-    if action == 'finish-meditate':
-        instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
-        book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
-        if book is not None and hasattr(book, 'spell_list'):
-            book.refill_spell_charges()
-            ui.message('Your spells have recharged.', libtcod.dark_cyan)
-        return
-
-    elif action == 'channel-meditate':
+    if action == 'wait' or action is None:
         instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
     elif action == 'channel-cast':
         instance.fighter.adjust_stamina(consts.STAMINA_REGEN_CHANNEL)
@@ -288,15 +262,21 @@ def do_queued_action(action):
         action()
 
 def cast_spell():
+    #Complicated because arcane mastery
+    m_spells = [(s[0],s[1],instance.memory.spell_charges[s[0]]) for s in instance.memory.spell_list.items()]
     left_hand = main.get_equipped_in_slot(instance.fighter.inventory,'left hand')
-    if not hasattr(left_hand, 'spell_list') or len(left_hand.spell_list) <= 0:
+
+    if hasattr(left_hand, 'spell_list') and len(left_hand.spell_list) > 0:
+        m_spells += [(s[0],s[1],left_hand.spell_charges[s[0]]) for s in left_hand.spell_list.items()]
+
+    if len(m_spells) < 1:
         ui.message("You have no spells available", libtcod.light_blue)
         return 'didnt-take-turn'
     else:
         letter_index = ord('a')
         ops = {}
         sp = {}
-        for spell,level in left_hand.get_active_spells().items():
+        for spell,level,charges in m_spells:
             spell_data = spells.library[spell]
             ops[chr(letter_index)] = [
                 {
@@ -310,7 +290,7 @@ def cast_spell():
                 },
                 {
                     'category': 'charges',
-                    'text': '%d/%d' % (left_hand.spell_charges[spell], spell_data.max_spell_charges(level)),
+                    'text': '%d/%d' % (charges, spell_data.max_spell_charges(level)),
                     'color': libtcod.yellow
                 }
             ]
@@ -319,6 +299,12 @@ def cast_spell():
         selection = ui.menu_ex('Cast which spell?', ops, 50, return_as_char=True)
         if selection is not None:
             s = sp[selection]
+            if instance.memory.can_cast(s,instance):
+                if spells.library[s].function() == 'success':
+                    instance.memory.spell_charges[s] -= 1
+                    level = instance.memory.spell_list[s]
+                    instance.fighter.adjust_stamina(-spells.library[s].levels[level-1]['stamina_cost'])
+                    return 'cast-spell'
             if left_hand.can_cast(s,instance):
                 if spells.library[s].function() == 'success':
                     left_hand.spell_charges[s] -= 1
@@ -395,6 +381,12 @@ def purchase_skill():
         if cost > instance.skill_points:
             ui.message("You don't have enough skill points.", libtcod.light_blue)
         else:
+            success = True
+            if perks.perk_list[skill].get('on_aquire') is not None:
+                success = perks.perk_list[skill].get('on_aquire')()
+            if success == 'failed':
+                ui.message("Canceled", libtcod.red)
+                return
             if skill in learned_skills.keys():
                 learned_skills[skill] += 1
             else:
@@ -574,15 +566,26 @@ def replace_essence(essence):
 
 
 def meditate():
+    global is_meditating
     book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
     if book is None or not hasattr(book, 'spell_list'):
         ui.message('Without access to magic, you have no need of meditation.', libtcod.dark_cyan)
         return 'didnt-take-turn'
     ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)
+    is_meditating = True
     for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
-        instance.action_queue.append('channel-meditate')
-    instance.action_queue.append('finish-meditate')
+        instance.action_queue.append('wait')
+    instance.action_queue.append(_do_meditate)
     return 'start-meditate'
+
+def _do_meditate():
+    global is_meditating
+    instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
+    book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
+    is_meditating = False
+    if book is not None and hasattr(book, 'spell_list'):
+        book.refill_spell_charges()
+        ui.message('Your spells have recharged.', libtcod.dark_cyan)
 
 def delay(duration,action,delay_action='delay'):
     for i in range(duration):
@@ -654,3 +657,24 @@ def jump(actor=None):
 
     ui.message('Out of range.', libtcod.white)
     return 'didnt-take-turn'
+
+def level_spell_mastery():
+    tomes = [t.equipment.get_active_spells().items() for t in instance.fighter.inventory if hasattr(t.equipment,'spell_list') and len(t.equipment.spell_list) > 0]
+    spell_list = list(set([spell for tome in tomes for spell in tome if spells.is_max_level(spell[0],spell[1]) ] ))
+    choice = ui.menu("Select a spell to memorize",[spells.library[s[0]].name.title() for s in spell_list],40)
+    if choice is not None:
+        instance.memory.add_spell(spell_list[choice][0],spell_list[choice][1])
+    else:
+        return 'failed'
+
+import game as main
+import libtcodpy as libtcod
+import math
+import consts
+import effects
+import combat
+import spells
+import syntax
+import pathfinding
+import ui
+import perks

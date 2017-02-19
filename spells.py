@@ -16,6 +16,9 @@ class Spell:
         base = self.levels[level-1]['charges']
         return int(base + base * game.skill_value('sorcery'))
 
+def is_max_level(spell,level):
+    return len(library[spell].levels) == level
+
 charm_battle_effects = {
     'fire' : {
         'weapon' : 'weapon_battleaxe_of_pure_fire',

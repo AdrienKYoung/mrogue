@@ -541,6 +541,9 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
         if target.fighter.has_status('stung'):
             damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
 
+        if target is player.instance and main.has_skill('solace') and player.is_meditating:
+            damage_mod *= 0.5
+
         if damage_multiplier is not None:
             damage_mod *= damage_multiplier
 
