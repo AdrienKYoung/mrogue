@@ -90,9 +90,10 @@ class Equipment:
         self.is_equipped = True
         ui.message('Equipped ' + self.owner.name + ' on ' + self.slot + '.', libtcod.orange)
         
-    def dequip(self):
+    def dequip(self, no_message=False):
         self.is_equipped = False
-        ui.message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
+        if not no_message:
+            ui.message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
 
     def print_description(self, console, x, y, width):
         print_height = 1
@@ -282,15 +283,18 @@ class Item:
         else:
             ui.message('The ' + self.owner.name + ' cannot be used.')
 
-                
-    def drop(self):
+
+    def drop(self, no_message=False):
+        if self.owner not in player.instance.fighter.inventory:
+            return
         if self.owner.equipment:
-            self.owner.equipment.dequip();
+            self.owner.equipment.dequip(no_message=no_message)
         current_map.add_object(self.owner)
         player.instance.fighter.inventory.remove(self.owner)
         self.owner.x = player.instance.x
         self.owner.y = player.instance.y
-        ui.message('You dropped a ' + self.owner.name + '.', libtcod.white)
+        if not no_message:
+            ui.message('You dropped a ' + self.owner.name + '.', libtcod.white)
 
     def get_options_list(self):
         options = []
@@ -836,11 +840,15 @@ def blastcap_explode(blastcap):
     return
 
 
-def centipede_on_hit(attacker, target):
+def centipede_on_hit(attacker, target, damage):
+    if target.fighter is None:
+        return
     target.fighter.apply_status_effect(effects.StatusEffect('stung', consts.CENTIPEDE_STING_DURATION, libtcod.flame))
 
 
-def zombie_on_hit(attacker, target):
+def zombie_on_hit(attacker, target, damage):
+    if target.fighter is None:
+        return
     if libtcod.random_get_int(0, 0, 100) < consts.ZOMBIE_IMMOBILIZE_CHANCE:
         ui.message('%s grabs %s! %s cannot move!' % (
                         syntax.name(attacker.name).capitalize(),
@@ -1317,7 +1325,7 @@ def create_item(name, material=None, quality=None):
                       equipment=equipment_component, always_visible=True, description=p.get('description'))
     if ability is not None:
         go.item.ability = ability
-    if hasattr(equipment_component, 'material'):
+    if hasattr(equipment_component, 'material') and equipment_component.material != '':
         go.name = equipment_component.material + ' ' + go.name
     if hasattr(equipment_component, 'quality') and equipment_component.quality != '':
         go.name = equipment_component.quality + ' ' + go.name
@@ -1843,12 +1851,12 @@ def play_game():
     key = libtcod.Key()
     while not libtcod.console_is_window_closed():
 
-        # render the screen
+        # Render the screen
         libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)
         render_all()
         libtcod.console_flush()
 
-        # handle keys and exit game if needed
+        # Handle keys and exit game if needed
         player_action = player.handle_keys()
         if player_action == 'exit':
             save_game()
@@ -1861,12 +1869,23 @@ def play_game():
 
         # Let monsters take their turn
         if game_state == 'playing' and player_action != 'didnt-take-turn':
+            dead_tickers = []
             player.instance.on_tick(object=player.instance)
             for object in current_map.objects:
                 if object.behavior:
                     object.behavior.take_turn()
                 if object is not player.instance:
                     object.on_tick(object=object)
+            for ticker in current_map.tickers:
+                if hasattr(ticker, 'ticks'):
+                    ticker.ticks += 1
+                if hasattr(ticker, 'on_tick'):
+                    ticker.on_tick(ticker)
+                if hasattr(ticker, 'dead') and ticker.dead:
+                    dead_tickers.append(ticker)
+            for ticker in dead_tickers:
+                if ticker in current_map.tickers:
+                    current_map.tickers.remove(ticker)
 
         # Handle auto-targeting
         ui.auto_target_monster()

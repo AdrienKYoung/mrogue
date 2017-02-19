@@ -25,27 +25,27 @@ charm_battle_effects = {
         'description' : 'Summon a battleaxe of pure flame, cleaving and burning all in its path'
     },
     'earth' : {
-        'weapon' : None,
-        'description' : 'Summon a crystal warhammer, crushing its foes when wielded with strength'
+        'weapon' : 'weapon_diamond_warhammer',
+        'description' : 'Summon a diamond warhammer, crushing its foes when wielded with strength'
     },
     'air' : {
-        'weapon' : None,
-        'description' : 'Summon a storm mace, booming with thunder it chain-lightning arcs through its victims'
+        'weapon' : 'weapon_storm_mace',
+        'description' : 'Summon a storm mace, booming with thunder as chain-lightning arcs through its victims'
     },
     'water' : {
-        'weapon' : None,
+        'weapon' : 'weapon_trident_of_raging_water',
         'description' : 'Summon a trident of raging water, threatening foes from a distance and hindering their movements'
     },
     'life' : {
-        'weapon' : None,
-        'description' : "Summon a lifedrinker dagger, sustaining the life of it's weilder with the pain of others"
+        'weapon' : 'weapon_lifedrinker_dagger',
+        'description' : "Summon a lifedrinker dagger, sustaining the life of it's wielder with the pain of others"
     },
     'cold' : {
-        'weapon' : None,
+        'weapon' : 'weapon_frozen_blade',
         'description' : 'Summon a frozen blade, inflicting merciless wounds on individual targets'
     },
     'arcane' : {
-        'weapon' : None,
+        'weapon' : 'weapon_staff_of_force',
         'description' : 'Summon a staff of force, humming with arcane energy that sends its targets flying'
     },
     'radiant' : {
@@ -53,8 +53,8 @@ charm_battle_effects = {
         'description' : 'Summon a greatsword of virtue, a weapon of pure light that strikes down the undeserving'
     },
     'dark' : {
-        'weapon' : None,
-        'description' : "Summon a reaper's scythe, a grim weapon that raises those it kills as zombies"
+        'weapon' : 'weapon_soul_reaper',
+        'description' : 'Summon a soul reaper, a grim scythe that raises those it kills as zombies'
     },
     'void' : {
         'weapon' : None,

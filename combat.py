@@ -509,6 +509,12 @@ damage_description_tables = {
         ('zap', 'zaps'),
         ('blast', 'blasts'),
         ('disintegrate', 'disintegrates'),
+    ],
+    'electric': [
+        ('shock', 'shocks'),
+        ('zap', 'zaps'),
+        ('jolt', 'jolts'),
+        ('electrocute', 'electrocutes'),
     ]
 }
 
@@ -570,20 +576,14 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
             damage = roll_damage_ex(weapon.weapon_dice,
                                 "{}d{}".format(weapon.str_dice,fighter.attack_damage), target.fighter.armor,
                                 fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
-                                target.fighter.getResists(), flat_bonus=fighter.damage_bonus)
+                                target.fighter.getWeaknesses(), flat_bonus=fighter.damage_bonus)
         else:
             damage = roll_damage_ex('0d0', unarmed_str_dice, target.fighter.armor,
                                     fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
-                                    target.fighter.getResists(), flat_bonus=fighter.damage_bonus)
+                                    target.fighter.getWeaknesses(), flat_bonus=fighter.damage_bonus)
 
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
-            # Trigger on-hit effects
-            if on_hit is not None:
-                on_hit(fighter.owner, target)
-            if weapon is not None and weapon.on_hit is not None:
-                for oh in weapon.on_hit:
-                    oh(fighter.owner, target)
             # Shred armor
             for i in range(shred):
                 if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
@@ -596,6 +596,12 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
             attack_text_ex(fighter,target,verb,location,damage,hit_type,percent_hit)
 
             target.fighter.take_damage(damage)
+            # Trigger on-hit effects
+            if on_hit is not None:
+                on_hit(fighter.owner, target, damage)
+            if weapon is not None and weapon.on_hit is not None:
+                for oh in weapon.on_hit:
+                    oh(fighter.owner, target, damage)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)
@@ -654,7 +660,7 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
         damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice,
                                 fighter.spell_power + main.skill_value("{}_affinity".format(spell_element))),
                                 target.fighter.spell_resist, spell_pierce, spell_element, damage_mod,
-                                target.fighter.getResists(), target.fighter.getResists(), 0)
+                                target.fighter.getResists(), target.fighter.getWeaknesses(), 0)
 
         if damage > 0:
             attack_text_ex(fighter,target,None,None,damage,spell_element,float(damage) / float(target.fighter.max_hp))
@@ -771,8 +777,10 @@ def get_chance_to_hit(target, accuracy):
         return 1.0
     return 1.0 - float(target.fighter.evasion) / float(max(accuracy, target.fighter.evasion + 1))
 
-def on_hit_stun(attacker, target):
+def on_hit_stun(attacker, target, damage):
     scaling_factor = 1
+    if target.fighter is None:
+        return
     if(attacker is player.instance):
         scaling_factor = attacker.player_stats.str / 10
     if libtcod.random_get_float(0,0.0,1.0) * scaling_factor > 0.85:
@@ -780,9 +788,93 @@ def on_hit_stun(attacker, target):
             ui.message("Your " + main.get_equipped_in_slot(player.instance.fighter.inventory,'right hand').owner.name.title() + " rings out!",libtcod.blue)
         target.fighter.apply_status_effect(effects.stunned())
 
-def on_hit_burn(attacker, target):
+def on_hit_burn(attacker, target, damage):
+    if target.fighter is None:
+        return
     if libtcod.random_get_int(0, 1, 10) <= 7:
         target.fighter.apply_status_effect(effects.burning())
+
+def on_hit_freeze(attacker, target, damage):
+    if target.fighter is None:
+        return
+    if libtcod.random_get_int(0, 1, 10) <= 3:
+        target.fighter.apply_status_effect(effects.frozen(duration=3))
+
+def on_hit_slow(attacker, target, damage):
+    if target.fighter is None:
+        return
+    if libtcod.random_get_int(0, 1, 10) <= 7:
+        target.fighter.apply_status_effect(effects.slowed(duration=5))
+
+def on_hit_sluggish(attacker, target, damage):
+    if target.fighter is None:
+        return
+    if libtcod.random_get_int(0, 1, 10) <= 7:
+        target.fighter.apply_status_effect(effects.sluggish(duration=5))
+
+def on_hit_chain_lightning(attacker, target, damage, zapped=None):
+    if zapped is None:
+        zapped = [target]
+    else:
+        zapped.append(target)
+    if target.fighter is None:
+        return
+    damage = roll_damage_ex('1d10', '0d0', target.fighter.spell_resist, 5, 'electric', 1.0,
+                            target.fighter.getResists(), target.fighter.getWeaknesses())
+
+    if damage > 0:
+        attack_text_ex(attacker.fighter, target, None, None, damage, 'electric', float(damage) / float(target.fighter.max_hp))
+
+        target.fighter.take_damage(damage)
+        for adj in main.adjacent_tiles_diagonal(target.x, target.y):
+            for obj in main.current_map.fighters:
+                if obj.x == adj[0] and obj.y == adj[1] and obj.fighter.team != attacker.fighter.team and obj not in zapped:
+                    on_hit_chain_lightning(attacker, obj, damage, zapped)
+    else:
+        ui.message('The shock does not damage %s' % syntax.name(target.name), libtcod.grey)
+
+def on_hit_lifesteal(attacker, target, damage):
+    attacker.fighter.heal(damage)
+
+def on_hit_knockback(attacker, target, damage, force=6):
+    if target.fighter is None:
+        return
+    diff_x = target.x - attacker.x
+    diff_y = target.y - attacker.y
+    if diff_x > 0:
+        diff_x = diff_x / abs(diff_x)
+    if diff_y > 0:
+        diff_y = diff_y / abs(diff_y)
+    direction = (diff_x, diff_y)
+
+    steps=0
+    while steps <= force:
+        steps += 1
+        against = main.get_objects(target.x + direction[0], target.y + direction[1], lambda o: o.blocks)
+        if against is None or len(against) == 0:
+            against = syntax.name(main.current_map.tiles[target.x + direction[0]][target.y + direction[1]].name)
+        else:
+            against = 'the ' + against.name
+        if not target.move(direction[0], direction[1]):
+            # Could not move
+            damage = roll_damage_ex('%dd4' % steps, '0d0', target.fighter.armor, 0, 'budgeoning', 1.0,
+                                    target.fighter.getResists(), target.fighter.getWeaknesses())
+            ui.message('%s %s backwards and collides with %s, taking %d damage.' % (
+                syntax.name(target.name).capitalize(),
+                syntax.conjugate(target is player.instance, ('fly', 'flies')),
+                against,
+                damage), libtcod.gray)
+            target.fighter.take_damage(damage)
+            steps = force + 1
+
+def on_hit_reanimate(attacker, target, damage):
+    if target.fighter is None and target.name.startswith('remains of'):
+        spawn_tile = main.find_closest_open_tile(target.x, target.y)
+        ui.message('A corpse walks again...', libtcod.dark_violet)
+        zombie = main.spawn_monster('monster_rotting_zombie', spawn_tile[0], spawn_tile[1])
+        zombie.fighter.team = attacker.fighter.team
+        zombie.behavior.follow_target = attacker
+        target.destroy()
 
 def mul(sequence):
     return reduce(lambda x,y: x * y,sequence,1)

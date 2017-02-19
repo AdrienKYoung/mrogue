@@ -98,7 +98,7 @@ def grapel(actor=None, target=None):
     #Blame the Bleshib
     if actor.distance_to(target) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, target):
         if target.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, target.x, target.y) == (target.x, target.y):
-            spells.cast_frog_tongue(actor, target)
+            frog_tongue(actor, target)
             return
         else:
             return 'didnt-take-turn'
@@ -390,6 +390,8 @@ def forge():
         if weapon.quality == 'artifact':
             ui.message('Your ' + weapon.owner.name + ' shimmers briefly. It cannot be improved further by this magic.',
                        libtcod.orange)
+        elif weapon.material == '':
+            ui.message('The %s cannot be altered by this magic.' % weapon.owner.name, libtcod.orange)
         else:
             ui.message('Your ' + weapon.owner.name + ' glows bright orange!', libtcod.orange)
 
@@ -433,7 +435,9 @@ def charm_resist():
     if len(player.instance.essence) < 1:
         ui.message("You don't have any essence.", libtcod.light_blue)
         return 'didnt-take-turn'
-    essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
+    essence = ui.choose_essence_from_pool()
+    if essence is None:
+        return 'didnt-take-turn'
     player.instance.fighter.apply_status_effect(effects.resistant(element=essence))
     if essence in spells.charm_resist_extra_resists:
         for effect in spells.charm_resist_extra_resists[essence]:
@@ -457,7 +461,9 @@ def charm_summoning():
     summon_pos = summon_positions[libtcod.random_get_int(0, 0, len(summon_positions) - 1)]
 
     # Select essence
-    essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
+    essence = ui.choose_essence_from_pool()
+    if essence is None:
+        return 'didnt-take-turn'
     player.instance.essence.remove(essence)
 
     # Select monster type - default to goblin
@@ -476,7 +482,9 @@ def charm_blessing():
     if len(player.instance.essence) < 1:
         ui.message("You don't have any essence.", libtcod.light_blue)
         return 'didnt-take-turn'
-    essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
+    essence = ui.choose_essence_from_pool()
+    if essence is None:
+        return 'didnt-take-turn'
     player.instance.fighter.apply_status_effect(spells.charm_blessing_effects[essence]['buff']())
     player.instance.essence.remove(essence)
 
@@ -484,15 +492,56 @@ def charm_battle():
     if len(player.instance.essence) < 1:
         ui.message("You don't have any essence.", libtcod.light_blue)
         return 'didnt-take-turn'
-    essence = player.instance.essence[ui.menu("Which essence?",player.instance.essence,24)]
-    import loot
+    elif len(player.instance.fighter.inventory) >= 26:
+        ui.message('You are carrying too many items to summon another.')
+        return 'didnt-take-turn'
+    essence = ui.choose_essence_from_pool()
+    if essence is None:
+        return 'didnt-take-turn'
     summoned_weapon = main.create_item(spells.charm_battle_effects[essence]['weapon'], material='', quality='')
     if summoned_weapon is None:
         return
+    expire_ticker = type('', (), {})()  # Create an empty object for duck typing
     equipped_weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
+    expire_ticker.old_weapon = equipped_weapon
+    if summoned_weapon.equipment.slot == 'both hands':
+        expire_ticker.old_left = main.get_equipped_in_slot(player.instance.fighter.inventory, 'left hand')
+    else:
+        expire_ticker.old_left = None
     if equipped_weapon is not None:
         equipped_weapon.dequip()
     summoned_weapon.item.pick_up()
+    expire_ticker.weapon = summoned_weapon
+    expire_ticker.max_ticks = 15
+    effect = effects.StatusEffect('summoned weapon', expire_ticker.max_ticks + 1, summoned_weapon.color)
+    player.instance.fighter.apply_status_effect(effect)
+    expire_ticker.effect = effect
+    expire_ticker.ticks = 0
+    expire_ticker.on_tick = charm_battle_on_tick
+    main.current_map.tickers.append(expire_ticker)
+    player.instance.essence.remove(essence)
+
+def charm_battle_on_tick(ticker):
+    dead_flag = False
+    dropped = False
+    if not ticker.weapon.equipment.is_equipped:
+        ui.message('The %s fades away as you release it from your grasp.' % ticker.weapon.name.title(), libtcod.light_blue)
+        dead_flag = True
+        dropped = True
+    elif ticker.ticks > ticker.max_ticks:
+        dead_flag = True
+        ui.message("The %s fades away as it's essence depletes." % ticker.weapon.name.title(), libtcod.light_blue)
+    if dead_flag:
+        ticker.dead = True
+        ticker.weapon.item.drop(no_message=True)
+        ticker.weapon.destroy()
+        player.instance.fighter.remove_status('summoned weapon')
+        if not dropped:
+            if ticker.old_weapon is not None:
+                ticker.old_weapon.equip()
+            if ticker.old_left is not None:
+                ticker.old_left.equip()
+
 
 import libtcodpy as libtcod
 import game as main

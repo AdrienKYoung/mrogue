@@ -39,7 +39,6 @@ loadouts = {
             'charm_battle',
             'equipment_leather_armor',
             'equipment_iron_helm',
-            'gem_lesser_fire'
         ],
         'description' : "Balanced melee fighter. Starts with good weapon and armor. Charm channels essence to imbue "
                         "temporary weapon effects."
@@ -241,7 +240,7 @@ def handle_keys():
                     return 'didnt-take-turn'
                 else:
                     return ui.show_ability_screen()
-            if key_char == 'p': # TEMPORARY
+            if key_char == 'p':
                 purchase_skill()
                 return 'didnt-take-turn'
             if mouse.rbutton_pressed:

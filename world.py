@@ -12,6 +12,7 @@ class Map:
         self.tiles = None
         self.objects = None
         self.fighters = None
+        self.tickers = []
         self.difficulty = difficulty
         self.pathfinding = None
 

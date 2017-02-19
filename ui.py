@@ -1069,6 +1069,13 @@ def render_projectile(start, end, color, character=None):
         prev = bolt.x, bolt.y
     bolt.destroy()
 
+def choose_essence_from_pool():
+    index = menu("Which essence?", player.instance.essence, 24)
+    if index is None:
+        return None
+    else:
+        return player.instance.essence[index]
+
 show_action_panel = True
 overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
 panel = libtcod.console_new(consts.PANEL_WIDTH, consts.PANEL_HEIGHT)
