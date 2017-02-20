@@ -89,6 +89,8 @@ data = {
                              'a frozen, barren tree', flammable=True, isWall=True),
     'pine tree': TileData(True, True, 'pine tree', libtcod.CHAR_ARROW2_N, libtcod.darkest_green,libtcod.white,
                              'a pine tree, its needles ever green', flammable=True, isWall=True),
+    'ice': TileData(False, False, 'ice', '=', libtcod.white, libtcod.light_blue,
+                             'floor made of a thick sheet of ice', isFloor=True),
 }
 
 # flags

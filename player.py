@@ -144,6 +144,8 @@ def create(loadout):
 
         if 'weapon' in prototype:
             i = main.create_item(prototype, material='iron', quality='')
+        elif 'equipment' in prototype:
+            i = main.create_item(prototype, material='', quality='')
         else:
             i = main.create_item(prototype)
 

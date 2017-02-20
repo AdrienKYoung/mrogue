@@ -125,8 +125,11 @@ def item_from_table(branch,loot_table=None):
     material = None
     quality = None
     if category == 'weapon':
-        material = choose_material(loot_level)
+        material = choose_weapon_material(loot_level)
         quality = choose_quality(loot_level)
+    if category == 'armor':
+        quality = choose_quality(loot_level)
+        material = choose_armor_material(loot_level)
 
     return main.create_item(item_id, material, quality)
 
@@ -137,10 +140,10 @@ def choose_loot_table(branch):
     else:
         return main.random_choice(b['loot'])
 
-def choose_material(loot_level=0):
+def choose_weapon_material(loot_level=0):
     roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 150))
     if roll < 5:
-        return choose_material(loot_level + 5)
+        return choose_weapon_material(loot_level + 5)
     elif roll < 15:
         return 'wooden'
     elif roll < 30:
@@ -157,6 +160,14 @@ def choose_material(loot_level=0):
         return 'aetherwood'
     else:
         return 'blightstone'
+
+def choose_armor_material(loot_level=0):
+    roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 150))
+    if roll > 100:
+        ops = armor_materials.keys()
+        return ops[libtcodpy.random_get_int(0,0,ops)]
+    else:
+        return ''
 
 
 def choose_quality(loot_level=0):
@@ -309,24 +320,15 @@ weapon_materials = {
 }
 
 armor_materials = {
-    'rst_slashing' :
-        {'adjective' : 'reinforced'},
-    'rst_piercing' :
-        {'adjective' : 'hardened'},
-    'rst_bludgeoning' :
-        {'adjective' : 'padded'},
-    'rst_fire' :
-        {'adjective' : 'fire-proof'},
-    'rst_electric' :
-        {'adjective' : 'insulated'},
-    'rst_cold' :
-        {'adjective' : 'fur-lined'},
-    'rst_spell' :
-        {'adjective' : 'enchanted'},
-    'rst_dark' :
-        {'adjective' : 'blessed'},
-    'rst_radiant' :
-        {'adjective' : 'infernal'},
+    'reinforced'    :   'slashing',
+    'hardened'      :   'piercing',
+    'padded'        :   'bludgeoning',
+    'fire-proof'    :   'fire',
+    'insulated'     :   'lightning',
+    'fur-lined'     :   'cold',
+    'blessed'       :   'dark',
+    'infernal'      :   'radiant',
+    'enchanted'     :   'spell'
 }
 
 proto = {

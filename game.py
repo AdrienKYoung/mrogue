@@ -1329,6 +1329,7 @@ def create_item(name, material=None, quality=None):
             equipment_component.pierce_bonus += loot.weapon_materials[material].get('pierce', 0)
             equipment_component.guaranteed_shred_bonus += loot.weapon_materials[material].get('autoshred', 0)
             equipment_component.break_chance += loot.weapon_materials[material].get('break', 0.0)
+
             if quality is None:
                 quality = random_choice(
                     {
@@ -1348,6 +1349,33 @@ def create_item(name, material=None, quality=None):
             equipment_component.pierce_bonus += loot.qualities[quality].get('pierce', 0)
             equipment_component.guaranteed_shred_bonus += loot.qualities[quality].get('autoshred', 0)
             equipment_component.break_chance += loot.qualities[quality].get('break', 0.0)
+
+        if equipment_component.category == 'armor':
+            equipment_component.base_id = name
+            if material is None:
+                material = ''
+            equipment_component.material = material
+            if material == 'enchanted':
+                equipment_component.spell_resist_bonus += 1
+            elif material in loot.armor_materials:
+                equipment_component.resistances += loot.armor_materials[material]
+
+            if quality is None:
+                quality = random_choice(
+                    {
+                        'broken': 5,
+                        'crude': 5,
+                        '': 75,
+                        'military': 10,
+                        'fine': 10,
+                        'masterwork': 5,
+                        'artifact': 1,
+                    }
+                )
+            equipment_component.quality = quality
+            equipment_component.armor_bonus += loot.qualities[quality]['ar']
+            equipment_component.evasion_bonus += loot.qualities[quality]['ev']
+            #equipment_component.weight += loot.qualities[quality]['weight']
 
     go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))

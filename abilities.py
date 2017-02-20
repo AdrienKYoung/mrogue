@@ -115,7 +115,58 @@ data = {
         'pierce': 3,
         'shred' : 2,
         'range':10
-    }
+    },
+
+    'ability_frozen_orb': {
+        'name': 'frozen orb',
+        'function': actions.magma_bolt,
+        'cooldown': 10,
+        'element':'cold',
+        'dice' : 2,
+        'base_damage' : '3d4',
+        'range':4
+    },
+
+    'ability_flash_frost': {
+        'name': 'flash frost',
+        'function': actions.magma_bolt,
+        'cooldown': 10,
+        'element':'cold',
+        'dice' : 0,
+        'base_damage' : '0d0',
+        'pierce': 0,
+        'range':6
+    },
+
+    'ability_ice_shards': {
+        'name': 'ice shards',
+        'function': actions.magma_bolt,
+        'cooldown': 10,
+        'element':'cold',
+        'dice' : 1,
+        'base_damage' : '3d6',
+        'range':3
+    },
+
+    'ability_snowstorm': {
+        'name': 'snowstorm',
+        'function': actions.magma_bolt,
+        'cooldown': 10,
+        'element':'cold',
+        'dice' : 1,
+        'base_damage' : '1d6',
+        'range':10
+    },
+
+    'ability_avalanche': {
+        'name': 'avalanche',
+        'function': actions.magma_bolt,
+        'cooldown': 20,
+        'element':'cold',
+        'dice' : 2,
+        'base_damage' : '3d8',
+        'range':10
+    },
 }
 
 vermin_summons = [
