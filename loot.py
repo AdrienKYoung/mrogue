@@ -165,7 +165,7 @@ def choose_armor_material(loot_level=0):
     roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 150))
     if roll > 100:
         ops = armor_materials.keys()
-        return ops[libtcodpy.random_get_int(0,0,ops)]
+        return ops[libtcodpy.random_get_int(0,0,len(ops))]
     else:
         return ''
 
