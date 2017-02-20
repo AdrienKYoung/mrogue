@@ -571,7 +571,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
                 syntax.conjugate(fighter.owner is player.instance, ('are', 'is'))),
                        libtcod.darker_crimson)
             return 'immune'
-        
+
         subtype = 'unarmed_combat'
         if weapon is not None:
             subtype = weapon.subtype

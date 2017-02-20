@@ -39,12 +39,6 @@ loadouts = {
             'charm_battle',
             'equipment_leather_armor',
             'equipment_iron_helm',
-            'equipment_brigandine',
-            'equipment_great_helm',
-            'equipment_greaves',
-            'equipment_gauntlets',
-            'equipment_armet_helm',
-            'equipment_plate_armor',
         ],
         'description' : "Balanced melee fighter. Starts with good weapon and armor. Charm channels essence to imbue "
                         "temporary weapon effects."
