@@ -149,7 +149,7 @@ ENDFEATURE
 FEATURE verman_hut
 FLAGS NOSPAWNS
 DEFINE $ LOOT_LEVEL 1 CATEGORY consumables
-DEFINE 1 MONSTER_ID monster_verman
+DEFINE 1 MONSTER_ID monster_silencer
 _______
 _#####_
 _#$..#_

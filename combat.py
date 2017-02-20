@@ -16,7 +16,7 @@ class Fighter:
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
                  damage_bonus=0, m_str_dice=0, m_str_size=0, monster_str_dice=None, spell_resist=0, team='enemy',
-                 on_get_hit=None):
+                 on_get_hit=None, stealth=None):
         self.xp = xp
         self.base_max_hp = hp
         self.hp = hp
@@ -51,6 +51,7 @@ class Fighter:
         self.subtype = subtype
         self.team = team
         self.on_get_hit = on_get_hit
+        self.stealth = stealth
 
         self.base_damage_bonus = damage_bonus
         self.m_str_dice = m_str_dice

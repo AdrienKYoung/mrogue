@@ -65,6 +65,9 @@ def invulnerable(duration = 5):
 def confusion(duration = 10):
     return StatusEffect('confusion',duration,libtcod.red,message="Madness takes hold of your mind!")
 
+def silence(duration=3):
+    return StatusEffect('silence', duration, libtcod.red,message="You have been silenced!")
+
 def rot(duration = -1):
     return StatusEffect('rot',duration,libtcod.red,message="Your flesh rots away!",on_apply=rot_apply,on_end=rot_end)
 

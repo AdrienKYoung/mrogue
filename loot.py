@@ -165,7 +165,7 @@ def choose_armor_material(loot_level=0):
     roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 150))
     if roll > 100:
         ops = armor_materials.keys()
-        return ops[libtcodpy.random_get_int(0,0,len(ops))]
+        return ops[libtcodpy.random_get_int(0,0,len(ops)-1)]
     else:
         return ''
 
@@ -520,7 +520,7 @@ proto = {
     'weapon_dagger': {
         'name'               : 'dagger',
         'category'           : 'weapon',
-        'subtype'        : 'knife',
+        'subtype'            : 'knife',
         'damage_type'        : 'stabbing',
         'char'               : '-',
         'color'              : libtcodpy.yellow,
@@ -528,7 +528,7 @@ proto = {
         'slot'               :'right hand',
         'description'        : 'A small double-edged knife. Deals triple damage to incapacitated targets',
         'stamina_cost'       : 6,
-        'str_requirement'    : 10,
+        'str_requirement'    : 6,
         'shred'              : 0,
         'accuracy'           : 5,
         'weapon_dice'        : '2d4',
@@ -546,14 +546,33 @@ proto = {
         'type'               : 'item',
         'slot'               :'right hand',
         'description'        : 'A long knife, made for dueling',
-        'stamina_cost'       : 6,
-        'str_requirement'    : 10,
+        'stamina_cost'       : 8,
+        'str_requirement'    : 8,
         'shred'              : 0,
         'accuracy'           : 5,
         'weapon_dice'        : '2d4',
         'str_dice'           : 2,
         'attack_delay'       : 12,
         'crit_bonus'         : 2
+    },
+    'weapon_katar': {
+        'name'               : 'katar',
+        'category'           : 'weapon',
+        'damage_type'        : 'stabbing',
+        'subtype'            : 'knife',
+        'char'               : chr(19),
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               :'both hands',
+        'description'        : 'A pair of exotic hooded punching daggers.',
+        'stamina_cost'       : 6,
+        'str_requirement'    : 10,
+        'shred'              : 1,
+        'accuracy'           : 5,
+        'weapon_dice'        : '2d8',
+        'str_dice'           : 2,
+        'attack_delay'       : 10,
+        'crit_bonus'         : 3.5
     },
     'weapon_spear': {
         'name'               : 'spear',
@@ -899,17 +918,30 @@ proto = {
 
     },
 
-    'equipment_leather_armor': {
-        'name'          : 'Leather Armor',
+    'equipment_cloth_robes': {
+        'name'          : 'Cloth Robes',
         'category'      : 'armor',
         'char'          : chr(6), #spade
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 1,
         'slot'          : 'body',
+        'description'   : 'Heavy cloth robes. Provide some degree of protection against attacks.',
+        'evasion_bonus' : 0,
+        'weight'        : 2
+    },
+
+    'equipment_leather_armor': {
+        'name'          : 'Leather Armor',
+        'category'      : 'armor',
+        'char'          : chr(6), #spade
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'armor_bonus'   : 2,
+        'slot'          : 'body',
         'description'   : 'A hardened leather vest.',
         'evasion_bonus' : -1,
-        'weight'        : 2
+        'weight'        : 5
     },
 
     'equipment_mail_armor': {

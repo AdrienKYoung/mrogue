@@ -232,7 +232,7 @@ def auto_target_monster():
         monster = main.closest_monster(consts.TORCH_RADIUS)
         if monster is not None:
             select_monster(monster)
-    elif not fov.player_can_see(selected_monster.x, selected_monster.y):
+    elif not selected_monster.player_can_see():
         main.changed_tiles.append((selected_monster.x, selected_monster.y))
         selected_monster = None
 

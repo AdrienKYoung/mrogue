@@ -365,6 +365,50 @@ proto = {
         'equipment': [{'none':30,'weapon_dagger':30,'weapon_messer':30},{'none':90,'book_lesser_fire':10},{'equipment_witch_hat':100}],
         'subtype':'human',
     },
+    'monster_wolf': {
+        'name': 'tundra wolf',
+        'char': 'w',
+        'color': libtcod.gray,
+        'hp': 20,
+        'strength_dice' : '3d6',
+        'attack_bonus' : 2,
+        'armor': 1,
+        'evasion': 10,
+        'accuracy': 20,
+        'move_speed': 1.1,
+        'attack_speed': 1.0,
+        'ai': ai.AI_Default,
+        'description': 'A great gray wolf. Hunts in packs.',
+        'resistances': [],
+        'shred': 1,
+        'modifier_category':'beast',
+        'subtype':'beast',
+    },
+    'monster_silencer': {
+        'name': 'corvid silencer',
+        'char': 'c',
+        'color': libtcod.darkest_grey,
+        'hp': 30,
+        'strength_dice' : '3d6',
+        'attack_bonus' : 0,
+        'armor': 1,
+        'evasion': 20,
+        'accuracy': 25,
+        'move_speed': 1.0,
+        'attack_speed': 1.5,
+        'ai': ai.AI_Default,
+        'description': 'A small raven-headed humanoid. '
+                       'Silencers hunt rogue wizards, and can hide themselves from sight '
+                       'with magic.',
+        'resistances': [],
+        'loot_level':3,
+        'equipment': [{'weapon_katar':10,'weapon_dagger':30,'weapon_messer':30},{'equipment_leather_armor':50,'equipment_cloth_robes':50}],
+        'attributes': ['ability_silence'],
+        'shred': 1,
+        'stealth':4,
+        'modifier_category':None,
+        'subtype':'humanoid',
+    },
     'monster_nosferatu': {
         'name': 'Nosferatu',
         'char': 'N',
@@ -549,6 +593,7 @@ proto = {
         'resistances': ['radiant','dark'],
         'shred': 2,
         'subtype':'angel',
+        'loot_level':15,
         'equipment': [{'weapon_greatsword':30,'weapon_halberd':30,'weapon_warhammer':30},{'equipment_plate_armor':100}],
         'movement_type': pathfinding.FLYING
     },
@@ -592,10 +637,31 @@ modifiers = {
     'adventurous' : {
         'hp_bonus': 1.25,
         'resistances' : ['fire','burn','stun']
+    },
+    'alpha' : {
+        'hp_bonus':1.25,
+        'damage_bonus':1.25
+    },
+    'starved' : {
+        'hp_bonus':0.8,
+        'evasion_bonus':0.5
+    },
+    'lithe' : {
+        'speed_bonus':1.25,
+        'evasion_bonus':0.5
+    },
+    'scarred' : {
+        'hp_bonus':1.5
+    },
+    'dire' : {
+        'hp_bonus':1.5,
+        'damage_bonus':1.5,
+        'shred_bonus':1
     }
 }
 
 modifier_categories = {
     'default'   : {'brawny':1,'wimpy':1,'crazed':1,'mild':1,'nimble':1,'lethargic':1,'cursed':1},
-    'goblin'    : {'brawny':2,'wimpy':3,'crazed':2,'nimble':2,'lethargic':3,'cursed':2,'chosen of splug':1,'greased up':1,'adventurous':2}
+    'goblin'    : {'brawny':2,'wimpy':3,'crazed':2,'nimble':2,'lethargic':3,'cursed':2,'chosen of splug':1,'greased up':1,'adventurous':2},
+    'beast'     : {'brawny':1,'wimpy':1,'alpha':1,'starved':1,'lithe':1,'scarred':1,'dire':1},
 }

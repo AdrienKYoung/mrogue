@@ -264,6 +264,9 @@ def do_queued_action(action):
         action()
 
 def cast_spell():
+    if instance.fighter.has_status('silence'):
+        ui.message('You are silenced!',libtcod.yellow)
+        return 'didnt-take-turn'
     result = _cast_spell()
     if result == 'cast-spell':
         if main.has_skill('stonecloak'):

@@ -521,8 +521,15 @@ class GameObject:
             return True
         return False
 
+    def player_can_see(self):
+        if self.fighter is not None and self.fighter.stealth is not None and player.instance.distance_to(
+                self) > self.fighter.stealth:
+            return False
+        else:
+            return fov.player_can_see(self.x, self.y)
+
     def draw(self, console):
-        if fov.player_can_see(self.x, self.y):
+        if self.player_can_see():
             if ui.selected_monster is self:
                 libtcod.console_put_char_ex(console, self.x, self.y, self.char, libtcod.black, self.color)
             else:
@@ -1069,7 +1076,7 @@ def target_monster(max_range=None):
         if x is None:
             return None
         for obj in current_map.fighters:
-            if obj.x == x and obj.y == y and obj is not player.instance:
+            if obj.x == x and obj.y == y and obj is not player.instance and obj.player_can_see():
                 return obj
         return None
 
@@ -1122,7 +1129,7 @@ def closest_monster(max_range):
     closest_dist = max_range + 1
 
     for object in current_map.fighters:
-        if object is not player.instance and fov.player_can_see(object.x, object.y):
+        if object is not player.instance and object.player_can_see():
             dist = player.instance.distance_to(object)
             if dist < closest_dist:
                 closest_dist = dist
@@ -1205,12 +1212,12 @@ def spawn_monster(name, x, y, team='enemy'):
                     death_function=death, spell_power=p.get('spell_power', 0) * modifier.get('spell_power_bonus',1),
                     can_breath_underwater=True, resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
                     weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
-                    inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
-                    base_shred=p.get('shred', 0) * modifier.get('shred_bonus',1),
+                    inventory=spawn_monster_inventory(p.get('equipment'),p.get('loot_level',-10)), on_hit=p.get('on_hit'),
+                    base_shred=p.get('shred', 0) + modifier.get('shred_bonus',1),
                     base_guaranteed_shred=p.get('guaranteed_shred', 0),
                     base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
                     monster_flags=p.get('flags', 0),subtype=p.get('subtype'),damage_bonus=p.get('attack_bonus', 0),
-                    monster_str_dice=p.get('strength_dice'), team=p.get('team', team))
+                    monster_str_dice=p.get('strength_dice'), team=p.get('team', team), stealth=p.get('stealth'))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
         behavior = None
@@ -1238,13 +1245,20 @@ def spawn_monster(name, x, y, team='enemy'):
     return None
 
 
-def spawn_monster_inventory(proto):
+def spawn_monster_inventory(proto,loot_level=-10):
     result = []
     if proto:
         for slot in proto:
             equip = random_choice(slot)
             if equip != 'none':
-                result.append(create_item(equip, material=loot.choose_material(-10), quality=loot.choose_quality(-10)))
+                if 'weapon' in equip:
+                    result.append(
+                        create_item(equip, material=loot.choose_weapon_material(loot_level), quality=loot.choose_quality(loot_level)))
+                elif 'equipment' in equip:
+                    result.append(
+                        create_item(equip, material=loot.choose_armor_material(loot_level), quality=loot.choose_quality(loot_level)))
+                else:
+                    result.append(create_item(equip))
     return result
 
 
@@ -1634,10 +1648,10 @@ def get_description(obj):
         return ""
 
 def get_visible_units():
-    return [f for f in current_map.fighters if fov.player_can_see(f.x,f.y)]
+    return [f for f in current_map.fighters if f.player_can_see()]
 
 def get_visible_units_ex(predicate):
-    return [f for f in current_map.fighters if fov.player_can_see(f.x,f.y) and predicate(f)]
+    return [f for f in current_map.fighters if f.player_can_see() and predicate(f)]
 
 
 def land_next_to_target(target_x, target_y, source_x, source_y):

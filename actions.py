@@ -324,6 +324,22 @@ def confuse():
                 syntax.name(monster.name).capitalize(),
                 syntax.conjugate(monster is player.instance, ('are', 'is'))), libtcod.light_blue)
 
+def silence(actor=None,target=None):
+    if actor is None:  # player is casting
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        ui.render_message_panel()
+        libtcod.console_flush()
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        target = main.get_monster_at_tile(*ui.target_tile(abilities.data['ability_silence']['range'], 'pick', default_target=default_target))
+
+    if target is None:
+        return 'cancelled'
+    elif target.fighter.apply_status_effect(effects.silence(),True):
+        ui.message('%s %s silenced!' % (
+            syntax.name(target.name).capitalize(),
+            syntax.conjugate(target is player.instance, ('are', 'is'))), libtcod.light_blue)
 
 def _set_confused_behavior(object):
     if object.behavior is not None:

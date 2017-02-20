@@ -101,11 +101,12 @@ class AI_Default:
         if fov.monster_can_see_object(monster, self.target):
             self.last_seen_position = self.target.x, self.target.y
             # Handle default ability use behavior
-            for a in monster.fighter.abilities:
-                if a.current_cd <= 0:
-                    # Use abilities when they're up
-                    if a.use(monster, self.target) != 'didnt-take-turn':
-                        return monster.behavior.attack_speed
+            if not monster.fighter.has_status('silence'):
+                for a in monster.fighter.abilities:
+                    if a.current_cd <= 0 and game.roll_dice('1d10') > 5:
+                        # Use abilities when they're up
+                        if a.use(monster, self.target) != 'didnt-take-turn':
+                            return monster.behavior.attack_speed
 
             # Handle moving
             if not is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y):

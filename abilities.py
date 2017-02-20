@@ -53,6 +53,13 @@ data = {
         'cooldown': 3
     },
 
+    'ability_silence': {
+        'name': 'Silence',
+        'function': actions.silence,
+        'range':5,
+        'cooldown': 15
+    },
+
     'ability_raise_zombie': {
         'name': 'Raise Zombie',
         'function' : actions.raise_zombie,
