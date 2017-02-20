@@ -423,6 +423,10 @@ def render_side_panel(acc_mod=1.0):
 
     drawHeight = 17
 
+    # Equip Load
+    libtcod.console_print(side_panel, 2, drawHeight, 'Equip Load: %d/%d' % (player.instance.fighter.equip_weight, player.instance.fighter.max_equip_weight))
+    drawHeight += 2
+
     # Weapon
     libtcod.console_print(side_panel, 2, drawHeight, 'Weapon:')
     drawHeight += 1

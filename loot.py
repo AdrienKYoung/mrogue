@@ -37,22 +37,22 @@ table = {
         'equipment_shield',
         'equipment_leather_armor',
         'equipment_iron_helm',
-        'equipment_vambraces'
+        'equipment_gauntlets'
     ],
 
     'armor_1': [
         'equipment_shield',
         'equipment_leather_armor',
         'equipment_iron_helm',
-        'equipment_mail_skirt',
-        'equipment_vambraces',
+        'equipment_greaves',
+        'equipment_gauntlets',
         'equipment_mail_armor'
     ],
 
     'armor_2' : [
         'equipment_iron_helm',
-        'equipment_mail_skirt',
-        'equipment_vambraces',
+        'equipment_greaves',
+        'equipment_gauntlets',
         'equipment_mail_armor',
         'equipment_brigandine',
         'equipment_great_helm',
@@ -63,9 +63,8 @@ table = {
     'armor_3' : [
         'equipment_brigandine',
         'equipment_great_helm',
-        'equipment_pauldrons',
         'equipment_greaves',
-        'equipment_spaulders',
+        'equipment_gauntlets',
         'equipment_armet_helm',
         'equipment_plate_armor',
     ],
@@ -663,7 +662,7 @@ proto = {
     'weapon_mace': {
         'name'               : 'mace',
         'category'           : 'weapon',
-        'subtype'            : 'club',
+        'subtype'            : 'mace',
         'damage_type'        : 'bludgeoning',
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
@@ -682,7 +681,7 @@ proto = {
     'weapon_warhammer': {
         'name'               : 'warhammer',
         'category'           : 'weapon',
-        'subtype'            : 'club',
+        'subtype'            : 'mace',
         'damage_type'        : 'bludgeoning',
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
@@ -703,7 +702,7 @@ proto = {
         'name'               : 'coal-brazer mace',
         'category'           : 'weapon',
         'damage_type'        : 'fire',
-        'subtype'            : 'club',
+        'subtype'            : 'mace',
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -743,7 +742,7 @@ proto = {
     'weapon_diamond_warhammer': {
         'name'               : 'diamond warhammer',
         'category'           : 'weapon',
-        'subtype'            : 'club',
+        'subtype'            : 'mace',
         'damage_type'        : 'bludgeoning',
         'char'               : chr(157),
         'color'              : libtcodpy.sepia,
@@ -764,7 +763,7 @@ proto = {
         'name'               : 'storm mace',
         'category'           : 'weapon',
         'damage_type'        : 'lightning',
-        'subtype'            : 'club',
+        'subtype'            : 'mace',
         'char'               : chr(157),
         'color'              : libtcodpy.light_sky,
         'type'               : 'item',
@@ -893,7 +892,8 @@ proto = {
         'slot'          : 'left hand',
         'description'   : 'An iron kite shield.',
         'ability'       : 'block', #not implemented
-        'evasion_bonus' : -2
+        'evasion_bonus' : -2,
+        'weight'        : 3
 
     },
 
@@ -906,7 +906,8 @@ proto = {
         'armor_bonus'   : 1,
         'slot'          : 'body',
         'description'   : 'A hardened leather vest.',
-        'evasion_bonus' : -1
+        'evasion_bonus' : -1,
+        'weight'        : 2
     },
 
     'equipment_mail_armor': {
@@ -918,7 +919,8 @@ proto = {
         'armor_bonus'   : 3,
         'evasion_bonus' : -3,
         'slot'          : 'body',
-        'description'   : 'A coat of mail made of interlocking iron rings'
+        'description'   : 'A coat of mail made of interlocking iron rings',
+        'weight'        : 10
     },
 
     'equipment_brigandine': {
@@ -930,7 +932,8 @@ proto = {
         'armor_bonus'   : 5,
         'evasion_bonus' : -5,
         'slot'          : 'body',
-        'description'   : 'A vest of articulated steel plates'
+        'description'   : 'A vest of articulated steel plates',
+        'weight'        : 20
     },
 
     'equipment_plate_armor': {
@@ -942,7 +945,8 @@ proto = {
         'armor_bonus'   : 7,
         'evasion_bonus' : -7,
         'slot'          : 'body',
-        'description'   : 'A hardened steel breastplate'
+        'description'   : 'A hardened steel breastplate',
+        'weight'        : 30
     },
 
     'equipment_boob_plate': {
@@ -954,7 +958,8 @@ proto = {
         'armor_bonus'   : 6,
         'evasion_bonus' : -4,
         'slot'          : 'body',
-        'description'   : 'A steel bra that deflects harm from the entire torso by an unknown mechanism'
+        'description'   : 'A steel bra that deflects harm from the entire torso by an unknown mechanism',
+        'weight'        : 10
     },
 
     'equipment_iron_helm': {
@@ -966,7 +971,8 @@ proto = {
         'armor_bonus'   : 1,
         'evasion_bonus' : -1,
         'slot'          : 'head',
-        'description'   : 'A conical iron helm with a nose guard'
+        'description'   : 'A conical iron helm with a nose guard',
+        'weight'        : 3
     },
 
     'equipment_great_helm': {
@@ -978,7 +984,8 @@ proto = {
         'armor_bonus'   : 2,
         'evasion_bonus' : -3,
         'slot'          : 'head',
-        'description'   : 'A large cylindrical steel helm. Very heavy and cumbersome'
+        'description'   : 'A large cylindrical steel helm. Very heavy and cumbersome',
+        'weight'        : 7
     },
 
     'equipment_armet_helm': {
@@ -990,7 +997,8 @@ proto = {
         'armor_bonus'   : 2,
         'evasion_bonus' : -1,
         'slot'          : 'head',
-        'description'   : 'A crested steel helm with visor and bevor.'
+        'description'   : 'A crested steel helm with visor and bevor.',
+        'weight'        : 6
     },
 
     'equipment_witch_hat': {
@@ -1003,55 +1011,21 @@ proto = {
         'evasion_bonus' : 0,
         'slot'          : 'head',
         'description'   : 'A black pointed hat, suitable for the fashionable culdron stirrer.',
-        'resistances'   : ['fire','burning']
+        'resistances'   : ['fire','burning'],
+        'weight'        : 1
     },
 
-    'equipment_vambraces' : {
-        'name'          : 'Vambraces',
+    'equipment_gauntlets' : {
+        'name'          : 'Gauntlets',
         'category'      : 'armor',
         'char'          : chr(34),
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'armor_bonus'   : 1,
         'evasion_bonus' : 0,
-        'slot'          : 'arms',
-        'description'   : 'A steel forearm guard'
-    },
-
-    'equipment_pauldrons' : {
-        'name'          : 'Pauldrons',
-        'category'      : 'armor',
-        'char'          : chr(34),
-        'color'         : libtcodpy.yellow,
-        'type'          : 'item',
-        'armor_bonus'   : 2,
-        'evasion_bonus' : -3,
-        'slot'          : 'arms',
-        'description'   : 'A single piece steel shoulder plate'
-    },
-
-    'equipment_spaulders' : {
-        'name'          : 'Spaulders',
-        'category'      : 'armor',
-        'char'          : chr(34),
-        'color'         : libtcodpy.yellow,
-        'type'          : 'item',
-        'armor_bonus'   : 2,
-        'evasion_bonus' : -1,
-        'slot'          : 'arms',
-        'description'   : 'Articulated steel plates that protect the arms and shoulders'
-    },
-
-    'equipment_mail_skirt' : {
-        'name'          : 'Mail Skirt',
-        'category'      : 'armor',
-        'char'          : chr(239),
-        'color'         : libtcodpy.yellow,
-        'type'          : 'item',
-        'armor_bonus'   : 1,
-        'evasion_bonus' : -1,
-        'slot'          : 'legs',
-        'description'   : 'A simple skirt of mail that protects the legs'
+        'slot'          : 'hands',
+        'description'   : 'An armored pair of gloves',
+        'weight'        : 3
     },
 
     'equipment_greaves' : {
@@ -1060,10 +1034,11 @@ proto = {
         'char'          : chr(239),
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
-        'armor_bonus'   : 2,
-        'evasion_bonus' : -2,
-        'slot'          : 'legs',
-        'description'   : 'Steel plates that protect the shins'
+        'armor_bonus'   : 1,
+        'evasion_bonus' : -1,
+        'slot'          : 'feet',
+        'description'   : 'Steel plates that protect the shins',
+        'weight'        : 3
     },
 
     #Charms

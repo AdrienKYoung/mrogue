@@ -328,7 +328,7 @@ class Fighter:
     @property
     def armor(self):
         bonus = sum(equipment.armor_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus *  mul(effect.armor_mod for effect in self.status_effects))
+        bonus = int(bonus * mul(effect.armor_mod for effect in self.status_effects))
         if self.owner is player.instance and main.has_skill('Iron Skin'):
             has_armor = False
             for item in main.get_all_equipped(self.inventory):
@@ -402,6 +402,18 @@ class Fighter:
         else:
             return 0
 
+    @property
+    def equip_weight(self):
+        if self.owner is not player.instance:
+            return 0
+        return sum(equipment.weight for equipment in main.get_all_equipped(self.inventory))
+
+    @property
+    def max_equip_weight(self):
+        if self.owner is not player.instance:
+            return 0
+        return self.owner.player_stats.str * 2
+
     def getResists(self):
         from_equips = reduce(lambda a,b: a | set(b.resistances), main.get_all_equipped(self.inventory), set())
         from_effects = reduce(lambda a,b: a | set(b.resistance_mod), self.status_effects, set())
@@ -410,6 +422,7 @@ class Fighter:
     def getWeaknesses(self):
         from_effects = reduce(lambda a, b: a | set(b.weakness_mod), self.status_effects, set())
         return list(set(self.weaknesses) | from_effects)
+
 
 hit_tables = {
     'default': {
@@ -531,7 +544,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
 
         damage_mod = location_damage_tables[location]['damage']
 
-        # Daggers deal x3 damage to stunned targets
+        # Attacks against stunned targets are critical
         weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
         if weapon and target.fighter.has_status('stunned') and verb != 'bashes':
             damage_mod *= weapon.crit_bonus
@@ -546,19 +559,26 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
             damage_mod *= damage_multiplier
 
         # weapon-specific damage verbs
-        hit_type = None
         if weapon is not None and weapon.damage_type is not None:
             hit_type = weapon.damage_type
         else:
             hit_type = 'bludgeoning'
 
-            # dark immunity
+        # dark immunity
         if target.fighter.has_status('lichform') and hit_type == 'dark':
             ui.message('%s %s unnaffected by dark energy!' % (
                 syntax.name(target.name),
                 syntax.conjugate(fighter.owner is player.instance, ('are', 'is'))),
                        libtcod.darker_crimson)
-            return
+            return 'immune'
+        
+        subtype = 'unarmed_combat'
+        if weapon is not None:
+            subtype = weapon.subtype
+
+        attack_damage = fighter.attack_damage
+        if fighter.owner is player.instance:
+            attack_damage += main.skill_value("{}_mastery".format(subtype))
 
         unarmed_str_dice = '1d{}'.format(fighter.attack_damage)
         if fighter.owner is not player.instance and weapon is None:
@@ -656,8 +676,11 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
 
-        damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice,
-                                fighter.spell_power + main.skill_value("{}_affinity".format(spell_element))),
+        spell_power = fighter.spell_power
+        if fighter.owner is player.instance:
+            spell_power += main.skill_value("{}_affinity".format(spell_element))
+
+        damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice, spell_power),
                                 target.fighter.spell_resist, spell_pierce, spell_element, damage_mod,
                                 target.fighter.getResists(), target.fighter.getWeaknesses(), 0)
 

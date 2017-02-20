@@ -39,6 +39,12 @@ loadouts = {
             'charm_battle',
             'equipment_leather_armor',
             'equipment_iron_helm',
+            'equipment_brigandine',
+            'equipment_great_helm',
+            'equipment_greaves',
+            'equipment_gauntlets',
+            'equipment_armet_helm',
+            'equipment_plate_armor',
         ],
         'description' : "Balanced melee fighter. Starts with good weapon and armor. Charm channels essence to imbue "
                         "temporary weapon effects."
@@ -142,6 +148,7 @@ def create(loadout):
             i = main.create_item(prototype)
 
         instance.fighter.inventory.append(i)
+        i.item.holder = instance
         if i.equipment is not None:
             i.equipment.equip()
 
@@ -240,7 +247,7 @@ def handle_keys():
                     return 'didnt-take-turn'
                 else:
                     return ui.show_ability_screen()
-            if key_char == 'p':
+            if key_char == 'p' and key.shift:
                 purchase_skill()
                 return 'didnt-take-turn'
             if mouse.rbutton_pressed:
@@ -546,7 +553,7 @@ def pick_up_item():
     items_here = main.get_objects(instance.x, instance.y, condition=lambda o: o.item)
     if len(items_here) > 0:
         if len(items_here) == 1:
-            items_here[0].item.pick_up()
+            items_here[0].item.pick_up(instance)
             return 'picked-up-item'
         options = []
         options.append('All')
@@ -557,9 +564,9 @@ def pick_up_item():
         if selection is not None:
             if selection == 0:
                 for i in items_here:
-                    i.item.pick_up()
+                    i.item.pick_up(instance)
             else:
-                items_here[selection - 1].item.pick_up()
+                items_here[selection - 1].item.pick_up(instance)
             return 'picked-up-item'
     else:
         essence_here = main.get_objects(instance.x, instance.y, condition=lambda o: hasattr(o, 'essence_type'))

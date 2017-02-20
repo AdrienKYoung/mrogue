@@ -554,7 +554,7 @@ def charm_battle():
         expire_ticker.old_left = None
     if equipped_weapon is not None:
         equipped_weapon.dequip()
-    summoned_weapon.item.pick_up()
+    summoned_weapon.item.pick_up(player.instance)
     expire_ticker.weapon = summoned_weapon
     expire_ticker.max_ticks = 15
     effect = effects.StatusEffect('summoned weapon', expire_ticker.max_ticks + 1, summoned_weapon.color)

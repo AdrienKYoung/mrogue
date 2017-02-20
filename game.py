@@ -17,7 +17,7 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None,spell_list=None,level_progression=None,level_costs=None,resistances=[],
-                 crit_bonus=1.0,subtype=None, spell_resist_bonus=0,starting_level=0):
+                 crit_bonus=1.0,subtype=None, spell_resist_bonus=0,starting_level=0, weight=0):
         self.max_hp_bonus = max_hp_bonus
         self.slot = slot
         self.category = category
@@ -47,6 +47,7 @@ class Equipment:
         self.essence = essence
         self.level = 0
         self.subtype = subtype
+        self.weight = weight
         if level_progression is not None:
             self.max_level = len(level_progression)
         self.level_progression = level_progression
@@ -71,6 +72,10 @@ class Equipment:
         else:
             return "+0"
 
+    @property
+    def holder(self):
+        return self.owner.item.holder
+
     def toggle(self):
         if self.is_equipped:
             self.dequip()
@@ -78,21 +83,28 @@ class Equipment:
             self.equip()
             
     def equip(self):
+        # First check weight
+        if self.holder is player.instance:
+            if self.holder.fighter.equip_weight + self.weight > self.holder.fighter.max_equip_weight:
+                ui.message('That is too heavy.', libtcod.orange)
+                return
+
         if self.slot == 'both hands':
-            rh = get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
-            lh = get_equipped_in_slot(player.instance.fighter.inventory, 'left hand')
+            rh = get_equipped_in_slot(self.holder.fighter.inventory, 'right hand')
+            lh = get_equipped_in_slot(self.holder.fighter.inventory, 'left hand')
             if rh is not None: rh.dequip()
             if lh is not None: lh.dequip()
         else:
-            old_equipment = get_equipped_in_slot(player.instance.fighter.inventory, self.slot)
+            old_equipment = get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
             if old_equipment is not None:
-                old_equipment.dequip()
+                old_equipment.dequip(self.holder)
         self.is_equipped = True
-        ui.message('Equipped ' + self.owner.name + ' on ' + self.slot + '.', libtcod.orange)
+        if self.holder is player.instance:
+            ui.message('Equipped ' + self.owner.name + ' on ' + self.slot + '.', libtcod.orange)
         
     def dequip(self, no_message=False):
         self.is_equipped = False
-        if not no_message:
+        if not no_message and self.holder is player.instance:
             ui.message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
 
     def print_description(self, console, x, y, width):
@@ -154,6 +166,9 @@ class Equipment:
             print_height += 1
         if self.spell_resist_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Spell Resist: ' + str(self.spell_resist_bonus))
+            print_height += 1
+        if self.weight > 0:
+            libtcod.console_print(console, x, y + print_height, 'Weight: ' + str(self.weight))
             print_height += 1
         if self.break_chance > 0:
             libtcod.console_print(console, x, y + print_height, 'It has a ' + str(self.break_chance) + '%%' + ' chance to break when used.')
@@ -252,49 +267,54 @@ class Equipment:
 
 
 class Item:
-    def __init__(self, category, use_function=None, type='item', ability=None):
+    def __init__(self, category, use_function=None, type='item', ability=None, holder=None):
         self.category = category
         self.use_function = use_function
         self.type = type
         self.ability = ability
+        self.holder = holder
         
-    def pick_up(self):
+    def pick_up(self, actor):
         if self.type == 'item':
-            if len(player.instance.fighter.inventory) >= 26:
-                ui.message('Your inventory is too full to pick up ' + self.owner.name)
+            if len(actor.fighter.inventory) >= 26:
+                if actor is player.instance:
+                    ui.message('Your inventory is too full to pick up ' + self.owner.name)
             else:
-                player.instance.fighter.inventory.append(self.owner)
+                self.holder = actor
+                actor.fighter.inventory.append(self.owner)
                 self.owner.destroy()
-                ui.message('You picked up a ' + self.owner.name + '!', libtcod.light_grey)
+                if actor is player.instance:
+                    ui.message('You picked up a ' + self.owner.name + '.', libtcod.light_grey)
                 equipment = self.owner.equipment
-                if equipment and get_equipped_in_slot(player.instance.fighter.inventory,equipment.slot) is None:
+                if equipment and get_equipped_in_slot(actor.fighter.inventory,equipment.slot) is None:
                     equipment.equip()
             
     def use(self):
         if self.owner.equipment:
             self.owner.equipment.toggle()
             return
-        if self.use_function is not None:
+        elif self.use_function is not None:
             if self.use_function() != 'cancelled':
                 if self.type == 'item' and self.category != 'charm':
-                    player.instance.fighter.inventory.remove(self.owner)
+                    self.holder.fighter.inventory.remove(self.owner)
             else:
                 return 'cancelled'
-        else:
+        elif self.holder is player.instance:
             ui.message('The ' + self.owner.name + ' cannot be used.')
 
 
     def drop(self, no_message=False):
-        if self.owner not in player.instance.fighter.inventory:
+        if self.owner not in self.holder.fighter.inventory:
             return
         if self.owner.equipment:
             self.owner.equipment.dequip(no_message=no_message)
         current_map.add_object(self.owner)
-        player.instance.fighter.inventory.remove(self.owner)
-        self.owner.x = player.instance.x
-        self.owner.y = player.instance.y
-        if not no_message:
+        self.holder.fighter.inventory.remove(self.owner)
+        self.owner.x = self.holder.x
+        self.owner.y = self.holder.y
+        if not no_message and self.holder is player.instance:
             ui.message('You dropped a ' + self.owner.name + '.', libtcod.white)
+        self.holder = None
 
     def get_options_list(self):
         options = []
@@ -1010,7 +1030,7 @@ def bomb_beetle_death(beetle):
 def monster_death(monster):
     global changed_tiles
 
-    if hasattr(monster.fighter,'inventory') and len(monster.fighter.inventory) > 0:
+    if hasattr(monster.fighter,'inventory') and len(monster.fighter.inventory) > 0 and monster.summon_time is None:
         for item in monster.fighter.inventory:
             item.x = monster.x
             item.y = monster.y
@@ -1178,19 +1198,19 @@ def spawn_monster(name, x, y, team='enemy'):
         death = monster_death
         if p.get('death_function'):
             death = p.get('death_function')
-        fighter_component = combat.Fighter( hp=int(p['hp'] * modifier.get('hp_bonus',1)),
-                                            armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
-                                            accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
-                                            death_function=death, spell_power=p.get('spell_power', 0) * modifier.get('spell_power_bonus',1),
-                                            can_breath_underwater=True, resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
-                                            weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
-                                            inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
-                                            base_shred=p.get('shred', 0) * modifier.get('shred_bonus',1),
-                                            base_guaranteed_shred=p.get('guaranteed_shred', 0),
-                                            base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
-                                            monster_flags=p.get('flags', 0),subtype=p.get('subtype'),damage_bonus=p.get('attack_bonus', 0),
-                                            monster_str_dice=p.get('strength_dice'), team=p.get('team', team))
-
+        fighter_component = combat.Fighter(
+                    hp=int(p['hp'] * modifier.get('hp_bonus',1)),
+                    armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
+                    accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
+                    death_function=death, spell_power=p.get('spell_power', 0) * modifier.get('spell_power_bonus',1),
+                    can_breath_underwater=True, resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
+                    weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
+                    inventory=spawn_monster_inventory(p.get('equipment')), on_hit=p.get('on_hit'),
+                    base_shred=p.get('shred', 0) * modifier.get('shred_bonus',1),
+                    base_guaranteed_shred=p.get('guaranteed_shred', 0),
+                    base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
+                    monster_flags=p.get('flags', 0),subtype=p.get('subtype'),damage_bonus=p.get('attack_bonus', 0),
+                    monster_str_dice=p.get('strength_dice'), team=p.get('team', team))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
         behavior = None
@@ -1200,6 +1220,11 @@ def spawn_monster(name, x, y, team='enemy'):
         monster = GameObject(x, y, p['char'], mod_tag + p['name'], p['color'], blocks=True, fighter=fighter_component,
                              behavior=behavior, description=p['description'], on_create=p.get('on_create'),
                              movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'))
+
+        for i in monster.fighter.inventory:
+            i.item.holder = monster
+            if i.equipment:
+                i.equipment.equip()
 
         if monster.behavior:
             monster.behavior.attack_speed = 1.0 / p.get('attack_speed', 1.0 * modifier.get('speed_bonus', 1.0))
@@ -1230,6 +1255,7 @@ def create_ability(name):
     else:
         return None
 
+
 def spawn_essence(x,y,type):
     essence_pickup = GameObject(x,y, '*', 'mote of ' + type + ' essence',
                     spells.essence_colors[type],
@@ -1237,6 +1263,7 @@ def spawn_essence(x,y,type):
                     on_step=player.pick_up_essence, on_tick=expire_out_of_vision)
     essence_pickup.essence_type = type
     current_map.add_object(essence_pickup)
+
 
 def create_item(name, material=None, quality=None):
     p = loot.proto[name]
@@ -1276,7 +1303,8 @@ def create_item(name, material=None, quality=None):
             crit_bonus=p.get('crit_bonus',1.0),
             resistances=p.get('resistances',[]),
             subtype=p.get('subtype'),
-            starting_level=p.get('level',0)
+            starting_level=p.get('level',0),
+            weight=p.get('weight',0)
         )
 
         if equipment_component.category == 'weapon':

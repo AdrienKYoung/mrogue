@@ -100,7 +100,7 @@ proto = {
         'hp': 20,
         'strength_dice' : '3d6',
         'attack_bonus' : 0,
-        'armor': 2,
+        'armor': 1,
         'evasion': 9,
         'accuracy': 23,
         'move_speed': 0.8,
