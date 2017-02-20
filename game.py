@@ -1375,7 +1375,7 @@ def create_item(name, material=None, quality=None):
             equipment_component.quality = quality
             equipment_component.armor_bonus += loot.qualities[quality]['ar']
             equipment_component.evasion_bonus += loot.qualities[quality]['ev']
-            #equipment_component.weight += loot.qualities[quality]['weight']
+            equipment_component.weight += loot.qualities[quality]['weight']
 
     go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))
