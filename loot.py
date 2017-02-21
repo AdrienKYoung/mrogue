@@ -82,9 +82,6 @@ table = {
     ],
 
     'tomes_1': [
-        #'tome_manabolt',
-        #'tome_mend',
-        #'tome_ignite',
         'book_lesser_fire'
     ],
 
@@ -123,7 +120,7 @@ def item_from_table(branch,loot_table=None):
 
     item_id = table[loot_table][libtcodpy.random_get_int(0,0,len(table[loot_table]))-1]
     material = None
-    quality = None
+    quality = ''
     if category == 'weapon':
         material = choose_weapon_material(loot_level)
         quality = choose_quality(loot_level)
@@ -199,136 +196,171 @@ item_categories = {
     'gem' : { 'plural' : 'gems'}
 }
 
+quality_progression = [
+    'broken',
+    'crude',
+    '',
+    'military',
+    'fine',
+    'masterwork',
+    'artifact'
+]
+
 qualities = {
     'broken' : {
-        'dmg' : -3,
-        'acc' : -3,
-        'shred' : -1,
         'color' : libtcodpy.desaturated_red,
-        'ev' : -5,
-        'ar' : -1,
-        'weight' : 0
+        'weapon': {
+            'strength_dice_bonus' : -3,
+            'accuracy_bonus' : -3,
+            'shred_bonus' : -1,
+        },
+        'armor': {
+            'evasion_bonus' : -5,
+            'armor_bonus' : -1,
+            'weight' : 0
+        }
     },
     'crude' : {
-        'dmg' : -2,
-        'acc' : -1,
-        'break' : 5.0,
         'color' : libtcodpy.dark_sepia,
-        'ev' : -1,
-        'ar' : 0,
-        'weight' : 1
+        'weapon': {
+            'strength_dice_bonus' : -2,
+            'accuracy_bonus' : -1,
+            'break_chance_bonus' : 5.0,
+        },
+        'armor': {
+            'evasion_bonus' : -1,
+            'armor_bonus' : 0,
+            'weight' : 1
+        }
     },
     '' : { # standard
-        'dmg' : 0,
-        'acc' : 0,
         'color' : libtcodpy.light_gray,
-        'ev' : 0,
-        'ar' : 0,
-        'weight' : 0
+        'weapon': {
+            'strength_dice_bonus' : 0,
+            'accuracy_bonus' : 0,
+        },
+        'armor': {
+            'evasion_bonus' : 0,
+            'armor_bonus' : 0,
+            'weight' : 0
+        }
     },
     'military' : {
-        'dmg' : 1,
-        'acc' : 1,
         'color' : libtcodpy.dark_orange,
-        'ev' : 0,
-        'ar' : 0,
-        'weight' : -1
+        'weapon': {
+            'strength_dice_bonus' : 1,
+            'accuracy_bonus' : 1,
+        },
+        'armor': {
+            'evasion_bonus' : 0,
+            'armor_bonus' : 0,
+            'weight' : -1
+        }
     },
     'fine' : {
-        'dmg' : 2,
-        'acc' : 2,
-        'break' : -1.5,
         'color' : libtcodpy.sea,
-        'ev' : 1,
-        'ar' : 0,
-        'weight' : -2
+        'weapon':{
+            'strength_dice_bonus' : 2,
+            'accuracy_bonus' : 2,
+            'break_chance_bonus' : -1.5,
+        },
+        'armor': {
+            'evasion_bonus' : 1,
+            'armor_bonus' : 0,
+            'weight' : -2
+        }
     },
     'masterwork' : {
-        'dmg' : 3,
-        'acc' : 3,
-        'shred' : 1,
-        'break' : -10.0,
         'color' : libtcodpy.green,
-        'ev' : 2,
-        'ar' : 0,
-        'weight' : -3
+        'weapon':{
+            'strength_dice_bonus' : 3,
+            'accuracy_bonus' : 3,
+            'shred_bonus' : 1,
+            'break_chance_bonus' : -10.0,
+        },
+        'armor':{
+            'evasion_bonus' : 2,
+            'armor_bonus' : 0,
+            'weight' : -3
+        }
     },
     'artifact' : {
-        'dmg' : 5,
-        'acc' : 5,
-        'shred' : 1,
-        'peirce' : 1,
-        'break' : -1000.0,
+        'strength_dice_bonus' : 5,
+        'accuracy_bonus' : 5,
+        'shred_bonus' : 1,
+        'peirce_bonus' : 1,
+        'break_chance_bonus' : -1000.0,
         'color' : libtcodpy.yellow,
-        'ev' : 3,
-        'ar' : 1,
+        'evasion_bonus' : 3,
+        'armor_bonus' : 1,
         'weight' : -5
     },
 }
 
 weapon_materials = {
     'wooden' : {
-        'dmg' : -2,
-        'acc' : 1,
-        'break' : 5.0
+        'strength_dice_bonus' : -2,
+        'accuracy_bonus' : 1,
+        'break_chance_bonus' : 5.0
     },
     'bronze' : {
-        'dmg' : 0,
-        'acc' : 0,
-        'break' : 1.5
+        'strength_dice_bonus' : 0,
+        'accuracy_bonus' : 0,
+        'break_chance_bonus' : 1.5
     },
     'iron' : {
-        'dmg' : 0,
-        'acc' : 0,
-        'shred' : 1
+        'strength_dice_bonus' : 0,
+        'accuracy_bonus' : 0,
+        'shred_bonus' : 1
     },
     'steel' : {
-        'dmg' : 1,
-        'acc' : 1,
-        'shred' : 2,
-        'break' : -5.0
+        'strength_dice_bonus' : 1,
+        'accuracy_bonus' : 1,
+        'shred_bonus' : 2,
+        'break_chance_bonus' : -5.0
     },
     'crystal' : {
-        'dmg' : 3,
-        'acc' : -2,
-        'pierce' : 1,
-        'break' : -1000.0
+        'strength_dice_bonus' : 3,
+        'accuracy_bonus' : -2,
+        'pierce_bonus' : 1,
+        'break_chance_bonus' : -1000.0
     },
     'meteor' : {
-        'dmg' : 5,
-        'acc' : -2,
-        'shred' : 1,
-        'break' : -5.0
+        'strength_dice_bonus' : 5,
+        'accuracy_bonus' : -2,
+        'shred_bonus' : 1,
+        'break_chance_bonus' : -5.0
     },
     'aetherwood' : {
-        'dmg' : 2,
-        'acc' : 3,
-        'shred' : 1,
-        'break' : -15.0
+        'strength_dice_bonus' : 2,
+        'accuracy_bonus' : 3,
+        'shred_bonus' : 1,
+        'break_chance_bonus' : -15.0
     },
     'blightstone' : {
-        'dmg' : 0,
-        'acc' : 0,
-        'autoshred' : 1,
-        'break' : -5.0
+        'strength_dice_bonus' : 0,
+        'accuracy_bonus' : 0,
+        'guaranteed_shred_bonus' : 1,
+        'break_chance_bonus' : -5.0
     },
     '' : {
-        'dmg' : 0,
-        'acc' : 0,
-        'shred' : 0
+        'strength_dice_bonus' : 0,
+        'accuracy_bonus' : 0,
+        'shred_bonus' : 0
     },
 }
 
 armor_materials = {
-    'reinforced'    :   'slashing',
-    'hardened'      :   'piercing',
-    'padded'        :   'bludgeoning',
-    'fire-proof'    :   'fire',
-    'insulated'     :   'lightning',
-    'fur-lined'     :   'cold',
-    'blessed'       :   'dark',
-    'infernal'      :   'radiant',
-    'enchanted'     :   'spell'
+    ''              :   {},
+    'reinforced'    :   {'resistance':'slashing'},
+    'hardened'      :   {'resistance':'piercing'},
+    'padded'        :   {'resistance':'bludgeoning'},
+    'fire-proof'    :   {'resistance':'fire'},
+    'insulated'     :   {'resistance':'lightning'},
+    'fur-lined'     :   {'resistance':'cold'},
+    'blessed'       :   {'resistance':'dark'},
+    'infernal'      :   {'resistance':'radiant'},
+    'enchanted'     :   {'resistance':'spell'}
 }
 
 proto = {

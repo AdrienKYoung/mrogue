@@ -692,8 +692,6 @@ def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_
         damage_mod *= consts.WEAKNESS_FACTOR
 
     #calculate damage
-    if damage_dice == '+0':
-        damage_dice = '0d0'
     damage = main.roll_dice(damage_dice, normalize_size=4) + main.roll_dice(stat_dice, normalize_size=4) + flat_bonus
     damage = int(float(damage) * damage_mod)
 

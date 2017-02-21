@@ -410,6 +410,7 @@ def dig(dx, dy):
         return 'failed'
 
 def forge():
+    import loot
     weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
     if weapon is not None and weapon.owner.item.category == 'weapon':
         if weapon.quality == 'artifact':
@@ -420,19 +421,8 @@ def forge():
         else:
             ui.message('Your ' + weapon.owner.name + ' glows bright orange!', libtcod.orange)
 
-            new_quality = ''
-            if weapon.quality == 'broken':
-                new_quality = 'crude'
-            elif weapon.quality == 'crude':
-                new_quality = ''
-            elif weapon.quality == '':
-                new_quality = 'military'
-            elif weapon.quality == 'military':
-                new_quality = 'fine'
-            elif weapon.quality == 'fine':
-                new_quality = 'masterwork'
-            elif weapon.quality == 'masterwork':
-                new_quality = 'artifact'
+            index = loot.quality_progression.index(weapon.quality)
+            new_quality = loot.quality_progression[index + 1]
             main.set_quality(weapon, new_quality)
             ui.message('It is now a ' + weapon.owner.name + '.', libtcod.orange)
     elif weapon is not None and weapon.owner.item.category != 'weapon':
