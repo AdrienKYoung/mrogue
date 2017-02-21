@@ -12,42 +12,49 @@ import collections
 
 
 class Equipment:
-    def __init__(self, slot, category, max_hp_bonus=0, attack_damage_bonus=0,
+    def __init__(self, slot, category, max_hp_bonus=0, strength_dice_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None,spell_list=None,level_progression=None,level_costs=None,resistances=[],
                  crit_bonus=1.0,subtype=None, spell_resist_bonus=0,starting_level=0, weight=0):
-        self.max_hp_bonus = max_hp_bonus
+        self.is_equipped = False
         self.slot = slot
         self.category = category
-        self.is_equipped = False
-        self.attack_damage_bonus = attack_damage_bonus
-        self.armor_bonus = armor_bonus
-        self.evasion_bonus = evasion_bonus
-        self.spell_power_bonus = spell_power_bonus
-        self.spell_resist_bonus = spell_resist_bonus
+        self.subtype = subtype
+
+        self.ctrl_attack = ctrl_attack
+        self.ctrl_attack_desc = ctrl_attack_desc
+
         self.stamina_cost = stamina_cost
         self.str_requirement = str_requirement
+        self.weight = weight
+        self.break_chance = break_chance
+
+        self.max_hp_bonus = max_hp_bonus
+        self.armor_bonus = armor_bonus
+        self.evasion_bonus = evasion_bonus
+        self.resistances = list(resistances)
+
+        self.strength_dice_bonus = strength_dice_bonus
+        self.on_hit = on_hit  # expects list
+        self.attack_delay = attack_delay
+        self.damage_type = damage_type
+        self.weapon_dice = weapon_dice
+        self.str_dice = str_dice
         self.shred_bonus = shred_bonus
         self.guaranteed_shred_bonus = guaranteed_shred_bonus
         self.pierce_bonus = pierce
+
         self.accuracy_bonus = accuracy
-        self.ctrl_attack = ctrl_attack
-        self.break_chance = break_chance
         self.crit_bonus = crit_bonus
-        self.ctrl_attack_desc = ctrl_attack_desc
-        self._weapon_dice = weapon_dice
-        self.str_dice = str_dice
-        self.on_hit = on_hit #expects list
-        self.damage_type = damage_type
         self.attack_speed_bonus = attack_speed_bonus
-        self.attack_delay = attack_delay
-        self.resistances = list(resistances)
+
+        self.spell_power_bonus = spell_power_bonus
+        self.spell_resist_bonus = spell_resist_bonus
+
         self.essence = essence
         self.level = 0
-        self.subtype = subtype
-        self.weight = weight
         if level_progression is not None:
             self.max_level = len(level_progression)
         self.level_progression = level_progression
@@ -62,15 +69,6 @@ class Equipment:
             self.refill_spell_charges()
         for i in range(starting_level):
             self.level_up(True)
-
-    @property
-    def weapon_dice(self):
-        if self._weapon_dice is not None:
-            d = self._weapon_dice.split('d')
-            dice_size = max(int(d[1]) + (2 * self.attack_damage_bonus), 1)
-            return "{}d{}".format(d[0],dice_size)
-        else:
-            return "+0"
 
     @property
     def holder(self):
@@ -142,9 +140,6 @@ class Equipment:
         if self.attack_delay != 0:
             attacks = max(round(float(player.instance.fighter.attack_speed) / float(self.attack_delay), 1), 1.0)
             libtcod.console_print(console, x, y + print_height, 'Attack Speed: ' + str(attacks))
-            print_height += 1
-        if self.attack_damage_bonus != 0:
-            libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(self.attack_damage_bonus))
             print_height += 1
         if self.evasion_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Evade: ' + str(self.evasion_bonus))
@@ -1208,7 +1203,7 @@ def spawn_monster(name, x, y, team='enemy'):
         fighter_component = combat.Fighter(
                     hp=int(p['hp'] * modifier.get('hp_bonus',1)),
                     armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
-                    accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)), xp=0,
+                    accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)),
                     death_function=death, spell_power=p.get('spell_power', 0) * modifier.get('spell_power_bonus',1),
                     can_breath_underwater=True, resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
                     weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
@@ -1290,7 +1285,7 @@ def create_item(name, material=None, quality=None):
         equipment_component = Equipment(
             slot=p['slot'],
             category=p['category'],
-            attack_damage_bonus=p.get('attack_damage_bonus', 0),
+            strength_dice_bonus=p.get('strength_dice_bonus', 0),
             armor_bonus=p.get('armor_bonus', 0),
             max_hp_bonus=p.get('max_hp_bonus', 0),
             evasion_bonus=p.get('evasion_bonus', 0),
@@ -1337,7 +1332,7 @@ def create_item(name, material=None, quality=None):
                      }
                 )
             equipment_component.material = material
-            equipment_component.attack_damage_bonus += loot.weapon_materials[material]['dmg']
+            equipment_component.strength_dice_bonus += loot.weapon_materials[material]['dmg']
             equipment_component.accuracy_bonus += loot.weapon_materials[material]['acc']
             equipment_component.shred_bonus += loot.weapon_materials[material].get('shred', 0)
             equipment_component.pierce_bonus += loot.weapon_materials[material].get('pierce', 0)
@@ -1357,7 +1352,7 @@ def create_item(name, material=None, quality=None):
                      }
                 )
             equipment_component.quality = quality
-            equipment_component.attack_damage_bonus += loot.qualities[quality]['dmg']
+            equipment_component.strength_dice_bonus += loot.qualities[quality]['dmg']
             equipment_component.accuracy_bonus += loot.qualities[quality]['acc']
             equipment_component.shred_bonus += loot.qualities[quality].get('shred', 0)
             equipment_component.pierce_bonus += loot.qualities[quality].get('pierce', 0)
@@ -1414,7 +1409,7 @@ def spawn_item(name, x, y, material=None, quality=None):
 def set_quality(equipment, quality):
     # set to default
     p = loot.proto[equipment.base_id]
-    equipment.attack_damage_bonus = p.get('attack_damage_bonus', 0)
+    equipment.strength_dice_bonus = 0
     equipment.accuracy_bonus = p.get('accuracy', 0)
     equipment.shred_bonus = p.get('shred', 0)
     equipment.pierce_bonus = p.get('pierce', 0)
@@ -1423,7 +1418,7 @@ def set_quality(equipment, quality):
     equipment.owner.name = p['name']
     # assign quality
     equipment.quality = quality
-    equipment.attack_damage_bonus += loot.qualities[quality]['dmg']
+    equipment.strength_dice_bonus += loot.qualities[quality]['dmg']
     equipment.accuracy_bonus += loot.qualities[quality]['acc']
     equipment.shred_bonus += loot.qualities[quality].get('shred', 0)
     equipment.pierce_bonus += loot.qualities[quality].get('pierce', 0)

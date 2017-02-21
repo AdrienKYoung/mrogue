@@ -94,17 +94,6 @@ def spawn_vermin(actor=None, target=None):
                 actor.summons.append(spawn)
                 summon_tiles.remove(pos)
 
-def grapel(actor=None, target=None):
-    #Blame the Bleshib
-    if actor.distance_to(target) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, target):
-        if target.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, target.x, target.y) == (target.x, target.y):
-            frog_tongue(actor, target)
-            return
-        else:
-            return 'didnt-take-turn'
-    else:
-        return 'didnt-take-turn'
-
 def raise_zombie(actor=None, target=None):
 
     check_corpse = main.adjacent_tiles_diagonal(actor.x, actor.y)
@@ -365,14 +354,17 @@ def shielding():
     player.instance.fighter.apply_status_effect(effects.StatusEffect('shielded', 21, libtcod.dark_blue))
 
 
-def frog_tongue(frog, target):
-    ui.message("The frog's tongue lashes out at you!", libtcod.dark_green)
-    result = combat.attack_ex(frog.fighter, target, 0, consts.FROG_TONGUE_ACC, consts.FROG_TONGUE_DMG, None, None,
-                              ('pull', 'pulls'), 0, 0, 0)
-    if result == 'hit':
-        beam = main.beam(frog.x, frog.y, target.x, target.y)
-        pull_to = beam[max(len(beam) - 3, 0)]
-        target.set_position(pull_to[0], pull_to[1])
+def frog_tongue(actor, target):
+    if actor.distance_to(target) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, target):
+        if target.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, target.x, target.y) == (target.x, target.y):
+            ui.message("The frog's tongue lashes out at you!", libtcod.dark_green)
+            result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=1.5, verb=('pull', 'pulls'))
+            if result == 'hit':
+                beam = main.beam(actor.x, actor.y, target.x, target.y)
+                pull_to = beam[max(len(beam) - 3, 0)]
+                target.set_position(pull_to[0], pull_to[1])
+            return 'success'
+    return 'didnt-take-turn'
 
 def ignite():
     target = ui.target_tile(consts.IGNITE_RANGE)

@@ -117,7 +117,7 @@ def create(loadout):
     global instance
 
     loadout = loadouts[loadout]
-    fighter_component = combat.Fighter(hp=100, xp=0, stamina=100, death_function=on_death, on_get_hit=on_get_hit, team='ally')
+    fighter_component = combat.Fighter(hp=100, stamina=100, death_function=on_death, on_get_hit=on_get_hit, team='ally')
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),
                         int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
@@ -128,6 +128,7 @@ def create(loadout):
     instance.known_spells = []
     instance.action_queue = []
     instance.skill_points = 100
+    instance.fighter.xp = 0
 
     for item in loadout['inventory']:
         i = None
@@ -455,9 +456,7 @@ def reach_attack(dx, dy):
     target_space = instance.x + 2 * dx, instance.y + 2 * dy
     target = main.get_monster_at_tile(target_space[0], target_space[1])
     if target is not None:
-        result = combat.attack_ex(instance.fighter, target, instance.fighter.calculate_attack_stamina_cost(), instance.fighter.accuracy,
-                             instance.fighter.attack_damage, 1.5, None, ('reach-attack', 'reach-attacks'),
-                             instance.fighter.attack_shred, instance.fighter.attack_guaranteed_shred, instance.fighter.attack_pierce)
+        result = combat.attack_ex(instance.fighter, target, instance.fighter.calculate_attack_stamina_cost(), verb=('reach-attack', 'reach-attacks'))
         if result != 'failed' and target.fighter:
             ui.select_monster(target)
         return result
@@ -486,9 +485,7 @@ def cleave_attack(dx, dy):
         for tile in adjacent:
             target = main.get_monster_at_tile(tile[0], tile[1])
             if target and target.fighter:
-                combat.attack_ex(instance.fighter, target, 0, instance.fighter.accuracy, instance.fighter.attack_damage,
-                                 None, None, ('cleave', 'cleaves'), instance.fighter.attack_shred,
-                                 instance.fighter.attack_guaranteed_shred + 1, instance.fighter.attack_pierce)
+                combat.attack_ex(instance.fighter, target, 0, verb=('cleave', 'cleaves'))
         return 'cleaved'
     else:
         value = instance.move(dx, dy)
@@ -500,10 +497,8 @@ def cleave_attack(dx, dy):
 def bash_attack(dx, dy):
     target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
     if target is not None:
-        result = combat.attack_ex(instance.fighter, target, consts.BASH_STAMINA_COST, instance.fighter.accuracy * consts.BASH_ACC_MOD,
-                                 instance.fighter.attack_damage, consts.BASH_DMG_MOD,
-                                 None, ('bash', 'bashes'), instance.fighter.attack_shred + 1, instance.fighter.attack_guaranteed_shred,
-                                 instance.fighter.attack_pierce)
+        result = combat.attack_ex(instance.fighter, target, consts.BASH_STAMINA_COST,
+                                  damage_multiplier=consts.BASH_DMG_MOD, verb=('bash', 'bashes'))
         if result == 'hit' and target.fighter:
             ui.select_monster(target)
             # knock the target back one space. Stun it if it cannot move.
@@ -661,11 +656,8 @@ def jump(actor=None):
                     instance.set_position(land[0], land[1])
                     instance.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
 
-                    combat.attack_ex(instance.fighter, jump_attack_target, 0, instance.fighter.accuracy * consts.JUMP_ATTACK_ACC_MOD,
-                                             instance.fighter.attack_damage,
-                                             consts.JUMP_ATTACK_DMG_MOD, instance.fighter.on_hit, ('jump-attack','jump-attacks'),
-                                             instance.fighter.attack_shred, instance.fighter.attack_guaranteed_shred,
-                                             instance.fighter.attack_pierce)
+                    combat.attack_ex(instance.fighter, jump_attack_target, 0, accuracy_modifier=consts.JUMP_ATTACK_ACC_MOD,
+                                             damage_multiplier=consts.JUMP_ATTACK_DMG_MOD,verb=('jump-attack','jump-attacks'))
 
                     return 'jump-attacked'
                 else:

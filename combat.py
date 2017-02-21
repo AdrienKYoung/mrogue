@@ -11,24 +11,18 @@ import abilities
 
 class Fighter:
 
-    def __init__(self, hp=1, defense=0, power=0, xp=0, stamina=0, armor=0, evasion=0, accuracy=25, attack_damage=1,
-                 damage_variance=0.15, spell_power=0, death_function=None, breath=6,
+    def __init__(self, hp=1, stamina=0, armor=0, evasion=0, accuracy=25, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
-                 damage_bonus=0, m_str_dice=0, m_str_size=0, monster_str_dice=None, spell_resist=0, team='enemy',
-                 on_get_hit=None, stealth=None):
-        self.xp = xp
+                 damage_bonus=0, monster_str_dice=None, spell_resist=0, team='enemy', on_get_hit=None, stealth=None):
+        self.owner = None
         self.base_max_hp = hp
         self.hp = hp
-        self.base_defense = defense
-        self.base_power = power
         self.death_function = death_function
         self.max_stamina = stamina
         self.stamina = stamina
         self.base_armor = armor
         self.base_evasion = evasion
-        self.base_attack_damage = attack_damage
-        self.base_damage_variance = damage_variance
         self.base_spell_power = spell_power
         self.base_spell_resist = spell_resist
         self.base_accuracy = accuracy
@@ -54,8 +48,6 @@ class Fighter:
         self.stealth = stealth
 
         self.base_damage_bonus = damage_bonus
-        self.m_str_dice = m_str_dice
-        self.m_str_size = m_str_size
         self.monster_str_dice = monster_str_dice
 
     def print_description(self, console, x, y, width):
@@ -115,8 +107,6 @@ class Fighter:
                 function = self.death_function
                 if function is not None:
                     function(self.owner)
-                if self.owner != player.instance:
-                    player.instance.fighter.xp += self.xp
             self.time_since_last_damaged = 0
         return damage
 
@@ -146,13 +136,6 @@ class Fighter:
                                         main.get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
         return stamina_cost
 
-    def calculate_damage(self):
-        if self.inventory and len(self.inventory) > 0:
-            weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
-            if weapon is not None:
-                return roll_damage(weapon,self)
-        return self.attack_damage * (1.0 - self.damage_variance + libtcod.random_get_float(0, 0, 2 * self.damage_variance))
-
     def calculate_attack_count(self):
 
         if self.owner is player.instance:
@@ -178,8 +161,7 @@ class Fighter:
         result = 'failed'
         attacks = self.calculate_attack_count()
         for i in range(attacks):
-            result = attack_ex(self, target, self.calculate_attack_stamina_cost(), self.accuracy, self.attack_damage, None, self.on_hit,
-                           None, self.attack_shred, self.attack_guaranteed_shred, self.attack_pierce)
+            result = attack_ex(self, target, self.calculate_attack_stamina_cost())
             if result == 'failed':
                 return result
             elif target.fighter is None:
@@ -308,18 +290,12 @@ class Fighter:
         return max(self.base_accuracy + bonus, 1)
 
     @property
-    def damage_variance(self):
-        return self.base_damage_variance
-
-    @property
     def damage_bonus(self):
         return self.base_damage_bonus
 
     @property
-    def attack_damage(self):
-        bonus = sum(equipment.attack_damage_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus * mul(effect.attack_power_mod for effect in self.status_effects))
-        bonus = 0
+    def strength_dice_size(self):
+        bonus = sum(equipment.strength_dice_bonus for equipment in main.get_all_equipped(self.inventory))
         if self.owner.player_stats:
             return max(self.owner.player_stats.str + bonus, 0)
         else:
@@ -516,18 +492,8 @@ damage_description_tables = {
     ]
 }
 
-def roll_damage(weapon, fighter):
-    total_damage = 0
-    if weapon.weapon_dice is not None:
-        d = weapon.weapon_dice.split('d')
-        dice_size = max(int(d[1]) + (2 * weapon.attack_damage_bonus), 1)
-        for i in range(1, int(d[0]) + 1):
-            total_damage += libtcod.random_get_int(0, 1, dice_size)
-    for i in range(weapon.str_dice):
-        total_damage += libtcod.random_get_int(0, 1, fighter.attack_damage)
-    return total_damage
-
-def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_multiplier, on_hit, verb, shred, guaranteed_shred, pierce):
+def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_modifier=1, damage_multiplier=1, shred_modifier=0,
+              guaranteed_shred_modifier=0, pierce_modifier=0):
     # check stamina
     if fighter.owner.name == 'player':
         if fighter.stamina < stamina_cost:
@@ -536,7 +502,7 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
         else:
             fighter.adjust_stamina(-stamina_cost)
 
-    if roll_to_hit(target, accuracy):
+    if roll_to_hit(target, fighter.accuracy * accuracy_modifier):
         # Target was hit
 
         #Determine location based effects
@@ -555,6 +521,8 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
 
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
+
+        damage_mod *= mul(effect.attack_power_mod for effect in fighter.status_effects)
 
         if damage_multiplier is not None:
             damage_mod *= damage_multiplier
@@ -577,31 +545,29 @@ def attack_ex(fighter, target, stamina_cost, accuracy, attack_damage, damage_mul
         if weapon is not None:
             subtype = weapon.subtype
 
-        attack_damage = fighter.attack_damage
+        str_dice_size = fighter.strength_dice_size
         if fighter.owner is player.instance:
-            attack_damage += main.skill_value("{}_mastery".format(subtype))
+            str_dice_size += main.skill_value("{}_mastery".format(subtype))
 
-        unarmed_str_dice = '1d{}'.format(fighter.attack_damage)
-        if fighter.owner is not player.instance and weapon is None:
-            unarmed_str_dice = fighter.monster_str_dice
-
+        weapon_dice = '0d0'
+        strength_dice = '1d{}'.format(str_dice_size)
         if weapon is not None:
-            damage = roll_damage_ex(weapon.weapon_dice,
-                                "{}d{}".format(weapon.str_dice,fighter.attack_damage), target.fighter.armor,
-                                fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
-                                target.fighter.getWeaknesses(), flat_bonus=fighter.damage_bonus)
-        else:
-            damage = roll_damage_ex('0d0', unarmed_str_dice, target.fighter.armor,
-                                    fighter.attack_pierce, hit_type, damage_mod, target.fighter.getResists(),
-                                    target.fighter.getWeaknesses(), flat_bonus=fighter.damage_bonus)
+            weapon_dice = weapon.weapon_dice
+            strength_dice = "{}d{}".format(weapon.str_dice,str_dice_size)
+        elif fighter.owner is not player.instance:
+            strength_dice = fighter.monster_str_dice
+
+        damage = roll_damage_ex(weapon_dice,strength_dice, target.fighter.armor,
+                            fighter.attack_pierce + pierce_modifier, hit_type, damage_mod, target.fighter.getResists(),
+                            target.fighter.getWeaknesses(), flat_bonus=fighter.damage_bonus)
 
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
             # Shred armor
-            for i in range(shred):
+            for i in range(fighter.attack_shred + shred_modifier):
                 if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
                     target.fighter.shred += 1
-            target.fighter.shred += min(guaranteed_shred, target.fighter.armor)
+            target.fighter.shred += min(fighter.attack_guaranteed_shred + guaranteed_shred_modifier, target.fighter.armor)
             # Receive effect
             if effect is not None and percent_hit > 0.1:
                 target.fighter.apply_status_effect(effect)

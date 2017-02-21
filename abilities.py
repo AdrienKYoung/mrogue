@@ -49,7 +49,7 @@ data = {
 
     'ability_grapel': {
         'name': 'Grapel',
-        'function': actions.grapel,
+        'function': actions.frog_tongue,
         'cooldown': 3
     },
 
