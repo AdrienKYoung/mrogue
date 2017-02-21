@@ -585,7 +585,7 @@ def render_action_panel():
         draw_height += 2
         libtcod.console_print(action_panel, 1, draw_height, '(d) Drop Item')
         draw_height += 2
-        libtcod.console_print(action_panel, 1, draw_height, '(p) Perks')
+        libtcod.console_print(action_panel, 1, draw_height, '(P) Perks')
         draw_height += 2
         libtcod.console_print(action_panel, 1, draw_height, '(v) Jump')
         draw_height += 2

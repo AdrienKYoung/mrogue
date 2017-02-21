@@ -597,6 +597,29 @@ proto = {
         'equipment': [{'weapon_greatsword':30,'weapon_halberd':30,'weapon_warhammer':30},{'equipment_plate_armor':100}],
         'movement_type': pathfinding.FLYING
     },
+    'monster_infested_treant': {
+        'name': 'infested treant',
+        'char': 'T',
+        'color': libtcod.dark_chartreuse,
+        'hp': 45,
+        'strength_dice' : '2d8',
+        'attack_bonus' : 0,
+        'armor': 0,
+        'evasion': 4,
+        'accuracy': 19,
+        'move_speed': 0.5,
+        'attack_speed': 1.0,
+        'on_create': None,
+        'ai': ai.AI_Default,
+        'description': 'A rotting corpse animated by some evil magic. It shambles slowly, but once it reaches its prey it latches on tight.',
+        'resistances': [],
+        'weaknesses' : ['radiant'],
+        'on_hit': main.zombie_on_hit,
+        'shred': 1,
+        'flags' : NO_CORPSE,
+        'modifier_category':'default',
+        'subtype':'undead',
+    },
 }
 
 modifiers = {

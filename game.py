@@ -79,7 +79,7 @@ class Equipment:
             self.dequip()
         else:
             self.equip()
-            
+
     def equip(self):
         # First check weight
         if self.holder is player.instance:
@@ -99,7 +99,7 @@ class Equipment:
         self.is_equipped = True
         if self.holder is player.instance:
             ui.message('Equipped ' + self.owner.name + ' on ' + self.slot + '.', libtcod.orange)
-        
+
     def dequip(self, no_message=False):
         self.is_equipped = False
         if not no_message and self.holder is player.instance:
@@ -124,12 +124,12 @@ class Equipment:
             libtcod.console_print(console, x, y + print_height, 'Armor: ' + str(self.armor_bonus))
             print_height += 1
         if self.weapon_dice != '+0':
-            r = dice_range(self.weapon_dice, normalize_size=4)
-            libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(r[0]) + '-' + str(r[1]))
+            r1 = dice_range(self.weapon_dice, normalize_size=4)
+            r2 = dice_range(str(self.str_dice)+'d'+str(player.instance.player_stats.str + self.strength_dice_bonus), normalize_size=4)
+            libtcod.console_print(console, x, y + print_height, 'Damage: ' + str(r1[0] + r2[0]) + '-' + str(r1[1] + r2[1]))
             print_height += 1
         if self.str_dice is not None and self.str_dice > 0:
-            r = dice_range(str(self.str_dice)+'d'+str(player.instance.player_stats.str), normalize_size=4)
-            libtcod.console_print(console, x, y + print_height, 'Strength Bonus: ' + str(r[0]) + '-' + str(r[1]))
+            libtcod.console_print(console, x, y + print_height, 'Strength Scaling: ' + str(self.str_dice) )
             print_height += 1
         if self.accuracy_bonus != 0:
             acc_str = 'Accuracy: '
@@ -216,10 +216,6 @@ class Equipment:
         return True
 
 
-        #return self.spell_list.has_key(spell_name) and sl > 0 and \
-        #       actor.fighter.stamina >= level['stamina_cost'] and \
-        #        self.spell_charges[spell_name] > 0
-
     def level_up(self, force = False):
         if self.level >= self.max_level:
             ui.message('{} is already max level!'.format(self.owner.name))
@@ -268,7 +264,7 @@ class Item:
         self.type = type
         self.ability = ability
         self.holder = holder
-        
+
     def pick_up(self, actor):
         if self.type == 'item':
             if len(actor.fighter.inventory) >= 26:
@@ -283,7 +279,7 @@ class Item:
                 equipment = self.owner.equipment
                 if equipment and get_equipped_in_slot(actor.fighter.inventory,equipment.slot) is None:
                     equipment.equip()
-            
+
     def use(self):
         if self.owner.equipment:
             self.owner.equipment.toggle()

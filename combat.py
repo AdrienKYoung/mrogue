@@ -170,7 +170,7 @@ class Fighter:
 
     def heal(self, amount):
         if self.owner is player.instance and main.has_skill('vitality'):
-            amount *= 1.25
+            amount = int(amount * 1.25)
         self.hp += amount
         if self.hp > self.max_hp:
             self.hp = self.max_hp
