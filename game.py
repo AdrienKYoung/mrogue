@@ -1033,6 +1033,7 @@ def create_item(name, material=None, quality=''):
         equipment_component = equipment.Equipment(
             slot=p['slot'],
             category=p['category'],
+            base_id=name,
             strength_dice_bonus=p.get('strength_dice_bonus', 0),
             armor_bonus=p.get('armor_bonus', 0),
             max_hp_bonus=p.get('max_hp_bonus', 0),
@@ -1068,13 +1069,13 @@ def create_item(name, material=None, quality=''):
             material = 'iron' if equipment_component.category == 'weapon' else ''
 
         if equipment_component.category == 'weapon':
-            equipment_component.modifiers.append(loot.qualities[quality]['weapon'])
-            equipment_component.modifiers.append(loot.weapon_materials[material])
+            equipment_component.modifiers[quality] = loot.qualities[quality]['weapon']
+            equipment_component.modifiers[material] = loot.weapon_materials[material]
             equipment_component.quality = quality
             equipment_component.material = material
         if equipment_component.category == 'armor':
-            equipment_component.modifiers.append(loot.qualities[quality]['armor'])
-            equipment_component.modifiers.append(loot.armor_materials[material])
+            equipment_component.modifiers[quality] = loot.qualities[quality]['armor']
+            equipment_component.modifiers[material] = loot.armor_materials[material]
             equipment_component.quality = quality
             equipment_component.material = material
 
@@ -1100,11 +1101,15 @@ def spawn_item(name, x, y, material=None, quality=None):
 
 def set_quality(equipment, quality):
     #remove all quality modifiers from the item
-    equipment.modifiers = [m for m in equipment.modifiers if m not in loot.qualities]
-    equipment.modifiers.append(quality)
+    for k in loot.qualities.keys():
+        if k in equipment.modifiers:
+            del equipment.modifiers[k]
+    equipment.quality = quality
+    equipment.modifiers[equipment.quality] = loot.qualities[equipment.quality][equipment.category]
 
     # update name
     go = equipment.owner
+    go.name = loot.proto[equipment.base_id]['name']
     if hasattr(equipment, 'material'):
         go.name = equipment.material + ' ' + go.name
     if hasattr(equipment, 'quality') and equipment.quality != '':

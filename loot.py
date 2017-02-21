@@ -217,7 +217,7 @@ qualities = {
         'armor': {
             'evasion_bonus' : -5,
             'armor_bonus' : -1,
-            'weight' : 0
+            'weight_bonus' : 0
         }
     },
     'crude' : {
@@ -230,7 +230,7 @@ qualities = {
         'armor': {
             'evasion_bonus' : -1,
             'armor_bonus' : 0,
-            'weight' : 1
+            'weight_bonus' : 1
         }
     },
     '' : { # standard
@@ -242,7 +242,7 @@ qualities = {
         'armor': {
             'evasion_bonus' : 0,
             'armor_bonus' : 0,
-            'weight' : 0
+            'weight_bonus' : 0
         }
     },
     'military' : {
@@ -254,7 +254,7 @@ qualities = {
         'armor': {
             'evasion_bonus' : 0,
             'armor_bonus' : 0,
-            'weight' : -1
+            'weight_bonus' : -1
         }
     },
     'fine' : {
@@ -267,7 +267,7 @@ qualities = {
         'armor': {
             'evasion_bonus' : 1,
             'armor_bonus' : 0,
-            'weight' : -2
+            'weight_bonus' : -2
         }
     },
     'masterwork' : {
@@ -281,7 +281,7 @@ qualities = {
         'armor':{
             'evasion_bonus' : 2,
             'armor_bonus' : 0,
-            'weight' : -3
+            'weight_bonus' : -3
         }
     },
     'artifact' : {

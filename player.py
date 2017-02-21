@@ -39,6 +39,7 @@ loadouts = {
             'charm_battle',
             'equipment_leather_armor',
             'equipment_iron_helm',
+            'scroll_forge'
         ],
         'description' : "Balanced melee fighter. Starts with good weapon and armor. Charm channels essence to imbue "
                         "temporary weapon effects."

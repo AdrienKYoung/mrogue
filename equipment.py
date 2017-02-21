@@ -12,17 +12,18 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
-                 resistances=[], modifiers = [],
+                 resistances=[], modifiers = {}, base_id=None,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0):
         self.is_equipped = False
         self.slot = slot
+        self.base_id = base_id
         self.category = category
         self.subtype = subtype
 
         self.ctrl_attack = ctrl_attack
         self.ctrl_attack_desc = ctrl_attack_desc
 
-        self.modifiers = list(modifiers) #list of references to dictionaries
+        self.modifiers = dict(modifiers) #list of references to dictionaries
 
         self._stamina_cost = stamina_cost
         self._str_requirement = str_requirement
@@ -69,10 +70,10 @@ class Equipment:
             self.level_up(True)
 
     def get_bonus(self,stat):
-        return sum([v.get(stat,0) for v in self.modifiers])
+        return sum([v.get(stat,0) for v in self.modifiers.values()])
 
     def get_scalar(self,stat):
-        return reduce(lambda a,b: a * b,[v.get(stat,1) for v in self.modifiers],1)
+        return reduce(lambda a,b: a * b,[v.get(stat,1) for v in self.modifiers.values()],1)
 
     @property
     def stamina_cost(self):
@@ -108,7 +109,7 @@ class Equipment:
 
     @property
     def resistances(self):
-        return self._resistances + [mod.get('resistance') for mod in self.modifiers if mod.get('resistance') is not None]
+        return self._resistances + [mod.get('resistance') for mod in self.modifiers.values() if mod.get('resistance') is not None]
 
     @property
     def strength_dice_bonus(self):
@@ -116,11 +117,7 @@ class Equipment:
 
     @property
     def on_hit(self):
-        return self._on_hit + [mod.get('on_hit') for mod in self.modifiers if mod.get('on_hit') is not None]
-
-    @property
-    def attack_delay(self):
-        return self._attack_delay + self.get_bonus('attack_delay_bonus')
+        return self._on_hit + [mod.get('on_hit') for mod in self.modifiers.values() if mod.get('on_hit') is not None]
 
     @property
     def attack_delay(self):
@@ -132,7 +129,7 @@ class Equipment:
 
     @property
     def shred_bonus(self):
-        return self._str_dice + self.get_bonus('shred_bonus')
+        return self._shred_bonus + self.get_bonus('shred_bonus')
 
     @property
     def guaranteed_shred_bonus(self):

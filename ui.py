@@ -11,7 +11,7 @@ def msgbox(text, width=50):
     menu(text, [], width)
 
 
-def menu(header, options, width, x_center=None, render_func=None):
+def menu(header, options, width=30, x_center=None, render_func=None):
 
     if len(options) > 26: raise ValueError('Cannot have a menu with more than 26 options.')
 

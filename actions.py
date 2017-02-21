@@ -409,27 +409,34 @@ def dig(dx, dy):
         ui.message('You cannot dig there.', libtcod.lightest_gray)
         return 'failed'
 
+forge_targets = ['weapon','armor']
+
 def forge():
     import loot
-    weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
-    if weapon is not None and weapon.owner.item.category == 'weapon':
-        if weapon.quality == 'artifact':
-            ui.message('Your ' + weapon.owner.name + ' shimmers briefly. It cannot be improved further by this magic.',
-                       libtcod.orange)
-        elif weapon.material == '':
-            ui.message('The %s cannot be altered by this magic.' % weapon.owner.name, libtcod.orange)
-        else:
-            ui.message('Your ' + weapon.owner.name + ' glows bright orange!', libtcod.orange)
+    choices = [i for i in player.instance.fighter.inventory if i.equipment is not None and i.equipment.category in forge_targets]
 
-            index = loot.quality_progression.index(weapon.quality)
-            new_quality = loot.quality_progression[index + 1]
-            main.set_quality(weapon, new_quality)
-            ui.message('It is now a ' + weapon.owner.name + '.', libtcod.orange)
-    elif weapon is not None and weapon.owner.item.category != 'weapon':
-        ui.message('Your ' + weapon.owner.name + ' emits a dull glow. This magic was only intended for weapons!',
+    if len(choices) < 1:
+        ui.message('You have no items to forge.',libtcod.orange)
+        return 'didnt-take-turn'
+
+    index = ui.menu('Forge what?',[c.name for c in choices])
+    if index is None:
+        ui.message('Cancelled.',libtcod.orange)
+        return 'didnt-take-turn'
+    target = choices[index].equipment
+
+    if target.quality == 'artifact':
+        ui.message('Your ' + target.owner.name + ' shimmers briefly. It cannot be improved further by this magic.',
                    libtcod.orange)
+    elif target.category == 'weapon' and target.material == '': #can't forge summoned weapons
+        ui.message('The %s cannot be altered by this magic.' % target.owner.name, libtcod.orange)
     else:
-        ui.message('Your hands tingle briefly. This magic was only intended for weapons!', libtcod.orange)
+        ui.message('Your ' + target.owner.name + ' glows bright orange!', libtcod.orange)
+
+        index = loot.quality_progression.index(target.quality)
+        new_quality = loot.quality_progression[index + 1]
+        main.set_quality(target, new_quality)
+        ui.message('It is now a ' + target.owner.name + '.', libtcod.orange)
     return True
 
 def aquatic(target):
