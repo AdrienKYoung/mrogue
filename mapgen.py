@@ -24,6 +24,51 @@ default_wall = 'stone wall'
 default_floor = 'stone floor'
 default_ramp = 'stone ramp'
 
+class BSP_Leaf:
+
+    def __init__(self, x, y, w, h, min_size=6):
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.left = None
+        self.right = None
+        self.min_size = min_size
+
+    def split(self):
+        if self.left is not None or self.right is not None:
+            return False
+        # determine split direction
+        if self.w > self.h and self.w / self.h > 1.25:
+            split_horizontal = False
+        elif self.h > self.w and self.h / self.w > 1.25:
+            split_horizontal = True
+        else:
+            split_horizontal = libtcod.random_get_int(0, 0, 1) == 0
+
+        if split_horizontal:
+            max_size = self.h - self.min_size
+        else:
+            max_size = self.w - self.min_size
+        if max_size <= self.min_size:
+            return False
+
+        split_value = libtcod.random_get_int(0, self.min_size, max_size)
+
+        if split_horizontal:
+            self.left = BSP_Leaf(self.x, self.y, self.w, split_value, min_size=self.min_size)
+            self.right = BSP_Leaf(self.x, self.y + split_value, self.w, self.h - split_value, min_size=self.min_size)
+        else:
+            self.left = BSP_Leaf(self.x, self.y, split_value, self.h, min_size=self.min_size)
+            self.right = BSP_Leaf(self.x + split_value, self.y, self.w - split_value, self.h, min_size=self.min_size)
+        return True
+
+    def split_recursive(self):
+        if self.split():
+            self.left.split_recursive()
+            self.right.split_recursive()
+
+
 # It's not a bug, it's a
 class Feature:
     def __init__(self):
@@ -1117,6 +1162,31 @@ def make_rooms_and_corridors():
     boss = main.check_boss(main.get_dungeon_level())
     if boss is not None:
         main.spawn_monster(boss, sample[1].center()[0], sample[1].center()[1])
+
+def make_garden_rooms(leaf):
+    if leaf.left is None or leaf.right is None:
+        room = Room()
+        for x in range(leaf.w):
+            room.set_tile(x, 0, default_wall)
+            room.set_tile(x, leaf.h, default_wall)
+        for y in range(leaf.h):
+            room.set_tile(0, y, default_wall)
+            room.set_tile(leaf.w, y, default_wall)
+        room.set_pos(leaf.x, leaf.y)
+        apply_room(room)
+    else:
+        make_garden_rooms(leaf.left)
+        make_garden_rooms(leaf.right)
+
+def make_map_garden():
+
+    for x in range(consts.MAP_WIDTH):
+        for y in range(consts.MAP_HEIGHT):
+            change_map_tile(x, y, default_floor)
+    root = BSP_Leaf(0, 0, consts.MAP_WIDTH - 1, consts.MAP_HEIGHT - 1)
+    root.split_recursive()
+    make_garden_rooms(root)
+
 
 def make_map_forest():
 

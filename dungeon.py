@@ -99,5 +99,22 @@ branches = {
             {'encounter':['monster_cockroach'], 'party':'2d2+2'},
         ],
         'generate':mapgen.make_map_forest,
+    },
+    'garden': {
+        'name'          :"the gardens",
+        'default_wall'  : 'stone wall',
+        'default_floor' : 'stone floor',
+        'default_ramp'  : 'stone ramp',
+        'scaling'       : 0,
+        'loot':{},
+        'loot_level':0,
+        'loot_dice':'1d4',
+        'encounter_dice':'1d4+5',
+        'xp_amount':7,
+        'encounter_range':6,
+        'monsters':[
+
+        ],
+        'generate':mapgen.make_map_garden,
     }
 }

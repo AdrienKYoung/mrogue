@@ -338,7 +338,7 @@ class Fighter:
     @property
     def evasion(self):
         bonus = sum(equipment.evasion_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus *  mul(effect.evasion_mod for effect in self.status_effects))
+        bonus = int(bonus * mul(effect.evasion_mod for effect in self.status_effects))
         if self.has_status('sluggish'):
             bonus -= 5
         if self.owner.player_stats:
