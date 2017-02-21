@@ -957,7 +957,7 @@ def spawn_monster(name, x, y, team='enemy'):
                     weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
                     inventory=spawn_monster_inventory(p.get('equipment'),p.get('loot_level',-10)), on_hit=p.get('on_hit'),
                     base_shred=p.get('shred', 0) + modifier.get('shred_bonus',1),
-                    base_guaranteed_shred=p.get('guaranteed_shred', 0),
+                    base_guaranteed_shred=p.get('guaranteed_shred', 0), on_get_hit=p.get('on_get_hit'),
                     base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
                     monster_flags=p.get('flags', 0),subtype=p.get('subtype'),damage_bonus=p.get('attack_bonus', 0),
                     monster_str_dice=p.get('strength_dice'), team=p.get('team', team), stealth=p.get('stealth'))

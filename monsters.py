@@ -3,6 +3,7 @@ import ai
 import libtcodpy as libtcod
 import pathfinding
 import combat
+import actions
 
 # Monster Flags
 NO_CORPSE = 1
@@ -600,25 +601,23 @@ proto = {
     'monster_infested_treant': {
         'name': 'infested treant',
         'char': 'T',
-        'color': libtcod.dark_chartreuse,
-        'hp': 45,
-        'strength_dice' : '2d8',
+        'color': libtcod.dark_magenta,
+        'hp': 180,
+        'strength_dice' : '4d10',
         'attack_bonus' : 0,
-        'armor': 0,
+        'armor': 4,
         'evasion': 4,
-        'accuracy': 19,
-        'move_speed': 0.5,
-        'attack_speed': 1.0,
-        'on_create': None,
+        'accuracy': 22,
+        'move_speed': 1.0,
+        'attack_speed': 0.6,
         'ai': ai.AI_Default,
-        'description': 'A rotting corpse animated by some evil magic. It shambles slowly, but once it reaches its prey it latches on tight.',
+        'description': 'A walking hulk of rotting wood, crawling with roaches.',
         'resistances': [],
-        'weaknesses' : ['radiant'],
-        'on_hit': main.zombie_on_hit,
+        'weaknesses' : ['fire'],
+        'on_get_hit' : actions.summon_roaches,
         'shred': 1,
         'flags' : NO_CORPSE,
-        'modifier_category':'default',
-        'subtype':'undead',
+        'subtype' : 'treant',
     },
 }
 

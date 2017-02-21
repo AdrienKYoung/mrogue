@@ -477,6 +477,27 @@ def summon_guardian_angel():
     ui.message('Your prayers have been answered!',libtcod.light_blue)
     return 'success'
 
+def summon_roaches(actor, attacker, damage):
+    if not hasattr(actor, 'summon_limit') or not hasattr(actor, 'summons'):
+        actor.summon_limit = 8
+        actor.summons = []
+    remove = []
+    for s in actor.summons:
+        if s.fighter is None or not s in main.current_map.fighters:
+            remove.append(s)
+    for s in remove:
+        actor.summons.remove(s)
+
+    if len(actor.summons) >= actor.summon_limit:
+        return
+    if fov.player_can_see(actor.x, actor.y):
+        ui.message('Cockroaches crawl from %s wounds!' % syntax.name(actor.name, possesive=True), libtcod.dark_magenta)
+    for adj in main.adjacent_tiles_diagonal(actor.x, actor.y):
+        if len(actor.summons) >= actor.summon_limit:
+            break
+        if not main.is_blocked(adj[0], adj[1]) and libtcod.random_get_int(0, 1, 10) <= 5:
+            actor.summons.append(main.spawn_monster('monster_cockroach', adj[0], adj[1]))
+
 def potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
 

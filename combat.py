@@ -114,7 +114,7 @@ class Fighter:
         if self.owner.behavior:
             self.owner.behavior.get_hit(attacker)
         if self.on_get_hit:
-            self.on_get_hit(self.owner, attacker,damage)
+            self.on_get_hit(self.owner, attacker, damage)
 
     def drop_essence(self):
         if hasattr(self.owner, 'essence') and self.owner is not player.instance:
