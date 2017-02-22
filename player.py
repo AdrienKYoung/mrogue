@@ -701,6 +701,9 @@ def on_get_hit(this,other,damage):
             if actions.summon_guardian_angel() != 'failed':
                 instance.heir_to_the_heavens_cd = 70
                 instance.fighter.apply_status_effect(effects.invulnerable(1),True)
+    if main.has_skill('adrenaline'):
+        factor = instance.fighter.max_hp / damage
+        instance.fighter.adjust_stamina(libtcod.random_get_int(0,0,int(factor * instance.fighter.max_stamina)))
 
 
 

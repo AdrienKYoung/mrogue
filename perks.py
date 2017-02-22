@@ -409,7 +409,7 @@ perk_list = {
         'requires' : 'void_affinity_3',
         'category' : 'Void Magic'
     },
-    'ravager' : {  #todo
+    'ravager' : {
         'name' : 'Ravager',
         'description' : ['Deal 10%% more damage to unarmored enemies',
                          'Deal 20%% more damage to unarmored enemies',
@@ -428,7 +428,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Martial'
     },
-    'combat_training' : {  #todo
+    'combat_training' : {
         'name' : 'Combat Training',
         'description' : ['Attacks cost 10%% less stamina',
                          'Attacks cost 20%% less stamina',

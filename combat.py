@@ -495,6 +495,9 @@ damage_description_tables = {
 def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_modifier=1, damage_multiplier=1, shred_modifier=0,
               guaranteed_shred_modifier=0, pierce_modifier=0):
     # check stamina
+    if main.has_skill('combat_training'):
+        stamina_cost *= main.skill_value('combat_training')
+
     if fighter.owner.name == 'player':
         if fighter.stamina < stamina_cost:
             ui.message("You can't find the strength to swing your weapon!", libtcod.light_yellow)
@@ -521,6 +524,11 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
+
+        if fighter.owner is player.instance and main.has_skill('ravager') and \
+            target.fighter.armor - fighter.attack_pierce + pierce_modifier < 1:
+            damage_mod *= main.skill_value('ravager')
+
 
         damage_mod *= mul(effect.attack_power_mod for effect in fighter.status_effects)
 
