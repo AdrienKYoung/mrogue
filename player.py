@@ -682,6 +682,12 @@ def level_spell_mastery():
     else:
         return 'failed'
 
+def learn_ability(name):
+    import abilities
+    ability = abilities.data[name]
+    abilities.default_abilities[name] = abilities.Ability(ability['name'],ability['description'],
+                                                                  ability['function'],ability['cooldown'])
+
 def on_tick(this):
     if main.has_skill('pyromaniac'):
         main.create_fire(this.x,this.y,10)
@@ -692,6 +698,8 @@ def on_tick(this):
     if main.has_skill('heir_to_the_heavens'):
         if hasattr(instance,'heir_to_the_heavens_cd'):
             instance.heir_to_the_heavens_cd -= 1
+    for ability in abilities.default_abilities.values():
+        ability.on_tick()
 
 def on_get_hit(this,other,damage):
     if main.has_skill('heir_to_the_heavens'):
@@ -719,3 +727,4 @@ import pathfinding
 import ui
 import perks
 import actions
+import abilities

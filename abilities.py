@@ -17,7 +17,7 @@ class Ability:
             if result != 'didnt-take-turn':
                 self.current_cd = self.cooldown
         else:
-            if actor is player.instance.instance:
+            if actor is player.instance:
                 ui.message('{} is on cooldown'.format(self.name), libtcod.red)
             result = 'didnt-take-turn'
         return result
@@ -33,6 +33,18 @@ data = {
         'description': 'Thrust at an enemy up to 2 spaces away',
         'function': actions.attack_reach,
         'cooldown': 0
+    },
+
+    'ability_pommel_strike': {
+        'name': 'Pommel Strike',
+        'description': 'Smash your opponent with your sword pommel for extra damage and shred at the expense of'
+                       ' greater stamina usage and exhaustion.',
+        'function':actions.pommel_attack,
+        'cooldown': 2,
+        'stamina_multiplier': 2,
+        'damage_multiplier': 1.8,
+        'guaranteed_shred_bonus': 2,
+        'exhaustion_duration': 3
     },
 
     'ability_berserk': {

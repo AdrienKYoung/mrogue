@@ -1028,8 +1028,7 @@ def show_ability_screen():
     for i in main.get_all_equipped(player.instance.fighter.inventory):
         if i is not weapon and i.owner.item.ability is not None:
             opts.append(i.owner.item.ability)
-    # Perk abilities
-    #TODO: Perk abilities
+    opts += [v for k,v in abilities.default_abilities.items() if k not in ['attack','bash']]
     index = menu('Abilities',[opt.name for opt in opts],20)
     if index is not None:
         choice = opts[index]

@@ -55,6 +55,28 @@ def bash_attack(actor=None, target=None):
             return result
     return 'didnt-take-turn'
 
+def pommel_attack(actor=None, target=None):
+    weapon = main.get_equipped_in_slot(actor.fighter.inventory,'right hand')
+    if weapon is None or weapon.subtype != 'sword':
+        ui.message('You need a sword to use that ability',libtcod.yellow)
+        return 'didnt-take-turn'
+
+    x, y = ui.target_tile(max_range=1)
+    target = None
+    for object in main.current_map.fighters:
+        if object.x == x and object.y == y:
+            target = object
+            break
+    if target is not None and target is not player.instance:
+        ability = abilities.data['ability_pommel_strike']
+        result = combat.attack_ex(actor.fighter,target,weapon.stamina_cost * ability['stamina_multiplier'],
+                                  damage_multiplier=ability['damage_multiplier'], guaranteed_shred_modifier=
+                                  ability['guaranteed_shred_bonus'], verb=('smash','smashes'))
+        if result != 'failed' and result != 'didnt-take-turn':
+            actor.fighter.apply_status_effect(effects.exhausted(ability['exhaustion_duration']))
+            return result
+    return 'didnt-take-turn'
+
 def berserk_self(actor=None, target=None):
     if actor is not None and actor.fighter is not None:
         if not actor.fighter.has_status('berserk') and not actor.fighter.has_status('exhausted'):

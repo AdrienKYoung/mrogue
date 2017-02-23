@@ -420,7 +420,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Martial'
     },
-    'adrenaline' : {  #todo
+    'adrenaline' : {
         'name' : 'Adrenaline',
         'description' : ['Chance to gain stamina upon taking damage. Chances increases as health decreases'],
         'max_rank' : 1,
@@ -439,7 +439,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Martial'
     },
-    'dagger_mastery' : {  #todo
+    'dagger_mastery' : {
         'name' : 'Dagger Mastery',
         'description' : ['Gain 2 extra attack damage when wielding daggers',
                          'Gain 4 extra attack damage when wielding daggers',
@@ -454,7 +454,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Daggers'
     },
-    'sword_mastery' : {  #todo
+    'sword_mastery' : {
         'name' : 'Sword Mastery',
         'description' : ['Gain 2 extra attack damage when wielding swords',
                          'Gain 4 extra attack damage when wielding swords',
@@ -469,7 +469,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Swords'
     },
-    'axe_mastery' : {  #todo
+    'axe_mastery' : {
         'name' : 'Axe Mastery',
         'description' : ['Gain 2 extra attack damage when wielding axes',
                          'Gain 4 extra attack damage when wielding axes',
@@ -484,7 +484,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Axes'
     },
-    'polearm_mastery' : {  #todo
+    'polearm_mastery' : {
         'name' : 'Polearm Mastery',
         'description' : ['Gain 2 extra attack damage when wielding polearms',
                          'Gain 4 extra attack damage when wielding polearms',
@@ -499,7 +499,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Polearms'
     },
-    'mace_mastery' : {  #todo
+    'mace_mastery' : {
         'name' : 'Mace Mastery',
         'description' : ['Gain 2 extra attack damage when wielding maces',
                          'Gain 4 extra attack damage when wielding maces',
@@ -514,7 +514,7 @@ perk_list = {
         'requires' : None,
         'category' : 'Maces'
     },
-    'unarmed_mastery' : {  #todo
+    'unarmed_mastery' : {
         'name' : 'Unarmed Mastery',
         'description' : ['Gain 2 extra attack damage when not wielding a weapon',
                          'Gain 4 extra attack damage when not wielding a weapon',
@@ -535,7 +535,8 @@ perk_list = {
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'sword_mastery_3',
-        'category' : 'Swords'
+        'category' : 'Swords',
+        'on_aquire': lambda: player.learn_ability('ability_pommel_strike')
     },
     'blade_dance' : {  #todo
         'name' : 'Blade Dance',
