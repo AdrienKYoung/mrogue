@@ -397,8 +397,8 @@ def purchase_skill():
             ui.message("You don't have enough skill points.", libtcod.light_blue)
         else:
             success = True
-            if perks.perk_list[skill].get('on_aquire') is not None:
-                success = perks.perk_list[skill].get('on_aquire')()
+            if perks.perk_list[skill].get('on_acquire') is not None:
+                success = perks.perk_list[skill].get('on_acquire')()
             if success == 'failed':
                 ui.message("Canceled", libtcod.red)
                 return

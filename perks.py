@@ -246,7 +246,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : None,
         'category' : 'Magic',
-        'on_aquire' : player.level_spell_mastery
+        'on_acquire' : player.level_spell_mastery
     },
     'solace' : {
         'name' : 'Solace',
@@ -299,7 +299,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'water_affinity_5',
         'category' : 'Water Magic',
-        'on_aquire': lambda: actions.aquatic(player.instance)
+        'on_acquire': lambda: actions.aquatic(player.instance)
     },
     'stonecloak' : {
         'name' : 'Stonecloak',
@@ -332,7 +332,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'air_affinity_5',
         'category' : 'Air Magic',
-        'on_aquire': lambda: actions.flight(player.instance)
+        'on_acquire': lambda: actions.flight(player.instance)
     },
     'vitality' : {
         'name' : 'Vitality',
@@ -349,7 +349,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'life_affinity_5',
         'category' : 'Life Magic',
-        'on_aquire': lambda: actions.auto_res(player.instance)
+        'on_acquire': lambda: actions.auto_res(player.instance)
     },
     'spellshards' : {
         'name' : 'Spellshards',
@@ -383,7 +383,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'dark_affinity_5',
         'category' : 'Dark Magic',
-        'on_aquire': lambda: actions.lichform(player.instance)
+        'on_acquire': lambda: actions.lichform(player.instance)
     },
     'guardian_of_light' : {  #todo
         'name' : 'Guardian of Light',
@@ -529,22 +529,23 @@ perk_list = {
         'requires' : None,
         'category' : 'Unarmed Combat'
     },
-    'pommel_strike' : {  #todo
+    'pommel_strike' : {
         'name' : 'Pommel Strike',
         'description' : ['Ability (requires sword): Make an attack with +2 shred'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'sword_mastery_3',
         'category' : 'Swords',
-        'on_aquire': lambda: player.learn_ability('ability_pommel_strike')
+        'on_acquire': lambda: player.learn_ability('ability_pommel_strike')
     },
-    'blade_dance' : {  #todo
+    'blade_dance' : {
         'name' : 'Blade Dance',
         'description' : ['Ability (requires sword): Swap places with an adjacent monster and make an attack against it'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'sword_mastery_5',
-        'category' : 'Swords'
+        'category' : 'Swords',
+        'on_acquire': lambda: player.learn_ability('ability_blade_dance')
     },
     'riposte' : {  #todo
         'name' : 'Riposte',

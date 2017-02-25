@@ -585,7 +585,11 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             target.fighter.take_damage(damage)
             # Trigger on-hit effects
             if on_hit is not None:
-                on_hit(fighter.owner, target, damage)
+                if isinstance(on_hit,(list,set,tuple)):
+                    for h in on_hit:
+                        h(fighter.owner, target, damage)
+                else:
+                    on_hit(fighter.owner, target, damage)
             if weapon is not None and weapon.on_hit is not None:
                 for oh in weapon.on_hit:
                     oh(fighter.owner, target, damage)

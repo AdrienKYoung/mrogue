@@ -55,27 +55,60 @@ def bash_attack(actor=None, target=None):
             return result
     return 'didnt-take-turn'
 
-def pommel_attack(actor=None, target=None):
-    weapon = main.get_equipped_in_slot(actor.fighter.inventory,'right hand')
-    if weapon is None or weapon.subtype != 'sword':
-        ui.message('You need a sword to use that ability',libtcod.yellow)
-        return 'didnt-take-turn'
+#note: doesn't support unarmed attacks
+def weapon_attack_ex(ability, actor, target):
+    weapon = None
+    ability_data = abilities.data[ability]
 
-    x, y = ui.target_tile(max_range=1)
-    target = None
-    for object in main.current_map.fighters:
-        if object.x == x and object.y == y:
-            target = object
-            break
-    if target is not None and target is not player.instance:
-        ability = abilities.data['ability_pommel_strike']
-        result = combat.attack_ex(actor.fighter,target,weapon.stamina_cost * ability['stamina_multiplier'],
-                                  damage_multiplier=ability['damage_multiplier'], guaranteed_shred_modifier=
-                                  ability['guaranteed_shred_bonus'], verb=('smash','smashes'))
+    if actor is None or actor is player.instance:
+        actor = player.instance
+        weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+
+        require_weapon = ability_data.get('require_weapon')
+        if require_weapon is not None and (weapon is None or weapon.subtype != require_weapon):
+            ui.message('You need a {} to use that ability'.format(require_weapon), libtcod.yellow)
+            return 'didnt-take-turn'
+
+        x, y = ui.target_tile(max_range=ability_data.get('max_range',1))
+        for object in main.current_map.fighters:
+            if object.x == x and object.y == y:
+                target = object
+                break
+
+        if target is None or target is player.instance:
+            return 'didnt-take-turn'
+    else:
+        weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+
+    if target is not None:
+
+        on_hit = weapon.on_hit
+        if ability_data.get('on_hit') is not None:
+            on_hit.append(ability_data.get('on_hit'))
+
+        result = combat.attack_ex(actor.fighter, target, weapon.stamina_cost * ability_data.get('stamina_multiplier',1),
+                                  accuracy_modifier=ability_data.get('accuracy_multiplier',1),
+                                  damage_multiplier=ability_data.get('damage_multiplier',1),
+                                  guaranteed_shred_modifier=weapon.guaranteed_shred_bonus +
+                                                            ability_data.get('guaranteed_shred_bonus',0),
+                                  pierce_modifier=weapon.pierce_bonus + ability_data.get('pierce_bonus',0),
+                                  shred_modifier=weapon.shred_bonus + ability_data.get('shred_bonus', 0),
+                                  verb=ability_data.get('verb'), on_hit=on_hit)
+
         if result != 'failed' and result != 'didnt-take-turn':
-            actor.fighter.apply_status_effect(effects.exhausted(ability['exhaustion_duration']))
             return result
     return 'didnt-take-turn'
+
+#automates some nasty currying needed to pass ability into on_hit functions
+def on_hit_tx(delegate,ability):
+    return lambda a,b,c: delegate(ability,a,b,c)
+
+def exhaust_self(ability,actor,*_):
+    ability_data = abilities.data[ability]
+    actor.fighter.apply_status_effect(effects.exhausted(ability_data['exhaustion_duration']))
+
+def swap(actor,target,_):
+    actor.swap_positions(target)
 
 def berserk_self(actor=None, target=None):
     if actor is not None and actor.fighter is not None:

@@ -26,6 +26,9 @@ class Ability:
         if self.current_cd > 0:
             self.current_cd -= 1
 
+def weapon_attack(ability_name):
+    return lambda actor,target:actions.weapon_attack_ex(ability_name,actor,target)
+
 import actions
 data = {
     'ability_thrust': {
@@ -39,12 +42,26 @@ data = {
         'name': 'Pommel Strike',
         'description': 'Smash your opponent with your sword pommel for extra damage and shred at the expense of'
                        ' greater stamina usage and exhaustion.',
-        'function':actions.pommel_attack,
+        'require_weapon':'sword',
+        'function': weapon_attack('ability_pommel_strike'),
         'cooldown': 2,
         'stamina_multiplier': 2,
         'damage_multiplier': 1.8,
         'guaranteed_shred_bonus': 2,
-        'exhaustion_duration': 3
+        'exhaustion_duration': 3,
+        'verb': ('smash','smashes'),
+        'on_hit': actions.on_hit_tx(actions.exhaust_self,'ability_pommel_strike')
+    },
+
+    'ability_blade_dance': {
+        'name': 'Blade Dance',
+        'description': 'Attack and swap places with a target',
+        'require_weapon':'sword',
+        'function': weapon_attack('ability_blade_dance'),
+        'cooldown': 2,
+        'stamina_multiplier': 1.2,
+        'damage_multiplier': 1,
+        'on_hit':actions.swap
     },
 
     'ability_berserk': {
