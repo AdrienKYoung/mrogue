@@ -64,6 +64,27 @@ data = {
         'on_hit':actions.swap
     },
 
+    'ability_skullsplitter': {
+        'name': 'Skull Splitter',
+        'description': 'Attack a single target for massive bonus damage that increases the '
+                         'closer the target is to death',
+        'require_weapon':'axe',
+        'function': weapon_attack('ability_skullsplitter'),
+        'cooldown': 10,
+        'stamina_multiplier': 1.5,
+        'damage_multiplier': actions.skullsplitter_calc_damage_bonus
+    },
+
+    'ability_sweep': {
+        'name': 'Sweep',
+        'description': 'Attack all enemies at a range of exactly 2',
+        'require_weapon':'polearm',
+        'function': actions.sweep_attack,
+        'cooldown': 5,
+        'stamina_multiplier': 3,
+        'damage_multiplier': 1.5
+    },
+
     'ability_berserk': {
         'name': 'Berserk',
         'function': actions.berserk_self,

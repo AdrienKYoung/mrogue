@@ -89,11 +89,14 @@ def slowed(duration=10):
 def agile(duration=30):
     return StatusEffect('agile', duration, libtcod.light_blue, evasion_mod=1.5,message='You speed up.')
 
-def free_move(duration=None):
+def free_move(duration=2):
     return StatusEffect('free move', duration, libtcod.blue)
 
 def solace(duration=None):
     return StatusEffect('solace', duration, libtcod.blue)
+
+def off_balance(duration=2):
+    return StatusEffect('off balance', duration, libtcod.red)
 
 def auto_res(duration=None):
     return StatusEffect('auto-res', duration, libtcod.light_blue, message="You are blessed by life itself!")

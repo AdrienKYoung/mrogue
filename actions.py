@@ -55,6 +55,25 @@ def bash_attack(actor=None, target=None):
             return result
     return 'didnt-take-turn'
 
+def sweep_attack(actor=None, target=None):
+    weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+    ability_data = abilities.data['ability_sweep']
+
+    if weapon is None or weapon.subtype != 'polearm':
+        ui.message('You need a polearm to use this ability')
+        return 'didnt-take-turn'
+
+    targets = main.get_objects(actor.x,actor.y,distance=2, condition=lambda o: o.fighter is not None and o.fighter.team != 'ally')
+    targets = [t for t in targets if (abs(t.x - actor.x) == 2 or abs(t.y - actor.y) == 2)]
+    if len(targets) > 0:
+        for enemy in targets:
+            combat.attack_ex(actor.fighter,enemy,0, verb=('sweep','sweeps'))
+        actor.fighter.adjust_stamina(-(weapon.stamina_cost * ability_data['stamina_multiplier']))
+        return True
+    else:
+        ui.message('There are no targets in range')
+        return 'didnt-take-turn'
+
 #note: doesn't support unarmed attacks
 def weapon_attack_ex(ability, actor, target):
     weapon = None
@@ -86,9 +105,13 @@ def weapon_attack_ex(ability, actor, target):
         if ability_data.get('on_hit') is not None:
             on_hit.append(ability_data.get('on_hit'))
 
-        result = combat.attack_ex(actor.fighter, target, weapon.stamina_cost * ability_data.get('stamina_multiplier',1),
+        damage_multiplier = ability_data.get('damage_multiplier',1)
+        if callable(damage_multiplier):
+            damage_multiplier = damage_multiplier(actor,target)
+
+        result = combat.attack_ex(actor.fighter, target, int(weapon.stamina_cost * ability_data.get('stamina_multiplier',1)),
                                   accuracy_modifier=ability_data.get('accuracy_multiplier',1),
-                                  damage_multiplier=ability_data.get('damage_multiplier',1),
+                                  damage_multiplier=damage_multiplier,
                                   guaranteed_shred_modifier=weapon.guaranteed_shred_bonus +
                                                             ability_data.get('guaranteed_shred_bonus',0),
                                   pierce_modifier=weapon.pierce_bonus + ability_data.get('pierce_bonus',0),
@@ -509,6 +532,12 @@ def lichform(target):
     target.fighter.max_hp = int(target.fighter.max_hp * 0.7)
     target.fighter.hp = min(target.fighter.hp,target.fighter.max_hp)
     target.fighter.apply_status_effect(effects.lichform())
+
+def gaze_into_the_void(target):
+    for i in range(3): player.pick_up_essence('void',player.instance)
+
+def skullsplitter_calc_damage_bonus(actor,target):
+    return 1.5 * ( 2 - target.fighter.hp / target.fighter.max_hp)
 
 def summon_guardian_angel():
     adj = main.adjacent_tiles_diagonal(player.instance.x, player.instance.y)

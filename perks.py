@@ -395,19 +395,20 @@ perk_list = {
     },
     'heir_to_the_heavens' : {
         'name' : 'Heir to the Heavens',
-        'description' : ['Whenever you take critical damage, a Daeva is summoned to aid you'],
+        'description' : ['Whenever you take critical damage, a guardian angel is summoned to aid you'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'radiant_affinity_5',
         'category' : 'Radiant Magic'
     },
-    'gaze_into_the_void' : {  #todo
+    'gaze_into_the_void' : {
         'name' : 'Gaze Into the Void',
         'description' : ['Gain 3 Void essence'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'void_affinity_3',
-        'category' : 'Void Magic'
+        'category' : 'Void Magic',
+        'on_acquire': lambda: actions.gaze_into_the_void(player.instance)
     },
     'ravager' : {
         'name' : 'Ravager',
@@ -536,7 +537,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'sword_mastery_3',
         'category' : 'Swords',
-        'on_acquire': lambda: player.learn_ability('ability_pommel_strike')
+        'on_acquire': player.learn_ability('ability_pommel_strike')
     },
     'blade_dance' : {
         'name' : 'Blade Dance',
@@ -545,9 +546,9 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'sword_mastery_5',
         'category' : 'Swords',
-        'on_acquire': lambda: player.learn_ability('ability_blade_dance')
+        'on_acquire': player.learn_ability('ability_blade_dance')
     },
-    'riposte' : {  #todo
+    'riposte' : {
         'name' : 'Riposte',
         'description' : ['Attacks against an enemy that missed you last turn are critical hits'],
         'max_rank' : 1,
@@ -555,7 +556,7 @@ perk_list = {
         'requires' : 'sword_mastery_7',
         'category' : 'Swords'
     },
-    'find_the_gap' : {  #todo
+    'find_the_gap' : {
         'name' : 'Find the Gap',
         'description' : ['Your attacks with daggers gain pierce 1'],
         'max_rank' : 1,
@@ -563,7 +564,7 @@ perk_list = {
         'requires' : 'dagger_mastery_3',
         'category' : 'Daggers'
     },
-    'cut_and_run' : {  #todo
+    'cut_and_run' : {
         'name' : 'Cut and Run',
         'description' : ['After damaging an enemy with a dagger, if your next action is a move, '
                          'it does not cost an action'],
@@ -572,7 +573,7 @@ perk_list = {
         'requires' : 'dagger_mastery_5',
         'category' : 'Daggers'
     },
-    'death_from_above' : {  #todo
+    'death_from_above' : {
         'name' : 'Death from Above',
         'description' : ['Your jump attacks have no accuracy penalty and deal 50% more damage'],
         'max_rank' : 1,
@@ -580,7 +581,7 @@ perk_list = {
         'requires' : 'dagger_mastery_7',
         'category' : 'Daggers'
     },
-    'wild_swings' : {  #todo
+    'wild_swings' : {
         'name' : 'Wild Swings',
         'description' : ['Dealing damage with axes deals 1d6 damage to enemies adjacent to the target'],
         'max_rank' : 1,
@@ -588,16 +589,17 @@ perk_list = {
         'requires' : 'axe_mastery_3',
         'category' : 'Axes'
     },
-    'skullsplitter' : {  #todo
+    'skullsplitter' : {
         'name' : 'Skullsplitter',
         'description' : ['Ability (requires axe): Attack a single target for massive bonus damage that increases the '
                          'closer the target is to death'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'axe_mastery_5',
-        'category' : 'Axes'
+        'category' : 'Axes',
+        'on_acquire': player.learn_ability('ability_skullsplitter')
     },
-    'lord_of_the_fray' : {  #todo
+    'lord_of_the_fray' : {
         'name' : 'Lord of the Fray',
         'description' : ['Gain increased attack damage for each adjacent enemy'],
         'max_rank' : 1,
@@ -611,7 +613,8 @@ perk_list = {
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'polearm_mastery_3',
-        'category' : 'Polearms'
+        'category' : 'Polearms',
+        'on_acquire': player.learn_ability('ability_sweep')
     },
     'vanguard' : {  #todo
         'name' : 'Vanguard',

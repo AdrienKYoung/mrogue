@@ -35,7 +35,7 @@ loadouts = {
         'spr':10,
         'con':12,
         'inventory':[
-            ['weapon_longsword','weapon_hatchet','weapon_mace'],
+            ['weapon_longsword','weapon_hatchet','weapon_mace','weapon_spear'],
             'charm_battle',
             'equipment_leather_armor',
             'equipment_iron_helm',
@@ -656,8 +656,15 @@ def jump(actor=None):
                     instance.set_position(land[0], land[1])
                     instance.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
 
-                    combat.attack_ex(instance.fighter, jump_attack_target, 0, accuracy_modifier=consts.JUMP_ATTACK_ACC_MOD,
-                                             damage_multiplier=consts.JUMP_ATTACK_DMG_MOD,verb=('jump-attack','jump-attacks'))
+                    accuracy_mod = consts.JUMP_ATTACK_ACC_MOD
+                    damage_multiplier = consts.JUMP_ATTACK_DMG_MOD
+
+                    if main.has_skill('death_from_above'):
+                        accuracy_mod = 1
+                        damage_multiplier *= 1.5
+
+                    combat.attack_ex(instance.fighter, jump_attack_target, 0, accuracy_modifier=accuracy_mod,
+                                             damage_multiplier=damage_multiplier,verb=('jump-attack','jump-attacks'))
 
                     return 'jump-attacked'
                 else:
@@ -683,6 +690,9 @@ def level_spell_mastery():
         return 'failed'
 
 def learn_ability(name):
+    return lambda: _learn_ability(name)
+
+def _learn_ability(name):
     import abilities
     ability = abilities.data[name]
     abilities.default_abilities[name] = abilities.Ability(ability['name'],ability['description'],

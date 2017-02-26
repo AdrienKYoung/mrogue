@@ -516,7 +516,8 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
         # Attacks against stunned targets are critical
         weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
-        if weapon and target.fighter.has_status('stunned') and verb != 'bashes':
+        if weapon and ((target.fighter.has_status('stunned') and verb != 'bashes')
+                       or target.fighter.has_status('off balance')):
             damage_mod *= weapon.crit_bonus
 
         if target.fighter.has_status('stung'):
@@ -525,9 +526,17 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
 
-        if fighter.owner is player.instance and main.has_skill('ravager') and \
-            target.fighter.armor - fighter.attack_pierce + pierce_modifier < 1:
-            damage_mod *= main.skill_value('ravager')
+        if fighter.owner is player.instance:
+            #perks!
+            if main.has_skill('ravager') and target.fighter.armor - (fighter.attack_pierce + pierce_modifier) < 1:
+                damage_mod *= main.skill_value('ravager')
+
+            if main.has_skill('find_the_gap') and weapon.subtype == 'dagger':
+                pierce_modifier += 1
+
+            if main.has_skill('lord_of_the_fray'):
+                damage_mod *= 1.1 * len(main.get_objects(fighter.owner.x,fighter.owner.y,distance=1,
+                                            condition=lambda o: o.fighter is not None and o.fighter.team == 'enemy'))
 
 
         damage_mod *= mul(effect.attack_power_mod for effect in fighter.status_effects)
@@ -596,6 +605,18 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)
+
+            if fighter.owner is player.instance and main.has_skill('cut_and_run') and \
+                            weapon.subtype == 'dagger':
+                fighter.apply_status_effect(effects.free_move())
+
+            if fighter.owner is player.instance and main.has_skill('wild_swings') and \
+                            weapon.subtype == 'axe':
+                for t in main.get_objects(target.x,target.y,distance=1,
+                                          condition=lambda o: o.fighter is not None and o.fighter.team is not 'ally'):
+                    if t != target:
+                        t.fighter.take_damage(main.roll_dice('1d6'),fighter)
+
             return 'hit'
         else:
             verbs = damage_description_tables['deflected']
@@ -611,6 +632,9 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
                 main.check_breakage(weapon)
             return 'blocked'
     else:
+        if target is player.instance and main.has_skill('riposte'):
+            fighter.apply_status_effect(effects.off_balance())
+
         if verb is None:
             verb = ('attack', 'attacks')
         #ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
