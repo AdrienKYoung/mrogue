@@ -2,6 +2,7 @@ import libtcodpy as libtcod
 import game as main
 import ui
 import player
+import actions
 
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
@@ -100,6 +101,10 @@ def off_balance(duration=2):
 
 def auto_res(duration=None):
     return StatusEffect('auto-res', duration, libtcod.light_blue, message="You are blessed by life itself!")
+
+def doom(duration=5,stacks=1):
+    return StatusEffect('doom',duration, libtcod.dark_crimson, stacking_behavior='stack-refresh', message='Death comes closer...',
+                        on_apply=actions.check_doom)
 
 def lichform(duration=None):
     return StatusEffect('lichform',None,libtcod.darker_crimson,spell_resist_mod=1.5,resistance_mod=

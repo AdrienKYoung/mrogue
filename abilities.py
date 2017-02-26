@@ -75,6 +75,28 @@ data = {
         'damage_multiplier': actions.skullsplitter_calc_damage_bonus
     },
 
+    'ability_crush': {
+        'name': 'Crush',
+        'description': "Make an attack that gains damage and shred"
+                         "for each point of your target's armor",
+        'require_weapon':'mace',
+        'function': weapon_attack('ability_crush'),
+        'cooldown': 5,
+        'stamina_multiplier': 1.5,
+        'damage_multiplier': actions.crush_calc_damage_bonus,
+        'shred_bonus': actions.crush_calc_shred_bonus
+    },
+
+    'ability_essence_fist': {
+        'name': 'Essence Fist',
+        'description': 'Consume an essence to deal high elemental damage',
+        'require_weapon':'unarmed',
+        'function': actions.essence_fist,
+        'stamina_cost': 50,
+        'cooldown':0,
+        'damage_multiplier': 4,
+    },
+
     'ability_sweep': {
         'name': 'Sweep',
         'description': 'Attack all enemies at a range of exactly 2',

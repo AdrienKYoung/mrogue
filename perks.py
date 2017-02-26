@@ -607,7 +607,7 @@ perk_list = {
         'requires' : 'axe_mastery_7',
         'category' : 'Axes'
     },
-    'sweep' : {  #todo
+    'sweep' : {
         'name' : 'Sweep',
         'description' : ['Ability (requires polearm): Attack all enemies at a range of exactly 2'],
         'max_rank' : 1,
@@ -633,7 +633,7 @@ perk_list = {
         'requires' : 'polearm_mastery_7',
         'category' : 'Polearms'
     },
-    'ringing_blows' : {  #todo
+    'ringing_blows' : {
         'name' : 'Ringing Blows',
         'description' : ['Increased chance to stun with maces. Stuns inflicted by mace hits last 1 more turn'],
         'max_rank' : 1,
@@ -641,16 +641,17 @@ perk_list = {
         'requires' : 'mace_mastery_3',
         'category' : 'Maces'
     },
-    'crush' : {  #todo
+    'crush' : {
         'name' : 'Crush',
         'description' : ["Ability (requires mace): Make an attack that gains damage and shred "
                          "for each point of your target's armor"],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'mace_mastery_5',
-        'category' : 'Maces'
+        'category' : 'Maces',
+        'on_acquire' : player.learn_ability('ability_crush')
     },
-    'rising_storm' : {  #todo
+    'rising_storm' : {
         'name' : 'Rising Storm',
         'description' : ['If you have not attacked in the last 3 turns, your next attack deals bonus damage'],
         'max_rank' : 1,
@@ -658,7 +659,7 @@ perk_list = {
         'requires' : 'mace_mastery_7',
         'category' : 'Maces'
     },
-    'martial_paragon' : {  #todo
+    'martial_paragon' : {
         'name' : 'Martial Paragon',
         'description' : ['Your weapon attacks have increase strength bonuses'],
         'max_rank' : 1,
@@ -666,7 +667,7 @@ perk_list = {
         'requires' : None, #ToDo: check for one of several learned skills
         'category' : 'Martial'
     },
-    'steel_fist' : {  #todo
+    'steel_fist' : {
         'name' : 'Steel Fist',
         'description' : ['Your unarmed attacks deal 1d6 weapon damage and have two strength dice'],
         'max_rank' : 1,
@@ -674,7 +675,7 @@ perk_list = {
         'requires' : 'unarmed_mastery_1',
         'category' : 'Unarmed Combat'
     },
-    'flying_knee_smash' : {  #todo
+    'flying_knee_smash' : {
         'name' : 'Flying Knee Smash',
         'description' : ['Your jump attacks made while unarmed deal double damage'],
         'max_rank' : 1,
@@ -682,17 +683,18 @@ perk_list = {
         'requires' : 'unarmed_mastery_3',
         'category' : 'Unarmed Combat'
     },
-    'essence_fist' : {  #todo
+    'essence_fist' : {
         'name' : 'Essence Fist',
-        'description' : ['Ability: Consume an essence to deal high elemental damage on your next unarmed attack'],
+        'description' : ['Ability: Consume an essence to deal high elemental damage'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'unarmed_mastery_5',
-        'category' : 'Unarmed Combat'
+        'category' : 'Unarmed Combat',
+        'on_acquire' : player.learn_ability('ability_essence_fist')
     },
-    'fist_of_foretold_demise' : {  #todo
+    'fist_of_foretold_demise' : {
         'name' : 'Fist of Foretold Demise',
-        'description' : ['Your unarmed attacks inflict 1d2 doom stacks (kills instantly at 13 stacks)'],
+        'description' : ['Your unarmed attacks inflict 1d2 doom stacks'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'unarmed_mastery_7',

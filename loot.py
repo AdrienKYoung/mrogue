@@ -285,15 +285,19 @@ qualities = {
         }
     },
     'artifact' : {
-        'strength_dice_bonus' : 5,
-        'accuracy_bonus' : 5,
-        'shred_bonus' : 1,
-        'peirce_bonus' : 1,
-        'break_chance_bonus' : -1000.0,
-        'color' : libtcodpy.yellow,
-        'evasion_bonus' : 3,
-        'armor_bonus' : 1,
-        'weight' : -5
+        'color' : libtcodpy.purple,
+        'weapon':{
+            'strength_dice_bonus' : 5,
+            'accuracy_bonus' : 5,
+            'shred_bonus' : 1,
+            'peirce_bonus' : 1,
+            'break_chance_bonus' : -1000.0,
+        },
+        'armor':{
+            'evasion_bonus' : 3,
+            'armor_bonus' : 1,
+            'weight' : -5
+        }
     },
 }
 
@@ -728,7 +732,7 @@ proto = {
         'accuracy'           : 2,
         'weapon_dice'        : '1d6',
         'str_dice'           : 2,
-        'on_hit'             : [combat.on_hit_stun],
+        'on_hit'             : [actions.mace_stun],
         'attack_delay'       : 18
     },
     'weapon_warhammer': {
@@ -748,7 +752,7 @@ proto = {
         'accuracy'           : 1,
         'weapon_dice'        : '1d8',
         'str_dice'           : 4,
-        'on_hit'             : [combat.on_hit_stun],
+        'on_hit'             : [actions.mace_stun],
         'attack_delay'       : 20
     },
     'weapon_coal_mace': {
@@ -767,7 +771,7 @@ proto = {
         'accuracy'           : 2,
         'weapon_dice'        : '1d6',
         'str_dice'           : 2,
-        'on_hit'             : [combat.on_hit_stun],
+        'on_hit'             : [actions.mace_stun],
         'attack_delay'       : 22
     },
 
@@ -809,7 +813,7 @@ proto = {
         'accuracy'           : 1,
         'weapon_dice'        : '1d8',
         'str_dice'           : 5,
-        'on_hit'             : [combat.on_hit_stun],
+        'on_hit'             : [actions.mace_stun],
         'attack_delay'       : 22
     },
     'weapon_storm_mace': {

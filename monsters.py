@@ -128,6 +128,7 @@ proto = {
         'move_speed': 1.25,
         'attack_speed': 1.0,
         'ai': ai.AI_Default,
+        'body_type': 'avian',
         'description': 'A predatory bird with white plumage flecked with gray. It glides with grace on chill winds, '
                        'searching for prey with its keen avian eyes.',
         'resistances': [],
@@ -398,6 +399,7 @@ proto = {
         'move_speed': 1.0,
         'attack_speed': 1.5,
         'ai': ai.AI_Default,
+        'body_type': 'avian',
         'description': 'A small raven-headed humanoid. '
                        'Silencers hunt rogue wizards, and can hide themselves from sight '
                        'with magic.',

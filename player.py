@@ -35,7 +35,7 @@ loadouts = {
         'spr':10,
         'con':12,
         'inventory':[
-            ['weapon_longsword','weapon_hatchet','weapon_mace','weapon_spear'],
+            ['weapon_longsword','weapon_hatchet','weapon_mace'],
             'charm_battle',
             'equipment_leather_armor',
             'equipment_iron_helm',
@@ -65,11 +65,7 @@ loadouts = {
         'con':10,
         'inventory':[
             'charm_blessing',
-            'potion_lesser_fire',
-            'potion_lesser_earth',
-            'potion_lesser_life',
-            'potion_lesser_air',
-            'potion_lesser_water'
+            'gem_lesser_fire'
         ],
         'description' : "Generalist class with great stats, especially spirit. Starts with no gear. "
                         "Charm channels essence to bless self with beneficial effects."
@@ -663,6 +659,10 @@ def jump(actor=None):
                         accuracy_mod = 1
                         damage_multiplier *= 1.5
 
+                    if main.has_skill('flying_knee_smash') and \
+                        main.get_equipped_in_slot(instance.fighter.inventory,'right hand') is None:
+                        damage_multiplier *= 2
+
                     combat.attack_ex(instance.fighter, jump_attack_target, 0, accuracy_modifier=accuracy_mod,
                                              damage_multiplier=damage_multiplier,verb=('jump-attack','jump-attacks'))
 
@@ -708,6 +708,11 @@ def on_tick(this):
     if main.has_skill('heir_to_the_heavens'):
         if hasattr(instance,'heir_to_the_heavens_cd'):
             instance.heir_to_the_heavens_cd -= 1
+    if main.has_skill('rising_storm'):
+        if hasattr(instance,'rising_storm_last_attack'):
+            instance.rising_storm_last_attack += 1
+        else:
+            instance.rising_storm_last_attack = 0
     for ability in abilities.default_abilities.values():
         ability.on_tick()
 

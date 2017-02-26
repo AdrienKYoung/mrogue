@@ -55,6 +55,32 @@ def bash_attack(actor=None, target=None):
             return result
     return 'didnt-take-turn'
 
+# todo: make more interesting
+def essence_fist(actor=None, target=None):
+    ability_data = abilities.data['ability_essence_fist']
+    x,y = ui.target_tile(max_range=1)
+    if x is None:
+        return 'didnt-take-turn'
+
+    ops = player.instance.essence
+    choice = ui.menu('Which essence?',ops)
+    if choice is not None:
+        essence = ops[choice]
+    else:
+        return "didnt-take-turn"
+
+    target = None
+    for object in main.current_map.fighters:
+        if object.x == x and object.y == y:
+            target = object
+            break
+    if target is not None and target is not player.instance:
+        result = combat.attack_ex(player.instance.fighter,target,ability_data['stamina_cost'],damage_multiplier=ability_data['damage_multiplier'])
+        if result != 'failed':
+            player.instance.essence.remove(essence)
+            return result
+    return 'didnt-take-turn'
+
 def sweep_attack(actor=None, target=None):
     weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
     ability_data = abilities.data['ability_sweep']
@@ -109,13 +135,17 @@ def weapon_attack_ex(ability, actor, target):
         if callable(damage_multiplier):
             damage_multiplier = damage_multiplier(actor,target)
 
+        shred_bonus = ability_data.get('shred_bonus',0)
+        if callable(shred_bonus):
+            shred_bonus = shred_bonus(actor,target)
+
         result = combat.attack_ex(actor.fighter, target, int(weapon.stamina_cost * ability_data.get('stamina_multiplier',1)),
                                   accuracy_modifier=ability_data.get('accuracy_multiplier',1),
                                   damage_multiplier=damage_multiplier,
                                   guaranteed_shred_modifier=weapon.guaranteed_shred_bonus +
                                                             ability_data.get('guaranteed_shred_bonus',0),
                                   pierce_modifier=weapon.pierce_bonus + ability_data.get('pierce_bonus',0),
-                                  shred_modifier=weapon.shred_bonus + ability_data.get('shred_bonus', 0),
+                                  shred_modifier=weapon.shred_bonus + shred_bonus,
                                   verb=ability_data.get('verb'), on_hit=on_hit)
 
         if result != 'failed' and result != 'didnt-take-turn':
@@ -132,6 +162,21 @@ def exhaust_self(ability,actor,*_):
 
 def swap(actor,target,_):
     actor.swap_positions(target)
+
+def mace_stun(attacker, target, damage):
+    scaling_factor = 1
+    stun_duration = 2
+    if target.fighter is None:
+        return
+    if(attacker is player.instance):
+        scaling_factor = attacker.player_stats.str / 10
+        if main.has_skill('ringing_blows'):
+            scaling_factor *= 1.5
+            stun_duration = 3
+    if libtcod.random_get_float(0,0.0,1.0) * scaling_factor > 0.85:
+        if attacker == player.instance:
+            ui.message("Your " + main.get_equipped_in_slot(player.instance.fighter.inventory,'right hand').owner.name.title() + " rings out!",libtcod.blue)
+        target.fighter.apply_status_effect(effects.stunned())
 
 def berserk_self(actor=None, target=None):
     if actor is not None and actor.fighter is not None:
@@ -408,6 +453,12 @@ def silence(actor=None,target=None):
             syntax.name(target.name).capitalize(),
             syntax.conjugate(target is player.instance, ('are', 'is'))), libtcod.light_blue)
 
+def check_doom(obj=None):
+    fx = [f for f in obj.fighter.status_effects if f.name == 'doom']
+    if len(fx) > 0 and fx[0].stacks >= 13:
+        ui.message("Death comes for {}".format(obj.name),libtcod.dark_crimson)
+        obj.fighter.take_damage(obj.fighter.max_hp)
+
 def _set_confused_behavior(object):
     if object.behavior is not None:
         old_ai = object.behavior.behavior
@@ -538,6 +589,12 @@ def gaze_into_the_void(target):
 
 def skullsplitter_calc_damage_bonus(actor,target):
     return 1.5 * ( 2 - target.fighter.hp / target.fighter.max_hp)
+
+def crush_calc_damage_bonus(actor,target):
+    return 1.5 + (target.fighter.armor+1 / 20) * 2.5
+
+def crush_calc_shred_bonus(actor,target):
+    return 1 + int(target.fighter.armor / 2)
 
 def summon_guardian_angel():
     adj = main.adjacent_tiles_diagonal(player.instance.x, player.instance.y)

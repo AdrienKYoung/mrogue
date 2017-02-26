@@ -406,14 +406,18 @@ hit_tables = {
         'body' : 60,
         'head'  : 10,
         'arms'  : 15,
-        'legs'  : 15,
-        #'feet'  : 5,
-        #'hands' : 5
+        'legs'  : 15
     },
     'insect': {
         'body'  : 60,
         'head'  : 30,
         'legs'  : 10
+    },
+    'avian': {
+        'body' : 60,
+        'head'  : 10,
+        'wings'  : 25,
+        'legs'  : 5
     },
     'plant': {
         'stem'  : 100
@@ -431,6 +435,11 @@ location_damage_tables = {
         'effect_chance':0.5
     },
     'arms' : {
+        'damage':0.75,
+        'effect':effects.exhausted,
+        'effect_chance':0.5,
+    },
+    'wings' : {
         'damage':0.75,
         'effect':effects.exhausted,
         'effect_chance':0.5,
@@ -538,6 +547,10 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
                 damage_mod *= 1.1 * len(main.get_objects(fighter.owner.x,fighter.owner.y,distance=1,
                                             condition=lambda o: o.fighter is not None and o.fighter.team == 'enemy'))
 
+            if main.has_skill('rising_storm'):
+                if hasattr(fighter.owner,'rising_storm_last_attack') and fighter.owner.rising_storm_last_attack > 2:
+                    damage_mod *= 1.5
+                    fighter.owner.rising_storm_last_attack = 0
 
         damage_mod *= mul(effect.attack_power_mod for effect in fighter.status_effects)
 
@@ -567,12 +580,23 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             str_dice_size += main.skill_value("{}_mastery".format(subtype))
 
         weapon_dice = '0d0'
-        strength_dice = '1d{}'.format(str_dice_size)
+        strength_dice = '0d0'
         if weapon is not None:
             weapon_dice = weapon.weapon_dice
-            strength_dice = "{}d{}".format(weapon.str_dice,str_dice_size)
+            strength_dice_number = weapon.str_dice
+            if fighter.owner is player.instance and main.has_skill('martial_paragon'):
+                strength_dice_number += 1
+            strength_dice = "{}d{}".format(strength_dice_number,str_dice_size)
         elif fighter.owner is not player.instance:
             strength_dice = fighter.monster_str_dice
+        else:
+            strength_dice_number = 1
+            if main.has_skill('martial_paragon'):
+                strength_dice_number += 1
+            if main.has_skill('steel_fist'):
+                weapon_dice = '1d6'
+                strength_dice_number += 1
+            strength_dice = "{}d{}".format(strength_dice_number, str_dice_size)
 
         damage = roll_damage_ex(weapon_dice,strength_dice, target.fighter.armor,
                             fighter.attack_pierce + pierce_modifier, hit_type, damage_mod, target.fighter.getResists(),
@@ -606,16 +630,18 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             if weapon:
                 main.check_breakage(weapon)
 
-            if fighter.owner is player.instance and main.has_skill('cut_and_run') and \
-                            weapon.subtype == 'dagger':
-                fighter.apply_status_effect(effects.free_move())
+            if fighter.owner is player.instance:
+                if target.fighter is not None and main.has_skill('fist_of_foretold_demise') and weapon is None:
+                    target.fighter.apply_status_effect(effects.doom(stacks=main.roll_dice('1d2')))
 
-            if fighter.owner is player.instance and main.has_skill('wild_swings') and \
-                            weapon.subtype == 'axe':
-                for t in main.get_objects(target.x,target.y,distance=1,
-                                          condition=lambda o: o.fighter is not None and o.fighter.team is not 'ally'):
-                    if t != target:
-                        t.fighter.take_damage(main.roll_dice('1d6'),fighter)
+                if main.has_skill('cut_and_run') and weapon.subtype == 'dagger':
+                    fighter.apply_status_effect(effects.free_move())
+
+                if main.has_skill('wild_swings') and weapon.subtype == 'axe':
+                    for t in main.get_objects(target.x,target.y,distance=1,
+                                              condition=lambda o: o.fighter is not None and o.fighter.team is not 'ally'):
+                        if t != target:
+                            t.fighter.take_damage(main.roll_dice('1d6'),fighter)
 
             return 'hit'
         else:
@@ -799,17 +825,6 @@ def get_chance_to_hit(target, accuracy):
     if target.behavior and (target.behavior.ai_state == 'resting' or target.behavior.ai_state == 'wandering'):
         return 1.0
     return 1.0 - float(target.fighter.evasion) / float(max(accuracy, target.fighter.evasion + 1))
-
-def on_hit_stun(attacker, target, damage):
-    scaling_factor = 1
-    if target.fighter is None:
-        return
-    if(attacker is player.instance):
-        scaling_factor = attacker.player_stats.str / 10
-    if libtcod.random_get_float(0,0.0,1.0) * scaling_factor > 0.85:
-        if attacker == player.instance:
-            ui.message("Your " + main.get_equipped_in_slot(player.instance.fighter.inventory,'right hand').owner.name.title() + " rings out!",libtcod.blue)
-        target.fighter.apply_status_effect(effects.stunned())
 
 def on_hit_burn(attacker, target, damage):
     if target.fighter is None:
