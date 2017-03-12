@@ -76,7 +76,7 @@ branches = {
             {'encounter':['monster_bomb_beetle'],'party':'1d2'},
             {'encounter':['monster_cockroach'], 'party':'3d2'},
             {'encounter':['monster_giant_frog']},
-            {'encounter':['monster_bear']},
+            {'encounter':['monster_alligator']},
             {'encounter':['monster_verman']},
             {'encounter':['monster_cockroach','monster_centipede','monster_bomb_beetle'],'party':'2d3'},
         ],

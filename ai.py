@@ -328,6 +328,9 @@ class AI_General:
         speed = self.base_move_speed
         if monster.fighter and monster.fighter.has_status('slowed'):
             speed *= 2.0
+        if monster.fighter is not None and monster.fighter.has_atribute('attribute_fast_swimmer'):
+            if game.current_map.tiles[monster.x][monster.y].is_water:
+                speed *= 0.5
         return speed
 
     @property

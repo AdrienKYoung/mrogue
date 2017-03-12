@@ -14,7 +14,8 @@ class Fighter:
     def __init__(self, hp=1, stamina=0, armor=0, evasion=0, accuracy=25, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
-                 damage_bonus=0, monster_str_dice=None, spell_resist=0, team='enemy', on_get_hit=None, stealth=None):
+                 damage_bonus=0, monster_str_dice=None, spell_resist=0, team='enemy', on_get_hit=None, stealth=None,
+                 attributes=[]):
         self.owner = None
         self.base_max_hp = hp
         self.hp = hp
@@ -32,6 +33,7 @@ class Fighter:
         self.resistances = list(resistances)
         self.weaknesses = list(weaknesses)
         self.inventory = list(inventory)
+        self.attributes = list(attributes)
         self.base_shred = base_shred
         self.base_guaranteed_shred = base_guaranteed_shred
         self.base_pierce = base_pierce
@@ -278,6 +280,12 @@ class Fighter:
                 self.status_effects.remove(effect)
                 return
 
+    def has_atribute(self, name):
+        if self.owner is player.instance:
+            return main.has_skill(name)
+        else:
+            return name in self.attributes
+
     @property
     def accuracy(self):
         if self.base_accuracy == 0:
@@ -408,6 +416,11 @@ hit_tables = {
         'arms'  : 15,
         'legs'  : 15
     },
+    'beast': {
+        'body'  : 50,
+        'head'  : 20,
+        'legs'  : 30
+    },
     'insect': {
         'body'  : 60,
         'head'  : 30,
@@ -534,6 +547,11 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
+
+        'attribute_thrash'
+
+        if fighter.has_atribute('attribute_rend') and target.fighter.armor - (fighter.attack_pierce + pierce_modifier) < 1:
+            damage_mod *= 1.5
 
         if fighter.owner is player.instance:
             #perks!

@@ -515,7 +515,6 @@ class Tile:
 # General Functions
 #############################################
 
-
 def has_skill(name):
     if name == 'Adrien':
         return False  # OOH, BURN!
@@ -931,6 +930,9 @@ def is_blocked(x, y, from_coord=None, movement_type=None):
 def get_room_spawns(room):
     return [[k, libtcod.random_get_int(0, v[0], v[1])] for (k, v) in room['spawns'].items()]
 
+def apply_attribute(attribute,monster):
+    
+    return attribute
 
 def spawn_monster(name, x, y, team='enemy'):
     if consts.DEBUG_NO_MONSTERS:
@@ -963,6 +965,8 @@ def spawn_monster(name, x, y, team='enemy'):
                     monster_str_dice=p.get('strength_dice'), team=p.get('team', team), stealth=p.get('stealth'))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
+            fighter_component.attributes = [a for a in p['attributes'] if a.startswith('attribute_')]
+
         behavior = None
         if p.get('ai'):
             behavior = p.get('ai')()
@@ -977,8 +981,8 @@ def spawn_monster(name, x, y, team='enemy'):
                 i.equipment.equip()
 
         if monster.behavior:
-            monster.behavior.attack_speed = 1.0 / p.get('attack_speed', 1.0 * modifier.get('speed_bonus', 1.0))
-            monster.behavior.move_speed = 1.0 / p.get('move_speed', 1.0 * modifier.get('speed_bonus', 1.0))
+            monster.behavior.base_attack_speed = 1.0 / p.get('attack_speed', 1.0 * modifier.get('speed_bonus', 1.0))
+            monster.behavior.base_move_speed = 1.0 / p.get('move_speed', 1.0 * modifier.get('speed_bonus', 1.0))
 
         if p.get('essence'):
             monster.essence = p.get('essence')
