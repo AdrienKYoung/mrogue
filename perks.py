@@ -585,7 +585,7 @@ perk_list = {
     },
     'death_from_above' : {
         'name' : 'Death from Above',
-        'description' : ['Your jump attacks have no accuracy penalty and deal 50% more damage'],
+        'description' : ['Your jump attacks have no accuracy penalty and deal 50%% more damage'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'dagger_mastery 7',

@@ -65,7 +65,6 @@ loadouts = {
         'con':10,
         'inventory':[
             'charm_blessing',
-            'gem_lesser_fire'
         ],
         'description' : "Generalist class with great stats, especially spirit. Starts with no gear. "
                         "Charm channels essence to bless self with beneficial effects."
@@ -78,7 +77,7 @@ loadouts = {
         'con':8,
         'inventory':[
             'charm_resistance',
-            'weapon_coal_mace'
+            'weapon_coal_mace',
         ],
         'description' : "Offensive melee fighter. Starts with no armor and a mace. "
                         "Charm channels essence to bless self with elemental resistance."
@@ -123,7 +122,7 @@ def create(loadout):
     instance.essence = []
     instance.known_spells = []
     instance.action_queue = []
-    instance.skill_points = 100
+    instance.skill_points = 20
     instance.fighter.xp = 0
     instance.perk_abilities = []
 
@@ -201,6 +200,10 @@ def handle_keys():
             moved = True  # so that this counts as a turn passing
             pass
         else:
+            if key.vk == libtcod.KEY_PAGEUP:
+                ui.scroll_message(1)
+            if key.vk == libtcod.KEY_PAGEDOWN:
+                ui.scroll_message(-1)
             if key_char == 'g':
                 return pick_up_item()
             if key_char == 'i':
@@ -274,9 +277,9 @@ def cast_spell():
     return result
 
 def _cast_spell():
-    #Complicated because arcane mastery
+    # Complicated because spell mastery
     m_spells = [(s[0],s[1],instance.memory.spell_charges[s[0]]) for s in instance.memory.spell_list.items()]
-    left_hand = main.get_equipped_in_slot(instance.fighter.inventory,'left hand')
+    left_hand = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
 
     if hasattr(left_hand, 'spell_list') and len(left_hand.spell_list) > 0:
         m_spells += [(s[0],s[1],left_hand.spell_charges[s[0]]) for s in left_hand.spell_list.items() if s[1] > 0]
@@ -316,12 +319,18 @@ def _cast_spell():
                     left_hand.spell_charges[s] -= 1
                     level = left_hand.spell_list[s]
                     instance.fighter.adjust_stamina(-spells.library[s].levels[level-1]['stamina_cost'])
+                    instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
+                                      color=libtcod.yellow, description='Meditating will renew your missing spells.'))
                     return 'cast-spell'
-            if instance.memory.can_cast(s, instance):
+                else:
+                    return 'didnt-take-turn'
+            if s in instance.memory.spell_list and instance.memory.can_cast(s, instance):
                 if spells.library[s].function() == 'success':
                     instance.memory.spell_charges[s] -= 1
                     level = instance.memory.spell_list[s]
                     instance.fighter.adjust_stamina(-spells.library[s].levels[level - 1]['stamina_cost'])
+                    instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
+                                      color=libtcod.yellow, description='Meditating will renew your missing spells.'))
                     return 'cast-spell'
                 else:
                     return 'didnt-take-turn'
@@ -602,6 +611,8 @@ def _do_meditate():
         book.refill_spell_charges()
         instance.memory.refill_spell_charges()
         ui.message('Your spells have recharged.', libtcod.dark_cyan)
+    instance.fighter.remove_status('meditate')
+    instance.fighter.remove_status('solace')
 
 def delay(duration,action,delay_action='delay'):
     for i in range(duration):
@@ -679,7 +690,7 @@ def jump(actor=None):
                 return 'jumped'
 
 
-    ui.message('Out of range.', libtcod.white)
+    ui.message('Cancelled.', libtcod.white)
     return 'didnt-take-turn'
 
 def level_spell_mastery():

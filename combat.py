@@ -54,6 +54,12 @@ class Fighter:
 
     def print_description(self, console, x, y, width):
         print_height = 1
+        # Print ally status
+        if self.team == 'ally':
+            libtcod.console_set_default_foreground(console, libtcod.blue)
+            libtcod.console_print(console, x, y + print_height, 'ALLY')
+            print_height += 2
+
         # Print health
         libtcod.console_set_default_foreground(console, libtcod.dark_red)
         libtcod.console_print(console, x, y + print_height, 'HP: %d/%d' % (self.hp, self.max_hp))
@@ -81,10 +87,7 @@ class Fighter:
 
         for effect in self.status_effects:
             libtcod.console_set_default_foreground(console, effect.color)
-            libtcod.console_print(console, x, y + print_height, '%s %s %s' % (
-                syntax.pronoun(self.owner.name).capitalize(),
-                syntax.conjugate(self.owner is player.instance, ('are', 'is')),
-                effect.name))
+            libtcod.console_print(console, x, y + print_height, effect.description)
             print_height += 1
         libtcod.console_set_default_foreground(console, libtcod.white)
 

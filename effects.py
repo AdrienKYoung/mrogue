@@ -7,7 +7,7 @@ import actions
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
                  attack_power_mod=1.0,armor_mod=1.0,shred_mod=1.0,pierce_mod=1.0,attack_speed_mod=1.0,evasion_mod=1.0,spell_power_mod=1.0, spell_resist_mod=1.0,
-                 accuracy_mod=1.0, resistance_mod=[],weakness_mod=[], stacks=1):
+                 accuracy_mod=1.0, resistance_mod=[],weakness_mod=[], stacks=1, description=''):
         self.name = name
         self.time_limit = time_limit
         self.color = color
@@ -28,98 +28,126 @@ class StatusEffect:
         self.accuracy_mod = accuracy_mod
         self.stacking_behavior = stacking_behavior
         self.stacks = stacks
+        self.description = description
 
 
 def burning(duration = 6, stacks = 1):
-    return StatusEffect('burning', duration, libtcod.red, stacking_behavior='stack-refresh', stacks=stacks, on_tick=fire_tick, message="You are on fire!")
+    return StatusEffect('burning', duration, libtcod.red, stacking_behavior='stack-refresh', stacks=stacks,
+                        on_tick=fire_tick, message="You are on fire!",
+                        description='This unit will take fire damage at the end of every turn.')
 
 def exhausted(duration = 5):
-    return StatusEffect('exhausted',duration,libtcod.yellow, message="You feel exhausted!")
+    return StatusEffect('exhausted',duration,libtcod.yellow, message="You feel exhausted!",
+                        description='This unit deals reduced damage.')
 
 def stunned(duration = 1):
-    return StatusEffect('stunned',duration,libtcod.red, message="You have been stunned!")
+    return StatusEffect('stunned',duration,libtcod.red, message="You have been stunned!",
+                        description='This unit cannot act.')
 
 def frozen(duration = 1):
-    return StatusEffect('frozen',duration,libtcod.blue, message="You have been frozen solid!")
+    return StatusEffect('frozen',duration,libtcod.blue, message="You have been frozen solid!",
+                        description='This unit cannot act.')
 
 def judgement(duration = 10):
-    return StatusEffect('judgement',duration,libtcod.yellow, message="A vengeful god watches your every move!")
+    return StatusEffect('judgement',duration,libtcod.yellow, message="A vengeful god watches your every move!",
+                        description='This unit will be punished for evil deeds.')
 
 def immobilized(duration = 5):
-    return StatusEffect('immobilized', duration, libtcod.yellow, message="Your feet are held fast!")
+    return StatusEffect('immobilized', duration, libtcod.yellow, message="Your feet are held fast!",
+                        description='This unit cannot move.')
 
 def berserk(duration = 20):
-    return StatusEffect('berserk',duration,libtcod.red,on_end=berserk_end, attack_power_mod=1.5, message="You are overcome by rage!")
+    return StatusEffect('berserk',duration,libtcod.red, on_end=berserk_end, attack_power_mod=1.5,
+                        message="You are overcome by rage!",
+                        description='This unit attacks harder and faster.')
 
 def regeneration(duration = 10):
-    return StatusEffect('regeneration',duration,libtcod.green,on_tick=regeneration_tick,message="Your wounds begin to close.")
+    return StatusEffect('regeneration', duration, libtcod.green, on_tick=regeneration_tick,
+                        message="Your wounds begin to close.",
+                        description='This unit heals at the end of every turn.')
 
 def warp_weapon(duration = 20):
-    return StatusEffect('warp',duration,libtcod.gray,message="Your weapon turns black!")
+    return StatusEffect('warp', duration, libtcod.gray, message="Your weapon turns black!",
+                        description="This unit's weapon deals severe void damage.")
 
 def poison(duration = 10):
-    return StatusEffect('poisoned',duration,libtcod.yellow,message="You have been poisoned!")
+    return StatusEffect('poisoned', duration, libtcod.yellow, message="You have been poisoned!",
+                        description="This unit takes poison damage at the end of every turn.")
 
 def invulnerable(duration = 5):
-    return StatusEffect('invulnerable',duration,libtcod.blue,message="A magical shield protects you from harm!")
+    return StatusEffect('invulnerable', duration, libtcod.blue, message="A golden shield protects you from harm!",
+                        description='This unit is immune to damage.')
 
 def confusion(duration = 10):
-    return StatusEffect('confusion',duration,libtcod.red,message="Madness takes hold of your mind!")
+    return StatusEffect('confusion', duration, libtcod.red, message="Madness takes hold of your mind!",
+                        description='This unit spends its turn moving erratically.')
 
 def silence(duration=3):
-    return StatusEffect('silence', duration, libtcod.red,message="You have been silenced!")
+    return StatusEffect('silence', duration, libtcod.red, message="You have been silenced!",
+                        description='This unit cannot cast spells.')
 
 def rot(duration = -1):
-    return StatusEffect('rot',duration,libtcod.red,message="Your flesh rots away!",on_apply=rot_apply,on_end=rot_end)
+    return StatusEffect('rot', duration, libtcod.red, message="Your flesh rots away!", on_apply=rot_apply,
+                        on_end=rot_end, description='This unit has reduced maximum HP.')
 
 def stoneskin(duration=30):
-    return StatusEffect('stoneskin',duration,libtcod.light_blue,armor_mod=1.5,message='Your skin turns to stone!')
+    return StatusEffect('stoneskin', duration, libtcod.light_blue, armor_mod=1.5, message='Your skin turns to stone!',
+                        description='This unit has increased armor.')
 
 def swiftness(duration=30):
-    return StatusEffect('swiftness', duration, libtcod.light_blue, attack_speed_mod=1.3,message='Your body feels light!')
+    return StatusEffect('swiftness', duration, libtcod.light_blue, attack_speed_mod=1.3,
+                        message='Your body feels light!', description='This unit makes faster attacks.')
 
 def serenity(duration=30):
-    return StatusEffect('serenity', duration, libtcod.light_blue, evasion_mod=1.5, accuracy_mod=1.5, message='Your mind becomes calm.')
+    return StatusEffect('serenity', duration, libtcod.light_blue, evasion_mod=1.5, accuracy_mod=1.5,
+                        message='Your mind becomes calm.',
+                        description='This unit has increased evasion and accuracy.')
 
 def sluggish(duration=5):
-    return StatusEffect('sluggish', duration, libtcod.sepia, message='Your reaction time slows...')
+    return StatusEffect('sluggish', duration, libtcod.sepia, message='Your reaction time slows...',
+                        description='This unit has decreased evasion')
 
 def slowed(duration=10):
-    return StatusEffect('slowed', duration, libtcod.yellow, message='Your pace slows...')
+    return StatusEffect('slowed', duration, libtcod.yellow, message='Your pace slows...',
+                        description='This unit takes longer to take its turn.')
 
 def agile(duration=30):
-    return StatusEffect('agile', duration, libtcod.light_blue, evasion_mod=1.5,message='You speed up.')
+    return StatusEffect('agile', duration, libtcod.light_blue, evasion_mod=1.5,message='You speed up.',
+                        description='This unit has increased evasion.')
 
 def free_move(duration=2):
-    return StatusEffect('free move', duration, libtcod.blue)
+    return StatusEffect('free move', duration, libtcod.blue, description='Moving does not cost an action.')
 
 def solace(duration=None):
-    return StatusEffect('solace', duration, libtcod.blue)
+    return StatusEffect('solace', duration, libtcod.blue, description='This unit takes half damage from all sources')
 
 def off_balance(duration=2):
-    return StatusEffect('off balance', duration, libtcod.red)
+    return StatusEffect('off balance', duration, libtcod.red,
+                        description='This unit is vulnerable to a critical strike.')
 
 def auto_res(duration=None):
-    return StatusEffect('auto-res', duration, libtcod.light_blue, message="You are blessed by life itself!")
+    return StatusEffect('auto-res', duration, libtcod.light_blue, message="You are blessed by life itself!",
+                        description='This unit will come back to life with full health when killed.')
 
 def doom(duration=5,stacks=1):
     return StatusEffect('doom',duration, libtcod.dark_crimson, stacking_behavior='stack-refresh', message='Death comes closer...',
-                        on_apply=actions.check_doom)
+                        on_apply=actions.check_doom, description='At 13 stacks, this unit instantly dies.')
 
 def lichform(duration=None):
     return StatusEffect('lichform',None,libtcod.darker_crimson,spell_resist_mod=1.5,resistance_mod=
         ['fire','cold','lightning','poison','radiant','dark','void',
          'stunned','slowed','burning','judgement','confusion','frozen','immobilized','exhausted','rot','frostbite'],
-        message="Dark magic infuses your soul as you sacrifice your body to undeath!")
+        message="Dark magic infuses your soul as you sacrifice your body to undeath!",
+        description='This unit is a lich, gaining resistance to all damage and immunity to death magic.')
 
 def resistant(element=None,effect=None,color=None,duration=99):
     import spells
     if element is not None:
         return StatusEffect('resist ' + element,duration,spells.essence_colors[element],resistance_mod=[element],
-                            message='You feel more resistant!')
+                            message='You feel more resistant!', description='This unit is resistant to %s.' % element)
     else:
         return StatusEffect('resist ' + effect, duration, color, resistance_mod=[effect],
-                            message='You feel more resistant!')
+                            message='You feel more resistant!', description='This unit is resistant to %s.' % effect)
 
 def fire_tick(effect,object=None):
     if object is not None or object.fighter is not None:

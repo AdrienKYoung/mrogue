@@ -875,7 +875,7 @@ proto = {
         'str_dice'           : 1,
         'on_hit'             : [combat.on_hit_lifesteal],
         'attack_delay'       : 12,
-        'crit_bonus'         : 2
+        'crit_bonus'         : 3
     },
     'weapon_frozen_blade': {
         'name'               : 'frozen blade',

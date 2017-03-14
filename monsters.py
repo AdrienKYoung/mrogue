@@ -276,8 +276,8 @@ proto = {
         'evasion': 0,
         'accuracy': 0,
         'on_create': None,
-        'description': 'a volatile yellow fungus covered in softly glowing nodules. If disrupted, it bursts in a '
-                       'deafening crack, stunning anything adjacent for several turns.',
+        'description': 'A volatile yellow fungus covered in softly glowing nodules. If disrupted, it bursts in a '
+                       'deafening crack, stunning anything adjacent (but not diagonally) for several turns.',
         'resistances': ['confusion', 'stunned'],
         'death_function': main.blastcap_explode,
         'subtype':'plant',
@@ -424,8 +424,7 @@ proto = {
         'ai': ai.AI_Default,
         'body_type': 'avian',
         'description': 'A small raven-headed humanoid. '
-                       'Silencers hunt rogue wizards, and can hide themselves from sight '
-                       'with magic.',
+                       'Silencers hunt rogue wizards, and can hide themselves from sight with magic.',
         'resistances': [],
         'loot_level':3,
         'equipment': [{'weapon_katar':10,'weapon_dagger':30,'weapon_messer':30},{'equipment_leather_armor':50,'equipment_cloth_robes':50}],
@@ -469,7 +468,7 @@ proto = {
         'move_speed': 1.0,
         'attack_speed': 1.8,
         'ai': ai.AI_Default,
-        'description': 'A roaring vortex of living flame.'
+        'description': 'A roaring vortex of living flame. '
                        'It fights with searing fury, leaving its victims charred and burned',
         'resistances': ['fire'],
         'shred': 3,
@@ -489,7 +488,7 @@ proto = {
         'move_speed': 0.5,
         'attack_speed': 0.5,
         'ai': ai.AI_Default,
-        'description': 'A form of stone, sand, and soil given life.'
+        'description': 'A form of stone, sand, and soil given life. '
                        'Attacks hardly phase it as it lumbers steadily forward.',
         'resistances': ['earth'],
         'shred': 2,
@@ -508,7 +507,7 @@ proto = {
         'move_speed': 2.2,
         'attack_speed': 1.2,
         'ai': ai.AI_Default,
-        'description': 'A playful spirit made of whirling gusts of wind.'
+        'description': 'A playful spirit made of whirling gusts of wind. '
                        'It moves swiftly, leaving swirling dust and leaves in its wake.',
         'resistances': ['air'],
         'shred': 1,
@@ -528,7 +527,7 @@ proto = {
         'move_speed': 1.0,
         'attack_speed': 1.0,
         'ai': ai.AI_Default,
-        'description': 'An amorphous being of pure water.'
+        'description': 'An amorphous being of pure water. '
                        'Anything caught in its flows will struggle to move or evade attacks.',
         'resistances': ['water'],
         'shred': 2,
@@ -549,7 +548,7 @@ proto = {
         'move_speed': 1.0,
         'attack_speed': 1.0,
         'ai': ai.AI_Default,
-        'description': 'A frigid creature made of blue glacial ice.'
+        'description': 'A frigid creature made of blue glacial ice. '
                        'Heat drains away in its presence, leaving an aura of winter in its absence.',
         'resistances': ['cold'],
         'shred': 2,
@@ -570,7 +569,7 @@ proto = {
         'move_speed': 1.0,
         'attack_speed': 1.0,
         'ai': ai.AI_Lifeplant,
-        'description': 'A twisting, climbing vine adorned with golden flowers.'
+        'description': 'A twisting, climbing vine adorned with golden flowers. '
                        'It glows with a soft warmth - those close enough to touch'
                        ' it can feel that warmth flow through them, healing their wounds.',
         'resistances': [],
@@ -593,7 +592,7 @@ proto = {
         'ai': ai.AI_Default,
         'attributes': ['ability_arcane_arrow'],
         'description': 'An artificial construct of glowing geometric shapes and symbols of power, '
-                       'vibrating with arcane energy.'
+                       'vibrating with arcane energy. '
                        'It bombards its enemies with magical energy from a distance.',
         'resistances': ['cold'],
         'shred': 0,

@@ -140,7 +140,7 @@ class GameObject:
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
         draw_height = y
-        libtcod.console_print_rect(console, x, draw_height, width, height, self.description.capitalize())
+        libtcod.console_print_rect(console, x, draw_height, width, height, self.description)
         draw_height += height
         if self.item:
             h = self.item.print_description(console, x, draw_height, width)
@@ -1062,7 +1062,7 @@ def create_item(name, material=None, quality=''):
             spell_list=p.get('spells'),
             level_progression=p.get('levels'),
             level_costs=p.get('level_costs'),
-            crit_bonus=p.get('crit_bonus',1.0),
+            crit_bonus=p.get('crit_bonus',1.5),
             resistances=p.get('resistances',[]),
             subtype=p.get('subtype'),
             starting_level=p.get('level',0),
@@ -1418,11 +1418,11 @@ def render_all():
 
     render_map()
 
-    ui.render_side_panel()
-
     ui.render_message_panel()
 
     ui.render_action_panel()
+
+    ui.render_side_panel()
 
     ui.render_ui_overlay()
 

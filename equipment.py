@@ -226,6 +226,10 @@ class Equipment:
                 acc_str += '+'
             libtcod.console_print(console, x, y + print_height, acc_str + str(self.accuracy_bonus))
             print_height += 1
+        if self.crit_bonus != 0:
+            acc_str = 'Crit: x'
+            libtcod.console_print(console, x, y + print_height, acc_str + str(self.crit_bonus))
+            print_height += 1
         if self.attack_delay != 0:
             attacks = max(round(float(player.instance.fighter.attack_speed) / float(self.attack_delay), 1), 1.0)
             libtcod.console_print(console, x, y + print_height, 'Attack Speed: ' + str(attacks))
@@ -257,6 +261,9 @@ class Equipment:
         if self.break_chance > 0:
             libtcod.console_print(console, x, y + print_height,
                                   'It has a ' + str(self.break_chance) + '%%' + ' chance to break when used.')
+            print_height += 1
+        for r in self.resistances:
+            libtcod.console_print(console, x, y + print_height, 'Resist %s' % r)
             print_height += 1
         if self.ctrl_attack_desc:
             libtcod.console_set_default_foreground(console, libtcod.azure)
@@ -306,11 +313,6 @@ class Equipment:
             ui.message("You don't have the stamina to cast that spell.", libtcod.light_yellow)
             return False
         return True
-
-
-        # return self.spell_list.has_key(spell_name) and sl > 0 and \
-        #       actor.fighter.stamina >= level['stamina_cost'] and \
-        #        self.spell_charges[spell_name] > 0
 
     def level_up(self, force=False):
         if self.level >= self.max_level:

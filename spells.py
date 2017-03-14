@@ -21,42 +21,52 @@ def is_max_level(spell,level):
 
 charm_battle_effects = {
     'fire' : {
+        'name' : 'Battleaxe of Pure Flame',
         'weapon' : 'weapon_battleaxe_of_pure_fire',
         'description' : 'Summon a battleaxe of pure flame, cleaving and burning all in its path'
     },
     'earth' : {
+        'name' : 'Diamond Warhammer',
         'weapon' : 'weapon_diamond_warhammer',
         'description' : 'Summon a diamond warhammer, crushing its foes when wielded with strength'
     },
     'air' : {
+        'name' : 'Storm Mace',
         'weapon' : 'weapon_storm_mace',
         'description' : 'Summon a storm mace, booming with thunder as chain-lightning arcs through its victims'
     },
     'water' : {
+        'name' : 'Trident of Raging Water',
         'weapon' : 'weapon_trident_of_raging_water',
         'description' : 'Summon a trident of raging water, threatening foes from a distance and hindering their movements'
     },
     'life' : {
+        'name' : 'Lifedrinker Dagger',
         'weapon' : 'weapon_lifedrinker_dagger',
         'description' : "Summon a lifedrinker dagger, sustaining the life of it's wielder with the pain of others"
     },
     'cold' : {
+        'name' : 'Frozen Blade',
         'weapon' : 'weapon_frozen_blade',
         'description' : 'Summon a frozen blade, inflicting merciless wounds on individual targets'
     },
     'arcane' : {
+        'name' : 'Staff of Force',
         'weapon' : 'weapon_staff_of_force',
         'description' : 'Summon a staff of force, humming with arcane energy that sends its targets flying'
     },
     'radiant' : {
+        'name' : 'Greatsword of Virtue',
         'weapon' : None,
         'description' : 'Summon a greatsword of virtue, a weapon of pure light that strikes down the undeserving'
     },
     'dark' : {
+        'name' : 'Soul Reaper',
         'weapon' : 'weapon_soul_reaper',
         'description' : 'Summon a soul reaper, a grim scythe that raises those it kills as zombies'
     },
     'void' : {
+        'name' : 'Claw of the Ancient One',
         'weapon' : None,
         'description' : 'Summon a claw of the Ancient One'
     },
@@ -64,42 +74,52 @@ charm_battle_effects = {
 
 charm_blessing_effects = {
     'fire': {
+        'name': 'Berserk',
         'buff':effects.berserk,
         'description':'Drive yourself berserk for a bonus to melee damage'
     },
     'earth': {
+        'name' : 'Stoneskin',
         'buff':effects.stoneskin,
         'description':'Turn your skin to stone for a bonus to armor'
     },
     'air': {
+        'name' : 'Swiftness',
         'buff':effects.swiftness,
         'description':'Turn your skin to stone for a bonus to armor'
     },
     'water': {
+        'name' : 'Serenity',
         'buff':effects.serenity,
         'description':'Turn your skin to stone for a bonus to armor'
     },
     'life': {
+        'name' : 'Regeneration',
         'buff':effects.regeneration,
         'description':'Regenerate your wounds over time.'
     },
-    'cold': {
+    'cold': { #todo
+        'name' : 'Regeneration',
         'buff':effects.regeneration,
         'description': ""
     },
-    'arcane': {
+    'arcane': { #todo
+        'name' : 'Regeneration',
         'buff':effects.regeneration,
         'description': ""
     },
-    'radiant': {
+    'radiant': { #todo
+        'name' : 'Regeneration',
         'buff':effects.regeneration,
         'description': ""
     },
-    'dark': {
+    'dark': { #todo
+        'name' : 'Regeneration',
         'buff':effects.regeneration,
         'description': ""
     },
-    'void': {
+    'void': { #todo
+        'name' : 'Regeneration',
         'buff':effects.regeneration,
         'description': ""
     }
@@ -109,66 +129,106 @@ charm_summoning_summons = {
     'fire': {
         'summon': 'monster_fire_elemental',
         'duration': 15,
-        'description':"Summon a fire elemental. It's attacks are deadly, but it won't last long in this world."
+        'name': 'Summon Fire Elemental',
+        'description':"Summon a fire elemental. Its attacks are deadly, but it won't last long in this world."
     },
     'earth': {
         'summon': 'monster_earth_elemental',
         'duration': 30,
+        'name': 'Summon Earth Elemental',
         'description':"Summon an earth elemental. It moves slowly, but is very durable."
     },
     'air': {
         'summon': 'monster_air_elemental',
         'duration': 30,
+        'name': 'Summon Air Elemental',
         'description':"Summon an air elemental. It flies and moves quickly, but inflicts little damage."
     },
     'water': {
         'summon': 'monster_water_elemental',
         'duration': 30,
+        'name': 'Summon Water Elemental',
         'description': "Summon a water elemental. It does not attack, but rather disables nearby foes."
     },
     'life': {
         'summon': 'monster_lifeplant',
         'duration': 15,
+        'name': 'Summon Lifeplant',
         'description': "Summon a lifeplant. It will slowly heal nearby creatures over time."
     },
     'cold': {
         'summon': 'monster_ice_elemental',
         'duration': 30,
+        'name': 'Summon Ice Elemental',
         'description': "Summon an ice elemental. It deals heavy damage, but is fragile."
     },
     'arcane': {
         'summon': 'monster_arcane_construct',
         'duration': 30,
+        'name': 'Summon Arcane Construct',
         'description': "Summon an Arcane Construct. This artificial can fire magical energy from a distance, but is fragile."
     },
     'radiant': { #TODO: make divine servant
         'summon': 'monster_divine_servant',
         'duration': 150,
+        'name': 'Summon Divine Servant',
         'description': "Summon a Divine Servant. This heavenly creature will swear to protect you."
     },
     'dark': { #TODO: make shadow demon
         'summon': 'monster_shadow_demon',
         'duration': 150,
+        'name': 'Summon Shadow Demon',
         'description': "Summon a Shadow Demon. This vicious creature of darkness will not bend to the will of mortals."
     },
     'void': { #TODO: make void horror
         'summon': 'monster_void_horror',
         'duration': 300,
+        'name': 'Summon Void Horror',
         'description': "Who can tell what horrors this might summon? I hope you know what you're doing."
     }
 }
 
-charm_resist_extra_resists = {
-    'fire':['burning'],
-    'water':['exhaustion'],
-    'air':['immobilize'],
-    'earth':['stun'],
-    'life':['poison'],
-    'dark':['rot'],
-    'ice':['freeze'],
-    'arcane':['silence'],
-    'radiant':['judgement'],
-    'void':[]
+charm_resist_effects = {
+    'fire' : {
+        'name' : 'Resist fire and burning',
+        'resists' : ['burning'],
+    },
+    'water' : {
+        'name' : 'Resist piercing and exhaustion',
+        'resists' : ['exhaustion'],
+    },
+    'earth' : {
+        'name' : 'Resist crushing and stun',
+        'resists' : ['stun'],
+    },
+    'air' : {
+        'name' : 'Resist lightning and immobilization',
+        'resists' : ['immobilize'],
+    },
+    'life' : {
+        'name' : 'Resist poison',
+        'resists' : ['poison'],
+    },
+    'cold' : {
+        'name' : 'Resist cold and freezing',
+        'resists' : ['freeze'],
+    },
+    'death' : {
+        'name' : 'Resist death and rot',
+        'resists' : ['rot'],
+    },
+    'arcane' : {
+        'name' : 'Resist silence',
+        'resists' : ['silence'],
+    },
+    'radiant' : {
+        'name' : 'Resist radiant and judgement',
+        'resists' : ['judgement'],
+    },
+    'void' : {
+        'name' : 'Resist void',
+        'resists' : [],
+    },
 }
 
 library = {

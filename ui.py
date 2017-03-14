@@ -6,6 +6,7 @@ import fov
 import player
 import combat
 import perks
+import spells
 
 def msgbox(text, width=50):
     menu(text, [], width)
@@ -25,7 +26,7 @@ def menu(header, options, width=30, x_center=None, render_func=None):
 
     return menu_ex(header, options_ex, width, x_center, render_func)
 
-# example menu options data:
+# Example menu options data:
 #
 #menu_options = {
 #       'a' : [  #<= indexed by key, value is a list of dictionaries
@@ -317,19 +318,23 @@ def get_names_under_mouse():
 
 
 def message(new_msg, color=libtcod.white):
-    global game_msgs
+    global game_msgs, msg_render_height
     new_msg_lines = textwrap.wrap(new_msg, consts.MSG_WIDTH)
 
     for line in new_msg_lines:
-        if len(game_msgs) == consts.MSG_HEIGHT + 1:
+        if len(game_msgs) == 100:
             del game_msgs[0]
         game_msgs.append((line, color))
+    msg_render_height = 0
 
 def message_flush(new_msg, color=libtcod.white):
     message(new_msg,color)
     render_message_panel()
     libtcod.console_flush()
 
+def scroll_message(amount):
+    global msg_render_height
+    msg_render_height = main.clamp(msg_render_height + amount, 0, len(game_msgs) - consts.MSG_HEIGHT - 1)
 
 def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, align=libtcod.CENTER):
     bar_width = int(float(value) / maximum * total_width)
@@ -397,7 +402,7 @@ def render_side_panel(acc_mod=1.0):
 
     # Base stats
     libtcod.console_print(side_panel, 2, 6, 'INT: ' + str(player.instance.player_stats.int))
-    libtcod.console_print(side_panel, 2, 7, 'WIZ: ' + str(player.instance.player_stats.wiz))
+    libtcod.console_print(side_panel, 2, 7, 'WIS: ' + str(player.instance.player_stats.wiz))
     libtcod.console_print(side_panel, 2, 8, 'STR: ' + str(player.instance.player_stats.str))
     libtcod.console_print(side_panel, 2, 9, 'AGI: ' + str(player.instance.player_stats.agi))
 
@@ -541,6 +546,7 @@ def render_side_panel(acc_mod=1.0):
         libtcod.console_put_char(side_panel, x, seperator_height, libtcod.CHAR_HLINE)
     libtcod.console_put_char(side_panel, 0, seperator_height, 199)
     libtcod.console_put_char(side_panel, consts.SIDE_PANEL_WIDTH - 1, seperator_height, 182)
+    libtcod.console_put_char(side_panel, consts.SIDE_PANEL_WIDTH - 1, consts.PANEL_HEIGHT, 4)
 
     libtcod.console_blit(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT, 0, consts.SIDE_PANEL_X,
                          consts.SIDE_PANEL_Y)
@@ -551,7 +557,12 @@ def render_message_panel():
     libtcod.console_clear(panel)
 
     y = 1
-    for (line, color) in game_msgs:
+    start = -(consts.MSG_HEIGHT + msg_render_height + 1)
+    if start + consts.MSG_HEIGHT + 1 >= 0:
+        render_msgs = game_msgs[start:]
+    else:
+        render_msgs = game_msgs[start:start + consts.MSG_HEIGHT + 1]
+    for (line, color) in render_msgs:
         libtcod.console_set_default_foreground(panel, color)
         libtcod.console_print_ex(panel, consts.MSG_X, y, libtcod.BKGND_NONE, libtcod.LEFT, line)
         y += 1
@@ -591,6 +602,8 @@ def render_action_panel():
         draw_height += 2
         libtcod.console_print(action_panel, 1, draw_height, '(x) Examine')
         draw_height += 2
+        libtcod.console_print(action_panel, 1, draw_height, '(TAB) Toggle\n    Selection')
+        draw_height += 3
         # Get/Interact
         items_here = main.get_objects(player.instance.x, player.instance.y, condition=lambda o: o.item)
         if len(items_here) > 0:
@@ -835,6 +848,7 @@ def skill_menu():
     mouse = main.mouse
     key = main.key
 
+    show_available = False
 
     for k in perks.perk_keys:
         skill = perks.perk_list[k]
@@ -863,102 +877,113 @@ def skill_menu():
 
         # Print header and borders
         libtcod.console_set_default_foreground(window, libtcod.white)
-        title_text = 'Browsing skills...'
+        title_text = 'Browsing skills... [%d points available]' % player.instance.skill_points
         libtcod.console_print(window, 1, 1, title_text)
+        if show_available:
+            libtcod.console_print(window, 1, 3, '[TAB] - Show All')
+        else:
+            libtcod.console_print(window, 1, 3, '[TAB] - Show Available')
         y = 0
         draw_border(window, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 5)
         draw_border(window, 0, consts.MAP_VIEWPORT_HEIGHT - 6, consts.MAP_VIEWPORT_WIDTH, 6)
 
         # Draw scrollable menu
-        for skill_category in skill_categories:
-            # Draw category dividers
-            libtcod.console_set_default_foreground(sub_window, libtcod.light_gray)
-            for i in range(consts.MAP_VIEWPORT_WIDTH):
-                libtcod.console_put_char_ex(sub_window, i, y, libtcod.CHAR_HLINE, libtcod.gray, libtcod.black)
-            libtcod.console_put_char_ex(sub_window, 0, y, 199, libtcod.gray, libtcod.black)
-            libtcod.console_put_char_ex(sub_window, consts.MAP_VIEWPORT_WIDTH - 1, y, 182, libtcod.gray, libtcod.black)
-            libtcod.console_print_ex(sub_window, 3, y, libtcod.black, libtcod.LEFT, skill_category.upper())
-            y += 1
-            # Draw all skills in category
-            for i in range(len(perks.perk_keys)):
-                k = perks.perk_keys[i]
-                skill = perks.perk_list[k]
-                if skill['category'] == skill_category:
+        if len(skill_categories) <= 0:
+            libtcod.console_set_default_foreground(window, libtcod.light_gray)
+            libtcod.console_print(window, 2, 6, 'No skills available.')
+        else:
 
-                    if y == selected_index:
-                        libtcod.console_set_default_background(sub_window, libtcod.white)
-                        libtcod.console_set_default_foreground(sub_window, libtcod.black)
-                        for j in range(1, consts.MAP_VIEWPORT_WIDTH - 1):
-                            libtcod.console_put_char_ex(sub_window, j, y, ' ', libtcod.black, libtcod.white)
-                    else:
-                        libtcod.console_set_default_background(sub_window, libtcod.black)
-                        if k in main.learned_skills.keys():
-                            libtcod.console_set_default_foreground(sub_window, libtcod.white)
-                        elif skill['sp_cost'] <= player.instance.skill_points and perks.meets_requirements(k):
-                            libtcod.console_set_default_foreground(sub_window, libtcod.dark_gray)
+            for skill_category in skill_categories:
+                # Draw category dividers
+                libtcod.console_set_default_foreground(sub_window, libtcod.light_gray)
+                for i in range(consts.MAP_VIEWPORT_WIDTH):
+                    libtcod.console_put_char_ex(sub_window, i, y, libtcod.CHAR_HLINE, libtcod.gray, libtcod.black)
+                libtcod.console_put_char_ex(sub_window, 0, y, 199, libtcod.gray, libtcod.black)
+                libtcod.console_put_char_ex(sub_window, consts.MAP_VIEWPORT_WIDTH - 1, y, 182, libtcod.gray, libtcod.black)
+                libtcod.console_print_ex(sub_window, 3, y, libtcod.black, libtcod.LEFT, skill_category.upper())
+                y += 1
+                # Draw all skills in category
+                for i in range(len(perks.perk_keys)):
+                    k = perks.perk_keys[i]
+                    skill = perks.perk_list[k]
+                    if k not in menu_lines:
+                        continue
+                    if skill['category'] == skill_category:
+
+                        if y == selected_index:
+                            libtcod.console_set_default_background(sub_window, libtcod.white)
+                            libtcod.console_set_default_foreground(sub_window, libtcod.black)
+                            for j in range(1, consts.MAP_VIEWPORT_WIDTH - 1):
+                                libtcod.console_put_char_ex(sub_window, j, y, ' ', libtcod.black, libtcod.white)
                         else:
-                            libtcod.console_set_default_foreground(sub_window, libtcod.darker_red)
-
-                    name_string = "({}) {}".format(skill['sp_cost'],skill['name'].title())
-                    libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, name_string)
-                    for s in main.learned_skills.keys():
-                        if s == k:
-                            rank = main.learned_skills[s]
-                            libtcod.console_set_default_foreground(sub_window, libtcod.dark_blue)
-                            if perks.perk_list[s]['max_rank'] > 1:
-                                if rank == perks.perk_list[s]['max_rank']:
-                                    tag_text = ' [MASTERED]'
-                                else:
-                                    tag_text = ' [RANK %s]' % str(rank)
+                            libtcod.console_set_default_background(sub_window, libtcod.black)
+                            if k in main.learned_skills.keys():
+                                libtcod.console_set_default_foreground(sub_window, libtcod.white)
+                            elif skill['sp_cost'] <= player.instance.skill_points and perks.meets_requirements(k):
+                                libtcod.console_set_default_foreground(sub_window, libtcod.dark_gray)
                             else:
-                                tag_text = ' [LEARNED]'
-                            libtcod.console_print_ex(sub_window, 6 + len(name_string), y, libtcod.BKGND_SET, libtcod.LEFT, tag_text)
-                            break
-                    y += 1
-        # Blit sub_window to window. Select based on scroll height
-        libtcod.console_blit(sub_window, 0, scroll_height, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 10, window, 0, 4, 1.0, 1.0)
+                                libtcod.console_set_default_foreground(sub_window, libtcod.darker_red)
 
-        # print description
-        selected_skill = menu_lines[selected_index]
-        can_purchase = perks.meets_requirements(selected_skill) and player.instance.skill_points >= perks.perk_list[selected_skill]['sp_cost']
-        if can_purchase:
-            libtcod.console_set_default_foreground(window, libtcod.dark_green)
-        else:
-            libtcod.console_set_default_foreground(window, libtcod.darker_red)
+                        name_string = "({}) {}".format(skill['sp_cost'],skill['name'].title())
+                        libtcod.console_print_ex(sub_window, 5, y, libtcod.BKGND_SET, libtcod.LEFT, name_string)
+                        for s in main.learned_skills.keys():
+                            if s == k:
+                                rank = main.learned_skills[s]
+                                libtcod.console_set_default_foreground(sub_window, libtcod.dark_blue)
+                                if perks.perk_list[s]['max_rank'] > 1:
+                                    if rank == perks.perk_list[s]['max_rank']:
+                                        tag_text = ' [MASTERED]'
+                                    else:
+                                        tag_text = ' [RANK %s]' % str(rank)
+                                else:
+                                    tag_text = ' [LEARNED]'
+                                libtcod.console_print_ex(sub_window, 6 + len(name_string), y, libtcod.BKGND_SET, libtcod.LEFT, tag_text)
+                                break
+                        y += 1
+            # Blit sub_window to window. Select based on scroll height
+            libtcod.console_blit(sub_window, 0, scroll_height, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 10, window, 0, 4, 1.0, 1.0)
 
-        require_string = ''
-        req = perks.perk_list[selected_skill].get('requires')
-        if req is not None:
-            req = req.split(' ')
-            lvl = ''
-            if len(req) > 1:
-                lvl = req[1]
-            require_string = ', Requires: %s %s' % (perks.perk_list[req[0]]['name'], lvl)
+            # print description
+            selected_skill = menu_lines[selected_index]
+            can_purchase = perks.meets_requirements(selected_skill) and player.instance.skill_points >= perks.perk_list[selected_skill]['sp_cost']
+            if can_purchase:
+                libtcod.console_set_default_foreground(window, libtcod.dark_green)
+            else:
+                libtcod.console_set_default_foreground(window, libtcod.darker_red)
 
-        libtcod.console_print(window, 2, consts.MAP_VIEWPORT_HEIGHT - 5, 'Cost: %dSP%s' % (perks.perk_list[selected_skill]['sp_cost'], require_string))
+            require_string = ''
+            req = perks.perk_list[selected_skill].get('requires')
+            if req is not None:
+                req = req.split(' ')
+                lvl = ''
+                if len(req) > 1:
+                    lvl = req[1]
+                require_string = ', Requires: %s %s' % (perks.perk_list[req[0]]['name'], lvl)
 
-        libtcod.console_set_default_foreground(window, libtcod.white)
-        rank = main.has_skill(selected_skill)
-        max_rank = perks.perk_list[selected_skill]['max_rank']
-        if rank == max_rank:
-            desc_index = max_rank - 1
-        else:
-            desc_index = rank
-        desc = perks.perk_list[selected_skill]['description'][desc_index]
+            libtcod.console_print(window, 2, consts.MAP_VIEWPORT_HEIGHT - 5, 'Cost: %dSP%s' % (perks.perk_list[selected_skill]['sp_cost'], require_string))
 
-        libtcod.console_print_rect(window, 1, consts.MAP_VIEWPORT_HEIGHT - 4, consts.MAP_VIEWPORT_WIDTH - 2, 5, desc)
+            libtcod.console_set_default_foreground(window, libtcod.white)
+            rank = main.has_skill(selected_skill)
+            max_rank = perks.perk_list[selected_skill]['max_rank']
+            if rank == max_rank:
+                desc_index = max_rank - 1
+            else:
+                desc_index = rank
+            desc = perks.perk_list[selected_skill]['description'][desc_index]
 
-        # print scroll bar
-        libtcod.console_set_default_foreground(window, libtcod.gray)
-        libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, 4, 30)
-        libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, consts.MAP_VIEWPORT_HEIGHT - 7, 31)
-        for i in range(consts.MAP_VIEWPORT_HEIGHT - 12):
-            libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, 5 + i, libtcod.CHAR_VLINE)
-        bar_height = int(float((consts.MAP_VIEWPORT_HEIGHT - 12) ** 2) / float(sub_height))
-        bar_height = main.clamp(bar_height, 1, consts.MAP_VIEWPORT_HEIGHT - 12)
-        bar_y = int(float(consts.MAP_VIEWPORT_HEIGHT - 12 - bar_height) * (float(scroll_height) / float(scroll_limit)))
-        for i in range(bar_height):
-            libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, bar_y + 5 + i, 219)
+            libtcod.console_print_rect(window, 1, consts.MAP_VIEWPORT_HEIGHT - 4, consts.MAP_VIEWPORT_WIDTH - 2, 5, desc)
+
+            # print scroll bar
+            libtcod.console_set_default_foreground(window, libtcod.gray)
+            libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, 4, 30)
+            libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, consts.MAP_VIEWPORT_HEIGHT - 7, 31)
+            for i in range(consts.MAP_VIEWPORT_HEIGHT - 12):
+                libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, 5 + i, libtcod.CHAR_VLINE)
+            bar_height = int(float((consts.MAP_VIEWPORT_HEIGHT - 12) ** 2) / float(sub_height))
+            bar_height = main.clamp(bar_height, 1, consts.MAP_VIEWPORT_HEIGHT - 12)
+            bar_y = int(float(consts.MAP_VIEWPORT_HEIGHT - 12 - bar_height) * (float(scroll_height) / float(scroll_limit)))
+            for i in range(bar_height):
+                libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, bar_y + 5 + i, 219)
 
         # Blit to main screen and flush
         libtcod.console_blit(window, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0,
@@ -983,34 +1008,52 @@ def skill_menu():
         # Down arrow increments selection index
         elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_RIGHT or key.vk == libtcod.KEY_KP2 or key.vk == libtcod.KEY_KP6:
             #selected_index = min(selected_index + 1, len(menu_lines) - 1)
-            new_index = None
-            while new_index is None:
-                selected_index += 1
-                if selected_index >= len(menu_lines):
-                    selected_index = 0
-                new_index = menu_lines[selected_index]
-            if selected_index < scroll_height + 1:
-                scroll_height = selected_index - 1
-            elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
-                scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
+            if len(menu_lines) > 0:
+                new_index = None
+                while new_index is None:
+                    selected_index += 1
+                    if selected_index >= len(menu_lines):
+                        selected_index = 0
+                    new_index = menu_lines[selected_index]
+                if selected_index < scroll_height + 1:
+                    scroll_height = selected_index - 1
+                elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
+                    scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
         # Up arrow decrements selection index
         elif key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP8 or key.vk == libtcod.KEY_KP4:
             #selected_index = max(selected_index - 1, 0)
-            new_index = None
-            while new_index is None:
-                selected_index -= 1
-                if selected_index < 0:
-                    selected_index = len(menu_lines) - 1
-                new_index = menu_lines[selected_index]
-            if selected_index < scroll_height + 1:
-                scroll_height = selected_index - 1
-            elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
-                scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
+            if len(menu_lines) > 0:
+                new_index = None
+                while new_index is None:
+                    selected_index -= 1
+                    if selected_index < 0:
+                        selected_index = len(menu_lines) - 1
+                    new_index = menu_lines[selected_index]
+                if selected_index < scroll_height + 1:
+                    scroll_height = selected_index - 1
+                elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
+                    scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
         # Scroll wheel & pageup/pagedown adjust scroll height
         elif key.vk == libtcod.KEY_PAGEDOWN or mouse.wheel_down:
             scroll_height = min(scroll_height + 3, scroll_limit)
         elif key.vk == libtcod.KEY_PAGEUP or mouse.wheel_up:
             scroll_height = max(scroll_height - 3, 0)
+        elif key.vk == libtcod.KEY_TAB:
+            show_available = not show_available
+            scroll_height = 0
+            selected_index = 1
+            menu_lines = []
+            skill_categories = []
+            for k in perks.perk_keys:
+                skill = perks.perk_list[k]
+                if show_available and (player.instance.skill_points < skill['sp_cost'] or not perks.meets_requirements(k)):
+                    continue
+                if not skill['category'] in skill_categories:
+                    skill_categories.append(skill['category'])
+                    menu_lines.append(None)
+                menu_lines.append(k)
+            sub_height = len(skill_categories) + len(perks.perk_keys)
+            scroll_limit = sub_height - (consts.MAP_VIEWPORT_HEIGHT - 10)
 
 def examine(x=None, y=None):
     if x is None or y is None:
@@ -1089,12 +1132,30 @@ def render_projectile(start, end, color, character=None):
         prev = bolt.x, bolt.y
     bolt.destroy()
 
-def choose_essence_from_pool():
-    index = menu("Which essence?", player.instance.essence, 24)
+def choose_essence_from_pool(charm_data):
+    options_ex = {}
+    letter_index = ord('a')
+    for essence in player.instance.essence:
+        options_ex[chr(letter_index)] = [{
+            'category': 'essence',
+            'text': essence,
+            'color': spells.essence_colors[essence],
+        },
+            {
+                'category': 'effect',
+                'text': charm_data[essence]['name'],
+                'color': libtcod.white,
+            }]
+        letter_index += 1
+    index = menu_ex('Select essence:', options_ex, 50)
+
     if index is None:
         return None
     else:
         return player.instance.essence[index]
+
+def map_screen():
+    return
 
 show_action_panel = True
 overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
@@ -1104,6 +1165,7 @@ action_panel = libtcod.console_new(consts.ACTION_MENU_WIDTH, consts.ACTION_MENU_
 window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
 selected_monster = None
 game_msgs = []
+msg_render_height = 0
 fade_value = 0
 display_ticker = 0
 overlay_text = None

@@ -696,12 +696,12 @@ def charm_resist():
     if len(player.instance.essence) < 1:
         ui.message("You don't have any essence.", libtcod.light_blue)
         return 'didnt-take-turn'
-    essence = ui.choose_essence_from_pool()
+    essence = ui.choose_essence_from_pool(spells.charm_resist_effects)
     if essence is None:
         return 'didnt-take-turn'
     player.instance.fighter.apply_status_effect(effects.resistant(element=essence))
-    if essence in spells.charm_resist_extra_resists:
-        for effect in spells.charm_resist_extra_resists[essence]:
+    if essence in spells.charm_resist_effects:
+        for effect in spells.charm_resist_effects[essence]['resists']:
             player.instance.fighter.apply_status_effect(effects.resistant(effect=effect,color=spells.essence_colors[essence]),supress_message=True)
     player.instance.essence.remove(essence)
 
@@ -722,7 +722,7 @@ def charm_summoning():
     summon_pos = summon_positions[libtcod.random_get_int(0, 0, len(summon_positions) - 1)]
 
     # Select essence
-    essence = ui.choose_essence_from_pool()
+    essence = ui.choose_essence_from_pool(spells.charm_summoning_summons)
     if essence is None:
         return 'didnt-take-turn'
     player.instance.essence.remove(essence)
@@ -743,7 +743,7 @@ def charm_blessing():
     if len(player.instance.essence) < 1:
         ui.message("You don't have any essence.", libtcod.light_blue)
         return 'didnt-take-turn'
-    essence = ui.choose_essence_from_pool()
+    essence = ui.choose_essence_from_pool(spells.charm_blessing_effects)
     if essence is None:
         return 'didnt-take-turn'
     player.instance.fighter.apply_status_effect(spells.charm_blessing_effects[essence]['buff']())
@@ -756,7 +756,7 @@ def charm_battle():
     elif len(player.instance.fighter.inventory) >= 26:
         ui.message('You are carrying too many items to summon another.')
         return 'didnt-take-turn'
-    essence = ui.choose_essence_from_pool()
+    essence = ui.choose_essence_from_pool(spells.charm_battle_effects)
     if essence is None:
         return 'didnt-take-turn'
     summoned_weapon = main.create_item(spells.charm_battle_effects[essence]['weapon'], material='', quality='')
