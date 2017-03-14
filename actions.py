@@ -459,6 +459,56 @@ def check_doom(obj=None):
         ui.message("Death comes for {}".format(obj.name),libtcod.dark_crimson)
         obj.fighter.take_damage(obj.fighter.max_hp)
 
+def blade_dance(actor=None, target=None):
+    if actor is None or actor is player.instance: # player is casting
+        #check for equipped sword
+        weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
+        if weapon is None or weapon.subtype != 'sword':
+            ui.message('You cannot do that without a sword.', libtcod.white)
+            return 'didnt-take-turn'
+
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        ui.render_message_panel()
+        libtcod.console_flush()
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        target = main.get_monster_at_tile(
+            *ui.target_tile(abilities.data['ability_blade_dance']['range'], 'pick', default_target=default_target))
+    else:
+        target = main.get_monster_at_tile(target[0], target[1])
+
+    if target is None:
+        return 'didnt-take-turn'
+    else:
+        actor.swap_positions(target)
+        actor.fighter.attack(target)
+
+def pommel_strike(actor=None, target=None):
+    if actor is None or actor is player.instance: # player is casting
+        #check for equipped sword
+        weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
+        if weapon is None or weapon.subtype != 'sword':
+            ui.message('You cannot do that without a sword.', libtcod.white)
+            return 'didnt-take-turn'
+
+        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        ui.render_message_panel()
+        libtcod.console_flush()
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        target = main.get_monster_at_tile(
+            *ui.target_tile(abilities.data['ability_pommel_strike']['range'], 'pick', default_target=default_target))
+    else:
+        target = main.get_monster_at_tile(target[0], target[1])
+
+    if target is None:
+        return 'didnt-take-turn'
+    else:
+        combat.attack_ex(actor.fighter, target, int(actor.fighter.calculate_attack_stamina_cost() * 1.5),
+                         verb=('pommel-strike', 'pommel-strikes'), shred_modifier=2)
+
 def _set_confused_behavior(object):
     if object.behavior is not None:
         old_ai = object.behavior.behavior
@@ -753,6 +803,10 @@ def charm_battle_on_tick(ticker):
             if ticker.old_left is not None:
                 ticker.old_left.equip()
 
+def learn_ability(ability):
+    dat = abilities.data[ability]
+    a = abilities.Ability(dat.get('name'), dat.get('description', ''), dat.get('function'), dat.get('cooldown', 0))
+    player.instance.perk_abilities.append(a)
 
 import libtcodpy as libtcod
 import game as main

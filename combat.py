@@ -136,6 +136,7 @@ class Fighter:
                 stamina_cost = int((float(main.get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) /
                                     (float(self.owner.player_stats.str) / float(
                                         main.get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
+            stamina_cost = int(stamina_cost * (1.0 + main.skill_value('combat_training')))
         return stamina_cost
 
     def calculate_attack_count(self):
@@ -589,7 +590,12 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
                        libtcod.darker_crimson)
             return 'immune'
 
-        subtype = 'unarmed_combat'
+        # perks
+        if fighter.owner is player.instance:
+            if main.has_skill('find_the_gap') and weapon is not None and weapon.subtype == 'dagger':
+                pierce_modifier += 1
+
+        subtype = 'unarmed'
         if weapon is not None:
             subtype = weapon.subtype
 
@@ -790,6 +796,8 @@ def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_
         damage = math.ceil(damage * 1-reduction_factor)
         # After reduction, apply a flat reduction that is a random amount from 0 to the target's armor value
         damage = max(0, damage - libtcod.random_get_int(0, 0, effective_defense))
+    else:
+        damage = int(damage * (1.0 + main.skill_value('ravager')))
 
     return int(math.ceil(damage))
 

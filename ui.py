@@ -894,7 +894,7 @@ def skill_menu():
                         libtcod.console_set_default_background(sub_window, libtcod.black)
                         if k in main.learned_skills.keys():
                             libtcod.console_set_default_foreground(sub_window, libtcod.white)
-                        elif skill['sp_cost'] <= player.instance.skill_points:
+                        elif skill['sp_cost'] <= player.instance.skill_points and perks.meets_requirements(k):
                             libtcod.console_set_default_foreground(sub_window, libtcod.dark_gray)
                         else:
                             libtcod.console_set_default_foreground(sub_window, libtcod.darker_red)
@@ -920,6 +920,23 @@ def skill_menu():
 
         # print description
         selected_skill = menu_lines[selected_index]
+        can_purchase = perks.meets_requirements(selected_skill) and player.instance.skill_points >= perks.perk_list[selected_skill]['sp_cost']
+        if can_purchase:
+            libtcod.console_set_default_foreground(window, libtcod.dark_green)
+        else:
+            libtcod.console_set_default_foreground(window, libtcod.darker_red)
+
+        require_string = ''
+        req = perks.perk_list[selected_skill].get('requires')
+        if req is not None:
+            req = req.split(' ')
+            lvl = ''
+            if len(req) > 1:
+                lvl = req[1]
+            require_string = ', Requires: %s %s' % (perks.perk_list[req[0]]['name'], lvl)
+
+        libtcod.console_print(window, 2, consts.MAP_VIEWPORT_HEIGHT - 5, 'Cost: %dSP%s' % (perks.perk_list[selected_skill]['sp_cost'], require_string))
+
         libtcod.console_set_default_foreground(window, libtcod.white)
         rank = main.has_skill(selected_skill)
         max_rank = perks.perk_list[selected_skill]['max_rank']
@@ -929,7 +946,7 @@ def skill_menu():
             desc_index = rank
         desc = perks.perk_list[selected_skill]['description'][desc_index]
 
-        libtcod.console_print_rect(window, 1, consts.MAP_VIEWPORT_HEIGHT - 5, consts.MAP_VIEWPORT_WIDTH - 2, 5, desc)
+        libtcod.console_print_rect(window, 1, consts.MAP_VIEWPORT_HEIGHT - 4, consts.MAP_VIEWPORT_WIDTH - 2, 5, desc)
 
         # print scroll bar
         libtcod.console_set_default_foreground(window, libtcod.gray)

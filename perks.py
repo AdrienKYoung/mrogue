@@ -1,8 +1,22 @@
 import player
 import actions
+import game as main
+import consts
 
 def meets_requirements(perk):
-    return True #TODO: actually check this
+    if consts.DEBUG_FREE_PERKS:
+        return True
+
+    requirement = perk_list[perk].get('requires')
+    if requirement is None:
+        return True
+    lvl = requirement.split(' ')
+    if len(lvl) > 1:
+        lvl = int(lvl[len(lvl) - 1])
+        requirement = requirement.split(' ')[0]
+        return main.has_skill(requirement) >= lvl
+    else:
+        return main.has_skill(requirement)
 
 perk_keys = [
     'ravager',
@@ -59,7 +73,7 @@ perk_keys = [
     'vitality',
     'resurrection',
     'arcane_affinity',
-    'dark_affinity',
+    'death_affinity',
     'blood_magic',
     'lichform',
     'radiant_affinity',
@@ -68,10 +82,6 @@ perk_keys = [
     'void_affinity',
     'gaze_into_the_void',
 ]
-
-
-
-
 
 perk_list = {
     'sorcery' : {
@@ -90,7 +100,7 @@ perk_list = {
         'description' : ['Reduce all spell cast times by one step'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires': 'sorcery_3',
+        'requires': 'sorcery 3',
         'category' : 'Magic'
     },
     'essence_hunter' : {
@@ -195,18 +205,18 @@ perk_list = {
         'requires' : None,
         'category' : 'Arcane Magic'
     },
-    'dark_affinity' : {
-        'name' : 'Dark Affinity',
-        'description' : ['You have 2 extra spellpower when casting Dark spells',
-                         'You have 4 extra spellpower when casting Dark spells',
-                         'You have 6 extra spellpower when casting Dark spells',
-                         'You have 8 extra spellpower when casting Dark spells',
-                         'You have 10 extra spellpower when casting Dark spells'],
+    'death_affinity' : {
+        'name' : 'Death Affinity',
+        'description' : ['You have 2 extra spellpower when casting Death spells',
+                         'You have 4 extra spellpower when casting Death spells',
+                         'You have 6 extra spellpower when casting Death spells',
+                         'You have 8 extra spellpower when casting Death spells',
+                         'You have 10 extra spellpower when casting Death spells'],
         'max_rank' : 5,
         'values'   : [2,4,6,8,10],
         'sp_cost' : 20,
         'requires' : None,
-        'category' : 'Dark Magic'
+        'category' : 'Death Magic'
     },
     'radiant_affinity' : {
         'name' : 'Radiant Affinity',
@@ -272,7 +282,7 @@ perk_list = {
         'description' : ['Your spells deal 10%% more damage.'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'fire_affinity_3',
+        'requires' : 'fire_affinity 3',
         'category' : 'Fire Magic'
     },
     'pyromaniac' : {
@@ -280,7 +290,7 @@ perk_list = {
         'description' : ['Gain immunity to burning. Leave a fire trail behind you when you move.'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'fire_affinity_5',
+        'requires' : 'fire_affinity 5',
         'category' : 'Fire Magic'
     },
     'grip_of_the_depths' : {
@@ -288,7 +298,7 @@ perk_list = {
         'description' : ['Gain 50 stamina whenever an enemy drowns. Drowned enemies have a chance to drop water essence.'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'water_affinity_3',
+        'requires' : 'water_affinity 3',
         'category' : 'Water Magic'
     },
     'aquatic' : {
@@ -297,7 +307,7 @@ perk_list = {
                          'through water'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'water_affinity_5',
+        'requires' : 'water_affinity 5',
         'category' : 'Water Magic',
         'on_acquire': lambda: actions.aquatic(player.instance)
     },
@@ -306,7 +316,7 @@ perk_list = {
         'description' : ['Gain temporary armor whenever you cast a spell'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'earth_affinity_3',
+        'requires' : 'earth_affinity 3',
         'category' : 'Earth Magic'
     },
     'earthmeld' : {  #todo
@@ -314,7 +324,7 @@ perk_list = {
         'description' : ['You may move into walls (if you are not currently standing in a wall)'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'earth_affinity_5',
+        'requires' : 'earth_affinity 5',
         'category' : 'Earth Magic'
     },
     'tailwind' : {
@@ -322,7 +332,7 @@ perk_list = {
         'description' : ['After you cast a spell, if your next action is a move, it does not cost an action.'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'air_affinity_3',
+        'requires' : 'air_affinity 3',
         'category' : 'Air Magic'
     },
     'flight' : {
@@ -330,7 +340,7 @@ perk_list = {
         'description' : ['Your base movement type becomes Flying'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'air_affinity_5',
+        'requires' : 'air_affinity 5',
         'category' : 'Air Magic',
         'on_acquire': lambda: actions.flight(player.instance)
     },
@@ -339,7 +349,7 @@ perk_list = {
         'description' : ['Healing effects are 25%% more effective'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'life_affinity_3',
+        'requires' : 'life_affinity 3',
         'category' : 'Life Magic'
     },
     'resurrection' : {
@@ -347,7 +357,7 @@ perk_list = {
         'description' : ['Upon death, resurrect with full health, once...'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'life_affinity_5',
+        'requires' : 'life_affinity 5',
         'category' : 'Life Magic',
         'on_acquire': lambda: actions.auto_res(player.instance)
     },
@@ -356,7 +366,7 @@ perk_list = {
         'description' : ['Damage dealt by your spells has +2 shred'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'cold_affinity_3',
+        'requires' : 'cold_affinity 3',
         'category' : 'Cold Magic'
     },
     'frostbite' : {
@@ -364,7 +374,7 @@ perk_list = {
         'description' : ['All visible enemies below 50%% health are slowed'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'cold_affinity_5',
+        'requires' : 'cold_affinity 5',
         'category' : 'Cold Magic'
     },
     'blood_magic' : {  #todo
@@ -372,17 +382,17 @@ perk_list = {
         'description' : ['You can cast spells without the required stamina, at the cost of health.'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'blood_affinity_3',
-        'category' : 'Dark Magic'
+        'requires' : 'death_affinity 3',
+        'category' : 'Death Magic'
     },
     'lichform' : {
         'name' : 'Lichform',
         'description' : ['Sacrifice 30%% of your maximum health. Gain resistance to all status effects and'
-                         'damage types, and immunity to dark magic.'],
+                         'damage types, and immunity to death magic.'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'dark_affinity_5',
-        'category' : 'Dark Magic',
+        'requires' : 'death_affinity 5',
+        'category' : 'Death Magic',
         'on_acquire': lambda: actions.lichform(player.instance)
     },
     'guardian_of_light' : {  #todo
@@ -390,7 +400,7 @@ perk_list = {
         'description' : ['You and your allies have +2 armor'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'radiant_affinity_3',
+        'requires' : 'radiant_affinity 3',
         'category' : 'Radiant Magic'
     },
     'heir_to_the_heavens' : {
@@ -398,7 +408,7 @@ perk_list = {
         'description' : ['Whenever you take critical damage, a guardian angel is summoned to aid you'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'radiant_affinity_5',
+        'requires' : 'radiant_affinity 5',
         'category' : 'Radiant Magic'
     },
     'gaze_into_the_void' : {
@@ -406,9 +416,9 @@ perk_list = {
         'description' : ['Gain 3 Void essence'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'void_affinity_3',
-        'category' : 'Void Magic',
-        'on_acquire': lambda: actions.gaze_into_the_void(player.instance)
+        'on_acquire': lambda: actions.gaze_into_the_void(player.instance),
+        'requires' : 'void_affinity 3',
+        'category' : 'Void Magic'
     },
     'ravager' : {
         'name' : 'Ravager',
@@ -535,25 +545,25 @@ perk_list = {
         'description' : ['Ability (requires sword): Make an attack with +2 shred'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'sword_mastery_3',
-        'category' : 'Swords',
-        'on_acquire': player.learn_ability('ability_pommel_strike')
+        'on_acquire': player.learn_ability('ability_pommel_strike'),
+        'requires' : 'sword_mastery 3',
+        'category' : 'Swords'
     },
     'blade_dance' : {
         'name' : 'Blade Dance',
         'description' : ['Ability (requires sword): Swap places with an adjacent monster and make an attack against it'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'sword_mastery_5',
+        'on_acquire': player.learn_ability('ability_blade_dance'),
+        'requires' : 'sword_mastery 5',
         'category' : 'Swords',
-        'on_acquire': player.learn_ability('ability_blade_dance')
     },
     'riposte' : {
         'name' : 'Riposte',
         'description' : ['Attacks against an enemy that missed you last turn are critical hits'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'sword_mastery_7',
+        'requires' : 'sword_mastery 7',
         'category' : 'Swords'
     },
     'find_the_gap' : {
@@ -561,7 +571,7 @@ perk_list = {
         'description' : ['Your attacks with daggers gain pierce 1'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'dagger_mastery_3',
+        'requires' : 'dagger_mastery 3',
         'category' : 'Daggers'
     },
     'cut_and_run' : {
@@ -570,7 +580,7 @@ perk_list = {
                          'it does not cost an action'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'dagger_mastery_5',
+        'requires' : 'dagger_mastery 5',
         'category' : 'Daggers'
     },
     'death_from_above' : {
@@ -578,7 +588,7 @@ perk_list = {
         'description' : ['Your jump attacks have no accuracy penalty and deal 50% more damage'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'dagger_mastery_7',
+        'requires' : 'dagger_mastery 7',
         'category' : 'Daggers'
     },
     'wild_swings' : {
@@ -586,7 +596,7 @@ perk_list = {
         'description' : ['Dealing damage with axes deals 1d6 damage to enemies adjacent to the target'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'axe_mastery_3',
+        'requires' : 'axe_mastery 3',
         'category' : 'Axes'
     },
     'skullsplitter' : {
@@ -595,16 +605,16 @@ perk_list = {
                          'closer the target is to death'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'axe_mastery_5',
-        'category' : 'Axes',
-        'on_acquire': player.learn_ability('ability_skullsplitter')
+        'on_acquire': player.learn_ability('ability_skullsplitter'),
+        'requires' : 'axe_mastery 5',
+        'category' : 'Axes'
     },
     'lord_of_the_fray' : {
         'name' : 'Lord of the Fray',
         'description' : ['Gain increased attack damage for each adjacent enemy'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'axe_mastery_7',
+        'requires' : 'axe_mastery 7',
         'category' : 'Axes'
     },
     'sweep' : {
@@ -612,9 +622,9 @@ perk_list = {
         'description' : ['Ability (requires polearm): Attack all enemies at a range of exactly 2'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'polearm_mastery_3',
-        'category' : 'Polearms',
-        'on_acquire': player.learn_ability('ability_sweep')
+        'on_acquire': player.learn_ability('ability_sweep'),
+        'requires' : 'polearm_mastery 3',
+        'category' : 'Polearms'
     },
     'vanguard' : {  #todo
         'name' : 'Vanguard',
@@ -622,7 +632,7 @@ perk_list = {
                          'you are wielding a spear'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'polearm_mastery_5',
+        'requires' : 'polearm_mastery 5',
         'category' : 'Polearms'
     },
     'heart_seeking_strike' : {  #todo
@@ -630,7 +640,7 @@ perk_list = {
         'description' : ['Chance to instantly slay weak enemies with melee attacks'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'polearm_mastery_7',
+        'requires' : 'polearm_mastery 7',
         'category' : 'Polearms'
     },
     'ringing_blows' : {
@@ -638,7 +648,7 @@ perk_list = {
         'description' : ['Increased chance to stun with maces. Stuns inflicted by mace hits last 1 more turn'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'mace_mastery_3',
+        'requires' : 'mace_mastery 3',
         'category' : 'Maces'
     },
     'crush' : {
@@ -647,16 +657,16 @@ perk_list = {
                          "for each point of your target's armor"],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'mace_mastery_5',
-        'category' : 'Maces',
-        'on_acquire' : player.learn_ability('ability_crush')
+        'on_acquire' : player.learn_ability('ability_crush'),
+        'requires' : 'mace_mastery 5',
+        'category' : 'Maces'
     },
     'rising_storm' : {
         'name' : 'Rising Storm',
         'description' : ['If you have not attacked in the last 3 turns, your next attack deals bonus damage'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'mace_mastery_7',
+        'requires' : 'mace_mastery 7',
         'category' : 'Maces'
     },
     'martial_paragon' : {
@@ -672,7 +682,7 @@ perk_list = {
         'description' : ['Your unarmed attacks deal 1d6 weapon damage and have two strength dice'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'unarmed_mastery_1',
+        'requires' : 'unarmed_mastery 1',
         'category' : 'Unarmed Combat'
     },
     'flying_knee_smash' : {
@@ -680,7 +690,7 @@ perk_list = {
         'description' : ['Your jump attacks made while unarmed deal double damage'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'unarmed_mastery_3',
+        'requires' : 'unarmed_mastery 3',
         'category' : 'Unarmed Combat'
     },
     'essence_fist' : {
@@ -688,16 +698,16 @@ perk_list = {
         'description' : ['Ability: Consume an essence to deal high elemental damage'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'unarmed_mastery_5',
-        'category' : 'Unarmed Combat',
-        'on_acquire' : player.learn_ability('ability_essence_fist')
+        'on_acquire' : player.learn_ability('ability_essence_fist'),
+        'requires' : 'unarmed_mastery 5',
+        'category' : 'Unarmed Combat'
     },
     'fist_of_foretold_demise' : {
         'name' : 'Fist of Foretold Demise',
         'description' : ['Your unarmed attacks inflict 1d2 doom stacks'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'unarmed_mastery_7',
+        'requires' : 'unarmed_mastery 7',
         'category' : 'Unarmed Combat'
     },
 }

@@ -125,6 +125,7 @@ def create(loadout):
     instance.action_queue = []
     instance.skill_points = 100
     instance.fighter.xp = 0
+    instance.perk_abilities = []
 
     for item in loadout['inventory']:
         i = None
@@ -402,7 +403,8 @@ def purchase_skill():
                 learned_skills[skill] += 1
             else:
                 learned_skills[skill] = 1
-            instance.skill_points -= cost
+            if not consts.DEBUG_FREE_PERKS:
+                instance.skill_points -= cost
             ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
 def on_death(instance):
@@ -725,8 +727,11 @@ def on_get_hit(this,other,damage):
                 instance.heir_to_the_heavens_cd = 70
                 instance.fighter.apply_status_effect(effects.invulnerable(1),True)
     if main.has_skill('adrenaline'):
-        factor = instance.fighter.max_hp / damage
-        instance.fighter.adjust_stamina(libtcod.random_get_int(0,0,int(factor * instance.fighter.max_stamina)))
+        health_percentage = float(instance.fighter.hp) / float(instance.fighter.max_hp)
+        adrenaline_chance = (1.0 - health_percentage) * 0.75
+        if libtcod.random_get_float(0, 0.0, 1.0) < adrenaline_chance:
+            instance.fighter.adjust_stamina(10)
+            ui.message('You feel a surge of adrenaline!', libtcod.light_yellow)
 
 
 
