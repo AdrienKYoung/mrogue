@@ -1101,6 +1101,81 @@ def show_ability_screen():
     return 'didnt-take-turn'
 
 
+map_offsets = {
+    'north' : (0, -1),
+    'south' : (0, 1),
+    'east' : (1, 0),
+    'west' : (-1, 0),
+}
+
+def show_map_screen():
+    import world
+    import dungeon
+
+    console = libtcod.console_new(31, 31)
+    canvas = libtcod.console_new(50, 50)
+    libtcod.console_set_default_background(console, libtcod.black)
+    libtcod.console_set_default_background(canvas, libtcod.black)
+
+    # assemble map array (only horizontal for now)
+    map_cells = {(0, 0) : world.world_maps['beach']}
+    q = [(0, 0)]
+    min_x = 0
+    min_y = 0
+    max_x = 0
+    max_y = 0
+    current_room_pos = (0, 0)
+    while len(q) > 0:
+        current = q.pop(0)
+        for l in map_cells[current].links:
+            pos = (current[0] + map_offsets[l[0]][0], current[1] + map_offsets[l[0]][1])
+            if pos in map_cells.keys():
+                continue
+            if pos[0] < min_x: min_x = pos[0]
+            if pos[1] < min_y: min_y = pos[1]
+            if pos[0] > max_x: max_x = pos[0]
+            if pos[1] > max_y: max_y = pos[1]
+            map_cells[pos] = l[1]
+            q.append(pos)
+            if map_cells[pos] == main.current_map:
+                current_room_pos = pos
+
+    # draw the map
+    offset = (min_x * 4, min_y * 4)
+    for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x + 1):
+            if (x, y) not in map_cells.keys() or not map_cells[(x, y)].visited:
+                continue
+            color = dungeon.branches[map_cells[(x,y)].branch]['map_color']
+            for d_y in range(4 * y, 4 * y + 3):
+                for d_x in range(4 * x, 4 * x + 3):
+                    libtcod.console_put_char_ex(canvas, d_x - offset[0], d_y - offset[1], ' ', color, color)
+            if x == current_room_pos[0] and y == current_room_pos[1]:
+                libtcod.console_set_default_foreground(canvas, libtcod.white)
+                libtcod.console_put_char(canvas, 4 * x + 1 - offset[0], 4 * y + 1 - offset[1], '@')
+            for l in map_cells[(x, y)].links:
+                pos = (2 * map_offsets[l[0]][0], 2 * map_offsets[l[0]][1])
+                if l[0] == 'north' or l[0] == 'south':
+                    link_char = libtcod.CHAR_DVLINE
+                else:
+                    link_char = libtcod.CHAR_DHLINE
+                libtcod.console_put_char(canvas, 4 * x + 1 + pos[0] - offset[0], 4 * y + 1 + pos[1] - offset[1], link_char)
+
+    render_pos = 14 + offset[0] - 4 * current_room_pos[0],\
+                 14 + offset[1] - 4 * current_room_pos[1]
+    libtcod.console_blit(canvas, 0, 0, 50, 50, console, render_pos[0], render_pos[1])
+
+    draw_border(console, 0, 0, 31, 31)
+    libtcod.console_blit(console, 0, 0, 31, 31, 0,
+                         consts.MAP_VIEWPORT_X + consts.MAP_VIEWPORT_WIDTH / 2 - 15,
+                         consts.MAP_VIEWPORT_Y + consts.MAP_VIEWPORT_HEIGHT / 2 - 15)
+    libtcod.console_flush()
+
+    # Handle input and return index
+    key = libtcod.console_wait_for_keypress(True)
+    return None
+
+
 def display_fading_text(text, display_time, fade_time):
     global fade_value, display_ticker, overlay_text
     fade_value = fade_time
@@ -1157,9 +1232,6 @@ def choose_essence_from_pool(charm_data):
         return None
     else:
         return player.instance.essence[index]
-
-def map_screen():
-    return
 
 show_action_panel = True
 overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)

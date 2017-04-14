@@ -15,6 +15,7 @@ class Map:
         self.tickers = []
         self.difficulty = difficulty
         self.pathfinding = None
+        self.visited = False
 
     def add_link(self, cell, direction):
         self.links.append((direction, cell))

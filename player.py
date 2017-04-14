@@ -221,9 +221,6 @@ def handle_keys():
                 if chosen_item is not None:
                     chosen_item.drop()
                     return 'dropped-item'
-            if key_char == ',' and key.shift:
-                #if stairs.x == instance.x and stairs.y == instance.y:
-                    main.next_level()
             if key_char == 'c':
                 ui.msgbox('Character Information\n\nLevel: ' + str(instance.level) + '\n\nMaximum HP: ' +
                        str(instance.fighter.max_hp),
@@ -237,7 +234,11 @@ def handle_keys():
             if key.vk == libtcod.KEY_TAB:
                 ui.target_next_monster()
             if key_char == 'm':
-                return meditate()
+                if key.shift:
+                    ui.show_map_screen()
+                    return 'didnt-take-turn'
+                else:
+                    return meditate()
             if key_char == 'a':
                 if key.shift:
                     ui.show_action_panel = not ui.show_action_panel

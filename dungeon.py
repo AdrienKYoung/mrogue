@@ -11,7 +11,8 @@ branches = {
         'loot'          : None,
         'monsters'      : None,
         'generate'      : mapgen.make_map_beach,
-        'connect'       : ['marsh', 'badlands']
+        'connect'       : ['marsh', 'badlands'],
+        'map_color'     : libtcod.Color(158, 134, 100),
     },
     'badlands': {
         'name'          : 'the badlands',
@@ -48,7 +49,8 @@ branches = {
             {'encounter':['monster_necroling', 'monster_goblin'], 'party':'1d3+3'},
         ],
         'generate'      : mapgen.make_map_badlands,
-        'connect'       : ['beach', 'forest', 'goblin']
+        'connect'       : ['beach', 'forest', 'goblin'],
+        'map_color'     : libtcod.Color(96, 96, 96),
     },
     'marsh': {
         'name'          : 'the marshes',
@@ -81,7 +83,8 @@ branches = {
             {'encounter':['monster_cockroach','monster_centipede','monster_bomb_beetle'],'party':'2d3'},
         ],
         'generate':mapgen.make_map_marsh,
-        'connect':['beach', 'garden', 'goblin']
+        'connect':['beach', 'garden', 'goblin'],
+        'map_color'     : libtcod.Color(255, 191, 0),
     },
     'forest': {
         'name'          :"the frozen forest",
@@ -99,6 +102,7 @@ branches = {
             {'encounter':['monster_cockroach'], 'party':'2d2+2'},
         ],
         'generate':mapgen.make_map_forest,
+        'map_color'     : libtcod.darkest_green,
     },
     'garden': {
         'name'          :"the gardens",
@@ -116,5 +120,6 @@ branches = {
 
         ],
         'generate':mapgen.make_map_garden,
+        'map_color'     : libtcod.light_green,
     }
 }

@@ -722,18 +722,6 @@ def random_choice_index(chances):
             return choice
         choice += 1
 
-def next_level():
-    global dungeon_level, changed_tiles
-
-    ui.message('You descend...', libtcod.white)
-    dungeon_level += 1
-    generate_level()
-    #initialize_fov()
-
-    for y in range(consts.MAP_HEIGHT):
-        for x in range(consts.MAP_WIDTH):
-            changed_tiles.append((x, y))
-
 def bomb_beetle_corpse_tick(object=None):
     if object is None:
         return
@@ -1451,6 +1439,7 @@ def use_stairs(stairs):
 
 def enter_map(world_map, direction=None):
     global current_map
+    world_map.visited = True
 
     if current_map is not None:
         clear_map()
