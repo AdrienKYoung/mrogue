@@ -318,7 +318,12 @@ def _cast_spell():
                 if spells.library[s].function() == 'success':
                     left_hand.spell_charges[s] -= 1
                     level = left_hand.spell_list[s]
-                    instance.fighter.adjust_stamina(-spells.library[s].levels[level-1]['stamina_cost'])
+                    cost = spells.library[s].levels[level-1]['stamina_cost']
+                    if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
+                        instance.fighter.hp -= cost - instance.fighter.stamina
+                        instance.fighter.stamina = 0
+                    else:
+                        instance.fighter.adjust_stamina(-cost)
                     instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
                                       color=libtcod.yellow, description='Meditating will renew your missing spells.'))
                     return 'cast-spell'
@@ -328,7 +333,12 @@ def _cast_spell():
                 if spells.library[s].function() == 'success':
                     instance.memory.spell_charges[s] -= 1
                     level = instance.memory.spell_list[s]
-                    instance.fighter.adjust_stamina(-spells.library[s].levels[level - 1]['stamina_cost'])
+                    cost = spells.library[s].levels[level - 1]['stamina_cost']
+                    if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
+                        instance.fighter.hp -= cost - instance.fighter.stamina
+                        instance.fighter.stamina = 0
+                    else:
+                        instance.fighter.adjust_stamina(-cost)
                     instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
                                       color=libtcod.yellow, description='Meditating will renew your missing spells.'))
                     return 'cast-spell'

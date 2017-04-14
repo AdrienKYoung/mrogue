@@ -310,6 +310,9 @@ class Equipment:
             ui.message('That spell is out of charges.', libtcod.blue)
             return False
         elif actor.fighter.stamina < level['stamina_cost']:
+            if main.has_skill('blood_magic'):
+                if actor.fighter.stamina + actor.fighter.hp > level['stamina_cost']:
+                    return True
             ui.message("You don't have the stamina to cast that spell.", libtcod.light_yellow)
             return False
         return True
