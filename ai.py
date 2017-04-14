@@ -393,6 +393,5 @@ class FireBehavior:
             # Spread to adjacent tiles
             if self.temperature < 9: # don't spread on the first turn
                 for tile in adjacent_tiles_diagonal(self.owner.x, self.owner.y):
-                    if game.current_map.tiles[tile[0]][tile[1]].flammable:
-                        if libtcod.random_get_int(0, 0, 8) == 0:
-                            game.create_fire(tile[0], tile[1], 10)
+                    if libtcod.random_get_int(0, 1, 100) <= game.current_map.tiles[tile[0]][tile[1]].flammable:
+                        game.create_fire(tile[0], tile[1], 10)

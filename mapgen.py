@@ -1241,13 +1241,13 @@ def make_map_forest():
     # flood fill to remove isolated pockets
     fill_pockets()
 
-    for f in noise[1]:
-        change_map_tile(f[0], f[1], 'deep water')
+    #for f in noise[1]:
+    #    change_map_tile(f[0], f[1], 'deep water')
 
-    for i in range(0, 10 + libtcod.random_get_int(0, 0, 10)):
-        start = (libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 3),
-                 libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 3))
-        create_terrain_patch(start, default_wall, 40, 80)
+    #for i in range(0, 10 + libtcod.random_get_int(0, 0, 10)):
+    #    start = (libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 3),
+    #             libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 3))
+    #    create_terrain_patch(start, default_wall, 40, 80)
 
     tree_count = libtcod.random_get_int(0, 5, 20)
     for i in range(tree_count):

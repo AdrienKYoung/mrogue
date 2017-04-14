@@ -478,6 +478,8 @@ class Tile:
 
     @property
     def flammable(self):
+        if self.flags & terrain.FLAG_NO_DIG == terrain.FLAG_NO_DIG:
+            return 0
         return terrain.data[self.tile_type].flammable
 
     @property
@@ -1139,7 +1141,7 @@ def create_fire(x,y,temp):
     global changed_tiles
 
     tile = current_map.tiles[x][y]
-    if tile.is_water or (tile.blocks and not tile.flammable):
+    if tile.is_water or (tile.blocks and tile.flammable == 0):
         return
     current = object_at_tile(x,y,'Fire')
     if current is not None:

@@ -6,7 +6,7 @@ class TileData:
 
     def __init__(self, blocks, blocks_sight, name, char,
                  foreground_color, background_color, description='unremarkable terrain', stamina_cost=0, jumpable=True,
-                 burnTemp=0, flammable=False, diggable=False, isWall = False, isFloor = False, isWater = False,
+                 burnTemp=0, flammable=0, diggable=False, isWall = False, isFloor = False, isWater = False,
                  isRamp=False, isPit=False, on_step=None):
         self.blocks = blocks
         self.blocks_sight = blocks_sight
@@ -42,9 +42,9 @@ data = {
                              'a sheer cliff of blackened stone', diggable=True, isWall=True),
     'wooden palisade': TileData(True, True, 'wooden palisade', '#', (94, 75, 47), (31, 24, 15),
                              'a barrier crafted from dry wooden posts lashed together with rope',
-                             diggable=True, isWall=True, flammable=True),
+                             diggable=True, isWall=True, flammable=10),
     'gnarled tree': TileData(True, True, 'gnarled tree', chr(157), (94, 75, 47), (31, 31, 31),
-                             'a twisted, leafless tree, worn down by the gritty winds of the badlands', flammable=True, isWall=True),
+                             'a twisted, leafless tree, worn down by the gritty winds of the badlands', flammable=7, isWall=True),
     'sand': TileData(False, False, 'sand', '.', (158, 134, 100), (127, 101, 63),
                              'fine, damp sand', isFloor=True),
     'sea cliff': TileData(True, True, 'sea cliff', '#', (63, 50, 31), (31, 24, 15),
@@ -63,9 +63,9 @@ data = {
     'chasm': TileData(False, False, 'chasm', libtcod.CHAR_BLOCK1, (16, 16, 32), (0, 0, 16),
                              'a pit descending into darkness', isPit=True),
     'grass floor': TileData(False, False, 'grass floor', ',', (4, 140, 13), (29, 71, 10),
-                             'a grass consisting of strange mossy tufts. Though damp to the touch, this grass has been known to fuel wildfires with surprising vigor.', flammable=True, isFloor=True),
+                             'a grass consisting of strange mossy tufts. Though damp to the touch, this grass has been known to fuel wildfires with surprising vigor.', flammable=11, isFloor=True),
     'dry grass': TileData(False, False, 'dry grass', ',', (56, 49, 43), (38, 33, 29),
-                             'dry stalks of grass that rustle in the wind. Might they burn?', flammable=True, isFloor=True),
+                             'dry stalks of grass that rustle in the wind. Might they burn?', flammable=15, isFloor=True),
     'scorched floor': TileData(False, False, 'scorched floor', '.', (94, 55, 55), (30, 30, 30),
                              'embers linger on this still-warm floor scorched by flame', isFloor=True),
     'scorched ramp': TileData(False, False, 'scorched ramp', '/', (94, 55, 55), (30, 30, 30),
@@ -86,9 +86,9 @@ data = {
     'snowy slope': TileData(False, False, 'snowy slope', '/', libtcod.white, libtcod.sepia,
                              'a slope covered in snow', isRamp=True),
     'barren tree': TileData(True, True, 'barren tree', chr(157), libtcod.sepia,libtcod.white,
-                             'a frozen, barren tree', flammable=True, isWall=True),
+                             'a frozen, barren tree', flammable=11, isWall=True),
     'pine tree': TileData(True, True, 'pine tree', libtcod.CHAR_ARROW2_N, libtcod.darkest_green,libtcod.white,
-                             'a pine tree, its needles ever green', flammable=True, isWall=True),
+                             'a pine tree, its needles ever green', flammable=2, isWall=True),
     'ice': TileData(False, False, 'ice', '=', libtcod.white, libtcod.light_blue,
                              'floor made of a thick sheet of ice', isFloor=True),
 }
