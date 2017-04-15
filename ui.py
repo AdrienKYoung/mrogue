@@ -1114,8 +1114,6 @@ def show_map_screen():
 
     console = libtcod.console_new(31, 31)
     canvas = libtcod.console_new(50, 50)
-    libtcod.console_set_default_background(console, libtcod.black)
-    libtcod.console_set_default_background(canvas, libtcod.black)
 
     # assemble map array (only horizontal for now)
     map_cells = {(0, 0) : world.world_maps['beach']}
@@ -1139,42 +1137,65 @@ def show_map_screen():
             q.append(pos)
             if map_cells[pos] == main.current_map:
                 current_room_pos = pos
-
-    # draw the map
     offset = (min_x * 4, min_y * 4)
-    for y in range(min_y, max_y + 1):
-        for x in range(min_x, max_x + 1):
-            if (x, y) not in map_cells.keys() or not map_cells[(x, y)].visited:
-                continue
-            color = dungeon.branches[map_cells[(x,y)].branch]['map_color']
-            for d_y in range(4 * y, 4 * y + 3):
-                for d_x in range(4 * x, 4 * x + 3):
-                    libtcod.console_put_char_ex(canvas, d_x - offset[0], d_y - offset[1], ' ', color, color)
-            if x == current_room_pos[0] and y == current_room_pos[1]:
-                libtcod.console_set_default_foreground(canvas, libtcod.white)
-                libtcod.console_put_char(canvas, 4 * x + 1 - offset[0], 4 * y + 1 - offset[1], '@')
-            for l in map_cells[(x, y)].links:
-                pos = (2 * map_offsets[l[0]][0], 2 * map_offsets[l[0]][1])
-                if l[0] == 'north' or l[0] == 'south':
-                    link_char = libtcod.CHAR_DVLINE
-                else:
-                    link_char = libtcod.CHAR_DHLINE
-                libtcod.console_put_char(canvas, 4 * x + 1 + pos[0] - offset[0], 4 * y + 1 + pos[1] - offset[1], link_char)
-
-    render_pos = 14 + offset[0] - 4 * current_room_pos[0],\
+    render_pos = 14 + offset[0] - 4 * current_room_pos[0], \
                  14 + offset[1] - 4 * current_room_pos[1]
-    libtcod.console_blit(canvas, 0, 0, 50, 50, console, render_pos[0], render_pos[1])
 
-    draw_border(console, 0, 0, 31, 31)
-    libtcod.console_blit(console, 0, 0, 31, 31, 0,
-                         consts.MAP_VIEWPORT_X + consts.MAP_VIEWPORT_WIDTH / 2 - 15,
-                         consts.MAP_VIEWPORT_Y + consts.MAP_VIEWPORT_HEIGHT / 2 - 15)
-    libtcod.console_flush()
+    done = False
+    while(not done):
 
-    # Handle input and return index
-    key = libtcod.console_wait_for_keypress(True)
-    return None
+        # draw the map
+        libtcod.console_set_default_background(console, libtcod.black)
+        libtcod.console_set_default_background(canvas, libtcod.black)
+        libtcod.console_clear(canvas)
+        libtcod.console_clear(console)
+        for y in range(min_y, max_y + 1):
+            for x in range(min_x, max_x + 1):
+                if (x, y) not in map_cells.keys() or not map_cells[(x, y)].visited:
+                    continue
+                color = dungeon.branches[map_cells[(x,y)].branch]['map_color']
+                for d_y in range(4 * y, 4 * y + 3):
+                    for d_x in range(4 * x, 4 * x + 3):
+                        libtcod.console_put_char_ex(canvas, d_x - offset[0], d_y - offset[1], ' ', color, color)
+                if x == current_room_pos[0] and y == current_room_pos[1]:
+                    libtcod.console_set_default_foreground(canvas, libtcod.white)
+                    libtcod.console_put_char(canvas, 4 * x + 1 - offset[0], 4 * y + 1 - offset[1], '@')
+                for l in map_cells[(x, y)].links:
+                    pos = (2 * map_offsets[l[0]][0], 2 * map_offsets[l[0]][1])
+                    if l[0] == 'north' or l[0] == 'south':
+                        link_char = libtcod.CHAR_DVLINE
+                    else:
+                        link_char = libtcod.CHAR_DHLINE
+                    libtcod.console_put_char(canvas, 4 * x + 1 + pos[0] - offset[0], 4 * y + 1 + pos[1] - offset[1], link_char)
 
+        libtcod.console_blit(canvas, 0, 0, 50, 50, console, render_pos[0], render_pos[1])
+
+        draw_border(console, 0, 0, 31, 31)
+        libtcod.console_blit(console, 0, 0, 31, 31, 0,
+                             consts.MAP_VIEWPORT_X + consts.MAP_VIEWPORT_WIDTH / 2 - 15,
+                             consts.MAP_VIEWPORT_Y + consts.MAP_VIEWPORT_HEIGHT / 2 - 15)
+        libtcod.console_flush()
+
+        # Handle input and return index
+        key = libtcod.console_wait_for_keypress(True)
+        if key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4:
+            render_pos = render_pos[0] + 1, render_pos[1]
+        elif key.vk == libtcod.KEY_RIGHT or key.vk == libtcod.KEY_KP6:
+            render_pos = render_pos[0] - 1, render_pos[1]
+        elif key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_KP8:
+            render_pos = render_pos[0], render_pos[1] + 1
+        elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_KP2:
+            render_pos = render_pos[0], render_pos[1] - 1
+        elif key.vk == libtcod.KEY_KP7:
+            render_pos = render_pos[0] + 1, render_pos[1] + 1
+        elif key.vk == libtcod.KEY_KP9:
+            render_pos = render_pos[0] - 1, render_pos[1] + 1
+        elif key.vk == libtcod.KEY_KP1:
+            render_pos = render_pos[0] + 1, render_pos[1] - 1
+        elif key.vk == libtcod.KEY_KP3:
+            render_pos = render_pos[0] - 1, render_pos[1] - 1
+        else:
+            done = True
 
 def display_fading_text(text, display_time, fade_time):
     global fade_value, display_ticker, overlay_text

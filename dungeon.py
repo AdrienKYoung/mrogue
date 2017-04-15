@@ -12,7 +12,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_map_beach,
         'connect'       : ['marsh', 'badlands'],
-        'map_color'     : libtcod.Color(158, 134, 100),
+        'map_color'     : libtcod.Color(0, 95, 191),
     },
     'badlands': {
         'name'          : 'the badlands',
