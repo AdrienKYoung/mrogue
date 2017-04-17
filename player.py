@@ -1,3 +1,5 @@
+import log
+
 class PlayerStats:
 
     def __init__(self, int=10, wiz=10, str=10, agi=10, con=10):
@@ -158,6 +160,9 @@ def handle_keys():
     ui.mouse_select_monster()
 
     key_char = chr(key.c)
+    #SOMETHING SERIOUSLY FUCKY HERE UNDER SOME BUILDS OF LIBTCOD
+    #WE CAN GET PHANTOM 'H' KEY PRESSES AFTER EVERY KEYBOARD INPUT
+    #DONT MAP ANYTHING TO 'H'
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle fullscreen
@@ -165,6 +170,8 @@ def handle_keys():
 
     elif key_char == 'q' and key.shift:
         return 'exit'  #exit game
+
+    log.info("INPUT","Key input: {}",[key_char])
 
     if game_state == 'playing':
 
@@ -191,9 +198,9 @@ def handle_keys():
             moved = move_or_attack(-1, -1, ctrl)
         elif key.vk == libtcod.KEY_KP9 or key_char == 'u':
             moved = move_or_attack(1, -1, ctrl)
-        elif key.vk == libtcod.KEY_KP1 or key_char == 'h':
+        elif key.vk == libtcod.KEY_KP1 or key_char == 'n':
             moved = move_or_attack(-1, 1, ctrl)
-        elif key.vk == libtcod.KEY_KP3 or key_char == 'j':
+        elif key.vk == libtcod.KEY_KP3 or key_char == 'm':
             moved = move_or_attack(1, 1, ctrl)
         elif key.vk == libtcod.KEY_KP5 or key_char == 's':
             instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT) # gain stamina for standing still
@@ -233,7 +240,7 @@ def handle_keys():
                 ui.examine()
             if key.vk == libtcod.KEY_TAB:
                 ui.target_next_monster()
-            if key_char == 'm':
+            if key_char == '/':
                 if key.shift:
                     ui.show_map_screen()
                     return 'didnt-take-turn'

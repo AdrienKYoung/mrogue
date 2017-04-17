@@ -3,6 +3,7 @@ import consts
 import Queue
 import math
 import libtcodpy as libtcod
+import log
 
 MAX_EDGES_DISCOVERED = 100
 # Movement type flags:
@@ -102,6 +103,7 @@ class Graph:
 
 
     def a_star_search(self, start, goal, movement_type=NORMAL):
+        log.info("PATH","Getting {} path from {} to {}",[movement_type,start,goal])
         discovered = 0
         closed_set = []
         open_set = [start]  # TODO: Use Priority Queue
@@ -127,7 +129,9 @@ class Graph:
                     shortest = f_score[open]
 
             if current == goal:
-                return Graph.reconstruct_path(came_from, current)
+                result = Graph.reconstruct_path(came_from, current)
+                log.info('PATH',"Generated path: {}",[result])
+                return result
 
             open_set.remove(current)
             closed_set.append(current)
@@ -157,6 +161,7 @@ class Graph:
                     g_score[neighbor.coord] = tentative_g_score + w
                     f_score[neighbor.coord] = g_score[neighbor.coord] + Graph.dist_between(neighbor.coord, goal)
 
+        log.warn("PATH","No path from {} to {}",[start,goal])
         return 'failure'
 
     @staticmethod
