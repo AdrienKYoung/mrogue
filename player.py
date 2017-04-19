@@ -252,7 +252,7 @@ def handle_keys():
                     return 'didnt-take-turn'
                 else:
                     return ui.show_ability_screen()
-            if key_char == 'p' and key.shift:
+            if key_char == 'p': #and key.shift:
                 purchase_skill()
                 return 'didnt-take-turn'
             if mouse.rbutton_pressed:
@@ -526,40 +526,7 @@ def bash_attack(dx, dy):
                                   damage_multiplier=consts.BASH_DMG_MOD, verb=('bash', 'bashes'))
         if result == 'hit' and target.fighter:
             ui.select_monster(target)
-            # knock the target back one space. Stun it if it cannot move.
-            direction = target.x - instance.x, target.y - instance.y  # assumes the instance is adjacent
-            stun = False
-            against = ''
-            against_tile = main.current_map.tiles[target.x + direction[0]][target.y + direction[1]]
-            if against_tile.blocks:
-                stun = True
-                against = main.current_map.tiles[target.x + direction[0]][target.y + direction[1]].name
-            elif against_tile.elevation != target.elevation and against_tile.tile_type != 'ramp' and main.current_map.tiles[target.x][target.y] != 'ramp':
-                stun = True
-                against = 'cliff'
-            else:
-                for obj in main.current_map.objects:
-                    if obj.x == target.x + direction[0] and obj.y == target.y + direction[1] and obj.blocks:
-                        stun = True
-                        against = obj.name
-                        break
-
-
-            if stun:
-                #  stun the target
-                if target.fighter.apply_status_effect(effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
-                    ui.message('%s %s with the %s, stunning %s!' % (
-                                    syntax.name(target.name).capitalize(),
-                                    syntax.conjugate(target is instance, ('collide', 'collides')),
-                                    against,
-                                    syntax.pronoun(target.name, objective=True)), libtcod.gold)
-            else:
-                ui.message('%s %s knocked backwards.' % (
-                                    syntax.name(target.name).capitalize(),
-                                    syntax.conjugate(target is instance, ('are', 'is'))), libtcod.gray)
-                target.set_position(target.x + direction[0], target.y + direction[1])
-                main.render_map()
-                libtcod.console_flush()
+            actions.knock_back(instance,target)
 
         return result
     else:

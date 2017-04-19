@@ -38,7 +38,7 @@ perk_keys = [
     'polearm_mastery',
     'sweep',
     'vanguard',
-    'heart_seeking_strike',
+    'gatekeeper',
     'mace_mastery',
     'ringing_blows',
     'crush',
@@ -377,7 +377,7 @@ perk_list = {
         'requires' : 'cold_affinity 5',
         'category' : 'Cold Magic'
     },
-    'blood_magic' : {  #todo
+    'blood_magic' : {
         'name' : 'Blood Magic',
         'description' : ['You can cast spells without the required stamina, at the cost of health.'],
         'max_rank' : 1,
@@ -395,7 +395,7 @@ perk_list = {
         'category' : 'Death Magic',
         'on_acquire': lambda: actions.lichform(player.instance)
     },
-    'guardian_of_light' : {  #todo
+    'guardian_of_light' : {
         'name' : 'Guardian of Light',
         'description' : ['You and your allies have +2 armor'],
         'max_rank' : 1,
@@ -626,7 +626,7 @@ perk_list = {
         'requires' : 'polearm_mastery 3',
         'category' : 'Polearms'
     },
-    'vanguard' : {  #todo
+    'vanguard' : {
         'name' : 'Vanguard',
         'description' : ['Get a free attack on enemies that move into a space adjacent to you when '
                          'you are wielding a spear'],
@@ -635,9 +635,9 @@ perk_list = {
         'requires' : 'polearm_mastery 5',
         'category' : 'Polearms'
     },
-    'heart_seeking_strike' : {  #todo
-        'name' : 'Heart Seeking Strike',
-        'description' : ['Chance to instantly slay weak enemies with melee attacks'],
+    'gatekeeper' : {
+        'name' : 'Gatekeeper',
+        'description' : ['Chance to knock back enemies with melee attacks'],
         'max_rank' : 1,
         'sp_cost' : 20,
         'requires' : 'polearm_mastery 7',

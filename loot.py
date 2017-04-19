@@ -613,7 +613,7 @@ proto = {
     'weapon_spear': {
         'name'               : 'spear',
         'category'           : 'weapon',
-        'subtype'        : 'polearm',
+        'subtype'            : 'polearm',
         'damage_type'        : 'stabbing',
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,

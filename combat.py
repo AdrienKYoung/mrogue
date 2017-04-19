@@ -8,6 +8,7 @@ import fov
 import syntax
 import pathfinding
 import abilities
+import actions
 
 class Fighter:
 
@@ -328,6 +329,8 @@ class Fighter:
                 bonus += 3
         if self.has_status('shielded'):
             bonus += 2
+        if main.has_skill('guardian_of_light') and (self.owner is player.instance or self.team == 'ally'):
+            bonus += 2
         return max(self.base_armor + bonus - self.shred, 0)
 
     @property
@@ -552,8 +555,6 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
 
-        'attribute_thrash'
-
         if fighter.has_atribute('attribute_rend') and target.fighter.armor - (fighter.attack_pierce + pierce_modifier) < 1:
             damage_mod *= 1.5
 
@@ -669,6 +670,10 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
                                               condition=lambda o: o.fighter is not None and o.fighter.team is not 'ally'):
                         if t != target:
                             t.fighter.take_damage(main.roll_dice('1d6'),fighter)
+
+                if main.has_skill('gatekeeper') and target.fighter is not None:
+                    if libtcod.random_get_int(0,0,10 + target.fighter.armor) < 5:
+                        actions.knock_back(fighter.owner,target)
 
             return 'hit'
         else:

@@ -111,12 +111,18 @@ class AI_Default:
             # Handle moving
             if not is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y):
                 monster.move_astar(self.target.x, self.target.y)
-                return monster.behavior.move_speed
+                if monster.behavior is not None: #need this check because the monster may die while moving
+                    return monster.behavior.move_speed
+                else:
+                    return 1
 
             # Handle attacking
             else:
                 monster.fighter.attack(self.target)
-                return monster.behavior.attack_speed
+                if monster.behavior is not None:
+                    return monster.behavior.attack_speed
+                else:
+                    return 1
 
         elif self.last_seen_position is not None and not\
                 (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):

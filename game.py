@@ -82,12 +82,35 @@ class Item:
 
         return print_height
 
+class Zone:
+    def __init__(self,radius,on_enter = None,on_tick = None):
+        self.radius = radius
+        self.on_enter = on_enter
+        self.on_tick = on_tick
+        self.influence = []
+        self.owner = None
+
+    def tick(self):
+        current = []
+        for f in current_map.fighters:
+            if f is self.owner:
+                continue
+            deltax = abs(f.x - self.owner.x)
+            deltay = abs(f.y - self.owner.y)
+            if deltax <= self.radius and deltay <= self.radius:
+                if f not in self.influence and self.on_enter is not None:
+                    self.on_enter(self.owner,f)
+                current.append(f)
+                if self.on_tick is not None:
+                    self.on_tick(self.owner,f)
+        self.influence = [f for f in self.influence if f in current]
+
 class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, behavior=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
-                 elevation=None, background_color=None, movement_type=0, summon_time = None):
+                 elevation=None, background_color=None, movement_type=0, summon_time = None, zones=[]):
         self.x = x
         self.y = y
         self.char = char
@@ -97,6 +120,7 @@ class GameObject:
         self.fighter = fighter
         self.always_visible = always_visible
         self.interact = interact
+        self.player_adjacent = False
         self.description = description
         self.on_create = on_create
         if self.fighter:
@@ -136,6 +160,9 @@ class GameObject:
         self.background_color = background_color
         self.movement_type = movement_type
         self.summon_time = summon_time
+        self.zones = []
+        for z in zones:
+            self.add_zone(z)
 
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
@@ -212,6 +239,14 @@ class GameObject:
             if old_elev != self.elevation:
                 fov.set_view_elevation(self.elevation)
             fov.set_fov_recompute()
+        else:
+            #if it's a monster, track if it was next to the player last turn and check perks
+            if is_adjacent_diagonal(self.x,self.y,player.instance.x,player.instance.y):
+                if has_skill('vanguard') and not self.player_adjacent:
+                    player.instance.fighter.attack(self)
+                self.player_adjacent = True
+            else:
+                self.player_adjacent = False
 
     def swap_positions(self, target):
         target_pos = target.x, target.y
@@ -398,6 +433,10 @@ class GameObject:
         current_map.objects.remove(self)
         current_map.objects.insert(0, self)
 
+    def add_zone(self,z):
+        self.zones.append(z)
+        z.owner = self
+
     def on_tick(self, object=None):
         if self.summon_time:
             self.summon_time -= 1
@@ -415,6 +454,8 @@ class GameObject:
             self.fighter.on_tick()
         if self.misc and hasattr(self.misc, 'on_tick'):
             self.misc.on_tick(object)
+        for z in self.zones:
+            z.tick()
 
     def destroy(self):
         global changed_tiles

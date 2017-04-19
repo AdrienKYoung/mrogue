@@ -420,6 +420,42 @@ def magma_bolt(actor=None, target=None):
     main.current_map.pathfinding.mark_blocked((x, y))
     main.changed_tiles.append((x, y))
 
+def knock_back(actor,target):
+    # knock the target back one space. Stun it if it cannot move.
+    direction = target.x - actor.x, target.y - actor.y  # assumes the instance is adjacent
+    stun = False
+    against = ''
+    against_tile = main.current_map.tiles[target.x + direction[0]][target.y + direction[1]]
+    if against_tile.blocks:
+        stun = True
+        against = main.current_map.tiles[target.x + direction[0]][target.y + direction[1]].name
+    elif against_tile.elevation != target.elevation and against_tile.tile_type != 'ramp' and \
+                    main.current_map.tiles[target.x][target.y] != 'ramp':
+        stun = True
+        against = 'cliff'
+    else:
+        for obj in main.current_map.objects:
+            if obj.x == target.x + direction[0] and obj.y == target.y + direction[1] and obj.blocks:
+                stun = True
+                against = obj.name
+                break
+
+    if stun:
+        #  stun the target
+        if target.fighter.apply_status_effect(
+                effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
+            ui.message('%s %s with the %s, stunning %s!' % (
+                syntax.name(target.name).capitalize(),
+                syntax.conjugate(target is actor, ('collide', 'collides')),
+                against,
+                syntax.pronoun(target.name, objective=True)), libtcod.gold)
+    else:
+        ui.message('%s %s knocked backwards.' % (
+            syntax.name(target.name).capitalize(),
+            syntax.conjugate(target is actor, ('are', 'is'))), libtcod.gray)
+        target.set_position(target.x + direction[0], target.y + direction[1])
+        main.render_map()
+        libtcod.console_flush()
 
 def confuse():
     ui.message('Choose a target with left-click, or right-click to cancel.', libtcod.white)
@@ -636,6 +672,14 @@ def lichform(target):
 
 def gaze_into_the_void(target):
     for i in range(3): player.pick_up_essence('void',player.instance)
+
+def vanguard(target):
+    player.instance.add_zone(main.Zone(1,on_enter=vanguard_attack))
+
+def vanguard_attack(actor,target):
+    weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+    if weapon is not None and weapon.subtype == 'polearm':
+        attack(actor,target)
 
 def skullsplitter_calc_damage_bonus(actor,target):
     return 1.5 * ( 2 - target.fighter.hp / target.fighter.max_hp)
