@@ -4,6 +4,7 @@ import shelve
 import consts
 import world
 import syntax
+import log
 
 #############################################
 # Classes
@@ -336,6 +337,7 @@ class GameObject:
         distance = math.sqrt(dx ** 2 + dy ** 2)
         dx = int(round(dx / distance))
         dy = int(round(dy / distance))
+        log.info('PATH',"{} moving to space ({},{})",[self.name,self.x + dx, self.y + dy])
         self.move(dx, dy)
 
     def move_astar(self, target_x, target_y):

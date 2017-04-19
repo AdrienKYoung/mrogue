@@ -40,7 +40,7 @@ class Graph:
             if obj.blocks:
                 self.mark_blocked((obj.x, obj.y))
 
-    def edge_to(self, source, neighbor):
+    def edge_to(self, source, neighbor, mod=1.0):
         if not source in self.edges:
             self.edges[source] = []
         edge = None
@@ -52,30 +52,33 @@ class Graph:
             edge = Edge(neighbor)
             self.edges[source].append(edge)
 
+        if source[0] != neighbor[0] and source[1] != neighbor[1]:
+            mod *= 1.2
+
         source_tile = main.current_map.tiles[source[0]][source[1]]
         neighbor_tile = main.current_map.tiles[neighbor[0]][neighbor[1]]
         if not neighbor_tile.blocks:
             # If the tile is not blocked, that's all we care about for flying movement.
-            edge.weights[FLYING] = 1.0
+            edge.weights[FLYING] = 1.0 * mod
             if neighbor_tile.elevation == source_tile.elevation or neighbor_tile.is_ramp or source_tile.is_ramp:
                 # If these tiles are on the same elevation, or one of them is a ramp, we have normal connectivity
                 if neighbor_tile.is_water:
                     # If this tile is a water space, it has normal movement costs for aquatic movement
-                    edge.weights[AQUATIC] = 1.0
+                    edge.weights[AQUATIC] = 1.0 * mod
                     if not neighbor_tile.jumpable:
                         # If this is deep water, it is very costly for normal movement
-                        edge.weights[NORMAL] = 5.0
+                        edge.weights[NORMAL] = 5.0 * mod
                     else:
                         # If this is shallow water, it is slightly more costly than normal movement
-                        edge.weights[NORMAL] = 1.05
+                        edge.weights[NORMAL] = 1.05 * mod
                 elif not neighbor_tile.is_pit:
-                    edge.weights[NORMAL] = 1.0
+                    edge.weights[NORMAL] = 1.0 * mod
             elif not neighbor_tile.is_pit:
                 # These tiles are separated by elevation. Climbing movement can cross, though a bit costly
-                edge.weights[CLIMBING] = 2.0
+                edge.weights[CLIMBING] = 2.0 * mod
         else:
             # Tunneling can move through solid walls, slightly more costly than normal movement
-            edge.weights[TUNNELING] = 1.05
+            edge.weights[TUNNELING] = 1.05 * mod
 
     def mark_blocked(self, coord):
         for adj in main.adjacent_tiles_diagonal(coord[0], coord[1]):
