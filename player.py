@@ -198,9 +198,9 @@ def handle_keys():
             moved = move_or_attack(-1, -1, ctrl)
         elif key.vk == libtcod.KEY_KP9 or key_char == 'u':
             moved = move_or_attack(1, -1, ctrl)
-        elif key.vk == libtcod.KEY_KP1 or key_char == 'n':
+        elif key.vk == libtcod.KEY_KP1 or key_char == 'h':
             moved = move_or_attack(-1, 1, ctrl)
-        elif key.vk == libtcod.KEY_KP3 or key_char == 'm':
+        elif key.vk == libtcod.KEY_KP3 or key_char == 'j':
             moved = move_or_attack(1, 1, ctrl)
         elif key.vk == libtcod.KEY_KP5 or key_char == 's':
             instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT) # gain stamina for standing still
@@ -240,7 +240,7 @@ def handle_keys():
                 ui.examine()
             if key.vk == libtcod.KEY_TAB:
                 ui.target_next_monster()
-            if key_char == '/':
+            if key_char == 'm':
                 if key.shift:
                     ui.show_map_screen()
                     return 'didnt-take-turn'
