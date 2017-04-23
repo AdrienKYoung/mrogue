@@ -290,9 +290,7 @@ def smite(actor=None, target=None):
     spell = abilities.data['ability_smite']
     x, y = 0, 0
     if actor is None or actor is player.instance:  # player is casting
-        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        ui.render_message_panel()
-        libtcod.console_flush()
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         default_target = None
         if ui.selected_monster is not None:
             default_target = ui.selected_monster.x, ui.selected_monster.y
@@ -308,9 +306,7 @@ def heat_ray(actor=None, target=None):
     spell = abilities.data['ability_heat_ray']
     line = None
     if actor is None:  # player is casting
-        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        ui.render_message_panel()
-        libtcod.console_flush()
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         default_target = None
         if ui.selected_monster is not None:
             default_target = ui.selected_monster.x, ui.selected_monster.y
@@ -332,11 +328,10 @@ def heat_ray(actor=None, target=None):
 
 def flame_wall(actor=None, target=None):
     x, y = 0, 0
+    spell = abilities.data['ability_flame_wall']
     if actor is None:  # player is casting
-        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        ui.render_message_panel()
-        libtcod.console_flush()
-        (x, y) = ui.target_tile()
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
         if x is None:
             return 'cancelled'
         actor = player.instance
@@ -353,9 +348,7 @@ def shatter_item(actor=None, target=None):
     x, y = 0, 0
     dc = 8
     if actor is None:  # player is casting
-        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        ui.render_message_panel()
-        libtcod.console_flush()
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         (x, y) = ui.target_tile()
         if x is None:
             return 'cancelled'
@@ -404,9 +397,7 @@ def magma_bolt(actor=None, target=None):
     spell = abilities.data['ability_magma_bolt']
     x, y = 0, 0
     if actor is None:  # player is casting
-        ui.message('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        ui.render_message_panel()
-        libtcod.console_flush()
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         (x, y) = ui.target_tile(max_range=spell['range'])
         actor = player.instance
         if x is None: return 'cancelled'
@@ -419,6 +410,74 @@ def magma_bolt(actor=None, target=None):
     main.current_map.tiles[x][y].tile_type = 'lava'
     main.current_map.pathfinding.mark_blocked((x, y))
     main.changed_tiles.append((x, y))
+
+def frozen_orb(actor=None, target=None):
+    spell = abilities.data['ability_frozen_orb']
+    x, y = 0, 0
+    if actor is None:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        actor = player.instance
+        if x is None: return 'cancelled'
+        target = main.get_monster_at_tile(x, y)
+    if target is not None:
+        if combat.spell_attack(actor.fighter, target,'ability_frozen_orb') == 'hit':
+            target.fighter.apply_status_effect(effects.slowed())
+
+def flash_frost(actor=None, target=None):
+    spell = abilities.data['ability_flash_frost']
+    x, y = 0, 0
+    if actor is None:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        actor = player.instance
+        if x is None: return 'cancelled'
+        target = main.get_monster_at_tile(x, y)
+    if target is not None:
+        target.fighter.apply_status_effect(effects.frozen(5))
+
+def ice_shards(actor, target):
+    x, y = 0, 0
+    spell = abilities.data['ability_ice_shards']
+    if actor is player.instance:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+    else:
+        x = target.x
+        y = target.y
+    if x is None: return 'cancelled'
+    for obj in main.current_map.fighters:
+        if obj.distance(x, y) <= spell['radius']:
+            combat.spell_attack(actor.fighter, obj, 'ability_ice_shards')
+            obj.fighter.apply_status_effect(effects.slowed())
+            obj.fighter.apply_status_effect(effects.bleeding())
+    return 'success'
+
+def snowstorm(actor=None, target=None):
+    x, y = 0, 0
+    spell = abilities.data['ability_snowstorm']
+    if actor is None:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        if x is None:
+            return 'cancelled'
+        actor = player.instance
+    else:
+        x = target.x
+        y = target.y
+    if x is not None:
+        zone = main.Zone(spell['radius'],_snowstorm_tick,_snowstorm_tick)
+        storm = main.GameObject(x,y,'@','Snowstorm',libtcod.light_azure,zones=[zone],summon_time=10)
+        storm.creator = actor
+    return 'failure'
+
+def _snowstorm_tick(actor,target):
+    if main.roll_dice('1d10' > 7):
+        combat.spell_attack(actor.owner.creator.fighter,target,'ability_snowstorm')
+        target.fighter.apply_status_effect(effects.slowed())
+        target.fighter.apply_status_effect(effects.blinded())
+        fx = main.GameObject(target.x,target.y,'*','cloud of cold',libtcod.light_azure,summon_time=2)
+        main.current_map.objects.append(fx)
 
 def knock_back(actor,target):
     # knock the target back one space. Stun it if it cannot move.

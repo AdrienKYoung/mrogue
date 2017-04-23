@@ -72,7 +72,11 @@ def warp_weapon(duration = 20):
 
 def poison(duration = 10):
     return StatusEffect('poisoned', duration, libtcod.yellow, message="You have been poisoned!",
-                        description="This unit takes poison damage at the end of every turn.")
+                        description="This unit takes poison damage at the end of every turn.", on_tick=poison_tick)
+
+def bleeding(duration = 10):
+    return StatusEffect('bleeding', duration, libtcod.yellow, message="You are bleeding badly!",
+                        description="This unit takes damage at the end of every turn.", on_tick=poison_tick)
 
 def invulnerable(duration = 5):
     return StatusEffect('invulnerable', duration, libtcod.blue, message="A golden shield protects you from harm!",
@@ -102,6 +106,11 @@ def serenity(duration=30):
     return StatusEffect('serenity', duration, libtcod.light_blue, evasion_mod=1.5, accuracy_mod=1.5,
                         message='Your mind becomes calm.',
                         description='This unit has increased evasion and accuracy.')
+
+def blinded(duration=10):
+    return StatusEffect('serenity', duration, libtcod.light_blue, accuracy_mod=0.35,
+                        message="Your can't see anything!",
+                        description='This unit has sharply decreased accuracy.')
 
 def sluggish(duration=5):
     return StatusEffect('sluggish', duration, libtcod.sepia, message='Your reaction time slows...',

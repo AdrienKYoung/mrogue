@@ -287,7 +287,7 @@ library = {
 
     'spell_frozen_orb' : Spell(
         'frost orb',
-        actions.magma_bolt,
+        actions.frozen_orb,
         'Fires an orb of frost that slows struck targets.',
         [
             {'stamina_cost':25,'charges':3},
@@ -298,7 +298,7 @@ library = {
 
     'spell_flash_frost' : Spell(
         'flash frost',
-        actions.magma_bolt,
+        actions.flash_frost,
         'Attempts to freeze a target solid with a burst of magical ice.',
         [
             {'stamina_cost':40,'charges':1},
@@ -308,8 +308,8 @@ library = {
 
     'spell_ice_shards' : Spell(
         'ice shards',
-        actions.magma_bolt,
-        'Sends out a blast of sharp ice shards',
+        actions.ice_shards,
+        'Blasts an area with razor sharp ice shards',
         [
             {'stamina_cost':40,'charges':2},
             {'stamina_cost':35,'charges':3},
@@ -319,7 +319,7 @@ library = {
 
     'spell_snowstorm' : Spell(
         'snowstorm',
-        actions.magma_bolt,
+        actions.snowstorm,
         'Summons a whirling ice storm, which inhibits movement and sight.',
         [
             {'stamina_cost':45,'charges':1},

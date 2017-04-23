@@ -162,6 +162,16 @@ data = {
         'range':3
     },
 
+    'ability_flame_wall': {
+        'name': 'heat ray',
+        'function': actions.flame_wall,
+        'cooldown': 10,
+        'element':'fire',
+        'dice' : 0,
+        'base_damage' : '0d0',
+        'range':10
+    },
+
     'ability_magma_bolt': {
         'name': 'heat ray',
         'function': actions.magma_bolt,
@@ -198,7 +208,7 @@ data = {
 
     'ability_frozen_orb': {
         'name': 'frozen orb',
-        'function': actions.magma_bolt,
+        'function': actions.frozen_orb,
         'cooldown': 10,
         'element':'cold',
         'dice' : 2,
@@ -208,7 +218,7 @@ data = {
 
     'ability_flash_frost': {
         'name': 'flash frost',
-        'function': actions.magma_bolt,
+        'function': actions.flash_frost,
         'cooldown': 10,
         'element':'cold',
         'dice' : 0,
@@ -223,8 +233,9 @@ data = {
         'cooldown': 10,
         'element':'cold',
         'dice' : 1,
-        'base_damage' : '3d6',
-        'range':3
+        'base_damage' : '1d8',
+        'range': 3,
+        'radius': 1
     },
 
     'ability_snowstorm': {
@@ -233,8 +244,9 @@ data = {
         'cooldown': 10,
         'element':'cold',
         'dice' : 1,
-        'base_damage' : '1d6',
-        'range':10
+        'base_damage' : '1d4',
+        'range':10,
+        'radius':4
     },
 
     'ability_avalanche': {

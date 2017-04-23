@@ -705,7 +705,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
 def spell_attack(fighter,target,spell_name):
     config = abilities.data[spell_name]
-    spell_attack_ex(fighter,target,
+    return spell_attack_ex(fighter,target,
                     config.get('accuracy'),
                     config.get('base_damage','0d0'),
                     config.get('dice',0),
