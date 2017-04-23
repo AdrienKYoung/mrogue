@@ -365,6 +365,7 @@ armor_materials = {
     'blessed'       :   {'resistance':'dark'},
     'infernal'      :   {'resistance':'radiant'},
     'enchanted'     :   {'resistance':'spell'}
+    #TODO: heavy - increased weight and +1 armor
 }
 
 proto = {
@@ -860,7 +861,7 @@ proto = {
     'weapon_lifedrinker_dagger': { #lit. german: 'knife'. no english period term
         'name'               : 'lifedrinker dagger',
         'category'           : 'weapon',
-        'damage_type'        : 'slashing',
+        'damage_type'        : 'stabbing',
         'subtype'            : 'dagger',
         'char'               : '-',
         'color'              : libtcodpy.green,
@@ -919,7 +920,7 @@ proto = {
         'name'               : 'soul reaper',
         'category'           : 'weapon',
         'subtype'            : 'polearm',
-        'damage_type'        : 'dark',
+        'damage_type'        : 'slashing',
         'char'               : ')',
         'color'              : libtcodpy.dark_violet,
         'type'               : 'item',

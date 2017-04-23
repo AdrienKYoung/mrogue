@@ -604,6 +604,8 @@ def render_action_panel():
         draw_height += 2
         libtcod.console_print(action_panel, 1, draw_height, '(TAB) Toggle\n    Selection')
         draw_height += 3
+        libtcod.console_print(action_panel, 1, draw_height, '(M) Map')
+        draw_height += 2
         # Get/Interact
         items_here = main.get_objects(player.instance.x, player.instance.y, condition=lambda o: o.item)
         if len(items_here) > 0:
