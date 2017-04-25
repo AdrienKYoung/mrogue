@@ -985,17 +985,29 @@ def spawn_monster(name, x, y, team='enemy'):
             death = p.get('death_function')
         fighter_component = combat.Fighter(
                     hp=int(p['hp'] * modifier.get('hp_bonus',1)),
-                    armor=int(p['armor'] * modifier.get('armor_bonus',1)), evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
+                    armor=int(p['armor'] * modifier.get('armor_bonus',1)),
+                    evasion=int(p['evasion'] * modifier.get('evasion_bonus',1)),
                     accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)),
-                    death_function=death, spell_power=p.get('spell_power', 0) * modifier.get('spell_power_bonus',1),
-                    can_breath_underwater=True, resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
+                    death_function=death,
+                    spell_power=p.get('spell_power', 0) * modifier.get('spell_power_bonus',1),
+                    can_breath_underwater=True,
+                    resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
                     weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
-                    inventory=spawn_monster_inventory(p.get('equipment'),p.get('loot_level',-10)), on_hit=p.get('on_hit'),
+                    inventory=spawn_monster_inventory(p.get('equipment'),
+                    loot_level=p.get('loot_level',-10)),
+                    on_hit=p.get('on_hit'),
                     base_shred=p.get('shred', 0) + modifier.get('shred_bonus',1),
-                    base_guaranteed_shred=p.get('guaranteed_shred', 0), on_get_hit=p.get('on_get_hit'),
-                    base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1), hit_table=p.get('body_type'),
-                    monster_flags=p.get('flags', 0),subtype=p.get('subtype'),damage_bonus=p.get('attack_bonus', 0),
-                    monster_str_dice=p.get('strength_dice'), team=p.get('team', team), stealth=p.get('stealth'))
+                    base_guaranteed_shred=p.get('guaranteed_shred', 0),
+                    on_get_hit=p.get('on_get_hit'),
+                    base_pierce=p.get('pierce', 0) * modifier.get('pierce_bonus',1),
+                    hit_table=p.get('body_type'),
+                    monster_flags=p.get('flags', 0),
+                    subtype=p.get('subtype'),
+                    damage_bonus=p.get('attack_bonus', 0),
+                    monster_str_dice=p.get('strength_dice'),
+                    team=p.get('team', team),
+                    stealth=p.get('stealth'),
+                    _range=p.get('range',1))
         if p.get('attributes'):
             fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
             fighter_component.attributes = [a for a in p['attributes'] if a.startswith('attribute_')]

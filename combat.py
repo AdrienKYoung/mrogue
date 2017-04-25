@@ -16,7 +16,7 @@ class Fighter:
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
                  damage_bonus=0, monster_str_dice=None, spell_resist=0, team='enemy', on_get_hit=None, stealth=None,
-                 attributes=[]):
+                 attributes=[], _range=1):
         self.owner = None
         self.base_max_hp = hp
         self.hp = hp
@@ -49,6 +49,7 @@ class Fighter:
         self.team = team
         self.on_get_hit = on_get_hit
         self.stealth = stealth
+        self.range = _range
 
         self.base_damage_bonus = damage_bonus
         self.monster_str_dice = monster_str_dice
@@ -168,7 +169,7 @@ class Fighter:
         result = 'failed'
         attacks = self.calculate_attack_count()
         for i in range(attacks):
-            result = attack_ex(self, target, self.calculate_attack_stamina_cost())
+            result = attack_ex(self, target, self.calculate_attack_stamina_cost(), on_hit=self.on_hit)
             if result == 'failed':
                 return result
             elif target.fighter is None:
@@ -254,6 +255,9 @@ class Fighter:
                 if 'refresh' in new_effect.stacking_behavior:
                     # refresh the effect
                     effect.time_limit = new_effect.time_limit
+                    add_effect = False
+                if 'extend' in new_effect.stacking_behavior:
+                    effect.time_limit += new_effect.time_limit
                     add_effect = False
                 if 'stack' in new_effect.stacking_behavior:
                     #add to current stack

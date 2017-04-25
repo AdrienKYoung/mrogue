@@ -806,6 +806,10 @@ def summon_roaches(actor, attacker, damage):
         if not main.is_blocked(adj[0], adj[1]) and libtcod.random_get_int(0, 1, 10) <= 5:
             actor.summons.append(main.spawn_monster('monster_cockroach', adj[0], adj[1]))
 
+def poison_attack_1(actor,target,damage):
+    if main.roll_dice('1d10') > target.fighter.armor:
+        target.fighter.apply_status_effect(effects.poison())
+
 def potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
 

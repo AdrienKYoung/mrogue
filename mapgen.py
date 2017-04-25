@@ -1450,7 +1450,8 @@ def make_test_space():
     player.instance.x = player_tile[0]
     player.instance.y = player_tile[1]
 
-    #main.spawn_monster('monster_reeker', player_tile[0], player_tile[1] - 20)
+    if consts.DEBUG_TEST_MONSTER is not None:
+        main.spawn_monster(consts.DEBUG_TEST_MONSTER, player_tile[0], player_tile[1] - 20)
 
     #stair_tile = (player_tile[0], player_tile[1] + 3)
     #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,

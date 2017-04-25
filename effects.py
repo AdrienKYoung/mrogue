@@ -71,9 +71,11 @@ def warp_weapon(duration = 20):
     return StatusEffect('warp', duration, libtcod.gray, message="Your weapon turns black!",
                         description="This unit's weapon deals severe void damage.", cleanseable=False)
 
-def poison(duration = 10):
-    return StatusEffect('poisoned', duration, libtcod.yellow, message="You have been poisoned!",
-                        description="This unit takes poison damage at the end of every turn.", on_tick=poison_tick)
+def poison(duration = 30):
+    fx = StatusEffect('poisoned', duration, libtcod.yellow, message="You have been poisoned!",
+                        description="This unit takes poison damage slowly.", on_tick=poison_tick, stacking_behavior='extend')
+    fx.timer = 0
+    return fx
 
 def bleeding(duration = 10):
     return StatusEffect('bleeding', duration, libtcod.yellow, message="You are bleeding badly!",
@@ -174,7 +176,11 @@ def regeneration_tick(effect,object=None):
 
 def poison_tick(effect,object=None):
     if object is not None or object.fighter is not None:
-        object.fighter.take_damage(2)
+        if effect.timer > 2:
+            object.fighter.take_damage(1)
+            effect.timer = 0
+        else:
+            effect.timer += 1
 
 def rot_apply(object=None):
     if object is not None or object.fighter is not None:

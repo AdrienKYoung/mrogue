@@ -108,6 +108,12 @@ class AI_Default:
                         if a.use(monster, self.target) != 'didnt-take-turn':
                             return monster.behavior.attack_speed
 
+            if monster.fighter.range > 1 and monster.distance_to(self.target) <= monster.fighter.range:
+                monster.fighter.attack(self.target)
+                ui.render_projectile([monster.x, monster.y], [self.target.x, self.target.y], libtcod.white)
+                if monster.behavior is not None:
+                    return monster.behavior.attack_speed
+
             # Handle moving
             if not is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y):
                 monster.move_astar(self.target.x, self.target.y)
