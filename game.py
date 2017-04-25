@@ -552,6 +552,10 @@ class Tile:
         return terrain.data[self.tile_type].isPit
 
     @property
+    def is_ice(self):
+        return terrain.data[self.tile_type].isIce
+
+    @property
     def on_step(self):
         return terrain.data[self.tile_type].on_step
 
@@ -600,6 +604,8 @@ def step_on_blightweed(weed, obj):
                 ui.message('The blightweed thorns shred %s armor!' % syntax.name(obj.name, possesive=True), libtcod.desaturated_red)
 
 def step_on_snow_drift(x,y,obj):
+    if obj is player.instance:
+        player.instance.fighter.adjust_stamina(-current_map.tiles[x][y].stamina_cost)
     current_map.tiles[x][y].tile_type = 'snowy ground'
 
 def adjacent_tiles_orthogonal(x, y):
@@ -1107,7 +1113,7 @@ def create_item(name, material=None, quality=''):
             spell_list=p.get('spells'),
             level_progression=p.get('levels'),
             level_costs=p.get('level_costs'),
-            crit_bonus=p.get('crit_bonus',1.5),
+            crit_bonus=p.get('crit_bonus',1.0),
             resistances=p.get('resistances',[]),
             subtype=p.get('subtype'),
             starting_level=p.get('level',0),
@@ -1180,11 +1186,25 @@ def check_breakage(equipment):
     else:
         return False
 
+def melt_ice(x, y):
+    if x < 0 or y < 0 or x >= consts.MAP_WIDTH or y >= consts.MAP_WIDTH:
+        return
+    if not current_map.tiles[x][y].is_ice:
+        return
+    if current_map.tiles[x][y].tile_type == 'ice':
+        current_map.tiles[x][y].tile_type = 'shallow water'
+    elif current_map.tiles[x][y].tile_type == 'deep_ice':
+        current_map.tiles[x][y].tile_type = 'deep water'
+    changed_tiles.append((x, y))
+
 def create_fire(x,y,temp):
     global changed_tiles
 
     tile = current_map.tiles[x][y]
     if tile.is_water or (tile.blocks and tile.flammable == 0):
+        return
+    elif tile.is_ice:
+        melt_ice(x, y)
         return
     current = object_at_tile(x,y,'Fire')
     if current is not None:

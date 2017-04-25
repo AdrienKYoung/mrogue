@@ -987,19 +987,32 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
         else:
             rotation = 0
 
-        if template.max_x + x >= consts.MAP_WIDTH:
-            x = consts.MAP_WIDTH - 1 - template.max_x
-        if template.max_y + y >= consts.MAP_HEIGHT:
-            y = consts.MAP_HEIGHT - 1 - template.max_y
-        if template.min_x + x < 0:
-            x = -template.min_x
-        if template.min_y + y < 0:
-            y = -template.min_y
+
         template.set_pos(x, y)
+        adj_x = adj_y = 0
+        if template.min_x < 0:
+            adj_x = -template.min_x
+        if template.max_x >= consts.MAP_WIDTH:
+            adj_x = consts.MAP_WIDTH - template.max_x - 1
+        if template.min_y < 0:
+            adj_y = -template.min_y
+        if template.max_y >= consts.MAP_WIDTH:
+            adj_y = consts.MAP_WIDTH - template.max_y - 1
+        template.set_pos(x + adj_x, y + adj_y)
+
+        #if template.max_x + x >= consts.MAP_WIDTH:
+        #    x = consts.MAP_WIDTH - 1 - template.max_x
+        #if template.max_y + y >= consts.MAP_HEIGHT:
+        #    y = consts.MAP_HEIGHT - 1 - template.max_y
+        #if template.min_x + x < 0:
+        #    x = -template.min_x
+        #if template.min_y + y < 0:
+        #    y = -template.min_y
+        #template.set_pos(x, y)
 
         # Check to see if our new feature collides with any existing features
         if not hard_override:
-            new_rect = Rect(template.pos[0], template.pos[1], template.bounds[0], template.bounds[1])
+            new_rect = Rect(template.pos[0] - template.width / 2, template.pos[1] - template.height / 2, template.bounds[0], template.bounds[1])
             for rect in feature_rects:
                 if rect.intersect(new_rect):
                     return 'failed'
@@ -1022,9 +1035,6 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
                         open_tiles.append(tile)
 
         apply_scripts(feature)
-
-        # reorient the template for next placement
-        template.rotate(2 * math.pi - rotation)
 
         return 'success'
 
@@ -1190,7 +1200,7 @@ def make_garden_rooms(leaf):
         for y in range(leaf.h):
             room.set_tile(0, y, default_wall)
             room.set_tile(leaf.w, y, default_wall)
-        room.set_pos(leaf.x, leaf.y)
+        room.set_pos(leaf.x + room.width / 2, leaf.y + room.height / 2)
         apply_room(room)
     else:
         make_garden_rooms(leaf.left)
@@ -1230,6 +1240,7 @@ def make_map_forest():
             #if elevation == 0:
             #    tile = 'snow drift'
             #room.set_tile(x,y,tile,elevation)
+
     apply_room(room)
 
     # create tunnels to connect feature points to closet two neighbors
@@ -1251,11 +1262,7 @@ def make_map_forest():
             neighbor = dist[1]
             create_wandering_tunnel(f[0], f[1], neighbor[1][0], neighbor[1][1], tile_type=default_floor, wide=False)
             connected.append(neighbor[1])
-    open_tiles = []
-    for y in range(consts.MAP_HEIGHT):
-        for x in range(consts.MAP_WIDTH):
-            if not map.tiles[x][y].blocks:
-                open_tiles.append((x, y))
+
     # flood fill to remove isolated pockets
     fill_pockets()
 
@@ -1267,12 +1274,18 @@ def make_map_forest():
     #             libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 3))
     #    create_terrain_patch(start, default_wall, 40, 80)
 
-    tree_count = libtcod.random_get_int(0, 5, 20)
-    for i in range(tree_count):
-        tree_pos = (
-        libtcod.random_get_int(0, 1, consts.MAP_WIDTH - 2), libtcod.random_get_int(0, 1, consts.MAP_HEIGHT - 2))
-        if not map.tiles[tree_pos[0]][tree_pos[1]].is_water:
-            change_map_tile(tree_pos[0], tree_pos[1], 'barren tree')
+    open_tiles = []
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            if not map.tiles[x][y].blocks:
+                open_tiles.append((x, y))
+
+    feature_count = libtcod.random_get_int(0, 0, 10)
+    for i in range(feature_count):
+        tile = choose_random_tile(open_tiles)
+        feature_index = libtcod.random_get_int(0, 0, len(feature_categories['forest']) - 1)
+        feature_name = feature_categories['forest'][feature_index].name
+        create_feature(tile[0], tile[1], feature_name, open_tiles)
 
     make_basic_map_links()
 

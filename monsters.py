@@ -76,7 +76,7 @@ proto = {
         'char': 'z',
         'color': libtcod.dark_chartreuse,
         'hp': 45,
-        'strength_dice' : '2d8',
+        'strength_dice' : '1d6',
         'attack_bonus' : 0,
         'armor': 0,
         'evasion': 4,

@@ -7,7 +7,7 @@ class TileData:
     def __init__(self, blocks, blocks_sight, name, char,
                  foreground_color, background_color, description='unremarkable terrain', stamina_cost=0, jumpable=True,
                  burnTemp=0, flammable=0, diggable=False, isWall = False, isFloor = False, isWater = False,
-                 isRamp=False, isPit=False, on_step=None):
+                 isRamp=False, isPit=False, isIce=False, on_step=None):
         self.blocks = blocks
         self.blocks_sight = blocks_sight
         self.name = name
@@ -26,6 +26,7 @@ class TileData:
         self.isRamp = isRamp
         self.isPit = isPit
         self.on_step = on_step
+        self.isIce = isIce
 
 data = {
     'stone floor': TileData(False, False, 'stone floor', '.', (128, 96, 0), (64, 48, 0),
@@ -90,7 +91,9 @@ data = {
     'pine tree': TileData(True, True, 'pine tree', libtcod.CHAR_ARROW2_N, libtcod.darkest_green,libtcod.white,
                              'a pine tree, its needles ever green', flammable=2, isWall=True),
     'ice': TileData(False, False, 'ice', '=', libtcod.white, libtcod.light_blue,
-                             'floor made of a thick sheet of ice', isFloor=True),
+                             'ground made of a thick sheet of ice', isFloor=True, isIce=True),
+    'deep_ice': TileData(False, False, 'ice', '=', libtcod.white, libtcod.light_blue,
+                             'ground made of a thick sheet of ice', isFloor=True, isIce=True),
 }
 
 # flags

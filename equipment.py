@@ -226,7 +226,7 @@ class Equipment:
                 acc_str += '+'
             libtcod.console_print(console, x, y + print_height, acc_str + str(self.accuracy_bonus))
             print_height += 1
-        if self.crit_bonus != 0:
+        if self.crit_bonus != 1.0:
             acc_str = 'Crit: x'
             libtcod.console_print(console, x, y + print_height, acc_str + str(self.crit_bonus))
             print_height += 1

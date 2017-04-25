@@ -417,6 +417,34 @@ FLAGS NOREFLECT
 .>.
 ...
 ENDFEATURE
+FEATURE forest_hgate
+CATEGORY forest_hlink
+FLAGS NOREFLECT
+###
+.>.
+...
+ENDFEATURE
+FEATURE forest_vgate
+CATEGORY forest_vlink
+FLAGS NOREFLECT
+...
+.>.
+...
+ENDFEATURE
+FEATURE garden_hgate
+CATEGORY garden_hlink
+FLAGS NOREFLECT
+###
+.>.
+...
+ENDFEATURE
+FEATURE garden_vgate
+CATEGORY garden_vlink
+FLAGS NOREFLECT
+...
+.>.
+...
+ENDFEATURE
 //*******************
 //16     Flatland
 //*******************
@@ -577,4 +605,34 @@ SCRIPT create_slopes
   ##..4..##
    ###.###
      ###
+ENDFEATURE
+//*******************
+//   Frozen Pond 1
+//*******************
+FEATURE frozen_pond_1
+CATEGORY forest
+DEFINE - ice
+  --
+ -----
+ ------
+---------
+---------
+ -------
+  -----
+  -----
+  ----
+ENDFEATURE
+//*******************
+//   Frozen Pond 2
+//*******************
+FEATURE frozen_pond_1
+CATEGORY forest
+DEFINE - ice
+ -----
+-------
+--------
+ -------
+  -----
+ -----
+  --
 ENDFEATURE

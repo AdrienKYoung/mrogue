@@ -239,7 +239,10 @@ def raise_zombie(actor=None, target=None):
 
 
 def fireball(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
     channel(actor, get_cast_time(actor,'ability_fireball'), 'fireball', lambda: _continuation_fireball(actor, target))
+    return 'success'
 
 def _continuation_fireball(actor, target):
     x, y = 0, 0
@@ -255,7 +258,11 @@ def _continuation_fireball(actor, target):
     for obj in main.current_map.fighters:
         if obj.distance(x, y) <= spell['radius']:
             combat.spell_attack(actor.fighter, obj, 'ability_fireball')
-            obj.fighter.apply_status_effect(effects.burning())
+            if obj.fighter is not None:
+                obj.fighter.apply_status_effect(effects.burning())
+    for _x in range(x - 1, x + 2):
+        for _y in range(y - 1, y + 2):
+            main.melt_ice(_x, _y)
     return 'success'
 
 def arcane_arrow(actor=None, target=None):
@@ -323,6 +330,9 @@ def heat_ray(actor=None, target=None):
         for l in line:
             if obj.x == l[0] and obj.y == l[1]:
                 combat.spell_attack(actor.fighter, obj,'ability_heat_ray')
+
+    main.melt_ice(x, y)
+
     return 'success'
 
 
@@ -410,6 +420,7 @@ def magma_bolt(actor=None, target=None):
     main.current_map.tiles[x][y].tile_type = 'lava'
     main.current_map.pathfinding.mark_blocked((x, y))
     main.changed_tiles.append((x, y))
+    return 'success'
 
 def frozen_orb(actor=None, target=None):
     spell = abilities.data['ability_frozen_orb']

@@ -56,7 +56,6 @@ table = {
         'equipment_mail_armor',
         'equipment_brigandine',
         'equipment_great_helm',
-        'equipment_pauldrons',
         'equipment_greaves'
     ],
 
@@ -534,7 +533,8 @@ proto = {
         'accuracy'           : 1,
         'weapon_dice'        : '2d6',
         'str_dice'           : 2,
-        'attack_delay'       : 14
+        'attack_delay'       : 14,
+        'crit_bonus'         : 1.5
     },
     'weapon_greatsword': { #called a spadone or montante in historical circles, but no one will recognize that
         'name'               : 'greatsword',
@@ -552,7 +552,8 @@ proto = {
         'accuracy'           : 1,
         'weapon_dice'        : '3d6',
         'str_dice'           : 3,
-        'attack_delay'       : 14
+        'attack_delay'       : 14,
+        'crit_bonus'         : 1.5
     },
     'weapon_dagger': {
         'name'               : 'dagger',
@@ -631,7 +632,8 @@ proto = {
         'ctrl_attack_desc'   : 'Reach-Attack - attack an enemy up to 2 spaces away in this direction.',
         'weapon_dice'        : '2d10',
         'str_dice'           : 1,
-        'attack_delay'       : 14
+        'attack_delay'       : 14,
+        'crit_bonus'         : 1.5
     },
     'weapon_halberd': {
         'name'               : 'halberd',
@@ -652,7 +654,8 @@ proto = {
         'ctrl_attack_desc'   : 'Reach-Attack - attack an enemy up to 2 spaces away in this direction.',
         'weapon_dice'        : '3d6',
         'str_dice'           : 3,
-        'attack_delay'       : 14
+        'attack_delay'       : 14,
+        'crit_bonus'         : 1.5
     },
     'weapon_pickaxe': {
         'name'               : 'pickaxe',
@@ -675,7 +678,8 @@ proto = {
         'break'              : 5.0,
         'weapon_dice'        : '1d4',
         'str_dice'           : 3,
-        'attack_delay'       : 28
+        'attack_delay'       : 28,
+        'crit_bonus'         : 1.5
     },
     'weapon_hatchet': {
         'name'               : 'hatchet',
@@ -695,7 +699,8 @@ proto = {
         'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.',
         'weapon_dice'        : '1d6',
         'str_dice'           : 2,
-        'attack_delay'       : 16
+        'attack_delay'       : 16,
+        'crit_bonus'         : 1.5
     },
     'weapon_dane_axe': {
         'name'               : 'dane axe',
@@ -715,7 +720,8 @@ proto = {
         'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.',
         'weapon_dice'        : '2d10',
         'str_dice'           : 3,
-        'attack_delay'       : 16
+        'attack_delay'       : 16,
+        'crit_bonus'         : 1.5
     },
     'weapon_mace': {
         'name'               : 'mace',
@@ -734,7 +740,8 @@ proto = {
         'weapon_dice'        : '1d6',
         'str_dice'           : 2,
         'on_hit'             : [actions.mace_stun],
-        'attack_delay'       : 18
+        'attack_delay'       : 18,
+        'crit_bonus'         : 1.5
     },
     'weapon_warhammer': {
         'name'               : 'warhammer',
@@ -754,7 +761,8 @@ proto = {
         'weapon_dice'        : '1d8',
         'str_dice'           : 4,
         'on_hit'             : [actions.mace_stun],
-        'attack_delay'       : 20
+        'attack_delay'       : 20,
+        'crit_bonus'         : 1.5
     },
     'weapon_coal_mace': {
         'name'               : 'coal-brazer mace',
@@ -773,7 +781,8 @@ proto = {
         'weapon_dice'        : '1d6',
         'str_dice'           : 2,
         'on_hit'             : [actions.mace_stun],
-        'attack_delay'       : 22
+        'attack_delay'       : 22,
+        'crit_bonus'         : 1.5
     },
 
     'weapon_battleaxe_of_pure_fire': {
@@ -795,7 +804,8 @@ proto = {
         'weapon_dice'        : '2d12',
         'str_dice'           : 3,
         'on_hit'             : [combat.on_hit_burn],
-        'attack_delay'       : 16
+        'attack_delay'       : 16,
+        'crit_bonus'         : 1.5
     },
     'weapon_diamond_warhammer': {
         'name'               : 'diamond warhammer',
@@ -815,7 +825,8 @@ proto = {
         'weapon_dice'        : '1d8',
         'str_dice'           : 5,
         'on_hit'             : [actions.mace_stun],
-        'attack_delay'       : 22
+        'attack_delay'       : 22,
+        'crit_bonus'         : 1.5
     },
     'weapon_storm_mace': {
         'name'               : 'storm mace',
@@ -834,7 +845,8 @@ proto = {
         'weapon_dice'        : '3d6',
         'str_dice'           : 2,
         'on_hit'             : [combat.on_hit_chain_lightning],
-        'attack_delay'       : 22
+        'attack_delay'       : 22,
+        'crit_bonus'         : 1.5
     },
     'weapon_trident_of_raging_water': {
         'name'               : 'trident of raging water',
@@ -856,7 +868,8 @@ proto = {
         'weapon_dice'        : '3d6',
         'str_dice'           : 3,
         'on_hit'             : [combat.on_hit_slow, combat.on_hit_sluggish],
-        'attack_delay'       : 14
+        'attack_delay'       : 14,
+        'crit_bonus'         : 1.5
     },
     'weapon_lifedrinker_dagger': { #lit. german: 'knife'. no english period term
         'name'               : 'lifedrinker dagger',
@@ -895,7 +908,8 @@ proto = {
         'weapon_dice'        : '2d10',
         'str_dice'           : 2,
         'on_hit'             : [combat.on_hit_freeze],
-        'attack_delay'       : 10
+        'attack_delay'       : 10,
+        'crit_bonus'         : 2.5
     },
     'weapon_staff_of_force': {
         'name'               : 'staff of force',
@@ -914,7 +928,8 @@ proto = {
         'weapon_dice'        : '1d10',
         'str_dice'           : 1,
         'on_hit'             : [combat.on_hit_knockback],
-        'attack_delay'       : 10
+        'attack_delay'       : 10,
+        'crit_bonus'         : 1.5
     },
     'weapon_soul_reaper': {
         'name'               : 'soul reaper',
@@ -936,7 +951,8 @@ proto = {
         'weapon_dice'        : '3d10',
         'str_dice'           : 2,
         'on_hit'             : [combat.on_hit_reanimate],
-        'attack_delay'       : 18
+        'attack_delay'       : 18,
+        'crit_bonus'         : 1.5
     },
 
     #ARMOR
@@ -952,7 +968,6 @@ proto = {
         'ability'       : 'block', #not implemented
         'evasion_bonus' : -2,
         'weight'        : 3
-
     },
 
     'equipment_cloth_robes': {

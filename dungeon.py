@@ -119,7 +119,7 @@ branches = {
             {'encounter':['monster_nosferatu']},
         ],
         'generate':mapgen.make_map_forest,
-        'map_color'     : libtcod.darkest_green,
+        'map_color'     : libtcod.darkest_sky,
     },
     'garden': {
         'name'          :"the gardens",
@@ -137,6 +137,6 @@ branches = {
 
         ],
         'generate':mapgen.make_map_garden,
-        'map_color'     : libtcod.light_green,
+        'map_color'     : libtcod.darker_green,
     }
 }
