@@ -1104,10 +1104,12 @@ def show_ability_screen():
 
 
 map_offsets = {
-    'north' : (0, -1),
-    'south' : (0, 1),
-    'east' : (1, 0),
-    'west' : (-1, 0),
+    'north' : (0, -1, 0),
+    'south' : (0, 1, 0),
+    'east' : (1, 0, 0),
+    'west' : (-1, 0, 0),
+    'down' : (0, 0, 1),
+    'up' : (0, 0, -1)
 }
 
 def show_map_screen():

@@ -5,8 +5,7 @@ import random
 import math
 import terrain
 import Queue
-import pathfinding
-import world
+import copy
 import player
 import dungeon
 
@@ -94,24 +93,48 @@ class Room:
         self.pos = 0, 0
         self.no_overwrite = False
 
+
+    @property
+    def bounds(self):
+        if self.max_x is None or self.min_x is None or self.max_y is None or self.min_y is None:
+            return 0, 0
+        else:
+            return self.max_x - self.min_x + 1, self.max_y - self.min_y + 1
+
+    @property
+    def width(self):
+        return self.max_x - self.min_x + 1
+
+    @property
+    def height(self):
+        return self.max_y - self.min_y + 1
+
     # define the world-space position of the upper-left-hand corner of this room. Adjust all tile positions
     def set_pos(self, x, y):
         if self.pos[0] == x and self.pos[1] == y:
             return  # No translation
         new_tiles = {}
         new_data = {}
+        new_min_x = new_min_y = 10000
+        new_max_x = new_max_y = -10000
         for tile in self.tiles.keys():
-            new_x = tile[0] + x - self.min_x
-            new_y = tile[1] + y - self.min_y
+            new_x = tile[0] + x - self.min_x - self.width / 2
+            new_y = tile[1] + y - self.min_y - self.height / 2
+            if new_x < new_min_x:
+                new_min_x = new_x
+            if new_y < new_min_y:
+                new_min_y = new_y
+            if new_x > new_max_x:
+                new_max_x = new_x
+            if new_y > new_max_y:
+                new_max_y = new_y
             new_tiles[new_x, new_y] = self.tiles[tile]
             if tile in self.data.keys():
                 new_data[new_x, new_y] = self.data[tile]
-        w = self.bounds[0] - 1
-        h = self.bounds[1] - 1
-        self.min_x = x
-        self.min_y = y
-        self.max_x = self.min_x + w
-        self.max_y = self.min_y + h
+        self.min_x = new_min_x
+        self.min_y = new_min_y
+        self.max_x = new_max_x
+        self.max_y = new_max_y
         self.tiles = new_tiles
         self.data = new_data
         self.pos = x, y
@@ -189,7 +212,6 @@ class Room:
             #else:
             #    self.data[(x, y)] += (' ' + ele_str)
 
-
     def get_open_tiles(self):
         return_tiles = []
         for tile in self.tiles.keys():
@@ -219,13 +241,6 @@ class Room:
             if terrain.data[tile_type].blocks or terrain.data[tile_type].isPit or tile in self.data.keys():
                 return_tiles.append(tile)
         return return_tiles
-
-    @property
-    def bounds(self):
-        if self.max_x is None or self.min_x is None or self.max_y is None or self.min_y is None:
-            return 0, 0
-        else:
-            return self.max_x - self.min_x + 1, self.max_y - self.min_y + 1
 
     def add_rectangle(self, x0=0, y0=0, width=None, height=None, tile_type=default_floor):
         if width is None:
@@ -825,7 +840,6 @@ def load_features_from_file(filename):
         if current_line.startswith('FEATURE'):
             name = current_line.split(' ')[1]
 
-            #do stuff
             feature_lines = []
             categories = []
             while lines[0] != 'ENDFEATURE':
@@ -960,7 +974,7 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
         return 'feature not found'
     else:
         feature = features[feature_name]
-        template = feature.room
+        template = copy.copy(feature.room)
 
         if not feature.has_flag(NOREFLECT):
             template.reflect(reflect_x=libtcod.random_get_int(0, 0, 1) == 1, reflect_y=libtcod.random_get_int(0, 0, 1) == 1)
@@ -973,10 +987,14 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
         else:
             rotation = 0
 
-        if template.bounds[0] + x > consts.MAP_WIDTH - 1:
-            x = consts.MAP_WIDTH - 1 - template.bounds[0]
-        if template.bounds[1] + y > consts.MAP_HEIGHT - 1:
-            y = consts.MAP_HEIGHT - 1 - template.bounds[1]
+        if template.max_x + x >= consts.MAP_WIDTH:
+            x = consts.MAP_WIDTH - 1 - template.max_x
+        if template.max_y + y >= consts.MAP_HEIGHT:
+            y = consts.MAP_HEIGHT - 1 - template.max_y
+        if template.min_x + x < 0:
+            x = -template.min_x
+        if template.min_y + y < 0:
+            y = -template.min_y
         template.set_pos(x, y)
 
         # Check to see if our new feature collides with any existing features
@@ -1256,13 +1274,15 @@ def make_map_forest():
         if not map.tiles[tree_pos[0]][tree_pos[1]].is_water:
             change_map_tile(tree_pos[0], tree_pos[1], 'barren tree')
 
+    make_basic_map_links()
+
 def make_map_marsh():
 
     rooms = []
     num_rooms = 0
 
     room = create_room_cellular_automata(consts.MAP_WIDTH - 2, consts.MAP_HEIGHT - 2)
-    room.set_pos(1, 1)
+    room.set_pos(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2)
     apply_room(room)
     open_tiles = room.get_open_tiles()
     grass_count = libtcod.random_get_int(0, 5, 15)
@@ -1304,6 +1324,8 @@ def make_map_marsh():
         boss_tile = choose_random_tile(open_tiles)
         main.spawn_monster(boss, boss_tile[0], boss_tile[1])
 
+    make_basic_map_links()
+
 
 def make_map_beach():
 
@@ -1329,6 +1351,8 @@ def make_map_beach():
             break
     player.instance.x = player_x
     player.instance.y = player_y
+
+    make_basic_map_links()
 
 
 def make_map_badlands():
@@ -1409,6 +1433,7 @@ def make_map_badlands():
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d'+str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),
                        active_branch['xp_amount'])
+    make_basic_map_links()
 
 
 def make_test_space():
@@ -1420,7 +1445,7 @@ def make_test_space():
     player_tile = (consts.MAP_WIDTH / 2, consts.MAP_HEIGHT - 4)
 
     if consts.DEBUG_TEST_FEATURE is not None:
-        create_feature(consts.MAP_WIDTH / 2 - 11, consts.MAP_HEIGHT / 2 - 11, consts.DEBUG_TEST_FEATURE, None)
+        create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, consts.DEBUG_TEST_FEATURE, None)
 
     player.instance.x = player_tile[0]
     player.instance.y = player_tile[1]
@@ -1434,7 +1459,7 @@ def make_test_space():
     #main.stairs.send_to_back()
 
 
-def make_map_links():
+def make_basic_map_links():
     # make map links
     for link in map.links:
         hlink = True
@@ -1442,36 +1467,41 @@ def make_map_links():
         c = '>'
         if link[0] == 'north':
             x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
-            y = 1
+            y = 2
             r = angles[0]
             c = chr(24)
         elif link[0] == 'south':
             x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
-            y = consts.MAP_HEIGHT - 1
+            y = consts.MAP_HEIGHT - 3
             r = angles[2]
             c = chr(25)
         elif link[0] == 'east':
-            x = consts.MAP_WIDTH - 1
+            x = consts.MAP_WIDTH - 3
             y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
             r = angles[1]
             c = chr(26)
         elif link[0] == 'west':
-            x = 1
+            x = 2
             y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
             r = angles[3]
             c = chr(27)
         else:
             x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
             y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
+            if link[0] == 'up':
+                c = '>'
+            elif link[0] == 'down':
+                c = '<'
             hlink = False
         if hlink:
             link_feature = random_from_list(feature_categories[link[1].branch + '_hlink']).name
             exclude = []
             create_feature(x, y, link_feature, hard_override=True, rotation=r, open_tiles=exclude)
-            closest = main.find_closest_open_tile(x + 1, y + 1, exclude=exclude)
+            closest = main.find_closest_open_tile(x, y, exclude=exclude)
             create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='open')
         else:
-            pass  # TODO: Vertical passages
+            link_feature = random_from_list(feature_categories[link[1].branch + '_vlink']).name
+            create_feature(x, y, link_feature, hard_override=True)
         # find the stairs that we just placed
         stairs = None
         for i in range(len(map.objects) - 1, 0, -1):
@@ -1511,8 +1541,6 @@ def make_map(_map):
     if consts.DEBUG_TEST_MAP:
         make_test_space()
     else: dungeon.branches[map.branch]['generate']()
-
-    make_map_links()
 
     # make sure the edges are undiggable walls
     for i in range(consts.MAP_WIDTH):

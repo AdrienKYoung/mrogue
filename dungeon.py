@@ -86,6 +86,18 @@ branches = {
         'connect':['beach', 'garden', 'goblin'],
         'map_color'     : libtcod.Color(255, 191, 0),
     },
+    'gtunnels': {
+        'name'          : 'the goblin tunnels',
+        'default_wall'  : 'sea cliff',
+        'default_floor' : 'sand',
+        'default_ramp'  : 'stone ramp',
+        'scaling'       : 0,
+        'loot'          : None,
+        'monsters'      : None,
+        'generate'      : mapgen.make_map_beach,
+        'connect'       : ['beach'],
+        'map_color'     : libtcod.Color(0, 95, 191),
+    },
     'forest': {
         'name'          :"the frozen forest",
         'default_wall'  : 'pine tree',

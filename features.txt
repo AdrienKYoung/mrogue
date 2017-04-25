@@ -369,7 +369,56 @@ SCRIPT create_slopes
 .....
 ENDFEATURE
 //*******************
-//15     Flatland
+//15 Goblin Tunnel Entrance
+//*******************
+FEATURE gtunnels_gate
+CATEGORY gtunnels_vlink
+FLAGS NOREFLECT NOELEV
+DEFAULT ,
+SCRIPT create_slopes
+DEFINE 1 MONSTER_ID monster_goblin_warrior
+DEFINE 2 MONSTER_ID monster_goblin
+##,..##
+#,,.,.#
+,.,1,,.
+,.2>2,.
+.,,1,..
+#...,.#
+##.,.##
+ENDFEATURE
+//*******************
+//15 Goblin Tunnel Entrance
+//*******************
+FEATURE beach_vgate
+CATEGORY beach_vlink
+FLAGS NOREFLECT NOELEV
+...
+.>.
+...
+ENDFEATURE
+FEATURE marsh_vgate
+CATEGORY marsh_vlink
+FLAGS NOREFLECT NOELEV
+...
+.>.
+...
+ENDFEATURE
+FEATURE badlands_vgate
+CATEGORY badlands_vlink
+FLAGS NOREFLECT NOELEV
+...
+.>.
+...
+ENDFEATURE
+FEATURE gtunnels_hgate
+CATEGORY gtunnels_hlink
+FLAGS NOREFLECT
+###
+.>.
+...
+ENDFEATURE
+//*******************
+//16     Flatland
 //*******************
 FEATURE flatland
 CATEGORY badlands
@@ -390,7 +439,7 @@ DEFINE - mud
    ..
 ENDFEATURE
 //*******************
-//16  Abandoned Hut
+//17  Abandoned Hut
 //*******************
 FEATURE abandoned_hut
 CATEGORY badlands
@@ -430,6 +479,7 @@ ENDFEATURE
 FEATURE ruined_fence1
 CATEGORY badlands
 DEFINE # wooden palisade
+FLAGS NOREFLECT NOROTATE
 #_####
      ####__##_
             _####_
