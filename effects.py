@@ -176,11 +176,14 @@ def regeneration_tick(effect,object=None):
 
 def poison_tick(effect,object=None):
     if object is not None and object.fighter is not None:
-        if effect.timer > 2:
-            object.fighter.take_damage(1)
-            effect.timer = 0
+        if hasattr(effect,'timer'):
+            if effect.timer > 2:
+                object.fighter.take_damage(1)
+                effect.timer = 0
+            else:
+                effect.timer += 1
         else:
-            effect.timer += 1
+            effect.timer = 0
 
 def bleed_tick(effect, object=None):
     if object is not None and object.fighter is not None:

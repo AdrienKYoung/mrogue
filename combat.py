@@ -111,6 +111,7 @@ class Fighter:
             self.hp -= damage
             if self.hp <= 0:
                 self.drop_essence()
+                self.owner.is_dead = True
                 function = self.death_function
                 if function is not None:
                     function(self.owner)
@@ -944,13 +945,7 @@ def on_hit_knockback(attacker, target, damage, force=6):
             steps = force + 1
 
 def on_hit_reanimate(attacker, target, damage):
-    if target.fighter is None and target.name.startswith('remains of'):
-        spawn_tile = main.find_closest_open_tile(target.x, target.y)
-        ui.message('A corpse walks again...', libtcod.dark_violet)
-        zombie = main.spawn_monster('monster_rotting_zombie', spawn_tile[0], spawn_tile[1])
-        zombie.fighter.team = attacker.fighter.team
-        zombie.behavior.follow_target = attacker
-        target.destroy()
+    main.raise_dead(attacker,target)
 
 def mul(sequence):
     return reduce(lambda x,y: x * y,sequence,1)

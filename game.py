@@ -111,7 +111,8 @@ class GameObject:
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, behavior=None, item=None, equipment=None,
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
-                 elevation=None, background_color=None, movement_type=0, summon_time = None, zones=[]):
+                 elevation=None, background_color=None, movement_type=0, summon_time = None, zones=[], is_corpse=False,
+                 zombie_type=None):
         self.x = x
         self.y = y
         self.char = char
@@ -164,6 +165,8 @@ class GameObject:
         self.zones = []
         for z in zones:
             self.add_zone(z)
+        self.is_corpse = is_corpse
+        self.zombie_type = zombie_type
 
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
@@ -728,6 +731,15 @@ def make_spiderweb(x, y):
     current_map.add_object(web)
     web.send_to_back()
 
+def raise_dead(actor,target):
+    if target.fighter is None and target.is_dead:
+        spawn_tile = find_closest_open_tile(target.x, target.y)
+        monster = target.zombie_type if target.zombie_type is not None else 'monster_rotting_zombie'
+        zombie = spawn_monster(monster, spawn_tile[0], spawn_tile[1])
+        zombie.fighter.team = actor.fighter.team
+        zombie.behavior.follow_target = actor
+        target.destroy()
+        ui.message('A corpse walks again...', libtcod.dark_violet)
 
 def get_all_equipped(equipped_list):
     result = []
@@ -1026,9 +1038,16 @@ def spawn_monster(name, x, y, team='enemy'):
         if p.get('ai'):
             behavior = p.get('ai')()
 
+        zombie_type = p.get('zombie')
+        if zombie_type is None:
+            name = "monster_zombie_{}".format(p.get('subtype'))
+            if name in monsters.proto:
+                zombie_type = name
+
         monster = GameObject(x, y, p['char'], mod_tag + p['name'], p['color'], blocks=True, fighter=fighter_component,
                              behavior=behavior, description=p['description'], on_create=p.get('on_create'),
-                             movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'))
+                             movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'),
+                             zombie_type=zombie_type)
 
         for i in monster.fighter.inventory:
             i.item.holder = monster

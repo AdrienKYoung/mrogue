@@ -48,6 +48,7 @@ proto = {
         'resistances': [],
         'shred': 1,
         'subtype':'insect',
+        'zombie':'monster_zombie_vermin'
     },
     'monster_centipede': {
         'name': 'centipede',
@@ -627,12 +628,12 @@ proto = {
         'color': libtcod.light_yellow,
         'hp': 50,
         'strength_dice' : '3d8',
-        'attack_bonus' : 0,
+        'attack_bonus' : 2,
         'spell_power': 50,
         'armor': 3,
         'evasion': 12,
         'accuracy': 25,
-        'move_speed': 1.0,
+        'move_speed': 1.1,
         'attack_speed': 1.8,
         'ai': ai.AI_Default,
         'attributes': ['ability_smite'],
@@ -733,3 +734,6 @@ modifier_categories = {
     'goblin'    : {'brawny':2,'wimpy':3,'crazed':2,'nimble':2,'lethargic':3,'cursed':2,'chosen of splug':1,'greased up':1,'adventurous':2},
     'beast'     : {'brawny':1,'wimpy':1,'alpha':1,'starved':1,'lithe':1,'scarred':1,'dire':1},
 }
+
+import monsters_zombies
+proto.update(monsters_zombies.proto)
