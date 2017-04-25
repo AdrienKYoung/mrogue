@@ -24,9 +24,10 @@ branches = {
         'loot':{
             'armor_1':25,
             'weapons_1':20,
-            'consumables_1':40,
-            'tomes_1':5,
-            'gems_1':5
+            'consumables_1':35,
+            'gems_1':10,
+            'tomes_1':4,
+            'keys_1':1
         },
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
@@ -62,9 +63,10 @@ branches = {
         'loot':{
             'armor_1':25,
             'weapons_1':20,
-            'consumables_1':40,
-            'tomes_1':5,
-            'gems_1':5
+            'consumables_1':35,
+            'gems_1':10,
+            'tomes_1':4,
+            'keys_1':1
         },
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',

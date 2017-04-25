@@ -77,9 +77,9 @@ def poison(duration = 30):
     fx.timer = 0
     return fx
 
-def bleeding(duration = 10):
-    return StatusEffect('bleeding', duration, libtcod.yellow, message="You are bleeding badly!",
-                        description="This unit takes damage at the end of every turn.", on_tick=poison_tick)
+def bleeding(duration = 5):
+    return StatusEffect('bleeding', duration, libtcod.red, message="You are bleeding badly!",
+                        description="This unit takes damage at the end of every turn.", on_tick=bleed_tick)
 
 def invulnerable(duration = 5):
     return StatusEffect('invulnerable', duration, libtcod.blue, message="A golden shield protects you from harm!",
@@ -162,7 +162,7 @@ def resistant(element=None,effect=None,color=None,duration=99):
                             message='You feel more resistant!', description='This unit is resistant to %s.' % effect, cleanseable=False)
 
 def fire_tick(effect,object=None):
-    if object is not None or object.fighter is not None:
+    if object is not None and object.fighter is not None:
         if main.current_map.tiles[object.x][object.y].is_water:
             object.fighter.remove_status('burning')
         damage = effect.stacks * 3
@@ -171,26 +171,33 @@ def fire_tick(effect,object=None):
         object.fighter.take_damage(damage)
 
 def regeneration_tick(effect,object=None):
-    if object is not None or object.fighter is not None:
+    if object is not None and object.fighter is not None:
         object.fighter.heal(3)
 
 def poison_tick(effect,object=None):
-    if object is not None or object.fighter is not None:
+    if object is not None and object.fighter is not None:
         if effect.timer > 2:
             object.fighter.take_damage(1)
             effect.timer = 0
         else:
             effect.timer += 1
 
+def bleed_tick(effect, object=None):
+    if object is not None and object.fighter is not None:
+        damage = effect.stacks * 3
+        if object is player.instance:
+            ui.message("You bleed out for {} damage...".format(damage), libtcod.dark_red)
+        object.fighter.take_damage(damage)
+
 def rot_apply(object=None):
-    if object is not None or object.fighter is not None:
+    if object is not None and object.fighter is not None:
         object.fighter.max_hp -= 20
         object.fighter.take_damage(20)
 
 def rot_end(object=None):
-    if object is not None or object.fighter is not None:
+    if object is not None and object.fighter is not None:
         object.fighter.max_hp += 20
 
 def berserk_end(object=None):
-    if object is not None or object.fighter is not None:
+    if object is not None and object.fighter is not None:
         object.fighter.apply_status_effect(exhausted())

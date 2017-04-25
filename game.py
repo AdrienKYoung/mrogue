@@ -277,6 +277,10 @@ class GameObject:
                 if door is not None and door.closed:
                     door_interact(door)
                     return True
+                fire = object_at_tile(x, y, 'Fire')
+                if fire is not None and not ui.menu_y_n('Really walk into flame?'):
+                    return False
+
                 cost = current_map.tiles[self.x][self.y].stamina_cost
                 swim = current_map.tiles[self.x][self.y].is_water \
                         and (self.movement_type & pathfinding.AQUATIC == pathfinding.AQUATIC)

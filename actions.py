@@ -432,7 +432,7 @@ def frozen_orb(actor=None, target=None):
         if x is None: return 'cancelled'
         target = main.get_monster_at_tile(x, y)
     if target is not None:
-        if combat.spell_attack(actor.fighter, target,'ability_frozen_orb') == 'hit':
+        if combat.spell_attack(actor.fighter, target,'ability_frozen_orb') == 'hit' and target.fighter is not None:
             target.fighter.apply_status_effect(effects.slowed())
 
 def flash_frost(actor=None, target=None):
@@ -447,21 +447,29 @@ def flash_frost(actor=None, target=None):
     if target is not None:
         target.fighter.apply_status_effect(effects.frozen(5))
 
-def ice_shards(actor, target):
+def ice_shards(actor=None, target=None):
     x, y = 0, 0
+    if actor is None:
+        actor = player.instance
     spell = abilities.data['ability_ice_shards']
     if actor is player.instance:  # player is casting
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        (x, y) = ui.target_tile(max_range=spell['range'])
+        tiles = ui.target_tile(max_range=spell['range'], targeting_type='cone')
     else:
+        tiles = [(target.x, target.y)]
         x = target.x
         y = target.y
-    if x is None: return 'cancelled'
-    for obj in main.current_map.fighters:
-        if obj.distance(x, y) <= spell['radius']:
-            combat.spell_attack(actor.fighter, obj, 'ability_ice_shards')
-            obj.fighter.apply_status_effect(effects.slowed())
-            obj.fighter.apply_status_effect(effects.bleeding())
+    if tiles is None or len(tiles) == 0 or tiles[0] is None or tiles[1] is None: return 'cancelled'
+    for tile in tiles:
+        reed = main.object_at_tile(tile[0], tile[1], 'reeds')
+        if reed is not None:
+            reed.destroy()
+        for obj in main.current_map.fighters:
+            if obj.x == tile[0] and obj.y == tile[1]:
+                combat.spell_attack(actor.fighter, obj, 'ability_ice_shards')
+                if obj.fighter is not None:
+                    obj.fighter.apply_status_effect(effects.slowed())
+                    obj.fighter.apply_status_effect(effects.bleeding())
     return 'success'
 
 def snowstorm(actor=None, target=None):

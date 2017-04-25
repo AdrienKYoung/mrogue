@@ -1,4 +1,5 @@
 import log
+import collections
 
 class PlayerStats:
 
@@ -54,7 +55,8 @@ loadouts = {
         'inventory':[
             'charm_raw',
             'weapon_dagger',
-            'equipment_leather_armor'
+            'equipment_leather_armor',
+            'glass_key'
         ],
         'description' : "Nimble melee fighter. Starts with excellent agility. "
                         "Charm channels essence to curse enemies with negative effects."
@@ -92,7 +94,7 @@ loadouts = {
         'con':8,
         'inventory':[
             'charm_raw',
-            'book_lesser_fire',
+            'book_of_blizzards',
             'gem_lesser_fire',
             'gem_lesser_water',
             'gem_lesser_earth',
@@ -286,18 +288,22 @@ def cast_spell():
 
 def _cast_spell():
     # Complicated because spell mastery
+
+    #tuple - name, level, charges
     m_spells = [(s[0],s[1],instance.memory.spell_charges[s[0]]) for s in instance.memory.spell_list.items()]
     left_hand = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
 
     if hasattr(left_hand, 'spell_list') and len(left_hand.spell_list) > 0:
-        m_spells += [(s[0],s[1],left_hand.spell_charges[s[0]]) for s in left_hand.spell_list.items() if s[1] > 0]
+        for s in left_hand.flat_spell_list:
+            m_spells.append((s, left_hand.spell_list[s], left_hand.spell_charges[s]))
+        #m_spells += [(s[0],s[1],left_hand.spell_charges[s[0]]) for s in left_hand.spell_list.items() if s[1] > 0]
 
     if len(m_spells) < 1:
         ui.message("You have no spells available", libtcod.light_blue)
         return 'didnt-take-turn'
     else:
         letter_index = ord('a')
-        ops = {}
+        ops = collections.OrderedDict()
         sp = {}
         for spell,level,charges in m_spells:
             spell_data = spells.library[spell]

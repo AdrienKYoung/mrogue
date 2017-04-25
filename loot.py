@@ -92,6 +92,10 @@ table = {
         'gem_lesser_cold',
         'gem_lesser_life',
         'gem_lesser_arcane',
+    ],
+
+    'keys_1': [
+        'glass_key'
     ]
 }
 
@@ -192,7 +196,8 @@ item_categories = {
     'potion' : { 'plural' : 'potions' },
     'book' : { 'plural' : 'books' },
     'charm' : { 'plural' : 'charms'},
-    'gem' : { 'plural' : 'gems'}
+    'gem' : { 'plural' : 'gems'},
+    'key' : { 'plural' : 'keys'},
 }
 
 quality_progression = [
@@ -1206,4 +1211,43 @@ proto = {
             1,1,1,2,2,2,3,3,3,3,4,4,4
         ]
     },
+
+    'book_of_blizzards' : {
+        'name'          : 'Book of Blizzards',
+        'category'      : 'book',
+        'char'          : '#',
+        'color'         : libtcodpy.lightest_azure,
+        'type'          : 'item',
+        'slot'          : 'left hand',
+        'description'   : 'A basic book of ice magic',
+        'essence': 'cold',
+        'level' : 10,
+        'spells': [
+            'spell_frozen_orb',
+            'spell_flash_frost',
+            'spell_ice_shards',
+            'spell_snowstorm',
+            'spell_avalanche'
+        ],
+        'levels': [
+            'spell_frozen_orb', 'spell_flash_frost', 'spell_frozen_orb', 'spell_ice_shards', 'spell_snowstorm',
+            'spell_ice_shards', 'spell_avalanche', 'spell_frozen_orb','spell_flash_frost', 'spell_ice_shards',
+            'spell_avalanche', 'spell_snowstorm', 'spell_avalanche'
+        ],
+        'level_costs': [
+            1,1,1,2,2,2,3,3,3,3,4,4,4
+        ]
+    },
+
+    #Misc
+
+    'glass_key' : {
+        'name'          : 'Glass Key',
+        'category'      : 'key',
+        'char'          : 13,
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'description'   : 'A delicate key made from clouded glass. This key can open any lock,'
+                          ' but breaks in the process.'
+    }
 }

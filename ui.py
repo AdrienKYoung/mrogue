@@ -7,6 +7,8 @@ import player
 import combat
 import perks
 import spells
+import collections
+import math
 
 def msgbox(text, width=50):
     menu(text, [], width)
@@ -16,7 +18,7 @@ def menu(header, options, width=30, x_center=None, render_func=None):
 
     if len(options) > 26: raise ValueError('Cannot have a menu with more than 26 options.')
 
-    options_ex = {}
+    options_ex = collections.OrderedDict()
     letter_index = ord('a')
     for option in options:
         options_ex[chr(letter_index)] = [{
@@ -25,6 +27,16 @@ def menu(header, options, width=30, x_center=None, render_func=None):
         letter_index += 1
 
     return menu_ex(header, options_ex, width, x_center, render_func)
+
+def menu_y_n(header, width=30, x_center=None):
+    options_ex = collections.OrderedDict()
+    options_ex['y'] = [{'text' : 'Yes'}]
+    options_ex['n'] = [{'text' : 'No'}]
+    #options_ex = {
+    #    'y' : [{'text' : 'Yes'}],
+    #    'n' : [{'text' : 'No'}]
+    #}
+    return menu_ex(header, options_ex, width, x_center, None, True) == 'y'
 
 # Example menu options data:
 #
@@ -104,38 +116,34 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
         height += 2
 
     # Print options list
-    letter_index = ord('a')
-    while letter_index <= ord('z'):
-        index = chr(letter_index)
-        if index in options.keys():
-            if options[index] is None or len(options[index]) == 0:
-                continue
-            # Print letter index
-            libtcod.console_set_default_foreground(window, libtcod.white)
-            libtcod.console_print(window, 1, draw_height, '(%s)' % index)
-            # Print category items
-            if len(options[index]) > 1:
-                for item in options[index]:
-                    if 'text' not in item.keys():
-                        continue
-                    x = 0
-                    for category in categories:
-                        if 'category' in item.keys() and item['category'] == category:
-                            if 'color' in item.keys():
-                                libtcod.console_set_default_foreground(window, item['color'])
-                            else:
-                                libtcod.console_set_default_foreground(window, libtcod.white)
-                            libtcod.console_print(window, 5 + x, draw_height, item['text'])
-                        x += col_widths[category]
-            elif 'text' in options[index][0]:
-                if 'color' in options[index][0].keys():
-                    libtcod.console_set_default_foreground(window, options[index][0]['color'])
-                else:
-                    libtcod.console_set_default_foreground(window, libtcod.white)
-                libtcod.console_print(window, 5, draw_height, options[index][0]['text'])
+    for index in options.keys():
+        if options[index] is None or len(options[index]) == 0:
+            continue
+        # Print letter index
+        libtcod.console_set_default_foreground(window, libtcod.white)
+        libtcod.console_print(window, 1, draw_height, '(%s)' % index)
+        # Print category items
+        if len(options[index]) > 1:
+            for item in options[index]:
+                if 'text' not in item.keys():
+                    continue
+                x = 0
+                for category in categories:
+                    if 'category' in item.keys() and item['category'] == category:
+                        if 'color' in item.keys():
+                            libtcod.console_set_default_foreground(window, item['color'])
+                        else:
+                            libtcod.console_set_default_foreground(window, libtcod.white)
+                        libtcod.console_print(window, 5 + x, draw_height, item['text'])
+                    x += col_widths[category]
+        elif 'text' in options[index][0]:
+            if 'color' in options[index][0].keys():
+                libtcod.console_set_default_foreground(window, options[index][0]['color'])
+            else:
+                libtcod.console_set_default_foreground(window, libtcod.white)
+            libtcod.console_print(window, 5, draw_height, options[index][0]['text'])
 
-            draw_height += 1
-        letter_index += 1
+        draw_height += 1
 
     # Draw Border
     draw_border(window, 0, 0, width, height)
@@ -716,6 +724,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
     main.render_map()
     render_side_panel()
     render_message_panel()
+    affected_tiles = []
 
     while True:
         libtcod.console_flush()
@@ -748,6 +757,29 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
                 libtcod.console_put_char_ex(overlay, line_x - offsetx, line_y - offsety, ' ', libtcod.white, libtcod.yellow)
                 line_x, line_y = libtcod.line_step()
         libtcod.console_put_char_ex(overlay, selected_x - offsetx, selected_y - offsety, ' ', libtcod.light_yellow,
+                                    libtcod.white)
+        if targeting_type == 'cone':
+            affected_tiles = []
+            selected_angle = math.atan2(-(selected_y - player.instance.y), selected_x - player.instance.x)
+            if selected_angle < 0: selected_angle += math.pi * 2
+            for draw_x in range(max(player.instance.x - max_range, 0), min(player.instance.x + max_range, consts.MAP_WIDTH - 1) + 1):
+                for draw_y in range(max(player.instance.y - max_range, 0), min(player.instance.y + max_range, consts.MAP_HEIGHT - 1) + 1):
+                    if draw_x == player.instance.x and draw_y == player.instance.y:
+                        continue
+                    if not fov.player_can_see(draw_x, draw_y):
+                        continue
+                    this_angle = math.atan2(-(draw_y - player.instance.y), draw_x - player.instance.x)
+                    if this_angle < 0: this_angle += math.pi * 2
+                    phi = abs(this_angle - selected_angle)
+                    if phi > math.pi:
+                        phi = 2 * math.pi - phi
+
+                    if phi <= math.pi / 4 and round(player.instance.distance(draw_x, draw_y)) <= max_range:
+                        affected_tiles.append((draw_x, draw_y))
+                        libtcod.console_put_char_ex(overlay, draw_x - offsetx, draw_y - offsety, ' ', libtcod.white, libtcod.yellow)
+
+        libtcod.console_put_char_ex(overlay, selected_x - offsetx, selected_y - offsety, ' ',
+                                    libtcod.light_yellow,
                                     libtcod.white)
 
         libtcod.console_blit(overlay, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X,
@@ -801,6 +833,8 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
             if max_range is None or round((player.instance.distance(x, y))) <= max_range:
                 if targeting_type == 'beam':
                     return beam_values
+                elif targeting_type == 'cone':
+                    return affected_tiles
                 else:
                     return selected_x, selected_y
             else:
@@ -1253,7 +1287,7 @@ def render_projectile(start, end, color, character=None):
     bolt.destroy()
 
 def choose_essence_from_pool(charm_data):
-    options_ex = {}
+    options_ex = collections.OrderedDict()
     letter_index = ord('a')
     for essence in player.instance.essence:
         options_ex[chr(letter_index)] = [{

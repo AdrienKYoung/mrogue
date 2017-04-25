@@ -234,7 +234,7 @@ data = {
         'element':'cold',
         'dice' : 1,
         'base_damage' : '1d8',
-        'range': 3,
+        'range': 5,
         'radius': 1
     },
 
