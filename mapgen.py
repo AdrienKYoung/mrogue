@@ -1000,16 +1000,6 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
             adj_y = consts.MAP_WIDTH - template.max_y - 1
         template.set_pos(x + adj_x, y + adj_y)
 
-        #if template.max_x + x >= consts.MAP_WIDTH:
-        #    x = consts.MAP_WIDTH - 1 - template.max_x
-        #if template.max_y + y >= consts.MAP_HEIGHT:
-        #    y = consts.MAP_HEIGHT - 1 - template.max_y
-        #if template.min_x + x < 0:
-        #    x = -template.min_x
-        #if template.min_y + y < 0:
-        #    y = -template.min_y
-        #template.set_pos(x, y)
-
         # Check to see if our new feature collides with any existing features
         if not hard_override:
             new_rect = Rect(template.pos[0] - template.width / 2, template.pos[1] - template.height / 2, template.bounds[0], template.bounds[1])

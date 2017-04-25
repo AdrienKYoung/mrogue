@@ -171,6 +171,8 @@ class GameObject:
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
         draw_height = y
+        if self.description is None:
+            self.description = ''
         libtcod.console_print_rect(console, x, draw_height, width, height, self.description)
         draw_height += height
         if self.item:
@@ -1236,7 +1238,7 @@ def create_fire(x,y,temp):
         return
 
     component = ai.FireBehavior(temp)
-    obj = GameObject(x,y,libtcod.CHAR_ARROW2_N,'Fire',libtcod.red,misc=component)
+    obj = GameObject(x,y,libtcod.CHAR_ARROW2_N,'Fire',libtcod.red,misc=component, description='A column of roaring flames')
     current_map.add_object(obj)
     if temp > 4:
         if tile.is_ramp:

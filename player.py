@@ -94,7 +94,7 @@ loadouts = {
         'con':8,
         'inventory':[
             'charm_raw',
-            'book_of_blizzards',
+            'book_lesser_fire',
             'gem_lesser_fire',
             'gem_lesser_water',
             'gem_lesser_earth',
@@ -295,7 +295,8 @@ def _cast_spell():
 
     if hasattr(left_hand, 'spell_list') and len(left_hand.spell_list) > 0:
         for s in left_hand.flat_spell_list:
-            m_spells.append((s, left_hand.spell_list[s], left_hand.spell_charges[s]))
+            if left_hand.spell_list[s] > 0:
+                m_spells.append((s, left_hand.spell_list[s], left_hand.spell_charges[s]))
         #m_spells += [(s[0],s[1],left_hand.spell_charges[s[0]]) for s in left_hand.spell_list.items() if s[1] > 0]
 
     if len(m_spells) < 1:

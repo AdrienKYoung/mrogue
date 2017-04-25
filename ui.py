@@ -827,7 +827,11 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
             selected_x, selected_y = main.beam_interrupt(player.instance.x, player.instance.y, cursor_x, cursor_y)
         elif targeting_type == 'beam':
             beam_values = main.beam(player.instance.x, player.instance.y, cursor_x, cursor_y)
-            selected_x, selected_y = beam_values[len(beam_values) - 1]
+            if len(beam_values) > 0:
+                selected_x, selected_y = beam_values[len(beam_values) - 1]
+            else:
+                selected_x = player.instance.x
+                selected_y = player.instance.y
 
         if (mouse.lbutton_pressed or key.vk == libtcod.KEY_ENTER) and fov.player_can_see(x, y):
             if max_range is None or round((player.instance.distance(x, y))) <= max_range:

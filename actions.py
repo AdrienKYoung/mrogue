@@ -310,28 +310,30 @@ def smite(actor=None, target=None):
     return 'success'
 
 def heat_ray(actor=None, target=None):
-    spell = abilities.data['ability_heat_ray']
+    spell = abilities.data['a' \
+                           'bility_heat_ray']
     line = None
     if actor is None:  # player is casting
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         default_target = None
         if ui.selected_monster is not None:
             default_target = ui.selected_monster.x, ui.selected_monster.y
-        (x, y) = ui.target_tile(spell['range'], 'beam_interrupt', default_target=default_target)
+        tiles = ui.target_tile(spell['range'], 'beam', default_target=default_target)
         actor = player.instance
     else:
         x = target.x
         y = target.y
-    if x is None: return 'cancelled'
-    line = main.beam(actor.x, actor.y, x, y)
-    if line is None or len(line) < 1: return 'cancelled'
+        tiles = main.beam(actor.x, actor.y, x, y)
+    if tiles is None or len(tiles) < 1 or tiles[0] is None or tiles[0][0] is None: return 'cancelled'
+    end = (tiles[len(tiles) - 1][0], tiles[len(tiles) - 1][1])
+    ui.render_projectile((actor.x, actor.y), end, libtcod.flame, libtcod.CHAR_BLOCK3)
 
     for obj in main.current_map.fighters:
-        for l in line:
+        for l in tiles:
             if obj.x == l[0] and obj.y == l[1]:
                 combat.spell_attack(actor.fighter, obj,'ability_heat_ray')
 
-    main.melt_ice(x, y)
+    main.melt_ice(end[0], end[1])
 
     return 'success'
 

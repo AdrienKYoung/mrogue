@@ -1221,7 +1221,7 @@ proto = {
         'slot'          : 'left hand',
         'description'   : 'A basic book of ice magic',
         'essence': 'cold',
-        'level' : 10,
+        'level' : 1,
         'spells': [
             'spell_frozen_orb',
             'spell_flash_frost',
