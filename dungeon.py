@@ -96,7 +96,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_map_beach,
         'connect'       : ['beach'],
-        'map_color'     : libtcod.Color(0, 95, 191),
+        'map_color'     : libtcod.dark_orange,
     },
     'forest': {
         'name'          :"the frozen forest",

@@ -1120,23 +1120,25 @@ def show_map_screen():
     canvas = libtcod.console_new(50, 50)
 
     # assemble map array (only horizontal for now)
-    map_cells = {(0, 0) : world.world_maps['beach']}
-    q = [(0, 0)]
+    map_cells = {(0, 0, 0) : world.world_maps['beach']}
+    q = [(0, 0, 0)]
+    layers = [0]
     min_x = 0
     min_y = 0
     max_x = 0
     max_y = 0
-    current_room_pos = (0, 0)
+    current_room_pos = (0, 0, 0)
     while len(q) > 0:
         current = q.pop(0)
         for l in map_cells[current].links:
-            pos = (current[0] + map_offsets[l[0]][0], current[1] + map_offsets[l[0]][1])
+            pos = (current[0] + map_offsets[l[0]][0], current[1] + map_offsets[l[0]][1], current[2] + map_offsets[l[0]][2])
             if pos in map_cells.keys():
                 continue
             if pos[0] < min_x: min_x = pos[0]
-            if pos[1] < min_y: min_y = pos[1]
             if pos[0] > max_x: max_x = pos[0]
+            if pos[1] < min_y: min_y = pos[1]
             if pos[1] > max_y: max_y = pos[1]
+            if pos[2] not in layers: layers.append(pos[2])
             map_cells[pos] = l[1]
             q.append(pos)
             if map_cells[pos] == main.current_map:
@@ -1146,6 +1148,8 @@ def show_map_screen():
                  14 + offset[1] - 4 * current_room_pos[1]
 
     done = False
+    draw_z = current_room_pos[2]
+
     while(not done):
 
         # draw the map
@@ -1155,21 +1159,27 @@ def show_map_screen():
         libtcod.console_clear(console)
         for y in range(min_y, max_y + 1):
             for x in range(min_x, max_x + 1):
-                if (x, y) not in map_cells.keys() or not map_cells[(x, y)].visited:
+                if (x, y, draw_z) not in map_cells.keys() or not map_cells[(x, y, draw_z)].visited:
                     continue
-                color = dungeon.branches[map_cells[(x,y)].branch]['map_color']
+                color = dungeon.branches[map_cells[(x,y,draw_z)].branch]['map_color']
                 for d_y in range(4 * y, 4 * y + 3):
                     for d_x in range(4 * x, 4 * x + 3):
                         libtcod.console_put_char_ex(canvas, d_x - offset[0], d_y - offset[1], ' ', color, color)
-                if x == current_room_pos[0] and y == current_room_pos[1]:
+                if x == current_room_pos[0] and y == current_room_pos[1] and draw_z == current_room_pos[2]:
                     libtcod.console_set_default_foreground(canvas, libtcod.white)
                     libtcod.console_put_char(canvas, 4 * x + 1 - offset[0], 4 * y + 1 - offset[1], '@')
-                for l in map_cells[(x, y)].links:
+                for l in map_cells[(x, y, draw_z)].links:
                     pos = (2 * map_offsets[l[0]][0], 2 * map_offsets[l[0]][1])
                     if l[0] == 'north' or l[0] == 'south':
                         link_char = libtcod.CHAR_DVLINE
-                    else:
+                    elif l[0] == 'east' or l[0] == 'west':
                         link_char = libtcod.CHAR_DHLINE
+                    elif l[0] == 'up':
+                        link_char = '<'
+                        pos = pos[0], pos[1] - 1
+                    else:
+                        link_char = '>'
+                        pos = pos[0], pos[1] + 1
                     libtcod.console_put_char(canvas, 4 * x + 1 + pos[0] - offset[0], 4 * y + 1 + pos[1] - offset[1], link_char)
 
         libtcod.console_blit(canvas, 0, 0, 50, 50, console, render_pos[0], render_pos[1])
@@ -1198,6 +1208,12 @@ def show_map_screen():
             render_pos = render_pos[0] + 1, render_pos[1] - 1
         elif key.vk == libtcod.KEY_KP3:
             render_pos = render_pos[0] - 1, render_pos[1] - 1
+        elif chr(key.c) == '.':
+            if draw_z + 1 in layers:
+                draw_z += 1
+        elif chr(key.c) == ',':
+            if draw_z - 1 in layers:
+                draw_z -= 1
         else:
             done = True
 

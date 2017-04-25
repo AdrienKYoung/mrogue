@@ -479,7 +479,6 @@ ENDFEATURE
 FEATURE ruined_fence1
 CATEGORY badlands
 DEFINE # wooden palisade
-FLAGS NOREFLECT NOROTATE
 #_####
      ####__##_
             _####_
