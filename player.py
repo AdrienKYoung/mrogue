@@ -38,7 +38,7 @@ loadouts = {
         'con':12,
         'inventory':[
             ['weapon_longsword','weapon_hatchet','weapon_mace'],
-            'charm_battle',
+            'charm_raw',
             'equipment_leather_armor',
             'equipment_iron_helm',
         ],
@@ -52,7 +52,7 @@ loadouts = {
         'spr':9,
         'con':8,
         'inventory':[
-            #'charm_curse',
+            'charm_raw',
             'weapon_dagger',
             'equipment_leather_armor'
         ],
@@ -66,7 +66,7 @@ loadouts = {
         'spr':14,
         'con':10,
         'inventory':[
-            'charm_blessing',
+            'charm_raw',
         ],
         'description' : "Generalist class with great stats, especially spirit. Starts with no gear. "
                         "Charm channels essence to bless self with beneficial effects."
@@ -78,7 +78,7 @@ loadouts = {
         'spr':12,
         'con':8,
         'inventory':[
-            'charm_resistance',
+            'charm_raw',
             'weapon_coal_mace',
         ],
         'description' : "Offensive melee fighter. Starts with no armor and a mace. "
@@ -91,7 +91,7 @@ loadouts = {
         'spr':10,
         'con':8,
         'inventory':[
-            'charm_summoning',
+            'charm_raw',
             'book_lesser_fire',
             'gem_lesser_fire',
             'gem_lesser_water',
@@ -159,10 +159,10 @@ def handle_keys():
 
     ui.mouse_select_monster()
 
-    key_char = chr(key.c)
-    #SOMETHING SERIOUSLY FUCKY HERE UNDER SOME BUILDS OF LIBTCOD
-    #WE CAN GET PHANTOM 'H' KEY PRESSES AFTER EVERY KEYBOARD INPUT
-    #DONT MAP ANYTHING TO 'H'
+    if key.vk == libtcod.KEY_CHAR:
+        key_char = chr(key.c)
+    else:
+        key_char = None
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle fullscreen
@@ -604,7 +604,11 @@ def delay(duration,action,delay_action='delay'):
         instance.action_queue.append(delay_action)
     instance.action_queue.append(action)
 
-def jump(actor=None):
+def jump(actor=None, range=None, stamina_cost=None):
+    if range is None:
+        range = consts.BASE_JUMP_RANGE
+    if stamina_cost is None:
+        stamina_cost = consts.JUMP_STAMINA_COST
     if not main.current_map.tiles[instance.x][instance.y].jumpable:
         ui.message('You cannot jump from this terrain!', libtcod.light_yellow)
         return 'didnt-take-turn'
@@ -615,7 +619,7 @@ def jump(actor=None):
         web.destroy()
         return 'webbed'
 
-    if instance.fighter.stamina < consts.JUMP_STAMINA_COST:
+    if instance.fighter.stamina < stamina_cost:
         ui.message("You don't have the stamina to jump!", libtcod.light_yellow)
         return 'didnt-take-turn'
 
@@ -623,7 +627,7 @@ def jump(actor=None):
 
     ui.render_message_panel()
     libtcod.console_flush()
-    (x, y) = ui.target_tile(consts.BASE_JUMP_RANGE, 'pick', consts.JUMP_ATTACK_ACC_MOD)
+    (x, y) = ui.target_tile(range, 'pick', consts.JUMP_ATTACK_ACC_MOD)
     if x is not None and y is not None:
         if main.current_map.tiles[x][y].blocks:
             ui.message('There is something in the way.', libtcod.light_yellow)
@@ -648,7 +652,7 @@ def jump(actor=None):
                 land = main.land_next_to_target(jump_attack_target.x, jump_attack_target.y, instance.x, instance.y)
                 if land is not None:
                     instance.set_position(land[0], land[1])
-                    instance.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
+                    instance.fighter.adjust_stamina(-stamina_cost)
 
                     accuracy_mod = consts.JUMP_ATTACK_ACC_MOD
                     damage_multiplier = consts.JUMP_ATTACK_DMG_MOD
@@ -671,7 +675,7 @@ def jump(actor=None):
             else:
                 # jump to open space
                 instance.set_position(x, y)
-                instance.fighter.adjust_stamina(-consts.JUMP_STAMINA_COST)
+                instance.fighter.adjust_stamina(-stamina_cost)
                 return 'jumped'
 
 

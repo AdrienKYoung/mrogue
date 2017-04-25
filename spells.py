@@ -125,6 +125,49 @@ charm_blessing_effects = {
     }
 }
 
+charm_raw_effects = {
+    'fire': {
+        'name': 'Ignite',
+        'description':'Create a fire on a space'
+    },
+    'earth': {
+        'name' : 'Shielding',
+        'description':'Instantly repair your armor and gain an armor boost'
+    },
+    'air': {
+        'name' : 'Wind step',
+        'description':'Effortlessly jump to another space'
+    },
+    'water': {
+        'name' : 'Cleanse',
+        'description':'Clear yourself of harmfull effects'
+    },
+    'life': {
+        'name' : 'Healing',
+        'description':'Heal some of your wounds'
+    },
+    'cold': {
+        'name' : 'Freeze',
+        'description': "Freeze a target enemy in ice"
+    },
+    'arcane': { #todo
+        'name' : 'Teleport',
+        'description': ""
+    },
+    'radiant': {
+        'name' : 'Invulnerability',
+        'description': "Become invulnerable to harm"
+    },
+    'dark': {
+        'name' : 'Raise dead',
+        'description': "Raise an adjacent corpse as a zombie"
+    },
+    'void': { #todo
+        'name' : '????',
+        'description': "?????"
+    }
+}
+
 charm_summoning_summons = {
     'fire': {
         'summon': 'monster_fire_elemental',

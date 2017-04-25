@@ -1153,6 +1153,15 @@ proto = {
         'on_use'        : actions.charm_summoning,
         'description'   : 'When infused with essence, this charm summons an elemental being as an ally.'
     },
+    'charm_raw' : {
+        'name'          : 'Essence Crystal',
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : actions.charm_raw,
+        'description'   : 'This charm will turn any type of essence into a basic spell.'
+    },
 
     #Books
 

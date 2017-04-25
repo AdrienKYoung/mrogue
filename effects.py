@@ -7,7 +7,7 @@ import actions
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
                  attack_power_mod=1.0,armor_mod=1.0,shred_mod=1.0,pierce_mod=1.0,attack_speed_mod=1.0,evasion_mod=1.0,spell_power_mod=1.0, spell_resist_mod=1.0,
-                 accuracy_mod=1.0, resistance_mod=[],weakness_mod=[], stacks=1, description=''):
+                 accuracy_mod=1.0, resistance_mod=[],weakness_mod=[], stacks=1, description='', cleanseable=True):
         self.name = name
         self.time_limit = time_limit
         self.color = color
@@ -29,6 +29,7 @@ class StatusEffect:
         self.stacking_behavior = stacking_behavior
         self.stacks = stacks
         self.description = description
+        self.cleanseable = False
 
 
 def burning(duration = 6, stacks = 1):
@@ -64,11 +65,11 @@ def berserk(duration = 20):
 def regeneration(duration = 10):
     return StatusEffect('regeneration', duration, libtcod.green, on_tick=regeneration_tick,
                         message="Your wounds begin to close.",
-                        description='This unit heals at the end of every turn.')
+                        description='This unit heals at the end of every turn.', cleanseable=False)
 
 def warp_weapon(duration = 20):
     return StatusEffect('warp', duration, libtcod.gray, message="Your weapon turns black!",
-                        description="This unit's weapon deals severe void damage.")
+                        description="This unit's weapon deals severe void damage.", cleanseable=False)
 
 def poison(duration = 10):
     return StatusEffect('poisoned', duration, libtcod.yellow, message="You have been poisoned!",
@@ -80,7 +81,7 @@ def bleeding(duration = 10):
 
 def invulnerable(duration = 5):
     return StatusEffect('invulnerable', duration, libtcod.blue, message="A golden shield protects you from harm!",
-                        description='This unit is immune to damage.')
+                        description='This unit is immune to damage.', cleanseable=False)
 
 def confusion(duration = 10):
     return StatusEffect('confusion', duration, libtcod.red, message="Madness takes hold of your mind!",
@@ -96,16 +97,16 @@ def rot(duration = -1):
 
 def stoneskin(duration=30):
     return StatusEffect('stoneskin', duration, libtcod.light_blue, armor_mod=1.5, message='Your skin turns to stone!',
-                        description='This unit has increased armor.')
+                        description='This unit has increased armor.', cleanseable=False)
 
 def swiftness(duration=30):
     return StatusEffect('swiftness', duration, libtcod.light_blue, attack_speed_mod=1.3,
-                        message='Your body feels light!', description='This unit makes faster attacks.')
+                        message='Your body feels light!', description='This unit makes faster attacks.', cleanseable=False)
 
 def serenity(duration=30):
     return StatusEffect('serenity', duration, libtcod.light_blue, evasion_mod=1.5, accuracy_mod=1.5,
                         message='Your mind becomes calm.',
-                        description='This unit has increased evasion and accuracy.')
+                        description='This unit has increased evasion and accuracy.', cleanseable=False)
 
 def blinded(duration=10):
     return StatusEffect('serenity', duration, libtcod.light_blue, accuracy_mod=0.35,
@@ -122,21 +123,21 @@ def slowed(duration=10):
 
 def agile(duration=30):
     return StatusEffect('agile', duration, libtcod.light_blue, evasion_mod=1.5,message='You speed up.',
-                        description='This unit has increased evasion.')
+                        description='This unit has increased evasion.', cleanseable=False)
 
 def free_move(duration=2):
-    return StatusEffect('free move', duration, libtcod.blue, description='Moving does not cost an action.')
+    return StatusEffect('free move', duration, libtcod.blue, description='Moving does not cost an action.', cleanseable=False)
 
 def solace(duration=None):
-    return StatusEffect('solace', duration, libtcod.blue, description='This unit takes half damage from all sources')
+    return StatusEffect('solace', duration, libtcod.blue, description='This unit takes half damage from all sources', cleanseable=False)
 
 def off_balance(duration=2):
     return StatusEffect('off balance', duration, libtcod.red,
-                        description='This unit is vulnerable to a critical strike.')
+                        description='This unit is vulnerable to a critical strike.', cleanseable=False)
 
 def auto_res(duration=None):
     return StatusEffect('auto-res', duration, libtcod.light_blue, message="You are blessed by life itself!",
-                        description='This unit will come back to life with full health when killed.')
+                        description='This unit will come back to life with full health when killed.', cleanseable=False)
 
 def doom(duration=5,stacks=1):
     return StatusEffect('doom',duration, libtcod.dark_crimson, stacking_behavior='stack-refresh', message='Death comes closer...',
@@ -147,16 +148,16 @@ def lichform(duration=None):
         ['fire','cold','lightning','poison','radiant','dark','void',
          'stunned','slowed','burning','judgement','confusion','frozen','immobilized','exhausted','rot','frostbite'],
         message="Dark magic infuses your soul as you sacrifice your body to undeath!",
-        description='This unit is a lich, gaining resistance to all damage and immunity to death magic.')
+        description='This unit is a lich, gaining resistance to all damage and immunity to death magic.', cleanseable=False)
 
 def resistant(element=None,effect=None,color=None,duration=99):
     import spells
     if element is not None:
         return StatusEffect('resist ' + element,duration,spells.essence_colors[element],resistance_mod=[element],
-                            message='You feel more resistant!', description='This unit is resistant to %s.' % element)
+                            message='You feel more resistant!', description='This unit is resistant to %s.' % element, cleanseable=False)
     else:
         return StatusEffect('resist ' + effect, duration, color, resistance_mod=[effect],
-                            message='You feel more resistant!', description='This unit is resistant to %s.' % effect)
+                            message='You feel more resistant!', description='This unit is resistant to %s.' % effect, cleanseable=False)
 
 def fire_tick(effect,object=None):
     if object is not None or object.fighter is not None:

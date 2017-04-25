@@ -627,6 +627,20 @@ def shielding():
     player.instance.fighter.shred = 0
     player.instance.fighter.apply_status_effect(effects.StatusEffect('shielded', 21, libtcod.dark_blue))
 
+def cleanse():
+    effects = list(player.instance.fighter.status_effects)
+
+    if len(effects) < 1:
+        ui.message("You aren't afflicted with any harmfull effects")
+        return 'didnt-take-turn'
+
+    for status in effects:
+        if status.cleanseable:
+            player.instance.fighter.remove_status(status.name)
+    ui.message("You feel better!")
+
+def invulnerable():
+    player.instance.fighter.apply_status_effect(effects.invulnerable(10))
 
 def frog_tongue(actor, target):
     if actor.distance_to(target) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, target):
@@ -841,6 +855,41 @@ def charm_summoning():
     # Set summon duration
     t = spells.charm_summoning_summons[essence]['duration']
     summon.summon_time = t + libtcod.random_get_int(0, 0, t)
+
+def charm_raw():
+    if len(player.instance.essence) < 1:
+        ui.message("You don't have any essence.", libtcod.light_blue)
+        return 'didnt-take-turn'
+    essence = ui.choose_essence_from_pool(spells.charm_blessing_effects)
+    if essence is None:
+        return 'didnt-take-turn'
+
+    result = 'didnt-take-turn'
+
+    if essence == 'fire':
+        result = flame_wall()
+    elif essence == 'life':
+        result = heal()
+    elif essence == 'earth':
+        result = shielding()
+    elif essence == 'water':
+        result = cleanse()
+    elif essence == 'cold':
+        result = flash_frost()
+    elif essence == 'wind':
+        player.jump(player.instance,3,0)
+    elif essence == 'arcane':
+        pass
+    elif essence == 'death':
+        result = raise_zombie()
+    elif essence == 'radiant':
+        result = invulnerable()
+    elif essence == 'void':
+        pass
+
+    if result != 'didnt-take-turn' and result != 'cancelled':
+        player.instance.essence.remove(essence)
+    return result
 
 def charm_blessing():
     if len(player.instance.essence) < 1:
