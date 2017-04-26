@@ -750,7 +750,7 @@ def make_spiderweb(x, y):
     web.send_to_back()
 
 def raise_dead(actor,target):
-    if target.fighter is None and target.is_dead:
+    if target.fighter is None and target.is_corpse:
         spawn_tile = find_closest_open_tile(target.x, target.y)
         monster = target.zombie_type if target.zombie_type is not None else 'monster_rotting_zombie'
         zombie = spawn_monster(monster, spawn_tile[0], spawn_tile[1])

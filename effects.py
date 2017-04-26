@@ -58,7 +58,7 @@ def exhausted(duration = 10):
                         description='This unit deals reduced damage.', attack_power_mod=0.55)
 
 def cursed(duration = 10):
-    return StatusEffect('exhausted',duration,libtcod.yellow, message="You have been cursed!",
+    return StatusEffect('cursed',duration,libtcod.yellow, message="You have been cursed!",
                         description='This unit has reduced defenses.', armor_mod=0.65, spell_resist_mod=0.65,
                         evasion_mod=0.5)
 

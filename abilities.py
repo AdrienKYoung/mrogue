@@ -274,6 +274,65 @@ data = {
         'base_damage' : '3d8',
         'range':10
     },
+
+    'ability_hex': {
+        'name': 'hex',
+        'function': actions.hex,
+        'cooldown': 20,
+        'element':'death',
+        'dice' : 0,
+        'base_damage' : '0d0',
+        'pierce': 0,
+        'range':6
+    },
+
+    'ability_defile': {
+        'name': 'defile',
+        'function': actions.defile,
+        'cooldown': 10,
+        'element':'death',
+        'dice' : 1,
+        'base_damage' : '2d8',
+        'pierce': 0,
+        'range':6
+    },
+
+    'ability_shackles_of_the_dead': {
+        'name': 'shackles of the dead',
+        'function': actions.hex,
+        'cooldown': 20,
+        'element':'death',
+        'dice' : 0,
+        'base_damage' : '0d0',
+        'pierce': 0,
+        'range':6,
+        'radius':1
+    },
+
+    'ability_sacrifice': {
+        'name': 'profane',
+        'function': actions.hex,
+        'cooldown': 10,
+        'element':'death',
+        'dice' : 2,
+        'base_damage' : '3d8',
+        'pierce': 2,
+        'radius':2
+    },
+
+    'ability_corpse_dance': {
+        'name': 'corpse dance',
+        'function': actions.hex,
+        'cooldown': 40,
+        'element':'death',
+        'dice' : 0,
+        'base_damage' : '0d0',
+        'pierce': 0,
+        'range':6,
+        'radius':3,
+        'cast_time':3,
+        'buff_duration':50
+    },
 }
 
 vermin_summons = [

@@ -514,17 +514,93 @@ def _snowstorm_tick(actor,target):
         fx = main.GameObject(target.x,target.y,'*','cloud of cold',libtcod.light_azure,summon_time=2)
         main.current_map.objects.append(fx)
 
-def hex(actor,target):
+def hex(actor=None,target=None):
     x, y = 0, 0
     spell = abilities.data['ability_hex']
     if actor is None:  # player is casting
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         (x, y) = ui.target_tile(max_range=spell['range'])
-        actor = player.instance
         if x is None: return 'cancelled'
+        actor = player.instance
         target = main.get_monster_at_tile(x, y)
     if target is not None:
         target.fighter.apply_status_effect(effects.cursed())
+    return 'success'
+
+def defile(actor=None,target=None):
+    x, y = 0, 0
+    spell = abilities.data['ability_defile']
+    if actor is None:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        if x is None: return 'cancelled'
+        actor = player.instance
+        target = main.object_at_coords(x, y)
+    if target is not None:
+        if target.is_corpse:
+            main.raise_dead(actor,target)
+        elif target.fighter is not None and (target.fighter.subtype == 'undead' or target.fighter.subtype == 'fiend'):
+            target.fighter.heal(int(target.fighter.max_hp / 3))
+            ui.message("Dark magic strengthens {}!".format(target.name))
+        elif target.fighter is not None:
+            combat.spell_attack(actor.fighter, target, 'ability_defile')
+    return 'success'
+
+def shackles_of_the_dead(actor=None,target=None):
+    x, y = 0, 0
+    spell = abilities.data['ability_defile']
+    if actor is None:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        if x is None: return 'cancelled'
+        actor = player.instance
+    else:
+        x = target.x
+        y = target.y
+
+    for (_x,_y) in main.adjacent_tiles_diagonal(x,y):
+        obj = main.get_monster_at_tile(_x,_y)
+        if obj is not None:
+            obj.fighter.apply_status_effect(effects.immobilized())
+    return 'success'
+
+def sacrifice(actor=None,target=None):
+    if actor is None:
+        actor = player.instance
+
+    spell = abilities.data['ability_sacrifice']
+    actor.fighter.take_damage(min(30,int(actor.fighter.hp / 2)))
+    damage_mod = int((actor.fighter.max_hp - actor.fighter.hp )/ actor.fighter.max_hp)
+
+    for (_x,_y) in main.adjacent_tiles_diagonal(actor.x,actor.y):
+        obj = main.get_monster_at_tile(_x,_y)
+        if obj is not None and obj.fighter.team == 'enemy':
+            combat.spell_attack_ex(actor.fighter,obj,None,spell['base_damage'],0,'death',spell['pierce'],0,1 + damage_mod)
+    return 'success'
+
+def corpse_dance(actor=None,target=None):
+    x, y = 0, 0
+    spell = abilities.data['ability_corpse_dance']
+    if actor is None:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        if x is None: return 'cancelled'
+        actor = player.instance
+    else:
+        x = target.x
+        y = target.y
+
+    for (_x, _y) in main.adjacent_tiles_diagonal(x, y):
+        objects = main.get_objects(_x,_y,None,spell['radius'])
+        for o in objects:
+            if o is not None and o.is_corpse:
+                main.raise_dead(actor,o)
+
+        obj = main.get_monster_at_tile(_x, _y)
+        if obj is not None and obj.fighter.team == 'ally' and obj.fighter.subtype == 'undead':
+            obj.fighter.apply_status_effect(effects.swiftness(spell['buff_duration']))
+            obj.fighter.apply_status_effect(effects.berserk(spell['buff_duration']))
+    return 'success'
 
 def knock_back(actor,target):
     # knock the target back one space. Stun it if it cannot move.

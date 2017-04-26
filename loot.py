@@ -1266,16 +1266,16 @@ proto = {
         'essence': 'death',
         'level' : 10,
         'spells': [
-            'spell_frozen_orb',
-            'spell_flash_frost',
-            'spell_ice_shards',
-            'spell_snowstorm',
-            'spell_avalanche'
+            'spell_hex',
+            'spell_defile',
+            'spell_shackles_of_the_dead',
+            'spell_sacrifice',
+            'spell_corpse_dance'
         ],
         'levels': [
-            'spell_frozen_orb', 'spell_flash_frost', 'spell_frozen_orb', 'spell_ice_shards', 'spell_snowstorm',
-            'spell_ice_shards', 'spell_avalanche', 'spell_frozen_orb','spell_flash_frost', 'spell_ice_shards',
-            'spell_avalanche', 'spell_snowstorm', 'spell_avalanche'
+            'spell_hex', 'spell_defile', 'spell_hex', 'spell_shackles_of_the_dead', 'spell_defile', 'spell_sacrifice',
+            'spell_corpse_dance', 'spell_hex','spell_defile', 'spell_shackles_of_the_dead',
+            'spell_corpse_dance', 'spell_sacrifice', 'spell_corpse_dance'
         ],
         'level_costs': [
             1,1,1,2,2,2,3,3,3,3,4,4,4

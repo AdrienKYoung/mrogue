@@ -127,7 +127,7 @@ class Fighter:
             self.hp -= damage
             if self.hp <= 0:
                 self.drop_essence()
-                self.owner.is_dead = True
+                self.owner.is_corpse = True
                 function = self.death_function
                 if function is not None:
                     function(self.owner)
@@ -539,6 +539,11 @@ damage_description_tables = {
     'radiant': [
         ('smite', 'smites'),
         ('disintegrate', 'disintegrates'),
+    ],
+    'death': [
+        ('curse','curse'),
+        ('defile', 'defiles'),
+        ('torment', 'torments')
     ]
 }
 
@@ -735,7 +740,7 @@ def spell_attack(fighter,target,spell_name):
                     config.get('shred',0))
 
 
-def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_element, spell_pierce, spell_shred = 0):
+def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_element, spell_pierce, spell_shred = 0, damage_mod=1):
     #dark immunity
     if target.fighter.has_status('lichform') and spell_element == 'dark':
         ui.message('%s %s unnaffected by dark energy!' % (
@@ -746,9 +751,6 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
 
     if accuracy is None or roll_to_hit(target, accuracy):
         # Target was hit
-
-        damage_mod = 1
-
         if target.fighter.has_status('stung'):
             damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
 

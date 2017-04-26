@@ -399,7 +399,7 @@ library = {
 
     'spell_hex' : Spell(
         'hex',
-        actions.magma_bolt,
+        actions.hex,
         'Curse a target, decreasing its armor, spell resist and evasion',
         [
             {'stamina_cost':25,'charges':3},
@@ -407,6 +407,52 @@ library = {
             {'stamina_cost':15,'charges':5}
         ],
         8
+    ),
+
+    'spell_defile' : Spell(
+        'defile',
+        actions.defile,
+        'Raise a corpse as a zombie, heal undead, or damage the living',
+        [
+            {'stamina_cost':35,'charges':2},
+            {'stamina_cost':30,'charges':3},
+            {'stamina_cost':25,'charges':4}
+        ],
+        10
+    ),
+
+    'spell_shackles_of_the_dead' : Spell(
+        'shackles of the dead',
+        actions.shackles_of_the_dead,
+        'Curse a target, decreasing its armor, spell resist and evasion',
+        [
+            {'stamina_cost':40,'charges':1},
+            {'stamina_cost':30,'charges':2},
+        ],
+        11
+    ),
+
+    'spell_sacrifice' : Spell(
+        'sacrifice',
+        actions.sacrifice,
+        "Sacrifice a portion of your remaining hp to deal damage to nearby enemies based on your missing hp",
+        [
+            {'stamina_cost':25,'charges':2},
+            {'stamina_cost':20,'charges':3},
+        ],
+        12
+    ),
+
+    'spell_corpse_dance' : Spell(
+        'corpse dance',
+        actions.corpse_dance,
+        'Raises all corpses in an area as undead and fills them with unholy fury.',
+        [
+            {'stamina_cost':60,'charges':1},
+            {'stamina_cost':40,'charges':1},
+            {'stamina_cost':40,'charges':2}
+        ],
+        13
     ),
 }
 
