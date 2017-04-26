@@ -1,3 +1,19 @@
+#part of mrogue, an interactive adventure game
+#Copyright (C) 2017 Adrien Young and Tyler Soberanis
+#
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import log
 import collections
 
@@ -62,11 +78,11 @@ loadouts = {
                         "Charm channels essence to curse enemies with negative effects."
     },
     'wanderer' : {
-        'str':10,
-        'agi':10,
+        'str':12,
+        'agi':12,
         'int':10,
         'spr':14,
-        'con':10,
+        'con':12,
         'inventory':[
             'charm_raw',
         ],
@@ -74,16 +90,17 @@ loadouts = {
                         "Charm channels essence to bless self with beneficial effects."
     },
     'fanatic' : {
-        'str':13,
+        'str':12,
         'agi':9,
-        'int':8,
-        'spr':12,
-        'con':8,
+        'int':11,
+        'spr':10,
+        'con':9,
         'inventory':[
+            ['book_lesser_death'],
             'charm_raw',
-            'weapon_coal_mace',
+            'weapon_coal_mace'
         ],
-        'description' : "Offensive melee fighter. Starts with no armor and a mace. "
+        'description' : "Melee magic caster. Starts with a tome, no armor and a mace. "
                         "Charm channels essence to bless self with elemental resistance."
     },
     'wizard' : {

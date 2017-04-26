@@ -1,3 +1,19 @@
+#part of mrogue, an interactive adventure game
+#Copyright (C) 2017 Adrien Young and Tyler Soberanis
+#
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import libtcodpy
 import game as main
 import player
@@ -366,7 +382,7 @@ armor_materials = {
     'fire-proof'    :   {'resistance':'fire'},
     'insulated'     :   {'resistance':'lightning'},
     'fur-lined'     :   {'resistance':'cold'},
-    'blessed'       :   {'resistance':'dark'},
+    'blessed'       :   {'resistance':'death'},
     'infernal'      :   {'resistance':'radiant'},
     'enchanted'     :   {'resistance':'spell'}
     #TODO: heavy - increased weight and +1 armor
@@ -511,13 +527,13 @@ proto = {
         'on_use'        : actions.potion_essence('radiant'), #not a bug, returns a lambda
         'description'   : 'The essence of radiance shines through this gemstone. Absorbing it will bestow a single radiant essence.'
     },
-    'gem_lesser_dark': {
+    'gem_lesser_death': {
         'name'          : 'Rough Onyx',
         'type'          : 'item',
         'category'      : 'gem',
         'char'          : chr(4),
-        'color'         : spells.essence_colors['dark'],
-        'on_use'        : actions.potion_essence('dark'), #not a bug, returns a lambda
+        'color'         : spells.essence_colors['death'],
+        'on_use'        : actions.potion_essence('death'), #not a bug, returns a lambda
         'description'   : 'The essence of dark envelops this gemstone. Absorbing it will bestow a single dark essence.'
     },
 
@@ -1222,6 +1238,33 @@ proto = {
         'description'   : 'A basic book of ice magic',
         'essence': 'cold',
         'level' : 1,
+        'spells': [
+            'spell_frozen_orb',
+            'spell_flash_frost',
+            'spell_ice_shards',
+            'spell_snowstorm',
+            'spell_avalanche'
+        ],
+        'levels': [
+            'spell_frozen_orb', 'spell_flash_frost', 'spell_frozen_orb', 'spell_ice_shards', 'spell_snowstorm',
+            'spell_ice_shards', 'spell_avalanche', 'spell_frozen_orb','spell_flash_frost', 'spell_ice_shards',
+            'spell_avalanche', 'spell_snowstorm', 'spell_avalanche'
+        ],
+        'level_costs': [
+            1,1,1,2,2,2,3,3,3,3,4,4,4
+        ]
+    },
+
+    'book_lesser_death' : {
+        'name'          : 'The Dead Walk',
+        'category'      : 'book',
+        'char'          : '#',
+        'color'         : libtcodpy.dark_violet,
+        'type'          : 'item',
+        'slot'          : 'left hand',
+        'description'   : 'A basic book of death magic',
+        'essence': 'death',
+        'level' : 10,
         'spells': [
             'spell_frozen_orb',
             'spell_flash_frost',

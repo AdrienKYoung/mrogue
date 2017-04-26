@@ -1,4 +1,18 @@
-
+#mrogue, an interactive adventure game
+#Copyright (C) 2017 Adrien Young and Tyler Soberanis
+#
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 def channel(actor,delay,spell_name,delegate):
     is_player = actor is player.instance
@@ -499,6 +513,18 @@ def _snowstorm_tick(actor,target):
         target.fighter.apply_status_effect(effects.blinded())
         fx = main.GameObject(target.x,target.y,'*','cloud of cold',libtcod.light_azure,summon_time=2)
         main.current_map.objects.append(fx)
+
+def hex(actor,target):
+    x, y = 0, 0
+    spell = abilities.data['ability_hex']
+    if actor is None:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        actor = player.instance
+        if x is None: return 'cancelled'
+        target = main.get_monster_at_tile(x, y)
+    if target is not None:
+        target.fighter.apply_status_effect(effects.cursed())
 
 def knock_back(actor,target):
     # knock the target back one space. Stun it if it cannot move.

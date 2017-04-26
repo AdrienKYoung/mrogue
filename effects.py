@@ -1,3 +1,19 @@
+#part of mrogue, an interactive adventure game
+#Copyright (C) 2017 Adrien Young and Tyler Soberanis
+#
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import libtcodpy as libtcod
 import game as main
 import ui
@@ -37,9 +53,14 @@ def burning(duration = 6, stacks = 1):
                         on_tick=fire_tick, message="You are on fire!",
                         description='This unit will take fire damage at the end of every turn.')
 
-def exhausted(duration = 5):
+def exhausted(duration = 10):
     return StatusEffect('exhausted',duration,libtcod.yellow, message="You feel exhausted!",
-                        description='This unit deals reduced damage.')
+                        description='This unit deals reduced damage.', attack_power_mod=0.55)
+
+def cursed(duration = 10):
+    return StatusEffect('exhausted',duration,libtcod.yellow, message="You have been cursed!",
+                        description='This unit has reduced defenses.', armor_mod=0.65, spell_resist_mod=0.65,
+                        evasion_mod=0.5)
 
 def stunned(duration = 1):
     return StatusEffect('stunned',duration,libtcod.red, message="You have been stunned!",
@@ -147,7 +168,7 @@ def doom(duration=5,stacks=1):
 
 def lichform(duration=None):
     return StatusEffect('lichform',None,libtcod.darker_crimson,spell_resist_mod=1.5,resistance_mod=
-        ['fire','cold','lightning','poison','radiant','dark','void',
+        ['fire','cold','lightning','poison','radiant','dark','void','doom','slugish','curse'
          'stunned','slowed','burning','judgement','confusion','frozen','immobilized','exhausted','rot','frostbite'],
         message="Dark magic infuses your soul as you sacrifice your body to undeath!",
         description='This unit is a lich, gaining resistance to all damage and immunity to death magic.', cleanseable=False)

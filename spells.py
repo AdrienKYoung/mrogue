@@ -1,3 +1,19 @@
+#part of mrogue, an interactive adventure game
+#Copyright (C) 2017 Adrien Young and Tyler Soberanis
+#
+#This program is free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+#
+#This program is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+#
+#You should have received a copy of the GNU General Public License
+#along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import libtcodpy as libtcod
 import effects
 import actions
@@ -379,7 +395,19 @@ library = {
             {'stamina_cost':45,'charges':1},
             {'stamina_cost':45,'charges':2}
         ],
-        16)
+        16),
+
+    'spell_hex' : Spell(
+        'hex',
+        actions.magma_bolt,
+        'Curse a target, decreasing its armor, spell resist and evasion',
+        [
+            {'stamina_cost':25,'charges':3},
+            {'stamina_cost':20,'charges':4},
+            {'stamina_cost':15,'charges':5}
+        ],
+        8
+    ),
 }
 
 essence_colors = {
@@ -387,7 +415,7 @@ essence_colors = {
     'life' : libtcod.green,
     'fire' : libtcod.flame,
     'earth' : libtcod.sepia,
-    'dark' : libtcod.dark_violet,
+    'death' : libtcod.dark_violet,
     'water' : libtcod.azure,
     'air' : libtcod.light_sky,
     'cold' : libtcod.lightest_azure,
