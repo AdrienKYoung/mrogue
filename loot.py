@@ -1264,7 +1264,7 @@ proto = {
         'slot'          : 'left hand',
         'description'   : 'A basic book of death magic',
         'essence': 'death',
-        'level' : 10,
+        'level' : 1,
         'spells': [
             'spell_hex',
             'spell_defile',
