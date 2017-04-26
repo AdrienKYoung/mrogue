@@ -21,6 +21,7 @@ import consts
 import world
 import syntax
 import log
+import string
 
 #############################################
 # Classes
@@ -295,8 +296,9 @@ class GameObject:
                     web.destroy()
                     return True
                 door = object_at_tile(x,y, 'door')
+                if door is None: door = object_at_tile(x, y, 'locked door')
                 if door is not None and door.closed:
-                    door_interact(door)
+                    door_interact(door, self)
                     return True
                 fire = object_at_tile(x, y, 'Fire')
                 if fire is not None and not ui.menu_y_n('Really walk into flame?'):
@@ -1268,16 +1270,36 @@ def create_fire(x,y,temp):
         obj.destroy()
     changed_tiles.append((x, y))
 
-def door_interact(door):
+def door_interact(door, actor):
     if not is_blocked(door.x, door.y):
         if door.closed:
-            door.closed = False
-            door.blocks_sight = False
-            door.background_color = None
+            do_open = False
+            if door.locked:
+                if actor is player.instance:
+                    key = player.get_key()
+                    if key is not None:
+                        if ui.menu_y_n('This door is locked. Use your glass key?'):
+                            do_open = True
+                            ui.message('The glass key fits into the lock and you hear a click. Then it dissolves into sand.', libtcod.yellow)
+                            player.instance.fighter.inventory.remove(key)
+                    else:
+                        ui.menu('This door is locked.', ['Back'])
+            else:
+                do_open = True
+            if do_open:
+                door.closed = False
+                door.blocks_sight = False
+                door.background_color = None
+                if door.locked:
+                    door.locked = False
+                    door.name = 'door'
+                    door.description = 'A heavy stone door with a keyhole in the center. It is unlocked.'
+            else:
+                return 'blocked'
         else:
             door.closed = True
             door.blocks_sight = True
-            door.background_color = libtcod.sepia
+            door.background_color = libtcod.dark_sepia
         changed_tiles.append((door.x, door.y))
         fov.set_fov_properties(door.x, door.y, door.blocks_sight, door.elevation)
         return 'interacted-door'
@@ -1546,7 +1568,7 @@ def render_main_menu_splash():
                              'by Tyler Soberanis and Adrien Young')
 
 
-def use_stairs(stairs):
+def use_stairs(stairs, actor):
     import world
     next_map = stairs.link[1]
     current_map.pathfinding = None
@@ -1589,7 +1611,7 @@ def enter_map(world_map, direction=None):
 
     fov.initialize_fov()
 
-    ui.display_fading_text(dungeon.branches[current_map.branch]['name'].title(), 60, 20)
+    ui.display_fading_text(string.capwords(dungeon.branches[current_map.branch]['name']), 60, 20)
 
 
 def generate_level(world_map):

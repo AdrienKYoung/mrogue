@@ -595,8 +595,8 @@ def apply_data(x, y, data):
             break
         elif data[i] == '>':
             map.objects.append(main.GameObject(x, y, '>', 'stairs', libtcod.white, always_visible=True))
-        elif data[i] == '+':
-            door = create_door(x, y)
+        elif data[i] == '+' or data[i] == '*':
+            door = create_door(x, y, locked=data[i] == '*')
             if door is not None:
                 map.objects.append(door)
                 door.send_to_back()
@@ -829,16 +829,25 @@ def create_blightweed(x, y):
     map.add_object(weed)
 
 
-def create_door(x, y):
+def create_door(x, y, locked=False):
     obj = main.get_objects(x, y)
     if len(obj) > 0:
         return None # object in the way
     type_here = map.tiles[x][y].tile_type
     if terrain.data[type_here].isFloor:
         change_map_tile(x, y, default_floor)
-    door = main.GameObject(x, y, '+', 'door', libtcod.brass, always_visible=True, description='A sturdy wooden door',
+    if locked:
+        name = 'locked door'
+        color = libtcod.darkest_flame
+        description = 'A heavy stone door with a keyhole in the center. It is locked.'
+    else:
+        name = 'door'
+        color = libtcod.brass
+        description = 'A sturdy wooden door'
+    door = main.GameObject(x, y, '+', name, libtcod.brass, always_visible=True, description=description,
                            blocks_sight=True, blocks=False, burns=True, interact=main.door_interact,
-                           background_color=libtcod.sepia)
+                           background_color=color)
+    door.locked = locked
     door.closed = True
     return door
 
@@ -969,6 +978,11 @@ def load_feature(lines=[]):
                             feature_room.data[(i_x, y_index)].append('+')
                         else:
                             feature_room.data[(i_x, y_index)] = '+'
+                    elif c == '*':
+                        if (i_x, y_index) in feature_room.data.keys():
+                            feature_room.data[(i_x, y_index)].append('*')
+                        else:
+                            feature_room.data[(i_x, y_index)] = '*'
                     elif c.isdigit():
                         if (i_x, y_index) in feature_room.data.keys():
                             for s in data_strings[int(c)]:
@@ -1371,7 +1385,39 @@ def make_map_beach():
     player.instance.x = player_x
     player.instance.y = player_y
 
-    make_basic_map_links()
+    for link in map.links:
+        if link[0] != 'north':
+            make_basic_map_link(link)
+        else:
+            # Make grotto entrance
+            stairs = None
+            create_feature(consts.MAP_WIDTH / 2, 1, 'grotto_entrance')
+            for i in range(len(map.objects) - 1, 0, -1):
+                if map.objects[i].name == 'stairs':
+                    stairs = map.objects[i]
+                    break
+            if stairs is not None:
+                stairs.name = "Gate to the Pilgrim's Grotto"
+                stairs.description = 'A tall basalt doorway, covered with engravings worn dull by the salty winds.'
+                stairs.link = link
+                stairs.interact = main.use_stairs
+                stairs.char = chr(24)
+
+
+def make_map_grotto():
+    open_tiles = []
+    create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'grotto', open_tiles=open_tiles)
+    stairs = None
+    for i in range(len(map.objects) - 1, 0, -1):
+        if map.objects[i].name == 'stairs':
+            stairs = map.objects[i]
+            break
+    if stairs is not None:
+        stairs.name = "Gate to the shore"
+        stairs.description = 'A tall basalt doorway, covered with engravings worn dull by the salty winds.'
+        stairs.link = map.links[0]
+        stairs.interact = main.use_stairs
+        stairs.char = chr(25)
 
 
 def make_map_badlands():
@@ -1482,58 +1528,61 @@ def make_test_space():
 def make_basic_map_links():
     # make map links
     for link in map.links:
-        hlink = True
-        r = 0
-        c = '>'
-        if link[0] == 'north':
-            x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
-            y = 2
-            r = angles[0]
-            c = chr(24)
-        elif link[0] == 'south':
-            x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
-            y = consts.MAP_HEIGHT - 3
-            r = angles[2]
-            c = chr(25)
-        elif link[0] == 'east':
-            x = consts.MAP_WIDTH - 3
-            y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
-            r = angles[1]
-            c = chr(26)
-        elif link[0] == 'west':
-            x = 2
-            y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
-            r = angles[3]
-            c = chr(27)
-        else:
-            x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
-            y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
-            if link[0] == 'up':
-                c = '>'
-            elif link[0] == 'down':
-                c = '<'
-            hlink = False
-        if hlink:
-            link_feature = random_from_list(feature_categories[link[1].branch + '_hlink']).name
-            exclude = []
-            create_feature(x, y, link_feature, hard_override=True, rotation=r, open_tiles=exclude)
-            closest = main.find_closest_open_tile(x, y, exclude=exclude)
-            create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='open')
-        else:
-            link_feature = random_from_list(feature_categories[link[1].branch + '_vlink']).name
-            create_feature(x, y, link_feature, hard_override=True)
-        # find the stairs that we just placed
-        stairs = None
-        for i in range(len(map.objects) - 1, 0, -1):
-            if map.objects[i].name == 'stairs':
-                stairs = map.objects[i]
-                break
-        if stairs is not None:
-            stairs.name = 'Path to ' + dungeon.branches[link[1].branch]['name']
-            stairs.description = 'A winding path leading to ' + dungeon.branches[link[1].branch]['name']
-            stairs.link = link
-            stairs.interact = main.use_stairs
-            stairs.char = c
+        make_basic_map_link(link)
+
+def make_basic_map_link(link):
+    hlink = True
+    r = 0
+    c = '>'
+    if link[0] == 'north':
+        x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
+        y = 2
+        r = angles[0]
+        c = chr(24)
+    elif link[0] == 'south':
+        x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
+        y = consts.MAP_HEIGHT - 3
+        r = angles[2]
+        c = chr(25)
+    elif link[0] == 'east':
+        x = consts.MAP_WIDTH - 3
+        y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
+        r = angles[1]
+        c = chr(26)
+    elif link[0] == 'west':
+        x = 2
+        y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
+        r = angles[3]
+        c = chr(27)
+    else:
+        x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
+        y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
+        if link[0] == 'up':
+            c = '>'
+        elif link[0] == 'down':
+            c = '<'
+        hlink = False
+    if hlink:
+        link_feature = random_from_list(feature_categories[link[1].branch + '_hlink']).name
+        exclude = []
+        create_feature(x, y, link_feature, hard_override=True, rotation=r, open_tiles=exclude)
+        closest = main.find_closest_open_tile(x, y, exclude=exclude)
+        create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='open')
+    else:
+        link_feature = random_from_list(feature_categories[link[1].branch + '_vlink']).name
+        create_feature(x, y, link_feature, hard_override=True)
+    # find the stairs that we just placed
+    stairs = None
+    for i in range(len(map.objects) - 1, 0, -1):
+        if map.objects[i].name == 'stairs':
+            stairs = map.objects[i]
+            break
+    if stairs is not None:
+        stairs.name = 'Path to ' + dungeon.branches[link[1].branch]['name']
+        stairs.description = 'A winding path leading to ' + dungeon.branches[link[1].branch]['name']
+        stairs.link = link
+        stairs.interact = main.use_stairs
+        stairs.char = c
 
 def make_map(_map):
     global feature_rects, map, default_floor, default_wall, default_ramp

@@ -25,6 +25,7 @@ import perks
 import spells
 import collections
 import math
+import string
 
 def msgbox(text, width=50):
     menu(text, [], width)
@@ -1118,7 +1119,7 @@ def examine(x=None, y=None):
         obj = main.object_at_coords(x, y)
         if obj is not None:
             if isinstance(obj, main.GameObject):
-                desc = obj.name.title()
+                desc = string.capwords(obj.name)
                 if obj.name == 'player':
                     desc = 'You'
                 if hasattr(obj, 'fighter') and obj.fighter is not None and obj is not player.instance and \

@@ -586,7 +586,7 @@ def pick_up_item():
         else:
             interactable_here = main.get_objects(instance.x, instance.y, condition=lambda o:o.interact, distance=1) #get stuff that's adjacent too
             if len(interactable_here) > 0:
-                result = interactable_here[0].interact(interactable_here[0])
+                result = interactable_here[0].interact(interactable_here[0], instance)
                 if result is None:
                     result = 'interacted'
                 return result
@@ -596,6 +596,13 @@ def pick_up_item():
 def replace_essence(essence):
     instance.essence[ui.menu('Replace what essence with %s essence?\n' % essence.essence_type, instance.essence, 50)] = essence.essence_type
     essence.destroy()
+
+
+def get_key(name='Glass Key'):
+    for item in instance.fighter.inventory:
+        if item.name == name:
+            return item
+    return None
 
 
 def meditate():

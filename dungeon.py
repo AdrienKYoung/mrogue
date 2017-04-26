@@ -156,5 +156,17 @@ branches = {
         ],
         'generate':mapgen.make_map_garden,
         'map_color'     : libtcod.darker_green,
+    },
+    'grotto': {
+        'name'          :"pilgrim's grotto",
+        'default_wall'  : 'sea cliff',
+        'default_floor' : 'sand',
+        'default_ramp'  : 'shale slope',
+        'scaling'       : 0,
+        'loot'          : None,
+        'monsters'      : None,
+        'generate'      : mapgen.make_map_grotto,
+        'connect'       : ['beach'],
+        'map_color'     : libtcod.dark_sea,
     }
 }

@@ -71,6 +71,11 @@ def initialize_world():
     world_maps['forest'] = Map('forest')
     world_maps['garden'] = Map('garden')
 
+    # Make Pilgrim's Grotto and connect to beach
+    new_map = Map('grotto')
+    world_maps['grotto'] = new_map
+    world_maps['beach'].add_link(new_map, 'north')
+
     # Add marsh maps and link back to beach
     for y in range(2):
         for x in range(3):
@@ -147,9 +152,5 @@ def initialize_world():
 
     # Link gardens and forest
     world_maps['garden_1_0'].add_link(world_maps['forest_0_0'], 'east')
-
-
-
-
 
 world_maps = None
