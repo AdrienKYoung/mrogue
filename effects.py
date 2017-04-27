@@ -45,7 +45,7 @@ class StatusEffect:
         self.stacking_behavior = stacking_behavior
         self.stacks = stacks
         self.description = description
-        self.cleanseable = False
+        self.cleanseable = cleanseable
 
 
 def burning(duration = 6, stacks = 1):
