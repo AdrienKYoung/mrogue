@@ -14,6 +14,8 @@
 #You should have received a copy of the GNU General Public License
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import consts
+
 def channel(actor,delay,spell_name,delegate):
     is_player = actor is player.instance
     ui.message_flush(syntax.conjugate(is_player,['You begin',actor.name.capitalize() + ' begins']) + ' to cast ' + spell_name)
@@ -519,7 +521,10 @@ def hex(actor=None,target=None):
     spell = abilities.data['ability_hex']
     if actor is None:  # player is casting
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        (x, y) = ui.target_tile(max_range=spell['range'])
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        (x, y) = ui.target_tile(max_range=spell['range'], default_target=default_target)
         if x is None: return 'cancelled'
         actor = player.instance
         target = main.get_monster_at_tile(x, y)
@@ -532,7 +537,10 @@ def defile(actor=None,target=None):
     spell = abilities.data['ability_defile']
     if actor is None:  # player is casting
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        (x, y) = ui.target_tile(max_range=spell['range'])
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        (x, y) = ui.target_tile(max_range=spell['range'], default_target=default_target)
         if x is None: return 'cancelled'
         actor = player.instance
         target = main.object_at_coords(x, y)
@@ -551,7 +559,10 @@ def shackles_of_the_dead(actor=None,target=None):
     spell = abilities.data['ability_defile']
     if actor is None:  # player is casting
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        (x, y) = ui.target_tile(max_range=spell['range'])
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        (x, y) = ui.target_tile(max_range=spell['range'], default_target=default_target)
         if x is None: return 'cancelled'
         actor = player.instance
     else:
@@ -733,13 +744,15 @@ def _set_confused_behavior(object):
         object.behavior.behavior = ai.ConfusedMonster(old_ai)
         object.behavior.behavior.owner = object
 
-def heal():
+def heal(amount=consts.HEAL_AMOUNT, use_percentage=False):
+    if use_percentage:
+        amount = round(amount * player.instance.fighter.max_hp)
     if player.instance.fighter.hp == player.instance.fighter.max_hp:
         ui.message('You are already at full health.', libtcod.white)
         return 'cancelled'
 
     ui.message('You feel better.', libtcod.white)
-    player.instance.fighter.heal(consts.HEAL_AMOUNT)
+    player.instance.fighter.heal(amount)
 
 
 def waterbreathing():
@@ -996,7 +1009,7 @@ def charm_raw():
     if essence == 'fire':
         result = flame_wall()
     elif essence == 'life':
-        result = heal()
+        result = heal(amount=0.05, use_percentage=True)
     elif essence == 'earth':
         result = shielding()
     elif essence == 'water':
@@ -1089,7 +1102,6 @@ def learn_ability(ability):
 
 import libtcodpy as libtcod
 import game as main
-import consts
 import syntax
 import fov
 import abilities

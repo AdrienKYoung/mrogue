@@ -147,11 +147,11 @@ charm_raw_effects = {
         'description':'Create a fire on a space'
     },
     'earth': {
-        'name' : 'Shielding',
+        'name' : 'Hardness',
         'description':'Instantly repair your armor and gain an armor boost'
     },
     'air': {
-        'name' : 'Wind step',
+        'name' : 'Wind Step',
         'description':'Effortlessly jump to another space'
     },
     'water': {
@@ -175,12 +175,12 @@ charm_raw_effects = {
         'description': "Become invulnerable to harm"
     },
     'dark': {
-        'name' : 'Raise dead',
+        'name' : 'Raise Dead',
         'description': "Raise an adjacent corpse as a zombie"
     },
     'void': { #todo
         'name' : '????',
-        'description': "?????"
+        'description': "????"
     }
 }
 

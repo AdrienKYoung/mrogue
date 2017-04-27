@@ -301,7 +301,7 @@ class GameObject:
                     door_interact(door, self)
                     return True
                 fire = object_at_tile(x, y, 'Fire')
-                if fire is not None and not ui.menu_y_n('Really walk into flame?'):
+                if fire is not None and self is player.instance and not ui.menu_y_n('Really walk into flame?'):
                     return False
 
                 cost = current_map.tiles[self.x][self.y].stamina_cost

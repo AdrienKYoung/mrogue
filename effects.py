@@ -51,16 +51,16 @@ class StatusEffect:
 def burning(duration = 6, stacks = 1):
     return StatusEffect('burning', duration, libtcod.red, stacking_behavior='stack-refresh', stacks=stacks,
                         on_tick=fire_tick, message="You are on fire!",
-                        description='This unit will take fire damage at the end of every turn.')
+                        description='This unit will take fire damage at the end of every turn.', cleanseable=True)
 
 def exhausted(duration = 10):
     return StatusEffect('exhausted',duration,libtcod.yellow, message="You feel exhausted!",
-                        description='This unit deals reduced damage.', attack_power_mod=0.55)
+                        description='This unit deals reduced damage.', attack_power_mod=0.55, cleanseable=True)
 
 def cursed(duration = 10):
     return StatusEffect('cursed',duration,libtcod.yellow, message="You have been cursed!",
                         description='This unit has reduced defenses.', armor_mod=0.65, spell_resist_mod=0.65,
-                        evasion_mod=0.5)
+                        evasion_mod=0.5, cleanseable=True)
 
 def stunned(duration = 1):
     return StatusEffect('stunned',duration,libtcod.red, message="You have been stunned!",
@@ -76,7 +76,7 @@ def judgement(duration = 10):
 
 def immobilized(duration = 5):
     return StatusEffect('immobilized', duration, libtcod.yellow, message="Your feet are held fast!",
-                        description='This unit cannot move.')
+                        description='This unit cannot move.', cleanseable=True)
 
 def berserk(duration = 20):
     return StatusEffect('berserk',duration,libtcod.red, on_end=berserk_end, attack_power_mod=1.5,
@@ -94,13 +94,15 @@ def warp_weapon(duration = 20):
 
 def poison(duration = 30):
     fx = StatusEffect('poisoned', duration, libtcod.yellow, message="You have been poisoned!",
-                        description="This unit takes poison damage slowly.", on_tick=poison_tick, stacking_behavior='extend')
+                        description="This unit takes poison damage slowly.", on_tick=poison_tick,
+                        stacking_behavior='extend', cleanseable=True)
     fx.timer = 0
     return fx
 
 def bleeding(duration = 5):
     return StatusEffect('bleeding', duration, libtcod.red, message="You are bleeding badly!",
-                        description="This unit takes damage at the end of every turn.", on_tick=bleed_tick)
+                        description="This unit takes damage at the end of every turn.", on_tick=bleed_tick,
+                        cleanseable=True)
 
 def invulnerable(duration = 5):
     return StatusEffect('invulnerable', duration, libtcod.blue, message="A golden shield protects you from harm!",
@@ -142,7 +144,7 @@ def sluggish(duration=5):
 
 def slowed(duration=10):
     return StatusEffect('slowed', duration, libtcod.yellow, message='Your pace slows...',
-                        description='This unit takes longer to take its turn.')
+                        description='This unit takes longer to take its turn.', cleanseable=True)
 
 def agile(duration=30):
     return StatusEffect('agile', duration, libtcod.light_blue, evasion_mod=1.5,message='You speed up.',

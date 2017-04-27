@@ -1228,7 +1228,7 @@ proto = {
         ]
     },
 
-    'book_of_blizzards' : {
+    'book_lesser_cold' : {
         'name'          : 'Book of Blizzards',
         'category'      : 'book',
         'char'          : '#',
