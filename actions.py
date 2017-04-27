@@ -746,7 +746,7 @@ def _set_confused_behavior(object):
 
 def heal(amount=consts.HEAL_AMOUNT, use_percentage=False):
     if use_percentage:
-        amount = round(amount * player.instance.fighter.max_hp)
+        amount = int(round(amount * player.instance.fighter.max_hp))
     if player.instance.fighter.hp == player.instance.fighter.max_hp:
         ui.message('You are already at full health.', libtcod.white)
         return 'cancelled'
@@ -766,14 +766,18 @@ def shielding():
 def cleanse():
     effects = list(player.instance.fighter.status_effects)
 
-    if len(effects) < 1:
-        ui.message("You aren't afflicted with any harmfull effects")
-        return 'didnt-take-turn'
-
+    cleansed = False
     for status in effects:
         if status.cleanseable:
+            cleansed = True
             player.instance.fighter.remove_status(status.name)
-    ui.message("You feel better!")
+    if cleansed:
+        ui.message("You feel refreshed.")
+        return 'success'
+    else:
+        ui.message("You aren't afflicted with any harmful effects")
+        return 'didnt-take-turn'
+
 
 def invulnerable():
     player.instance.fighter.apply_status_effect(effects.invulnerable(10))
@@ -1009,7 +1013,7 @@ def charm_raw():
     if essence == 'fire':
         result = flame_wall()
     elif essence == 'life':
-        result = heal(amount=0.05, use_percentage=True)
+        result = heal(amount=0.10, use_percentage=True)
     elif essence == 'earth':
         result = shielding()
     elif essence == 'water':

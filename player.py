@@ -433,7 +433,7 @@ def level_up():
 
     purchase_skill()
 
-    instance.fighter.heal(instance.fighter.max_hp / 2)
+    instance.fighter.heal(int(instance.fighter.max_hp * consts.LEVEL_UP_HEAL))
 
 def purchase_skill():
     learned_skills = main.learned_skills
