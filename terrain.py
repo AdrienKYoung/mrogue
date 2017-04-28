@@ -46,9 +46,9 @@ class TileData:
 
 data = {
     'stone floor': TileData(False, False, 'stone floor', '.', (128, 96, 0), (64, 48, 0),
-                             'the cold, cobblestone dungeon floor', isFloor=True),
+                             'the cold, damp stone cave floor', isFloor=True),
     'stone wall': TileData(True, True, 'stone wall', '#', (255, 191, 0), (191, 143, 0),
-                             'the sturdy masonry of the dungeon walls', diggable=True, isWall=True),
+                             'solid limestone cave walls', diggable=True, isWall=True),
     'damp soil': TileData(False, False, 'damp soil', '.', (128, 96, 0), (64, 48, 0),
                              'damp, loamy soil crawling with worms and insects', isFloor=True),
     'mossy stone wall': TileData(True, True, 'mossy stone wall', '#', (255, 191, 0), (191, 143, 0),

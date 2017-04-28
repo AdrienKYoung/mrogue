@@ -309,32 +309,22 @@ class Rect:
         return self.y2 - self.y1
 
 
-def create_room_random():
+def create_room_random(terrain_options=None):
     choice = libtcod.random_get_int(0, 0, 2)
 
-    choice = 2
     if choice == 0:
-        return create_room_rectangle()
+        return create_room_rectangle(terrain_options)
     elif choice == 1:
-        return create_room_circle()
+        return create_room_circle(terrain_options)
     elif choice == 2:
-        return create_room_cloud()
-    elif choice == 3:
         return create_room_cellular_automata(10, 10)
-    else:
-        # Default
-        return create_room_rectangle()
 
 
-#TODO: This should look at branch type
-def random_terrain():
-    dice = libtcod.random_get_int(0, 0, 3)
-    if dice == 0:
-        return 'shallow water'
-    elif dice == 1:
-        return 'grass floor'
-    else:
-        return default_floor
+def random_terrain(options=None):
+    if options is None:
+        options = ['shallow water','grass floor',default_floor]
+    dice = libtcod.random_get_int(0, 0, len(options)-1)
+    return options[dice]
 
 def create_room_cellular_automata(width, height):
     room = Room()
@@ -476,15 +466,15 @@ def random_from_list(list):
     i = libtcod.random_get_int(0, 0, len(list) - 1)
     return list[i]
 
-def create_room_rectangle():
+def create_room_rectangle(terrain_options=None):
     room = Room()
-    room.add_rectangle(tile_type=random_terrain())
+    room.add_rectangle(tile_type=random_terrain(terrain_options))
     return room
 
 
-def create_room_circle():
+def create_room_circle(terrain_options=None):
     room = Room()
-    room.add_circle(tile_type=random_terrain())
+    room.add_circle(tile_type=random_terrain(terrain_options))
     return room
 
 def create_room_cloud(tile_type = None, min_radius=2, max_radius=5):
@@ -1500,6 +1490,49 @@ def make_map_badlands():
                        active_branch['xp_amount'])
     make_basic_map_links()
 
+def make_map_gtunnels():
+    active_branch = dungeon.branches[map.branch]
+    rooms = []
+    num_rooms = 0
+
+    for r in range(consts.MG_MAX_ROOMS):
+        room = create_room_random(active_branch['terrain_types'])
+        dimensions = room.bounds
+
+        x = libtcod.random_get_int(0, 1 + (dimensions[0] / 2), consts.MAP_WIDTH - (dimensions[0] / 2) - 1)
+        y = libtcod.random_get_int(0, 1 + (dimensions[1] / 2), consts.MAP_HEIGHT - (dimensions[1] / 2) - 1)
+
+        room_bounds = Rect(x, y, dimensions[0], dimensions[1])
+
+        failed = False
+        for other_room in rooms:
+            if room_bounds.intersect(other_room):
+                failed = True
+                break
+
+        if not failed:
+            # create_room(new_room)
+            room.set_pos(room_bounds.x1, room_bounds.y1)
+            apply_room(room)
+            (new_x, new_y) = room.center()
+            if num_rooms > 0:
+                (prev_x, prev_y) = rooms[num_rooms - 1].center()
+                create_wandering_tunnel(prev_x, prev_y, new_x, new_y)
+            main.place_objects(room.get_open_tiles())
+            num_rooms += 1
+            rooms.append(room_bounds)
+
+    open_tiles = []
+    for x in range(consts.MAP_WIDTH):
+        for y in range(consts.MAP_HEIGHT):
+            if not map.tiles[x][y].blocks:
+                open_tiles.append((x, y))
+
+    main.place_objects(open_tiles,
+                       main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
+                       main.roll_dice(active_branch['loot_dice']),
+                       active_branch['xp_amount'])
+    make_basic_map_links()
 
 def make_test_space():
     for y in range(2, consts.MAP_HEIGHT - 2):
