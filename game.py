@@ -123,6 +123,12 @@ class Zone:
                     self.on_tick(self.owner,f)
         self.influence = [f for f in self.influence if f in current]
 
+class Ticker:
+    def __init__(self,max_ticks,on_tick):
+        self.ticks = 0
+        self.on_tick = on_tick
+        self.max_ticks = max_ticks
+
 class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, behavior=None, item=None, equipment=None,
@@ -760,6 +766,33 @@ def raise_dead(actor,target):
         zombie.behavior.follow_target = actor
         target.destroy()
         ui.message('A corpse walks again...', libtcod.dark_violet)
+
+def create_temp_terrain(type,tiles,duration):
+    terrain_data = terrain.data[type]
+    ticker = Ticker(duration,_temp_terrain_on_tick)
+    ticker.restore = []
+    ticker.map = current_map
+
+    for (x,y) in tiles:
+        tile = current_map.tiles[x][y]
+        if tile.diggable or not tile.is_wall:
+            ticker.restore.append((x,y,tile.tile_type))
+            tile.tile_type = type
+            changed_tiles.append((x, y))
+            if terrain_data.blocks:
+                current_map.pathfinding.mark_blocked((x, y))
+
+    current_map.tickers.append(ticker)
+
+def _temp_terrain_on_tick(ticker):
+    if ticker.max_ticks <= ticker.ticks:
+        ticker.dead = True
+        for x,y,type in ticker.restore:
+            terrain_data = terrain.data[type]
+            ticker.map.tiles[x][y].tile_type = type
+            changed_tiles.append((x, y))
+            if terrain_data.blocks:
+                current_map.pathfinding.mark_blocked((x, y))
 
 def get_all_equipped(equipped_list):
     result = []

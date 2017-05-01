@@ -111,6 +111,7 @@ loadouts = {
         'con':8,
         'inventory':[
             'charm_raw',
+            'charm_shard_of_creation',
             'book_lesser_fire',
             'gem_lesser_fire',
             'gem_lesser_water',

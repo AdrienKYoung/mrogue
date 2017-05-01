@@ -21,6 +21,7 @@ import combat
 import dungeon
 import spells
 import actions
+import charms
 
 table = {
     'weapons_0': [
@@ -1149,45 +1150,14 @@ proto = {
     },
 
     #Charms
-
-    'charm_battle' : {
-        'name'          : 'Charm of Battle',
-        'type'          : 'item',
-        'category'      : 'charm',
-        'char'          : chr(235),
-        'color'         : libtcodpy.yellow,
-        'on_use'        : actions.charm_battle,
-        'description'   : 'When infused with essence, this charm summons an elemental weapon.'
-    },
-
     'charm_resistance' : {
         'name'          : 'Charm of Resistance',
         'type'          : 'item',
         'category'      : 'charm',
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
-        'on_use'        : actions.charm_resist,
+        'on_use'        : charms.charm_resist,
         'description'   : 'When infused with essence, this charm grants resistance to that type of essence.'
-    },
-
-    'charm_blessing' : {
-        'name'          : 'Charm of Blessings',
-        'type'          : 'item',
-        'category'      : 'charm',
-        'char'          : chr(235),
-        'color'         : libtcodpy.yellow,
-        'on_use'        : actions.charm_blessing,
-        'description'   : 'When infused with essence, this charm grants magical blessings.'
-    },
-
-    'charm_summoning' : {
-        'name'          : 'Charm of Summoning',
-        'type'          : 'item',
-        'category'      : 'charm',
-        'char'          : chr(235),
-        'color'         : libtcodpy.yellow,
-        'on_use'        : actions.charm_summoning,
-        'description'   : 'When infused with essence, this charm summons an elemental being as an ally.'
     },
     'charm_raw' : {
         'name'          : 'Essence Crystal',
@@ -1195,8 +1165,17 @@ proto = {
         'category'      : 'charm',
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
-        'on_use'        : actions.charm_raw,
+        'on_use'        : charms.charm_raw,
         'description'   : 'This charm will turn any type of essence into a basic spell.'
+    },
+    'charm_shard_of_creation' : {
+        'name'          : 'Shard of Creation',
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : charms.shard_of_creation,
+        'description'   : 'A tiny mote of magical creation. Can be used to temporarily modify terrain.'
     },
 
     #Books

@@ -953,23 +953,7 @@ def poison_attack_1(actor,target,damage):
 def potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
 
-def charm_resist():
-    if len(player.instance.essence) < 1:
-        ui.message("You don't have any essence.", libtcod.light_blue)
-        return 'didnt-take-turn'
-    essence = ui.choose_essence_from_pool(spells.charm_resist_effects)
-    if essence is None:
-        return 'didnt-take-turn'
-    player.instance.fighter.apply_status_effect(effects.resistant(element=essence))
-    if essence in spells.charm_resist_effects:
-        for effect in spells.charm_resist_effects[essence]['resists']:
-            player.instance.fighter.apply_status_effect(effects.resistant(effect=effect,color=spells.essence_colors[essence]),supress_message=True)
-    player.instance.essence.remove(essence)
-
-def charm_summoning():
-    if len(player.instance.essence) < 1:
-        ui.message("You don't have any essence.", libtcod.light_blue)
-        return 'didnt-take-turn'
+def summon_ally(name, duration):
     adj = main.adjacent_tiles_diagonal(player.instance.x, player.instance.y)
 
     # Get viable summoning position. Return failure if no position is available
@@ -982,83 +966,27 @@ def charm_summoning():
         return
     summon_pos = summon_positions[libtcod.random_get_int(0, 0, len(summon_positions) - 1)]
 
-    # Select essence
-    essence = ui.choose_essence_from_pool(spells.charm_summoning_summons)
-    if essence is None:
-        return 'didnt-take-turn'
-    player.instance.essence.remove(essence)
-
     # Select monster type - default to goblin
-    summon_type = 'monster_goblin'
     import monsters
-    if essence in spells.charm_summoning_summons.keys() and spells.charm_summoning_summons[essence]['summon'] in monsters.proto.keys():
-        summon_type = spells.charm_summoning_summons[essence]['summon']
-    summon = main.spawn_monster(summon_type, summon_pos[0], summon_pos[1], team='ally')
-    summon.behavior.follow_target = player.instance
+    if name in monsters.proto.keys():
+        summon = main.spawn_monster(name, summon_pos[0], summon_pos[1], team='ally')
+        summon.behavior.follow_target = player.instance
 
-    # Set summon duration
-    t = spells.charm_summoning_summons[essence]['duration']
-    summon.summon_time = t + libtcod.random_get_int(0, 0, t)
-
-def charm_raw():
-    if len(player.instance.essence) < 1:
-        ui.message("You don't have any essence.", libtcod.light_blue)
-        return 'didnt-take-turn'
-    essence = ui.choose_essence_from_pool(spells.charm_blessing_effects)
-    if essence is None:
+        # Set summon duration
+        summon.summon_time = duration + libtcod.random_get_int(0, 0, duration)
+        return 'success'
+    else:
         return 'didnt-take-turn'
 
-    result = 'didnt-take-turn'
-
-    if essence == 'fire':
-        result = flame_wall()
-    elif essence == 'life':
-        result = heal(amount=0.10, use_percentage=True)
-    elif essence == 'earth':
-        result = shielding()
-    elif essence == 'water':
-        result = cleanse()
-    elif essence == 'cold':
-        result = flash_frost()
-    elif essence == 'wind':
-        player.jump(player.instance,3,0)
-    elif essence == 'arcane':
-        pass
-    elif essence == 'death':
-        result = raise_zombie()
-    elif essence == 'radiant':
-        result = invulnerable()
-    elif essence == 'void':
-        pass
-
-    if result != 'didnt-take-turn' and result != 'cancelled':
-        player.instance.essence.remove(essence)
-    return result
-
-def charm_blessing():
-    if len(player.instance.essence) < 1:
-        ui.message("You don't have any essence.", libtcod.light_blue)
-        return 'didnt-take-turn'
-    essence = ui.choose_essence_from_pool(spells.charm_blessing_effects)
-    if essence is None:
-        return 'didnt-take-turn'
-    player.instance.fighter.apply_status_effect(spells.charm_blessing_effects[essence]['buff']())
-    player.instance.essence.remove(essence)
-
-def charm_battle():
-    if len(player.instance.essence) < 1:
-        ui.message("You don't have any essence.", libtcod.light_blue)
-        return 'didnt-take-turn'
-    elif len(player.instance.fighter.inventory) >= 26:
+def summon_weapon(weapon):
+    if len(player.instance.fighter.inventory) >= 26:
         ui.message('You are carrying too many items to summon another.')
         return 'didnt-take-turn'
-    essence = ui.choose_essence_from_pool(spells.charm_battle_effects)
-    if essence is None:
-        return 'didnt-take-turn'
-    summoned_weapon = main.create_item(spells.charm_battle_effects[essence]['weapon'], material='', quality='')
+
+    summoned_weapon = main.create_item(weapon, material='', quality='')
     if summoned_weapon is None:
         return
-    expire_ticker = type('', (), {})()  # Create an empty object for duck typing
+    expire_ticker = main.Ticker(15,summon_weapon_on_tick)
     equipped_weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
     expire_ticker.old_weapon = equipped_weapon
     if summoned_weapon.equipment.slot == 'both hands':
@@ -1069,16 +997,13 @@ def charm_battle():
         equipped_weapon.dequip()
     summoned_weapon.item.pick_up(player.instance)
     expire_ticker.weapon = summoned_weapon
-    expire_ticker.max_ticks = 15
     effect = effects.StatusEffect('summoned weapon', expire_ticker.max_ticks + 1, summoned_weapon.color)
     player.instance.fighter.apply_status_effect(effect)
     expire_ticker.effect = effect
-    expire_ticker.ticks = 0
-    expire_ticker.on_tick = charm_battle_on_tick
     main.current_map.tickers.append(expire_ticker)
-    player.instance.essence.remove(essence)
+    return 'success'
 
-def charm_battle_on_tick(ticker):
+def summon_weapon_on_tick(ticker):
     dead_flag = False
     dropped = False
     if not ticker.weapon.equipment.is_equipped:

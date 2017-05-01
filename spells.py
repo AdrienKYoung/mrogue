@@ -35,110 +35,64 @@ class Spell:
 def is_max_level(spell,level):
     return len(library[spell].levels) == level
 
-charm_battle_effects = {
-    'fire' : {
-        'name' : 'Battleaxe of Pure Flame',
-        'weapon' : 'weapon_battleaxe_of_pure_fire',
-        'description' : 'Summon a battleaxe of pure flame, cleaving and burning all in its path'
+charm_shard_of_creation = {
+    'life': {
+        'name': 'Create grass',
+        'description' : 'Create a patch of grass'
     },
-    'earth' : {
-        'name' : 'Diamond Warhammer',
-        'weapon' : 'weapon_diamond_warhammer',
-        'description' : 'Summon a diamond warhammer, crushing its foes when wielded with strength'
+    'earth': {
+        'name': 'Create stone walls',
+        'description' : 'Create a stone wall'
     },
-    'air' : {
-        'name' : 'Storm Mace',
-        'weapon' : 'weapon_storm_mace',
-        'description' : 'Summon a storm mace, booming with thunder as chain-lightning arcs through its victims'
+    'water': {
+        'name': 'Create wall',
+        'description' : 'Create a patch of shallow water'
     },
-    'water' : {
-        'name' : 'Trident of Raging Water',
-        'weapon' : 'weapon_trident_of_raging_water',
-        'description' : 'Summon a trident of raging water, threatening foes from a distance and hindering their movements'
-    },
-    'life' : {
-        'name' : 'Lifedrinker Dagger',
-        'weapon' : 'weapon_lifedrinker_dagger',
-        'description' : "Summon a lifedrinker dagger, sustaining the life of it's wielder with the pain of others"
-    },
-    'cold' : {
-        'name' : 'Frozen Blade',
-        'weapon' : 'weapon_frozen_blade',
-        'description' : 'Summon a frozen blade, inflicting merciless wounds on individual targets'
-    },
-    'arcane' : {
-        'name' : 'Staff of Force',
-        'weapon' : 'weapon_staff_of_force',
-        'description' : 'Summon a staff of force, humming with arcane energy that sends its targets flying'
-    },
-    'radiant' : {
-        'name' : 'Greatsword of Virtue',
-        'weapon' : None,
-        'description' : 'Summon a greatsword of virtue, a weapon of pure light that strikes down the undeserving'
-    },
-    'dark' : {
-        'name' : 'Soul Reaper',
-        'weapon' : 'weapon_soul_reaper',
-        'description' : 'Summon a soul reaper, a grim scythe that raises those it kills as zombies'
-    },
-    'void' : {
-        'name' : 'Claw of the Ancient One',
-        'weapon' : None,
-        'description' : 'Summon a claw of the Ancient One'
+    'fire': {
+        'name': 'Create lava',
+        'description' : 'Create a pit of lava'
     },
 }
 
-charm_blessing_effects = {
+charm_volatile_orb = {
     'fire': {
-        'name': 'Berserk',
-        'buff':effects.berserk,
-        'description':'Drive yourself berserk for a bonus to melee damage'
+        'name': 'Fire bomb',
+        'description': 'Deal damage and set fires in an area'
+    },
+    'cold': {
+        'name': 'Ice Bomb',
+        'description' : 'Deal damage and freeze enemies in an area'
+    },
+    'arcane': {
+        'name': 'Time bomb',
+        'description' : 'Create a time bomb, which explodes after a time'
+    },
+}
+
+charm_farmers_talisman = {
+    'life': {
+        'name': 'Lifeplant',
+        'description' : 'Summon a life plant, which heals all units adjacent to it'
     },
     'earth': {
-        'name' : 'Stoneskin',
-        'buff':effects.stoneskin,
-        'description':'Turn your skin to stone for a bonus to armor'
+        'name': 'Dig',
+        'description' : 'Dig out a tile'
+    },
+}
+
+charm_primal_totem = {
+    'fire': {
+        'name': 'Berserk Self',
+        'description': 'You gain attack power for a time but will be exhausted when it ends'
     },
     'air': {
-        'name' : 'Swiftness',
-        'buff':effects.swiftness,
-        'description':'Turn your skin to stone for a bonus to armor'
+        'name': 'Battle Cry',
+        'description': 'Alert all enemies in a wide area, but reduce their defense'
     },
-    'water': {
-        'name' : 'Serenity',
-        'buff':effects.serenity,
-        'description':'Turn your skin to stone for a bonus to armor'
+    'death': {
+        'name': 'Soul Reaper',
+        'description': 'Summon a Soul Reaper weapon for a time, which raises those it slays as zombies'
     },
-    'life': {
-        'name' : 'Regeneration',
-        'buff':effects.regeneration,
-        'description':'Regenerate your wounds over time.'
-    },
-    'cold': { #todo
-        'name' : 'Regeneration',
-        'buff':effects.regeneration,
-        'description': ""
-    },
-    'arcane': { #todo
-        'name' : 'Regeneration',
-        'buff':effects.regeneration,
-        'description': ""
-    },
-    'radiant': { #todo
-        'name' : 'Regeneration',
-        'buff':effects.regeneration,
-        'description': ""
-    },
-    'dark': { #todo
-        'name' : 'Regeneration',
-        'buff':effects.regeneration,
-        'description': ""
-    },
-    'void': { #todo
-        'name' : 'Regeneration',
-        'buff':effects.regeneration,
-        'description': ""
-    }
 }
 
 charm_raw_effects = {
@@ -181,69 +135,6 @@ charm_raw_effects = {
     'void': { #todo
         'name' : '????',
         'description': "????"
-    }
-}
-
-charm_summoning_summons = {
-    'fire': {
-        'summon': 'monster_fire_elemental',
-        'duration': 15,
-        'name': 'Summon Fire Elemental',
-        'description':"Summon a fire elemental. Its attacks are deadly, but it won't last long in this world."
-    },
-    'earth': {
-        'summon': 'monster_earth_elemental',
-        'duration': 30,
-        'name': 'Summon Earth Elemental',
-        'description':"Summon an earth elemental. It moves slowly, but is very durable."
-    },
-    'air': {
-        'summon': 'monster_air_elemental',
-        'duration': 30,
-        'name': 'Summon Air Elemental',
-        'description':"Summon an air elemental. It flies and moves quickly, but inflicts little damage."
-    },
-    'water': {
-        'summon': 'monster_water_elemental',
-        'duration': 30,
-        'name': 'Summon Water Elemental',
-        'description': "Summon a water elemental. It does not attack, but rather disables nearby foes."
-    },
-    'life': {
-        'summon': 'monster_lifeplant',
-        'duration': 15,
-        'name': 'Summon Lifeplant',
-        'description': "Summon a lifeplant. It will slowly heal nearby creatures over time."
-    },
-    'cold': {
-        'summon': 'monster_ice_elemental',
-        'duration': 30,
-        'name': 'Summon Ice Elemental',
-        'description': "Summon an ice elemental. It deals heavy damage, but is fragile."
-    },
-    'arcane': {
-        'summon': 'monster_arcane_construct',
-        'duration': 30,
-        'name': 'Summon Arcane Construct',
-        'description': "Summon an Arcane Construct. This artificial can fire magical energy from a distance, but is fragile."
-    },
-    'radiant': { #TODO: make divine servant
-        'summon': 'monster_divine_servant',
-        'duration': 150,
-        'name': 'Summon Divine Servant',
-        'description': "Summon a Divine Servant. This heavenly creature will swear to protect you."
-    },
-    'dark': { #TODO: make shadow demon
-        'summon': 'monster_shadow_demon',
-        'duration': 150,
-        'name': 'Summon Shadow Demon',
-        'description': "Summon a Shadow Demon. This vicious creature of darkness will not bend to the will of mortals."
-    },
-    'void': { #TODO: make void horror
-        'summon': 'monster_void_horror',
-        'duration': 300,
-        'name': 'Summon Void Horror',
-        'description': "Who can tell what horrors this might summon? I hope you know what you're doing."
     }
 }
 
