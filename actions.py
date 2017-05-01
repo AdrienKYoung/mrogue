@@ -202,6 +202,7 @@ def berserk_self(actor=None, target=None):
                 ui.message('%s %s!' % (
                                 syntax.name(actor.name).capitalize(),
                                 syntax.conjugate(False, ('roar', 'roars'))), libtcod.red)
+            return 'success'
         else:
             if actor is player.instance:
                 ui.message("You cannot go berserk right now.", libtcod.yellow)
@@ -613,6 +614,57 @@ def corpse_dance(actor=None,target=None):
             obj.fighter.apply_status_effect(effects.berserk(spell['buff_duration']))
     return 'success'
 
+def battle_cry(actor=None,target=None):
+    if actor is None:
+        actor = player.instance
+
+    for unit in main.current_map.fighters:
+        if unit.fighter.team != actor.fighter.team:
+            unit.fighter.apply_status_effect(effects.cursed(20))
+            if unit.behavior is not None and hasattr(unit.behavior,'ai_state'):
+                unit.behavior.ai_state = 'pursuing'
+
+    ui.message("{} {} out a battle cry!".format(
+        syntax.conjugate(actor is player.instance,['You',actor.name]),
+        syntax.conjugate(actor is player.instance,['let','lets'])
+    ))
+
+    return 'success'
+
+def mass_heal(actor=None,target=None):
+    if actor is None:
+        actor = player.instance
+
+    for unit in main.current_map.fighters:
+        if unit.fighter.team == actor.fighter.team:
+            unit.fighter.apply_status_effect(effects.regeneration())
+            amount = int(round(0.25 * unit.fighter.max_hp))
+            unit.fighter.heal(amount)
+            ui.message("{} {} healed!".format(syntax.conjugate(unit is player.instance,['You',unit.name]),
+                       syntax.conjugate(unit is player.instance,['were','was'])), libtcod.white)
+    return 'success'
+
+def mass_cleanse(actor=None,target=None):
+    if actor is None:
+        actor = player.instance
+
+    for unit in main.current_map.fighters:
+        if unit.fighter.team == actor.fighter.team:
+            effects = list(player.instance.fighter.status_effects)
+            for status in effects:
+                if status.cleanseable:
+                    player.instance.fighter.remove_status(status.name)
+    return 'success'
+
+def mass_reflect(actor=None,target=None):
+    if actor is None:
+        actor = player.instance
+
+    for unit in main.current_map.fighters:
+        if unit.fighter.team == actor.fighter.team:
+            unit.fighter.apply_status_effect(effects.reflect_magic())
+    return 'success'
+
 def knock_back(actor,target):
     # knock the target back one space. Stun it if it cannot move.
     direction = target.x - actor.x, target.y - actor.y  # assumes the instance is adjacent
@@ -833,7 +885,9 @@ def dig(dx, dy):
             main.current_map.pathfinding.mark_unblocked((dig_x, dig_y))
         fov.set_fov_properties(dig_x, dig_y, False)
         fov.set_fov_recompute()
-        main.check_breakage(main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand'))
+        item = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
+        if item is not None:
+            main.check_breakage(item)
         return 'success'
     else:
         ui.message('You cannot dig there.', libtcod.lightest_gray)

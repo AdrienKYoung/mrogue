@@ -164,6 +164,10 @@ def auto_res(duration=None):
     return StatusEffect('auto-res', duration, libtcod.light_blue, message="You are blessed by life itself!",
                         description='This unit will come back to life with full health when killed.', cleanseable=False)
 
+def reflect_magic(duration=20):
+    return StatusEffect('reflect-magic', duration, libtcod.light_blue, message="You are protected against magic!",
+                        description='Harmful magic will be returned to its caster.', cleanseable=False)
+
 def doom(duration=5,stacks=1):
     return StatusEffect('doom',duration, libtcod.dark_crimson, stacking_behavior='stack-refresh', message='Death comes closer...',
                         on_apply=actions.check_doom, description='At 13 stacks, this unit instantly dies.')

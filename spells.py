@@ -80,6 +80,21 @@ charm_farmers_talisman = {
     },
 }
 
+charm_holy_symbol = {
+    'life': {
+        'name': 'Mass Heal',
+        'description' : 'Heal yourself and all nearby allies, and give all targets a regeneration buff'
+    },
+    'water': {
+        'name': 'Mass Cleanse',
+        'description' : 'Remove all negative effects from yourself and nearby allies'
+    },
+    'radiant': {
+        'name': 'Mass Reflect',
+        'description': 'Protects you and nearby allies from magical harm by returning spells to their casters.'
+    }
+}
+
 charm_primal_totem = {
     'fire': {
         'name': 'Berserk Self',

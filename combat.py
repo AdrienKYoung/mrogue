@@ -741,6 +741,9 @@ def spell_attack(fighter,target,spell_name):
 
 
 def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_element, spell_pierce, spell_shred = 0, damage_mod=1):
+    if target.fighter.has_status('reflect-magic'):
+        target = fighter.owner
+
     #dark immunity
     if target.fighter.has_status('lichform') and spell_element == 'dark':
         ui.message('%s %s unnaffected by dark energy!' % (

@@ -1332,11 +1332,12 @@ def render_projectile(start, end, color, character=None):
         prev = bolt.x, bolt.y
     bolt.destroy()
 
-def choose_essence_from_pool(charm_data,options='any'):
+def choose_essence_from_pool(charm_data):
     options_ex = collections.OrderedDict()
     letter_index = ord('a')
+    index = None
     for essence in player.instance.essence:
-        if options == 'any' or essence in options:
+        if essence in charm_data:
             options_ex[chr(letter_index)] = [{
                 'category': 'essence',
                 'text': essence,
@@ -1348,7 +1349,10 @@ def choose_essence_from_pool(charm_data,options='any'):
                     'color': libtcod.white,
                 }]
             letter_index += 1
-    index = menu_ex('Select essence:', options_ex, 50)
+    if len(options_ex) > 0:
+        index = menu_ex('Select essence:', options_ex, 50)
+    else:
+        message('No appropriate essence')
 
     if index is None:
         return None

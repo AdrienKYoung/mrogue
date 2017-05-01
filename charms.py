@@ -15,7 +15,7 @@ def select_essence(data,options='any'):
     return ui.choose_essence_from_pool(data)
 
 def shard_of_creation():
-    essence = select_essence(spells.charm_raw_effects)
+    essence = select_essence(spells.charm_shard_of_creation)
     if essence is None:
         return 'didnt-take-turn'
 
@@ -44,6 +44,62 @@ def shard_of_creation():
         return 'success'
     else:
         return 'didnt-take-turn'
+
+def farmers_talisman():
+    essence = select_essence(spells.charm_farmers_talisman)
+    if essence is None:
+        return 'didnt-take-turn'
+
+    result = 'didnt-take-turn'
+
+    if essence == 'life':
+        result = actions.summon_ally('monster_lifeplant',15)
+    elif essence == 'earth':
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(2)
+        if x is None:
+            return 'didnt-take-turn'
+        result = actions.dig(x - player.instance.x, y - player.instance.y)
+
+    if result == 'success':
+        player.instance.essence.remove(essence)
+    return result
+
+def primal_totem():
+    essence = select_essence(spells.charm_primal_totem)
+    if essence is None:
+        return 'didnt-take-turn'
+
+    result = 'didnt-take-turn'
+
+    if essence == 'fire':
+        result = actions.berserk_self(player.instance)
+    elif essence == 'air':
+        result = actions.battle_cry(player.instance)
+    elif essence == 'death':
+        result = actions.summon_weapon('weapon_soul_reaper')
+
+    if result == 'success':
+        player.instance.essence.remove(essence)
+    return result
+
+def holy_symbol():
+    essence = select_essence(spells.charm_holy_symbol)
+    if essence is None:
+        return 'didnt-take-turn'
+
+    result = 'didnt-take-turn'
+
+    if essence == 'life':
+        result = actions.mass_heal(player.instance)
+    elif essence == 'water':
+        result = actions.mass_cleanse(player.instance)
+    elif essence == 'radiant':
+        result = actions.mass_reflect(player.instance)
+
+    if result == 'success':
+        player.instance.essence.remove(essence)
+    return result
 
 def charm_resist():
     essence = select_essence(spells.charm_resist_effects)
