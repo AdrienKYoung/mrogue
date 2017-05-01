@@ -762,6 +762,7 @@ def waterbreathing():
 def shielding():
     player.instance.fighter.shred = 0
     player.instance.fighter.apply_status_effect(effects.StatusEffect('shielded', 21, libtcod.dark_blue))
+    return 'success'
 
 def cleanse():
     effects = list(player.instance.fighter.status_effects)
@@ -781,6 +782,7 @@ def cleanse():
 
 def invulnerable():
     player.instance.fighter.apply_status_effect(effects.invulnerable(10))
+    return 'success'
 
 def frog_tongue(actor, target):
     if actor.distance_to(target) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, target):

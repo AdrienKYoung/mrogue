@@ -1,0 +1,177 @@
+//part of mrogue, an interactive adventure game
+//Copyright (C) 2017 Adrien Young and Tyler Soberanis
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+//*******************
+//16     Flatland
+//*******************
+FEATURE flatland
+CATEGORY badlands
+DEFINE - mud
+    .....
+   ........
+  ...........
+ ............
+ .............
+ ..............
+.............
+.........
+.........
+ .........
+ ..........
+  .......
+   .....
+   ..
+ENDFEATURE
+//*******************
+//17  Abandoned Hut
+//*******************
+FEATURE abandoned_hut
+CATEGORY badlands
+DEFINE # wooden palisade
+FLAGS NOELEV
+SCRIPT create_slopes
+ ______
+_######_
+_#....+___
+_#....####_
+_#.......#_
+_#.......#_
+_#########_
+ _________
+ENDFEATURE
+//*******************
+//17  Blight Maze
+//*******************
+FEATURE blight_maze
+CATEGORY badlands
+DEFINE , dry grass
+DEFINE 1 MONSTER_ID monster_golem
+SCRIPT fill_blightweed create_slopes
+FLAGS NOELEV
+........
+.#,####.
+.#,#,$#.
+.#,,,,#.
+.#,,,,#.
+.#1,#,#.
+.####,#.
+........
+ENDFEATURE
+//*******************
+//18 Ruined Fence 1
+//*******************
+FEATURE ruined_fence1
+CATEGORY badlands
+DEFINE # wooden palisade
+#_####
+     ####__##_
+            _####_
+                _##
+                   ##
+                    #
+                    ##_##
+                        ###
+                          #
+ENDFEATURE
+//*******************
+//19 Ruined Fence 2
+//*******************
+FEATURE ruined_fence2
+CATEGORY badlands
+DEFINE # wooden palisade
+##
+ #_
+ _#
+  ##
+   ##
+    #_##
+       ###
+         ##
+          _
+          ##
+           #
+           ##
+            #
+ENDFEATURE
+//*******************
+//20  Mud Pen
+//*******************
+FEATURE mud_pen
+CATEGORY badlands
+DEFINE # wooden palisade
+DEFINE - mud
+DEFINE , dry grass
+DEFINE 1 MONSTER_ID monster_witch
+FLAGS NOELEV
+SCRIPT create_slopes
+    ______
+   __----__
+  _#--##--_
+ _#----#--__
+__-----,##--_
+_#----,,,#--_
+_#----,1,#--_
+_#---,,###--_
+_#--,###---__
+__---#----__
+ _-#---____
+_______
+ENDFEATURE
+//*******************
+//21  courtyard
+//*******************
+FEATURE courtyard
+CATEGORY badlands
+DEFINE - mud
+DEFINE , dry grass
+DEFINE $ LOOT_LEVEL 1
+FLAGS NOELEV
+SCRIPT create_slopes
+__________
+_###..###_
+_##.##.##_
+_#......#_
+_.#.$..#._
+_.#....#._
+_#......#_
+_##.##.##_
+_###..###_
+__________
+ENDFEATURE
+//*******************
+//22     well
+//*******************
+FEATURE well
+CATEGORY badlands
+DEFINE $ LOOT_LEVEL 2
+DEFINE 1 MONSTER_ID monster_goblin
+DEFINE 2 MONSTER_ID monster_necroling
+DEFINE 3 MONSTER_ID monster_tunnel_spider
+DEFINE 4 MONSTER_ID monster_centipede
+FLAGS NOELEV
+SCRIPT create_slopes
+     ###
+   ###.###
+  ##..3..##
+  #.1:::..#
+.##.:::::.##
+....:::::2$#
+.##.:::::.##
+  #.1:::..#
+  ##..4..##
+   ###.###
+     ###
+ENDFEATURE

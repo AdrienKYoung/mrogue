@@ -1,0 +1,176 @@
+//part of mrogue, an interactive adventure game
+//Copyright (C) 2017 Adrien Young and Tyler Soberanis
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+//*******************
+//   Default Gate
+//*******************
+FEATURE default_gate
+CATEGORY default_gate
+FLAGS NOREFLECT
+...
+.>.
+...
+ENDFEATURE
+
+//*******************
+//     Marsh Gate
+//*******************
+FEATURE marsh_gate
+CATEGORY marsh_hlink
+DEFINE # mossy stone wall
+FLAGS NOREFLECT
+###
+,>,
+_,_
+ENDFEATURE
+//*******************
+// Marsh Vertical Gate
+//*******************
+FEATURE marsh_vgate
+CATEGORY marsh_vlink
+FLAGS NOREFLECT NOELEV
+...
+.>.
+...
+ENDFEATURE
+
+//*******************
+//     Beach Gate
+//*******************
+FEATURE beach_gate
+CATEGORY beach_hlink
+DEFINE # sea cliff
+FLAGS NOREFLECT NOELEV
+SCRIPT create_slopes
+###
+->-
+---
+ENDFEATURE
+
+//*******************
+//   Badlands Gate
+//*******************
+FEATURE badlands_gate
+CATEGORY badlands_hlink
+DEFINE # dark shale wall
+DEFINE . shale
+DEFINE - gnarled tree
+FLAGS NOREFLECT NOELEV
+SCRIPT create_slopes
+ ###
+.->-.
+.....
+ENDFEATURE
+//*******************
+// Badlands Vertical Gate
+//*******************
+FEATURE badlands_vgate
+CATEGORY badlands_vlink
+FLAGS NOREFLECT NOELEV
+...
+.>.
+...
+ENDFEATURE
+
+//*******************
+// Goblin Tunnels Guarded Entrance
+//*******************
+FEATURE gtunnels_gate
+CATEGORY gtunnels_vlink
+FLAGS NOREFLECT NOELEV
+DEFAULT ,
+SCRIPT create_slopes
+DEFINE 1 MONSTER_ID monster_goblin_warrior
+DEFINE 2 MONSTER_ID monster_goblin
+##,..##
+#,,.,.#
+,.,1,,.
+,.2>2,.
+.,,1,..
+#...,.#
+##.,.##
+ENDFEATURE
+//*******************
+// Goblin Tunnels Gate
+//*******************
+FEATURE gtunnels_hgate
+CATEGORY gtunnels_hlink
+FLAGS NOREFLECT
+###
+.>.
+...
+ENDFEATURE
+
+//*******************
+// Frozen Forest Gate
+//*******************
+FEATURE forest_hgate
+CATEGORY forest_hlink
+FLAGS NOREFLECT
+###
+.>.
+...
+ENDFEATURE
+//*******************
+// Frozen Forest Vertical Gate
+//*******************
+FEATURE forest_vgate
+CATEGORY forest_vlink
+FLAGS NOREFLECT
+...
+.>.
+...
+ENDFEATURE
+
+//*******************
+//    Garden Gate
+//*******************
+FEATURE garden_hgate
+CATEGORY garden_hlink
+FLAGS NOREFLECT
+###
+.>.
+...
+ENDFEATURE
+//*******************
+// Garden Vertical Gate
+//*******************
+FEATURE garden_vgate
+CATEGORY garden_vlink
+FLAGS NOREFLECT
+...
+.>.
+...
+ENDFEATURE
+
+//*******************
+//  Grotto Entrance
+//*******************
+FEATURE grotto_entrance
+CATEGORY beach
+FLAGS NOROTATE NOREFLECT
+###########
+####.>.####
+   #...#
+-#-##*##-#-
+.---...---.
+.#--...--#.
+..-.....-..
+.#-.....-#.
+...........
+ .........
+    ...
+ENDFEATURE

@@ -43,6 +43,10 @@ class PlayerStats:
         return self.base_agi
 
     @property
+    def con(self):
+        return self.base_con
+
+    @property
     def max_essence(self):
         return 1 + int(math.floor(self.wiz / 4))
 

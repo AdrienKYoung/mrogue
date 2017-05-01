@@ -841,10 +841,14 @@ def create_door(x, y, locked=False):
     door.closed = True
     return door
 
-def load_features_from_file(filename):
+def initialize_features():
     global feature_categories, features
     feature_categories = {}
     features = {}
+    load_features_from_file('features.txt')
+
+def load_features_from_file(filename):
+    global feature_categories, features
     feature_file = open(filename, 'r')
     lines = feature_file.read().split('\n')
     while len(lines) > 0:
@@ -852,6 +856,10 @@ def load_features_from_file(filename):
         lines.remove(lines[0])
         if current_line.startswith('//'):
             continue
+        if current_line.startswith('IMPORT'):
+            load_features_from_file(current_line.split(' ')[1])
+            continue
+
         if current_line.startswith('FEATURE'):
             name = current_line.split(' ')[1]
 
@@ -1596,13 +1604,21 @@ def make_basic_map_link(link):
             c = '<'
         hlink = False
     if hlink:
-        link_feature = random_from_list(feature_categories[link[1].branch + '_hlink']).name
+        link_feature_category = link[1].branch + '_hlink'
+        if link_feature_category in feature_categories and len(feature_categories[link_feature_category]) > 0:
+            link_feature = random_from_list(feature_categories[link_feature_category]).name
+        else:
+            link_feature = feature_categories['default_gate'][0].name
         exclude = []
         create_feature(x, y, link_feature, hard_override=True, rotation=r, open_tiles=exclude)
         closest = main.find_closest_open_tile(x, y, exclude=exclude)
         create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='open')
     else:
-        link_feature = random_from_list(feature_categories[link[1].branch + '_vlink']).name
+        link_feature_category = link[1].branch + '_vlink'
+        if link_feature_category in feature_categories and len(feature_categories[link_feature_category]) > 0:
+            link_feature = random_from_list(feature_categories[link_feature_category]).name
+        else:
+            link_feature = feature_categories['default_gate'][0].name
         create_feature(x, y, link_feature, hard_override=True)
     # find the stairs that we just placed
     stairs = None

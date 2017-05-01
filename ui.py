@@ -405,16 +405,37 @@ def render_side_panel(acc_mod=1.0):
     libtcod.console_set_default_background(side_panel, libtcod.black)
     libtcod.console_clear(side_panel)
 
-    render_bar(2, 2, consts.BAR_WIDTH, 'HP', player.instance.fighter.hp, player.instance.fighter.max_hp,
+    drawHeight = 2
+
+    render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', player.instance.fighter.hp, player.instance.fighter.max_hp,
                libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)
     # Display armor/shred
     armor_string = 'AR:' + str(player.instance.fighter.armor)
     if player.instance.fighter.shred > 0:
         libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
     libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, 2, libtcod.BKGND_DEFAULT, libtcod.RIGHT, armor_string)
+    drawHeight += 1
 
-    render_bar(2, 3, consts.BAR_WIDTH, 'Stamina', player.instance.fighter.stamina, player.instance.fighter.max_stamina,
+    render_bar(2, drawHeight, consts.BAR_WIDTH, 'Stamina', player.instance.fighter.stamina, player.instance.fighter.max_stamina,
                libtcod.dark_green, libtcod.darker_green)
+    drawHeight += 1
+
+    # New armor graphics
+    libtcod.console_set_default_foreground(side_panel, libtcod.white)
+    libtcod.console_print(side_panel, 2, drawHeight, 'AR: ')
+    if player.instance.fighter.armor == 0:
+        libtcod.console_set_default_foreground(side_panel, libtcod.black)
+        libtcod.console_set_default_background(side_panel, libtcod.red)
+        libtcod.console_print_ex(side_panel, 6, drawHeight, libtcod.BKGND_SET, libtcod.LEFT, 'NONE')
+    else:
+        for i in range(min(player.instance.fighter.armor, 15)):
+            libtcod.console_put_char_ex(side_panel, 6 + i, drawHeight, ')', libtcod.black, libtcod.light_gray)
+        libtcod.console_set_default_foreground(side_panel, libtcod.dark_gray)
+        for i in range(player.instance.fighter.shred):
+            libtcod.console_put_char_ex(side_panel, 6 + min(player.instance.fighter.armor + i, 15), drawHeight, ')', libtcod.black, libtcod.darker_gray)
+    libtcod.console_set_default_background(side_panel, libtcod.black)
+    drawHeight += 1
+
 
     # Breath
     if player.instance.fighter.breath < player.instance.fighter.max_breath:
@@ -422,36 +443,40 @@ def render_side_panel(acc_mod=1.0):
         for num in range(0, player.instance.fighter.breath):
             breath_text += 'O '
         libtcod.console_set_default_foreground(side_panel, libtcod.dark_blue)
-        libtcod.console_print(side_panel, 2, 4, breath_text)
-        libtcod.console_set_default_foreground(side_panel, libtcod.white)
+        libtcod.console_print(side_panel, 2, drawHeight, breath_text)
+    drawHeight += 1
 
     # Base stats
-    libtcod.console_print(side_panel, 2, 6, 'INT: ' + str(player.instance.player_stats.int))
-    libtcod.console_print(side_panel, 2, 7, 'WIS: ' + str(player.instance.player_stats.wiz))
-    libtcod.console_print(side_panel, 2, 8, 'STR: ' + str(player.instance.player_stats.str))
-    libtcod.console_print(side_panel, 2, 9, 'AGI: ' + str(player.instance.player_stats.agi))
+    libtcod.console_set_default_foreground(side_panel, libtcod.white)
+    libtcod.console_print(side_panel, 2, drawHeight, 'INT: ' + str(player.instance.player_stats.int))
+    libtcod.console_print(side_panel, 2, drawHeight + 1, 'WIS: ' + str(player.instance.player_stats.wiz))
+    libtcod.console_print(side_panel, 2, drawHeight + 2, 'STR: ' + str(player.instance.player_stats.str))
+    libtcod.console_print(side_panel, 2, drawHeight + 3, 'AGI: ' + str(player.instance.player_stats.agi))
+    libtcod.console_print(side_panel, 2, drawHeight + 4, 'CON: ' + str(player.instance.player_stats.con))
 
     # Level/XP
-    libtcod.console_print(side_panel, 2, 11, 'Lvl: ' + str(player.instance.level))
-    libtcod.console_print(side_panel, 2, 12, 'XP:  ' + str(player.instance.fighter.xp))
-    libtcod.console_print(side_panel, 2, 13, 'SP:  ' + str(player.instance.skill_points))
+    libtcod.console_print(side_panel, 10, drawHeight, 'Lvl: ' + str(player.instance.level))
+    libtcod.console_print(side_panel, 10, drawHeight + 1, 'XP:  ' + str(player.instance.fighter.xp))
+    libtcod.console_print(side_panel, 10, drawHeight + 2, 'SP:  ' + str(player.instance.skill_points))
+    drawHeight += 6
 
     # Mana
-    libtcod.console_print(side_panel, 2, 14, 'Essence:')
-    libtcod.console_put_char(side_panel, 2, 15, '[')
+    libtcod.console_print(side_panel, 2, drawHeight, 'Essence:')
+    drawHeight += 1
+    libtcod.console_put_char(side_panel, 2, drawHeight, '[')
     x = 4
     for m in range(len(player.instance.essence)):
         libtcod.console_set_default_foreground(side_panel, spells.essence_colors[player.instance.essence[m]])
-        libtcod.console_put_char(side_panel, x, 15, '*')
+        libtcod.console_put_char(side_panel, x, drawHeight, '*')
         x += 2
     for m in range(player.instance.player_stats.max_essence - len(player.instance.essence)):
         libtcod.console_set_default_foreground(side_panel, libtcod.dark_grey)
-        libtcod.console_put_char(side_panel, x, 15, '.')
+        libtcod.console_put_char(side_panel, x, drawHeight, '.')
         x += 2
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
-    libtcod.console_put_char(side_panel, x, 15, ']')
+    libtcod.console_put_char(side_panel, x, drawHeight, ']')
 
-    drawHeight = 17
+    drawHeight += 2
 
     # Equip Load
     libtcod.console_print(side_panel, 2, drawHeight, 'Equip Load: %d/%d' % (player.instance.fighter.equip_weight, player.instance.fighter.max_equip_weight))
