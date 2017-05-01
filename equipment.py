@@ -186,9 +186,13 @@ class Equipment:
             self.equip()
 
     def equip(self):
+        old_equipment = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
         # First check weight
         if self.holder is player.instance:
-            if self.holder.fighter.equip_weight + self.weight > self.holder.fighter.max_equip_weight:
+            old_weight = 0
+            if old_equipment is not None:
+                old_weight = old_equipment.weight
+            if self.holder.fighter.equip_weight + self.weight - old_weight > self.holder.fighter.max_equip_weight:
                 ui.message('That is too heavy.', libtcod.orange)
                 return
 
@@ -198,7 +202,6 @@ class Equipment:
             if rh is not None: rh.dequip()
             if lh is not None: lh.dequip()
         else:
-            old_equipment = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
             if old_equipment is not None:
                 old_equipment.dequip(self.holder)
         self.is_equipped = True

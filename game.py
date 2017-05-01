@@ -889,6 +889,8 @@ def monster_death(monster):
 
     if hasattr(monster.fighter,'inventory') and len(monster.fighter.inventory) > 0 and monster.summon_time is None:
         for item in monster.fighter.inventory:
+            if item.equipment:
+                item.equipment.dequip()
             item.x = monster.x
             item.y = monster.y
             current_map.add_object(item)
