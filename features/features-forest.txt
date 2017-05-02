@@ -44,3 +44,34 @@ DEFINE - ice
  -----
   --
 ENDFEATURE
+//*******************
+//   Tower Ruins 1
+//*******************
+FEATURE tower_ruins_1
+CATEGORY forest
+DEFINE - snow drift
+DEFINE X pine tree
+DEFINE $ LOOT_LEVEL 2
+__________
+__#####-__
+#--  $#-__
+__#--X#-__
+__#---#-__
+__###-- #-
+ENDFEATURE
+
+//*******************
+//   Tower Ruins 2
+//*******************
+FEATURE tower_ruins_2
+CATEGORY forest
+DEFINE - snow drift
+DEFINE $ LOOT_LEVEL 2
+DEFINE 1 MONSTER_ID monster_silencer
+_____________
+_1###-#####-_
+#__  -#--$#-_
+__#---+---#-_
+_##---#####-_
+__#-#-#-----_
+ENDFEATURE

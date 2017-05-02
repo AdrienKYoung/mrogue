@@ -111,7 +111,7 @@ loadouts = {
         'con':8,
         'inventory':[
             'charm_raw',
-            'charm_primal_totem',
+            'equipment_cloth_robes',
             'book_lesser_fire',
             'gem_lesser_fire',
             'gem_lesser_water',

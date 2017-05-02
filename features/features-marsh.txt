@@ -96,7 +96,7 @@ ENDFEATURE
 FEATURE verman_hut
 FLAGS NOSPAWNS
 DEFINE $ LOOT_LEVEL 1 CATEGORY consumables
-DEFINE 1 MONSTER_ID monster_infested_treant
+DEFINE 1 MONSTER_ID monster_verman
 _______
 _#####_
 _#$..#_

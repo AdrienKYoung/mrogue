@@ -139,8 +139,15 @@ branches = {
         'default_floor' : 'snowy ground',
         'default_ramp'  : 'snowy slope',
         'scaling'       : 0,
-        'loot':{},
-        'loot_level':0,
+        'loot':{
+            'armor_1':25,
+            'weapons_1':20,
+            'consumables_1':35,
+            'gems_1':10,
+            'tomes_1':4,
+            'keys_1':1
+        },
+        'loot_level':2,
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
         'xp_amount':7,
