@@ -551,7 +551,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
               guaranteed_shred_modifier=0, pierce_modifier=0):
     # check stamina
     if main.has_skill('combat_training'):
-        stamina_cost *= main.skill_value('combat_training')
+        stamina_cost = int(round(stamina_cost * main.skill_value('combat_training')))
 
     if fighter.owner.name == 'player':
         if fighter.stamina < stamina_cost:

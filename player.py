@@ -63,8 +63,7 @@ loadouts = {
             'equipment_leather_armor',
             'equipment_iron_helm',
         ],
-        'description' : "Balanced melee fighter. Starts with good weapon and armor. Charm channels essence to imbue "
-                        "temporary weapon effects."
+        'description' : "Balanced melee fighter. Starts with good weapon and armor."
     },
     'rogue' : {
         'str':10,
@@ -78,8 +77,7 @@ loadouts = {
             'equipment_leather_armor',
             'glass_key'
         ],
-        'description' : "Nimble melee fighter. Starts with excellent agility. "
-                        "Charm channels essence to curse enemies with negative effects."
+        'description' : "Nimble melee fighter. Starts with excellent agility."
     },
     'wanderer' : {
         'str':12,
@@ -90,8 +88,7 @@ loadouts = {
         'inventory':[
             'charm_raw',
         ],
-        'description' : "Generalist class with great stats, especially spirit. Starts with no gear. "
-                        "Charm channels essence to bless self with beneficial effects."
+        'description' : "Generalist class with great stats, especially spirit. Starts with no gear."
     },
     'fanatic' : {
         'str':12,
@@ -104,8 +101,7 @@ loadouts = {
             'charm_raw',
             'weapon_coal_mace'
         ],
-        'description' : "Melee magic caster. Starts with a tome, no armor and a mace. "
-                        "Charm channels essence to bless self with elemental resistance."
+        'description' : "Melee magic caster. Starts with a tome, no armor and a mace."
     },
     'wizard' : {
         'str':6,
@@ -124,10 +120,11 @@ loadouts = {
             'gem_lesser_cold',
             'gem_lesser_life',
             'gem_lesser_arcane',
-            'gem_lesser_radiance'
+            'gem_lesser_radiance',
+            'gem_lesser_death'
         ],
         'description' : "Fragile in melee, but have access to powerful offensive magic. "
-                        "Starts with a tome. Charm channels essence to summon elementals"
+                        "Starts with a tome."
     },
 }
 
@@ -150,6 +147,7 @@ def create(loadout):
     instance.known_spells = []
     instance.action_queue = []
     instance.skill_points = 20
+    instance.skill_point_progress = 0
     instance.fighter.xp = 0
     instance.perk_abilities = []
 
@@ -402,6 +400,14 @@ def pick_up_xp(xp, obj):
         instance.fighter.xp += consts.XP_ORB_AMOUNT_MIN + \
                              libtcod.random_get_int(0, 0, consts.XP_ORB_AMOUNT_MAX - consts.XP_ORB_AMOUNT_MIN)
         check_level_up()
+
+        instance.skill_point_progress += instance.player_stats.wiz
+        if instance.skill_point_progress >= 100:
+            ui.message('Your skills have increased.', libtcod.green)
+            instance.skill_points += 10
+            instance.skill_point_progress -= 100
+            purchase_skill()
+
         xp.destroy()
 
 def check_level_up():
@@ -413,7 +419,6 @@ def check_level_up():
 def level_up():
 
     instance.level += 1
-    instance.skill_points += instance.player_stats.wiz
     ui.message('You grow stronger! You have reached level ' + str(instance.level) + '!', libtcod.green)
     choice = None
     while choice is None:
@@ -436,8 +441,6 @@ def level_up():
         instance.player_stats.int += 1
     elif choice == 4:
         instance.player_stats.wiz += 1
-
-    purchase_skill()
 
     instance.fighter.heal(int(instance.fighter.max_hp * consts.LEVEL_UP_HEAL))
 

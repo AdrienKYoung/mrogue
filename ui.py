@@ -455,9 +455,9 @@ def render_side_panel(acc_mod=1.0):
     libtcod.console_print(side_panel, 2, drawHeight + 4, 'CON: ' + str(player.instance.player_stats.con))
 
     # Level/XP
-    libtcod.console_print(side_panel, 10, drawHeight, 'Lvl: ' + str(player.instance.level))
-    libtcod.console_print(side_panel, 10, drawHeight + 1, 'XP:  ' + str(player.instance.fighter.xp))
-    libtcod.console_print(side_panel, 10, drawHeight + 2, 'SP:  ' + str(player.instance.skill_points))
+    libtcod.console_print(side_panel, 11, drawHeight, 'Lvl: ' + str(player.instance.level))
+    libtcod.console_print(side_panel, 11, drawHeight + 1, 'XP:  ' + str(player.instance.fighter.xp))
+    libtcod.console_print(side_panel, 11, drawHeight + 2, 'SP:  ' + str(player.instance.skill_points))
     drawHeight += 6
 
     # Mana
