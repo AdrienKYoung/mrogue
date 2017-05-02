@@ -1337,7 +1337,7 @@ def choose_essence_from_pool(charm_data):
     letter_index = ord('a')
     index = None
     for essence in player.instance.essence:
-        if essence in charm_data:
+        if essence in charm_data.keys():
             options_ex[chr(letter_index)] = [{
                 'category': 'essence',
                 'text': essence,
