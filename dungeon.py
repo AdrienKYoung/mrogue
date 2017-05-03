@@ -27,7 +27,6 @@ branches = {
         'loot'          : None,
         'monsters'      : None,
         'generate'      : mapgen.make_map_beach,
-        'connect'       : ['marsh', 'badlands'],
         'map_color'     : libtcod.Color(0, 95, 191),
     },
     'badlands': {
@@ -43,7 +42,8 @@ branches = {
             'consumables_1':35,
             'gems_1':10,
             'tomes_1':4,
-            'keys_1':1
+            'keys_1':1,
+            'charms_1':5
         },
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
@@ -81,7 +81,8 @@ branches = {
             'consumables_1':35,
             'gems_1':10,
             'tomes_1':4,
-            'keys_1':1
+            'keys_1':1,
+            'charms_1':5
         },
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
@@ -121,7 +122,8 @@ branches = {
             'consumables_1':35,
             'gems_1':10,
             'tomes_1':4,
-            'keys_1':1
+            'keys_1':1,
+            'charms_1':5
         },
         'loot_dice':'2d3',
         'encounter_range':3,

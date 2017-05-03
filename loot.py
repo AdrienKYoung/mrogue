@@ -113,6 +113,13 @@ table = {
 
     'keys_1': [
         'glass_key'
+    ],
+
+    'charms_1': [
+        'charm_farmers_talisman',
+        'charm_primal_totem',
+        'charm_holy_symbol',
+        'charm_shard_of_creation'
     ]
 }
 
