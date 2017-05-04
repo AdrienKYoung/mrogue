@@ -1363,8 +1363,12 @@ def choose_essence_from_pool(charm_data):
 def buy(item,payment_type,success,cancelled):
     inventory = player.instance.fighter.inventory
     options = [i.name for i in inventory if i.item.category == payment_type]
-    selection = options[menu('Which item as payment?',options)]
-    if selection is None:
+    options.append('Back')
+    index = menu('Which item as payment?',options)
+    selection = None
+    if index is not None:
+        selection = options[index]
+    if selection is None or selection == 'Back':
         return cancelled
     else:
         payment = next((n for n in inventory if n.name == selection))

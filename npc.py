@@ -49,7 +49,7 @@ data = {
         'description': 'A hunched figure hidden under ragged robes',
         'dialog': {
             'greeting_1':{
-                'text':"Greeting 1",
+                'text':"Come to bring me something nice?",
                 'options':{
                     'Shop':'shop_1',
                     'Talk':'talk_1',
@@ -57,25 +57,32 @@ data = {
                 }
             },
             'talk_1':{
-                'text':"Talk 1",
+                'text':"Much time has passed since another's footsteps echoed on these stones.",
+                'options' : {
+                    'Continue':'talk_2'
+                }
+            },
+            'talk_2':{
+                'text':"Such silence is sacred in this forsaken land.",
                 'options' : {
                     'Continue':'greeting_1'
                 }
             },
             'shop_1':{
-                'text':"Shop 1",
+                'text':"I'll give you one of these for something nice.",
                 'options': {
-                    'holy symbol':lambda: ui.buy('charm_holy_symbol','treasure','leave_1','leave_1')
+                    'holy symbol':lambda: ui.buy('charm_holy_symbol','treasure','success_1','greeting_1'),
+                    'Back':'greeting_1'
                 }
             },
             'success_1':{
-                'text':"Talk 1",
+                'text':"Yes, perfect! Enjoy your trinket.",
                 'options' : {
                     'Continue':'greeting_1'
                 }
             },
             'leave_1':{
-                'text':"Leave 1",
+                'text':"Fare thee well then.",
                 'options' : {
                     'Continue':end_conversation
                 }
