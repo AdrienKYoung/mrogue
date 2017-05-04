@@ -330,22 +330,20 @@ def _cast_spell():
         sp = {}
         for spell,level,charges in m_spells:
             spell_data = spells.library[spell]
-            ops[chr(letter_index)] = [
-                {
-                    'category' : 'spell',
+            ops[chr(letter_index)] = {
+                'spell' : {
                     'text' : spell_data.name.title()
                 },
-                {
-                    'category': 'stamina',
+                'stamina' : {
                     'text': '[%d]' % spell_data.levels[level-1]['stamina_cost'],
                     'color': libtcod.dark_green
                 },
-                {
-                    'category': 'charges',
+                'charges' : {
                     'text': '%d/%d' % (charges, spell_data.max_spell_charges(level)),
                     'color': libtcod.yellow
-                }
-            ]
+                },
+                'description' : spell_data.description
+            }
             sp[chr(letter_index)] = spell
             letter_index += 1
         selection = ui.menu_ex('Cast which spell?', ops, 50, return_as_char=True)
