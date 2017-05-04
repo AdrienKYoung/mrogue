@@ -594,6 +594,7 @@ def apply_data(x, y, data):
 
 def apply_object(x, y, data):
     monster_id = None
+    npc_id = None
     go_name = None
     go_description = None
     go_blocks = None
@@ -602,6 +603,9 @@ def apply_object(x, y, data):
     for i in range(1, len(data)):
         if data[i] == 'MONSTER_ID':
             monster_id = data[i + 1]
+            i += 1
+        elif data[i] == 'NPC_ID':
+            npc_id = data[i + 1]
             i += 1
         elif data[i] == 'GO_NAME':
             go_name = data[i + 1]
@@ -630,6 +634,8 @@ def apply_object(x, y, data):
 
     if monster_id is not None:
         main.spawn_monster(monster_id, x, y)
+    elif npc_id is not None:
+        main.spawn_npc(npc_id, x, y)
     elif go_name is not None:
         new_obj = main.GameObject(x, y, go_char, go_name, go_color, blocks=go_blocks, description=go_description)
         map.add_object(new_obj)

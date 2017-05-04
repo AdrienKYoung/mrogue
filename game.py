@@ -135,7 +135,7 @@ class GameObject:
                  player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
                  elevation=None, background_color=None, movement_type=0, summon_time = None, zones=[], is_corpse=False,
-                 zombie_type=None):
+                 zombie_type=None, npc =None):
         self.x = x
         self.y = y
         self.char = char
@@ -190,6 +190,7 @@ class GameObject:
             self.add_zone(z)
         self.is_corpse = is_corpse
         self.zombie_type = zombie_type
+        self.npc = npc
 
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
@@ -824,6 +825,9 @@ def normalized_choice(choices_list,factor):
         return None
     return choices_list[int((size - 1) * clamp(factor,0,1))]
 
+def random_entry(options):
+    return options[libtcod.random_get_int(0,0,len(options)-1)]
+
 def random_choice(chances_dict):
     chances = chances_dict.values()
     strings = chances_dict.keys()
@@ -1137,6 +1141,17 @@ def spawn_monster_inventory(proto,loot_level=-10):
                     result.append(create_item(equip))
     return result
 
+def spawn_npc(name,x,y):
+    import npc
+    p = npc.data[name]
+    npc_component = npc.NPC(p['dialog'],p['root'])
+    result = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, interact=npc.start_conversation,
+                         description=p['description'], on_create=p.get('on_create'), npc=npc_component,
+                         movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'))
+
+    result.elevation = current_map.tiles[x][y].elevation
+    current_map.add_object(result)
+    return result
 
 def create_ability(name):
     if name in abilities.data:
@@ -1380,7 +1395,6 @@ def dice_range(dice, normalize_size=None):
         remainder_min = 1
 
     return dice_count + remainder_min + flat_bonus, dice_count * dice_size + remainder + flat_bonus
-
 
 def find_closest_open_tile(x, y, exclude=[]):
     if in_bounds(x, y) and not is_blocked(x, y) and len(exclude) == 0:

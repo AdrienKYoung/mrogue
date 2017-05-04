@@ -1359,6 +1359,19 @@ def choose_essence_from_pool(charm_data):
     else:
         return player.instance.essence[index]
 
+
+def buy(item,payment_type,success,cancelled):
+    inventory = player.instance.fighter.inventory
+    options = [i.name for i in inventory if i.item.category == payment_type]
+    selection = options[menu('Which item as payment?',options)]
+    if selection is None:
+        return cancelled
+    else:
+        payment = next((n for n in inventory if n.name == selection))
+        inventory.remove(payment)
+        inventory.append(main.create_item(item))
+        return success
+
 show_action_panel = True
 overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
 panel = libtcod.console_new(consts.PANEL_WIDTH, consts.PANEL_HEIGHT)

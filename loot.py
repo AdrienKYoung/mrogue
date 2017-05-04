@@ -222,6 +222,7 @@ item_categories = {
     'charm' : { 'plural' : 'charms'},
     'gem' : { 'plural' : 'gems'},
     'key' : { 'plural' : 'keys'},
+    'treasure' : { 'plural' : 'treasure' }
 }
 
 quality_progression = [
@@ -1305,5 +1306,14 @@ proto = {
         'type'          : 'item',
         'description'   : 'A delicate key made from clouded glass. This key can open any lock,'
                           ' but breaks in the process.'
+    },
+
+    'treasure_bejeweled_chalice': {
+        'name'          : 'bejeweled chalice',
+        'category'      : 'treasure',
+        'char'          : '$',
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'description'   : 'A golden chalice, encrusted with precious jewels. Mundane, but valuable.'
     }
 }

@@ -22,6 +22,7 @@ CATEGORY grotto
 DEFINE , shale
 DEFINE - shallow seawater
 DEFINE ~ deep seawater
+DEFINE 1 NPC_ID npc_hermit
 FLAGS NOROTATE NOREFLECT
 ###############################
 #############     #############
@@ -104,7 +105,7 @@ HEIGHT 3
              ,,,,,
          ,,,,,,,,,,,,,
         #,,,,#,,,#,,,,#
-        ,,,,,,,,,,,,,,,
+        ,,,,,,,,1,,,,,,
         ,,,,,,,,,,,,,,,
         #,,,,#,,,#,,,,#
         ,,,,,,,,,,,,,,,

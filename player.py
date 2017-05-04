@@ -75,7 +75,8 @@ loadouts = {
             'charm_raw',
             'weapon_dagger',
             'equipment_leather_armor',
-            'glass_key'
+            'glass_key',
+            'treasure_bejeweled_chalice'
         ],
         'description' : "Nimble melee fighter. Starts with excellent agility."
     },
