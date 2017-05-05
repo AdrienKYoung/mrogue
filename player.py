@@ -112,7 +112,10 @@ loadouts = {
         'con':8,
         'inventory':[
             'charm_raw',
-            'charm_farmers_talisman',
+            #'charm_farmers_talisman',
+            #'charm_holy_symbol',
+            #'charm_shard_of_creation',
+            #'charm_primal_totem',
             'equipment_cloth_robes',
             'book_lesser_fire',
             'gem_lesser_fire',

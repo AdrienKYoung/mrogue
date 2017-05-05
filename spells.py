@@ -370,7 +370,7 @@ essence_colors = {
     'death' : libtcod.dark_violet,
     'water' : libtcod.azure,
     'air' : libtcod.light_sky,
-    'cold' : libtcod.lightest_azure,
+    'cold' : libtcod.lightest_gray,
     'radiant' : libtcod.lighter_yellow,
     'arcane' : libtcod.fuchsia,
     'void' : libtcod.darker_crimson

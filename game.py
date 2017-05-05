@@ -56,7 +56,7 @@ class Item:
             return
         elif self.use_function is not None:
             if self.use_function() != 'cancelled':
-                if self.type == 'item' and self.category != 'charm':
+                if self.type == 'item' and self.category != 'charm' and not(self.category == 'gem' and consts.DEBUG_INFINITE_GEMS):
                     self.holder.fighter.inventory.remove(self.owner)
             else:
                 return 'cancelled'
@@ -97,6 +97,8 @@ class Item:
 
         if self.owner.equipment:
             print_height += self.owner.equipment.print_description(console, x, y + print_height, width)
+        if self.category == 'charm':
+            print_height += charms.print_charm_description(self, console, x, y + print_height, width)
 
         return print_height
 
@@ -1417,6 +1419,14 @@ def find_closest_open_tile(x, y, exclude=[]):
                 neighbors.append(n)
     return None  # failure
 
+def find_random_open_tile():
+    open = []
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            if not is_blocked(x, y):
+                open.append((x, y))
+    return open[libtcod.random_get_int(0, 0, len(open) - 1)]
+
 def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
     if len(tiles) == 0:
         return
@@ -1848,6 +1858,7 @@ import player
 import combat
 import terrain
 import equipment
+import charms
 
 # Globals
 

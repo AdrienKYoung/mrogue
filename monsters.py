@@ -135,7 +135,7 @@ proto = {
     'monster_snow_kite': {
         'name': 'snow kite',
         'char': 'k',
-        'color': libtcod.lightest_azure,
+        'color': libtcod.lightest_gray,
         'hp': 36,
         'strength_dice' : '3d8',
         'attack_bonus' : 0,
@@ -578,7 +578,7 @@ proto = {
     'monster_ice_elemental': {
         'name': 'ice elemental',
         'char': 'E',
-        'color': libtcod.lightest_azure,
+        'color': libtcod.lightest_gray,
         'hp': 20,
         'strength_dice' : '3d8',
         'attack_bonus' : 10,

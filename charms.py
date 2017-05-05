@@ -17,6 +17,43 @@ def select_essence(data,options='any'):
         return 'didnt-take-turn'
     return ui.choose_essence_from_pool(data)
 
+def get_charm_data(charm):
+    if charm.use_function == charm_raw:
+        return spells.charm_raw_effects
+    elif charm.use_function == charm_resist:
+        return spells.charm_resist_effects
+    elif charm.use_function == farmers_talisman:
+        return spells.charm_farmers_talisman
+    elif charm.use_function == holy_symbol:
+        return spells.charm_holy_symbol
+    elif charm.use_function == primal_totem:
+        return spells.charm_primal_totem
+    elif charm.use_function == shard_of_creation:
+        return spells.charm_shard_of_creation
+
+def print_charm_description(charm, console, x, y, width):
+    data = get_charm_data(charm)
+    draw_height = 1
+
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    libtcod.console_print(console, x + 1, y + draw_height, 'Abilities:')
+    draw_height += 1
+    libtcod.console_set_default_foreground(console, libtcod.dark_gray)
+    for i in range(min(width, 20)):
+        libtcod.console_put_char(console, x + 1 + i, y + draw_height, '=')
+    draw_height += 1
+    for element in data.keys():
+        if element == 'void':
+            continue #seeeeecret!
+        libtcod.console_set_default_foreground(console, spells.essence_colors[element])
+        libtcod.console_print(console, x + 1, y + draw_height, element.capitalize())
+        libtcod.console_set_default_foreground(console, libtcod.white)
+        for j in range(len(element) + 2, 10):
+            libtcod.console_put_char(console, x + j, y + draw_height, '-')
+        libtcod.console_print(console, x + 11, y + draw_height, data[element]['name'].title())
+        draw_height += 1
+    return draw_height
+
 def shard_of_creation():
     essence = select_essence(spells.charm_shard_of_creation)
     if essence is None:
@@ -145,7 +182,7 @@ def charm_raw():
         if result != 'didnt-take-turn':
             ui.message('A gust of air lifts you to your destination', spells.essence_colors['air'])
     elif essence == 'arcane':
-        result = 'didnt-take-turn' #TODO: teleport
+        result = actions.create_teleportal(player.instance.x, player.instance.y)
     elif essence == 'death':
         result = actions.raise_zombie()
     elif essence == 'radiant':

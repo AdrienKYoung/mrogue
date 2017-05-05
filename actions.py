@@ -637,6 +637,7 @@ def battle_cry(actor=None,target=None):
             unit.fighter.apply_status_effect(effects.cursed(20))
             if unit.behavior is not None and hasattr(unit.behavior,'ai_state'):
                 unit.behavior.ai_state = 'pursuing'
+                unit.behavior.last_seen_position = player.instance.x, player.instance.y
 
     ui.message("{} {} out a battle cry!".format(
         syntax.conjugate(actor is player.instance,['You',actor.name]),
@@ -834,8 +835,8 @@ def hardness(actor=None):
     actor.fighter.apply_status_effect(effects.stoneskin(21))
     if actor is player.instance or fov.player_can_see(actor.x, actor.y):
         ui.message('%s armor is repaired and %s skin becomes as hard as stone.' % (
-            syntax.name(actor, possesive=True),
-            syntax.pronoun(actor.name, possesive=True).capitalize()),
+            syntax.name(actor, possesive=True).capitalize(),
+            syntax.pronoun(actor.name, possesive=True)),
             spells.essence_colors['earth'])
     return 'success'
 
@@ -1050,6 +1051,47 @@ def poison_attack_1(actor,target,damage):
 
 def potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
+
+def teleport(actor, x, y):
+    if actor is None:
+        actor = player.instance
+
+    if actor is player.instance or fov.player_can_see(actor.x, actor.y):
+        ui.message('%s %s in a crackle of magical energy!' %
+                   (syntax.name(actor).capitalize(),
+                    syntax.conjugate(actor is player.instance, ('vanish', 'vanishes'))),
+                    spells.essence_colors['arcane'])
+    actor.set_position(x, y)
+    if actor is not player.instance and fov.player_can_see(actor.x, actor.y):
+        ui.message('%s appears out of thin air!' % syntax.name(actor).capitalize(), spells.essence_colors['arcane'])
+    return 'success'
+
+def teleport_random(actor=None):
+    destination = main.find_random_open_tile()
+    return teleport(actor, destination[0], destination[1])
+
+def teleportal_on_tick(teleportal):
+    if not hasattr(teleportal, 'timer'):
+        teleportal.timer = 3
+        return
+    else:
+        teleportal.timer -= 1
+    if teleportal.timer <= 0:
+        destination = main.find_random_open_tile()
+        for obj in main.get_objects(teleportal.x, teleportal.y):
+            if obj is not teleportal:
+                teleport(obj, destination[0], destination[1])
+        teleportal.destroy()
+
+def create_teleportal(x, y):
+    portal = main.GameObject(x, y, 9, 'teleportal', spells.essence_colors['arcane'], on_tick=teleportal_on_tick)
+    portal.timer = 4
+    main.current_map.add_object(portal)
+    main.changed_tiles.append((x, y))
+    if fov.player_can_see(x, y):
+        ui.message('A volatile portal opens. In a few moments it will teleport creatures standing near it.',
+                   spells.essence_colors['arcane'])
+    return 'success'
 
 def summon_ally(name, duration):
     adj = main.adjacent_tiles_diagonal(player.instance.x, player.instance.y)

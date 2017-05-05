@@ -51,7 +51,10 @@ def name(object, possesive=False, proper=False):
 
 def pronoun(_name, possesive=False, objective=False, gender='N'):
     if _name == 'player':
-        return name(_name, possesive=possesive)
+        if possesive:
+            return 'your'
+        else:
+            return 'you'
     if possesive:
         if gender == 'M':
             return 'his'
