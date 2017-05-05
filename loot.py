@@ -120,7 +120,7 @@ table = {
         'gem_lesser_life',
         'gem_lesser_arcane',
         'gem_lesser_death',
-        'gem_lesser_radiant',
+        'gem_lesser_radiance',
     ],
 
     'keys_1': [
@@ -404,7 +404,7 @@ armor_materials = {
     'insulated'     :   {'resistance':'lightning'},
     'fur-lined'     :   {'resistance':'cold'},
     'blessed'       :   {'resistance':'death'},
-    'infernal'      :   {'resistance':'radiant'},
+    'infernal'      :   {'resistance':'radiance'},
     'enchanted'     :   {'resistance':'spell'}
     #TODO: heavy - increased weight and +1 armor
 }
@@ -544,9 +544,9 @@ proto = {
         'type'          : 'item',
         'category'      : 'gem',
         'char'          : chr(4),
-        'color'         : spells.essence_colors['radiant'],
-        'on_use'        : actions.potion_essence('radiant'), #not a bug, returns a lambda
-        'description'   : 'The essence of radiance shines through this gemstone. Absorbing it will bestow a single radiant essence.'
+        'color'         : spells.essence_colors['radiance'],
+        'on_use'        : actions.potion_essence('radiance'), #not a bug, returns a lambda
+        'description'   : 'The essence of radiance shines through this gemstone. Absorbing it will bestow a single radiance essence.'
     },
     'gem_lesser_death': {
         'name'          : 'Rough Onyx',

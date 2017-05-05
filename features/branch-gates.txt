@@ -162,10 +162,11 @@ ENDFEATURE
 FEATURE grotto_entrance
 CATEGORY beach
 FLAGS NOROTATE NOREFLECT
-###########
-####.>.####
-   #...#
--#-##*##-#-
+DEFINE : stone brick wall
+###:::::###
+###:.>.:###
+   :...:
+-#-::*::-#-
 .---...---.
 .#--...--#.
 ..-.....-..

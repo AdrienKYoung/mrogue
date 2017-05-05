@@ -214,7 +214,7 @@ data = {
         'name': 'smite',
         'function': actions.smite,
         'cooldown': 10,
-        'element':'radiant',
+        'element':'radiance',
         'dice' : 2,
         'base_damage' : '3d6',
         'pierce': 3,

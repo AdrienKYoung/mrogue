@@ -704,7 +704,9 @@ def change_map_tile(x, y, tile_type, no_overwrite=False, hard_override=False):
         map.tiles[x][y].no_overwrite = no_overwrite
 
 
-def create_wandering_tunnel(x1, y1, x2, y2, tile_type=default_floor, wide=True):
+def create_wandering_tunnel(x1, y1, x2, y2, tile_type=None, wide=True):
+    if tile_type is None:
+        tile_type = default_floor
     current_x = x1
     current_y = y1
     xdir = 0

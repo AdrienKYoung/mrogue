@@ -50,6 +50,7 @@ ENDFEATURE
 FEATURE tower_ruins_1
 CATEGORY forest
 DEFINE - snow drift
+DEFINE # stone brick wall
 DEFINE X pine tree
 DEFINE $ LOOT_LEVEL 2
 __________
@@ -66,6 +67,7 @@ ENDFEATURE
 FEATURE tower_ruins_2
 CATEGORY forest
 DEFINE - snow drift
+DEFINE # stone brick wall
 DEFINE $ LOOT_LEVEL 2
 DEFINE 1 MONSTER_ID monster_silencer
 _____________

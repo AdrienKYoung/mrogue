@@ -537,7 +537,7 @@ damage_description_tables = {
         ('jolt', 'jolts'),
         ('electrocute', 'electrocutes'),
     ],
-    'radiant': [
+    'radiance': [
         ('smite', 'smites'),
         ('disintegrate', 'disintegrates'),
     ],

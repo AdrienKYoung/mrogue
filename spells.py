@@ -89,7 +89,7 @@ charm_holy_symbol = {
         'name': 'Mass Cleanse',
         'description' : 'Remove all negative effects from yourself and nearby allies'
     },
-    'radiant': {
+    'radiance': {
         'name': 'Mass Reflect',
         'description': 'Protects you and nearby allies from magical harm by returning spells to their casters.'
     }
@@ -139,7 +139,7 @@ charm_raw_effects = {
         'name' : 'Teleport',
         'description': ""
     },
-    'radiant': {
+    'radiance': {
         'name' : 'Invulnerability',
         'description': "Become invulnerable to harm"
     },
@@ -186,8 +186,8 @@ charm_resist_effects = {
         'name' : 'Resist silence',
         'resists' : ['silence'],
     },
-    'radiant' : {
-        'name' : 'Resist radiant and judgement',
+    'radiance' : {
+        'name' : 'Resist radiance and judgement',
         'resists' : ['judgement'],
     },
     'void' : {
@@ -371,7 +371,7 @@ essence_colors = {
     'water' : libtcod.azure,
     'air' : libtcod.light_sky,
     'cold' : libtcod.lightest_gray,
-    'radiant' : libtcod.lighter_yellow,
+    'radiance' : libtcod.lighter_yellow,
     'arcane' : libtcod.fuchsia,
     'void' : libtcod.darker_crimson
 }

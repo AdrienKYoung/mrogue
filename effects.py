@@ -175,7 +175,7 @@ def doom(duration=5,stacks=1):
 
 def lichform(duration=None):
     return StatusEffect('lichform',None,libtcod.darker_crimson,spell_resist_mod=1.5,resistance_mod=
-        ['fire','cold','lightning','poison','radiant','dark','void','doom','slugish','curse'
+        ['fire','cold','lightning','poison','radiance','dark','void','doom','slugish','curse'
          'stunned','slowed','burning','judgement','confusion','frozen','immobilized','exhausted','rot','frostbite'],
         message="Dark magic infuses your soul as you sacrifice your body to undeath!",
         description='This unit is a lich, gaining resistance to all damage and immunity to death magic.', cleanseable=False)

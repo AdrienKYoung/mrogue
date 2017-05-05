@@ -144,7 +144,7 @@ def holy_symbol():
         result = actions.mass_heal(player.instance)
     elif essence == 'water':
         result = actions.mass_cleanse(player.instance)
-    elif essence == 'radiant':
+    elif essence == 'radiance':
         result = actions.mass_reflect(player.instance)
 
     if result == 'success':
@@ -185,7 +185,7 @@ def charm_raw():
         result = actions.create_teleportal(player.instance.x, player.instance.y)
     elif essence == 'death':
         result = actions.raise_zombie()
-    elif essence == 'radiant':
+    elif essence == 'radiance':
         result = actions.invulnerable()
     elif essence == 'void':
         result = 'didnt-take-turn' #TODO: mutate self

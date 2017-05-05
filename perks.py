@@ -92,7 +92,7 @@ perk_keys = [
     'death_affinity',
     'blood_magic',
     'lichform',
-    'radiant_affinity',
+    'radiance_affinity',
     'guardian_of_light',
     'heir_to_the_heavens',
     'void_affinity',
@@ -234,13 +234,13 @@ perk_list = {
         'requires' : None,
         'category' : 'Death Magic'
     },
-    'radiant_affinity' : {
+    'radiance_affinity' : {
         'name' : 'Radiant Affinity',
-        'description' : ['You have 2 extra spellpower when casting Radiant spells',
-                         'You have 4 extra spellpower when casting Radiant spells',
-                         'You have 6 extra spellpower when casting Radiant spells',
-                         'You have 8 extra spellpower when casting Radiant spells',
-                         'You have 10 extra spellpower when casting Radiant spells'],
+        'description' : ['You have 2 extra spellpower when casting Radiance spells',
+                         'You have 4 extra spellpower when casting Radiance spells',
+                         'You have 6 extra spellpower when casting Radiance spells',
+                         'You have 8 extra spellpower when casting Radiance spells',
+                         'You have 10 extra spellpower when casting Radiance spells'],
         'max_rank' : 5,
         'values'   : [2,4,6,8,10],
         'sp_cost' : 20,
@@ -416,7 +416,7 @@ perk_list = {
         'description' : ['You and your allies have +2 armor'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'radiant_affinity 3',
+        'requires' : 'radiance_affinity 3',
         'category' : 'Radiant Magic'
     },
     'heir_to_the_heavens' : {
@@ -424,7 +424,7 @@ perk_list = {
         'description' : ['Whenever you take critical damage, a guardian angel is summoned to aid you'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'requires' : 'radiant_affinity 5',
+        'requires' : 'radiance_affinity 5',
         'category' : 'Radiant Magic'
     },
     'gaze_into_the_void' : {
