@@ -293,6 +293,7 @@ class Fighter:
             new_effect.on_apply(self.owner)
         if new_effect.message is not None and self.owner is player.instance and not supress_message:
             ui.message(new_effect.message, new_effect.color)
+
         return True
 
     def has_status(self, name):

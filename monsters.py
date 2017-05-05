@@ -25,6 +25,26 @@ import actions
 NO_CORPSE = 1
 
 proto = {
+    'monster_target': {
+        'name': 'training dummy',
+        'char': 'd',
+        'color': libtcod.white,
+        'hp': 5000000000,
+        'strength_dice' : '0d0',
+        'attack_bonus' : 0,
+        'armor': 0,
+        'evasion': 0,
+        'accuracy': 0,
+        'move_speed': 1.0,
+        'attack_speed': 1.0,
+        'on_create': None,
+        'ai': ai.AI_Default,
+        'description': 'A training dummy stuffed with straw',
+        'resistances': [],
+        'shred': 0,
+        #'modifier_category':'default',
+        #'subtype':'default',
+    },
     'monster_goblin': {
         'name': 'goblin lurker',
         'char': 'g',

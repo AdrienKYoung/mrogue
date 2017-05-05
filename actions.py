@@ -893,6 +893,11 @@ def ignite():
         return True
     return False
 
+
+def on_hit_judgement(attacker, target, damage):
+    if target.fighter is not None:
+        target.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('2d6')))
+
 def pickaxe_dig(dx, dy):
     result = dig(player.instance.x + dx, player.instance.y + dy)
     if result == 'failed':

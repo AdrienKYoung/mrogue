@@ -71,9 +71,10 @@ def frozen(duration = 1):
     return StatusEffect('frozen',duration,libtcod.blue, message="You have been frozen solid!",
                         description='This unit cannot act.')
 
-def judgement(duration = 10):
-    return StatusEffect('judgement',duration,libtcod.yellow, message="A vengeful god watches your every move!",
-                        description='This unit will be punished for evil deeds.')
+def judgement(duration = 30, stacks=10):
+    return StatusEffect('judgement',duration,libtcod.yellow, message="You are marked for judgement!", stacks=stacks,
+                        description='This unit could be punished with smiting.', stacking_behavior='stack-refresh',
+                        cleanseable=True, on_apply=check_judgement)
 
 def immobilized(duration = 5):
     return StatusEffect('immobilized', duration, libtcod.yellow, message="Your feet are held fast!",
@@ -232,3 +233,10 @@ def rot_end(object=None):
 def berserk_end(object=None):
     if object is not None and object.fighter is not None:
         object.fighter.apply_status_effect(exhausted())
+
+def check_judgement(obj=None):
+    fx = [f for f in obj.fighter.status_effects if f.name == 'judgement']
+    if len(fx) > 0 and fx[0].stacks >= 100:
+        ui.message("{} was judged!".format(obj.name), libtcod.light_yellow)
+        obj.fighter.take_damage(int(obj.fighter.max_hp / 3))
+        obj.fighter.remove_status('judgement')

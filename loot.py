@@ -996,6 +996,27 @@ proto = {
         'attack_delay'       : 18,
         'crit_bonus'         : 1.5
     },
+    'weapon_sword_of_holy_wrath': {
+        'name'               : 'sword of holy wrath',
+        'category'           : 'weapon',
+        'subtype'            : 'sword',
+        'damage_type'        : 'slashing',
+        'char'               : '/',
+        'color'              : libtcodpy.lighter_yellow,
+        'type'               : 'item',
+        'slot'               :'both hands',
+        'description'        : 'A blessed blade that calls down judgement on foes',
+        'stamina_cost'       : 8,
+        'str_requirement'    : 1,
+        'pierce'             : 1,
+        'shred'              : 1,
+        'accuracy'           : 4,
+        'weapon_dice'        : '2d10',
+        'str_dice'           : 2,
+        'on_hit'             : [actions.on_hit_judgement],
+        'attack_delay'       : 10,
+        'crit_bonus'         : 1.5
+    },
 
     #ARMOR
     'equipment_shield': {
