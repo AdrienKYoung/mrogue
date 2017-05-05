@@ -318,7 +318,7 @@ class ConfusedMonster:
             obj.behavior.behavior = self.old_ai
             if fov.player_can_see(obj.x, obj.y):
                 ui.message('%s %s no longer confused.' % (
-                    syntax.name(obj.name).capitalize(),
+                    syntax.name(obj).capitalize(),
                     syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.light_grey)
             return 0.0
 
@@ -387,11 +387,11 @@ class ReekerGasBehavior:
                                     lambda o: o.fighter is not None and o.name != 'reeker' and o.name != 'blastcap'):
             if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
                 if fov.player_can_see(obj.x, obj.y):
-                    ui.message('A foul-smelling cloud of gas begins to form around %s.' % syntax.name(obj.name), libtcod.fuchsia)
+                    ui.message('A foul-smelling cloud of gas begins to form around %s.' % syntax.name(obj), libtcod.fuchsia)
             else:
                 if fov.player_can_see(obj.x, obj.y):
                     ui.message('%s %s on the foul gas.' % (
-                        syntax.name(obj.name).capitalize(),
+                        syntax.name(obj).capitalize(),
                         syntax.conjugate(obj is player.instance, ('choke', 'chokes'))), libtcod.fuchsia)
                 obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
 

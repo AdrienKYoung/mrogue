@@ -45,8 +45,8 @@ charm_shard_of_creation = {
         'description' : 'Create a stone wall'
     },
     'water': {
-        'name': 'Create wall',
-        'description' : 'Create a patch of shallow water'
+        'name': 'Create pool',
+        'description' : 'Create a pool of water'
     },
     'fire': {
         'name': 'Create lava',
@@ -143,7 +143,7 @@ charm_raw_effects = {
         'name' : 'Invulnerability',
         'description': "Become invulnerable to harm"
     },
-    'dark': {
+    'death': {
         'name' : 'Raise Dead',
         'description': "Raise an adjacent corpse as a zombie"
     },

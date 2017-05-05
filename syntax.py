@@ -21,28 +21,32 @@ def conjugate(is_player, conjugations):
         return conjugations[0]
     return conjugations[1]
 
-
-def name(_name, possesive=False, proper=False):
+def name(object, possesive=False, proper=False):
+    _name = object.name
+    if object.fighter and object.fighter.team == 'ally':
+        article = 'your '
+    else:
+        article = 'the '
     if possesive:
         if _name == 'player':
             return 'your'
-        elif proper:
+        if proper:
             if _name[len(_name) - 1] == 's':
                 return _name.capitalize() + "'"
             else:
                 return _name.capitalize() + "'s"
         else:
             if _name[len(_name) - 1] == 's':
-                return 'the ' + _name + "'"
+                return article + _name + "'"
             else:
-                return 'the ' + _name + "'s"
+                return article + _name + "'s"
     else:
         if _name == 'player':
             return 'you'
         elif proper:
             return _name.capitalize()
         else:
-            return 'the ' + _name
+            return article + _name
 
 
 def pronoun(_name, possesive=False, objective=False, gender='N'):

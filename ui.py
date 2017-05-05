@@ -257,7 +257,7 @@ def inventory_menu(header):
                     libtcod.console_set_default_foreground(window, libtcod.white)
                     libtcod.console_print(window, 1, y, '(' + chr(letter_index) + ') ')
                     libtcod.console_put_char_ex(window, 5, y, item.char, item.color, libtcod.black)
-                    libtcod.console_print(window, 7, y, item.name.title())
+                    libtcod.console_print(window, 7, y, string.capwords(item.name))
 
                     if item.equipment and item.equipment.is_equipped:
                         libtcod.console_set_default_foreground(window, libtcod.orange)
@@ -557,14 +557,14 @@ def render_side_panel(acc_mod=1.0):
                 libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
             else:
                 libtcod.console_set_default_foreground(side_panel, libtcod.gray)
-            libtcod.console_print(side_panel, 4, drawHeight, line.title())
+            libtcod.console_print(side_panel, 4, drawHeight, string.capwords(line))
             drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
         if end < len(objects_here) - 1:
             libtcod.console_print(side_panel, 4, drawHeight, '...' + str(len(objects_here) - 7) + ' more...')
             drawHeight += 1
     libtcod.console_set_default_foreground(side_panel, libtcod.gray)
-    libtcod.console_print(side_panel, 4, drawHeight, main.current_map.tiles[player.instance.x][player.instance.y].name.title())
+    libtcod.console_print(side_panel, 4, drawHeight, string.capwords(main.current_map.tiles[player.instance.x][player.instance.y].name))
     drawHeight += 2
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
@@ -923,7 +923,7 @@ def inspect_inventory():
     chosen_item = inventory_menu('Select which item?')
     if chosen_item is not None:
         options = chosen_item.get_options_list()
-        menu_choice = menu(chosen_item.owner.name, options, 50, render_func=chosen_item.owner.print_description)
+        menu_choice = menu(string.capwords(chosen_item.owner.name), options, 50, render_func=chosen_item.owner.print_description)
         if menu_choice is not None:
             if options[menu_choice] == 'Use':
                 chosen_item.use()
@@ -1181,7 +1181,7 @@ def examine(x=None, y=None):
                         desc = desc + item.name + ', '
                 menu(desc, ['back'], 50, render_func=obj.print_description)
             else:
-                desc = obj.name.title() + '\n\n' + main.get_description(obj)
+                desc = string.capwords(obj.name) + '\n\n' + main.get_description(obj)
                 menu(desc, ['back'], 50)
 
 def show_ability_screen():
@@ -1379,14 +1379,14 @@ def choose_essence_from_pool(charm_data):
             }
             letter_index += 1
     if len(options_ex) > 0:
-        index = menu_ex('Select essence:', options_ex, 50)
+        index = menu_ex('Select essence:', options_ex, 50, return_as_char=True)
     else:
         message('No appropriate essence')
 
     if index is None:
         return None
     else:
-        return player.instance.essence[index]
+        return options_ex[index]['essence']['text']
 
 
 def buy(item,payment_type,success,cancelled):

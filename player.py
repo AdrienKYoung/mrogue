@@ -112,6 +112,7 @@ loadouts = {
         'con':8,
         'inventory':[
             'charm_raw',
+            'charm_farmers_talisman',
             'equipment_cloth_robes',
             'book_lesser_fire',
             'gem_lesser_fire',
@@ -157,6 +158,8 @@ def create(loadout):
         prototype = item
         if not isinstance(item,basestring):
             idx = ui.menu("Choose a starting item",[loot.proto[a]['name'].title() for a in item],30,x_center=consts.SCREEN_WIDTH / 2)
+            if idx is None:
+                return 'cancelled'
             prototype = item[idx]
 
         if 'weapon' in prototype:
@@ -174,6 +177,7 @@ def create(loadout):
     if consts.DEBUG_STARTING_ITEM is not None:
         test = main.create_item(consts.DEBUG_STARTING_ITEM)
         instance.fighter.inventory.append(test)
+    return 'success'
 
 def handle_keys():
 
@@ -384,14 +388,20 @@ def _cast_spell():
     return 'didnt-take-turn'
 
 def pick_up_essence(essence, obj):
-    if obj is instance and len(instance.essence) < instance.player_stats.max_essence:
+    if obj is not instance:
+        return 'failure'
+    if len(instance.essence) < instance.player_stats.max_essence:
         if isinstance(essence ,main.GameObject):
             instance.essence.append(essence.essence_type)
-            ui.message('You are infused with magical power.', essence.color)
+            ui.message('You are infused with the essence of %s.' % essence.essence_type, essence.color)
             essence.destroy()
+            return 'success'
         else:
             instance.essence.append(essence)
-            ui.message('You are infused with magical power.', spells.essence_colors[essence])
+            ui.message('You are infused with the essence of %s.' % essence, spells.essence_colors[essence])
+            return 'success'
+    else:
+        return replace_essence(essence)
 
 
 def pick_up_xp(xp, obj):
@@ -589,8 +599,10 @@ def pick_up_item():
     else:
         essence_here = main.get_objects(instance.x, instance.y, condition=lambda o: hasattr(o, 'essence_type'))
         if len(essence_here) > 0:
-            replace_essence(essence_here[0])
-            return 'replaced-essence'
+            if replace_essence(essence_here[0]) == 'success':
+                return 'replaced-essence'
+            else:
+                return 'didnt-take-turn'
         else:
             interactable_here = main.get_objects(instance.x, instance.y, condition=lambda o:o.interact, distance=1) #get stuff that's adjacent too
             if len(interactable_here) > 0:
@@ -602,8 +614,17 @@ def pick_up_item():
 
 
 def replace_essence(essence):
-    instance.essence[ui.menu('Replace what essence with %s essence?\n' % essence.essence_type, instance.essence, 50)] = essence.essence_type
-    essence.destroy()
+    if isinstance(essence, main.GameObject):
+        essence_type = essence.essence_type
+    else:
+        essence_type = essence
+    index = ui.menu('Replace what essence with %s essence?\n' % essence_type, instance.essence, 50)
+    if index is None:
+        return 'cancelled'
+    instance.essence[index] = essence_type
+    if isinstance(essence, main.GameObject):
+        essence.destroy()
+    return 'success'
 
 
 def get_key(name='Glass Key'):

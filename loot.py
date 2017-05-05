@@ -111,6 +111,18 @@ table = {
         'gem_lesser_arcane',
     ],
 
+    'gems_2': [
+        'gem_lesser_fire',
+        'gem_lesser_water',
+        'gem_lesser_earth',
+        'gem_lesser_air',
+        'gem_lesser_cold',
+        'gem_lesser_life',
+        'gem_lesser_arcane',
+        'gem_lesser_death',
+        'gem_lesser_radiant',
+    ],
+
     'keys_1': [
         'glass_key'
     ],
@@ -457,7 +469,7 @@ proto = {
         'category'      : 'potion',
         'char'          : '!',
         'color'         : libtcodpy.yellow,
-        'on_use'        : actions.shielding,
+        'on_use'        : actions.hardness,
         'type'          : 'item',
         'description'   : 'This oily metallic potion bolsters the defenses of anyone who drinks it, repairing shreded'
                           ' armor and temporarily enhancing its effectiveness'
@@ -703,7 +715,7 @@ proto = {
         'pierce'             : 1,
         'shred'              : 1,
         'accuracy'           : -3,
-        'ctrl_attack'        : actions.dig,
+        'ctrl_attack'        : actions.pickaxe_dig,
         'ctrl_attack_desc'   : 'Dig - dig through walls in this direction.',
         'break'              : 5.0,
         'weapon_dice'        : '1d4',

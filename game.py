@@ -45,7 +45,7 @@ class Item:
                 actor.fighter.inventory.append(self.owner)
                 self.owner.destroy()
                 if actor is player.instance:
-                    ui.message('You picked up a ' + self.owner.name + '.', libtcod.light_grey)
+                    ui.message('You picked up a ' + string.capwords(self.owner.name) + '.', libtcod.light_grey)
                 equipment = self.owner.equipment
                 if equipment and get_equipped_in_slot(actor.fighter.inventory,equipment.slot) is None:
                     equipment.equip()
@@ -74,7 +74,7 @@ class Item:
         self.owner.x = self.holder.x
         self.owner.y = self.holder.y
         if not no_message and self.holder is player.instance:
-            ui.message('You dropped a ' + self.owner.name + '.', libtcod.white)
+            ui.message('You dropped a ' + string.capwords(self.owner.name) + '.', libtcod.white)
         self.holder = None
 
     def get_options_list(self):
@@ -298,7 +298,7 @@ class GameObject:
                 web = object_at_tile(self.x, self.y, 'spiderweb')
                 if web is not None and not self.name == 'tunnel spider':
                     ui.message('%s %s against the web' % (
-                                    syntax.name(self.name).capitalize(),
+                                    syntax.name(self).capitalize(),
                                     syntax.conjugate(self is player.instance, ('struggle', 'struggles'))))
                     web.destroy()
                     return True
@@ -479,7 +479,7 @@ class GameObject:
             if self.summon_time <= 0:
                 if fov.player_can_see(self.x, self.y):
                     ui.message('%s fades away as %s returns to the world from whence %s came.' %
-                               (syntax.name(self.name).capitalize(),
+                               (syntax.name(self).capitalize(),
                                 syntax.pronoun(self.name),
                                 syntax.pronoun(self.name)), libtcod.gray)
                 self.destroy()
@@ -635,7 +635,7 @@ def step_on_blightweed(weed, obj):
         if obj.fighter.armor > 0:
             obj.fighter.shred += 1
             if fov.player_can_see(obj.x, obj.y):
-                ui.message('The blightweed thorns shred %s armor!' % syntax.name(obj.name, possesive=True), libtcod.desaturated_red)
+                ui.message('The blightweed thorns shred %s armor!' % syntax.name(obj, possesive=True), libtcod.desaturated_red)
 
 def step_on_snow_drift(x,y,obj):
     if obj is player.instance:
@@ -682,7 +682,7 @@ def blastcap_explode(blastcap):
         if is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
             if obj.fighter.apply_status_effect(effects.StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
                 ui.message('%s %s stunned!' % (
-                                syntax.name(obj.name).capitalize(),
+                                syntax.name(obj).capitalize(),
                                 syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.gold)
 
     if ui.selected_monster is blastcap:
@@ -705,8 +705,8 @@ def zombie_on_hit(attacker, target, damage):
         return
     if libtcod.random_get_int(0, 0, 100) < consts.ZOMBIE_IMMOBILIZE_CHANCE:
         ui.message('%s grabs %s! %s cannot move!' % (
-                        syntax.name(attacker.name).capitalize(),
-                        syntax.name(target.name),
+                        syntax.name(attacker).capitalize(),
+                        syntax.name(target),
                         syntax.pronoun(target.name).capitalize()), libtcod.yellow)
         target.fighter.apply_status_effect(effects.immobilized(3))
 
@@ -775,9 +775,12 @@ def create_temp_terrain(type,tiles,duration):
     ticker.map = current_map
 
     for (x,y) in tiles:
+        # Don't place walls over game objects
+        if terrain_data.blocks and len(get_objects(x, y)) > 0:
+            continue
         tile = current_map.tiles[x][y]
         if tile.diggable or not tile.is_wall:
-            ticker.restore.append((x,y,tile.tile_type))
+            ticker.restore.append((x,y,dungeon.branches[current_map.branch]['default_floor']))
             tile.tile_type = type
             changed_tiles.append((x, y))
             if terrain_data.blocks:
@@ -870,7 +873,7 @@ def bomb_beetle_corpse_tick(object=None):
 
 def bomb_beetle_death(beetle):
 
-    ui.message('%s is dead!' % syntax.name(beetle.name).capitalize(), libtcod.red)
+    ui.message('%s is dead!' % syntax.name(beetle).capitalize(), libtcod.red)
     beetle.char = 149
     beetle.color = libtcod.black
     beetle.blocks = True
@@ -900,7 +903,7 @@ def monster_death(monster):
             current_map.add_object(item)
             item.send_to_back()
 
-    ui.message('%s is dead!' % syntax.name(monster.name).capitalize(), libtcod.red)
+    ui.message('%s is dead!' % syntax.name(monster).capitalize(), libtcod.red)
 
     if monster.fighter.monster_flags & monsters.NO_CORPSE == monsters.NO_CORPSE:
         monster.destroy()

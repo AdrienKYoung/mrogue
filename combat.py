@@ -118,7 +118,7 @@ class Fighter:
         if self.stamina > self.max_stamina:
             self.stamina = self.max_stamina
 
-    def take_damage(self, damage, attacker=None):
+    def take_damage(self, damage, attacker=None, affect_shred=True):
         if self.owner == player.instance and consts.DEBUG_INVINCIBLE:
             damage = 0
 
@@ -131,7 +131,8 @@ class Fighter:
                 function = self.death_function
                 if function is not None:
                     function(self.owner)
-            self.time_since_last_damaged = 0
+            if affect_shred:
+                self.time_since_last_damaged = 0
         return damage
 
     def get_hit(self, attacker,damage):
@@ -219,7 +220,7 @@ class Fighter:
                     self.breath -= 1
                 else:
                     drown_damage = int(self.max_hp / 4)
-                    ui.message('%s %s, suffering %d damage!' % (syntax.name(self.owner.name).capitalize(),
+                    ui.message('%s %s, suffering %d damage!' % (syntax.name(self.owner).capitalize(),
                                              syntax.conjugate(self.owner is player.instance,
                                              ('drown', 'drowns')), drown_damage), libtcod.blue)
 
@@ -262,7 +263,7 @@ class Fighter:
         for resist in self.resistances:
             if resist == new_effect.name:
                 if fov.player_can_see(self.owner.x, self.owner.y):
-                    ui.message('%s %s.' % (syntax.name(self.owner.name).capitalize(), syntax.conjugate(
+                    ui.message('%s %s.' % (syntax.name(self.owner).capitalize(), syntax.conjugate(
                                     self.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
                 return False
         # check for existing matching effects
@@ -348,7 +349,7 @@ class Fighter:
                     break
             if not has_armor:
                 bonus += 3
-        if self.has_status('shielded'):
+        if self.has_status('stoneskin'):
             bonus += 2
         if main.has_skill('guardian_of_light') and (self.owner is player.instance or self.team == 'ally'):
             bonus += 2
@@ -615,7 +616,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         # dark immunity
         if target.fighter.has_status('lichform') and hit_type == 'dark':
             ui.message('%s %s unnaffected by dark energy!' % (
-                syntax.name(target.name),
+                syntax.name(target),
                 syntax.conjugate(fighter.owner is player.instance, ('are', 'is'))),
                        libtcod.darker_crimson)
             return 'immune'
@@ -671,7 +672,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
             target.fighter.take_damage(damage)
             # Trigger on-hit effects
-            if on_hit is not None:
+            if on_hit is not None and target.fighter is not None:
                 if isinstance(on_hit,(list,set,tuple)):
                     for h in on_hit:
                         h(fighter.owner, target, damage)
@@ -708,9 +709,9 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
             #ui.message('The ' + fighter.owner.name.title() + "'s attack " + verb + ' the ' + target.name + '!', libtcod.grey)
             ui.message('%s attack %s %s' % (
-                            syntax.name(fighter.owner.name, possesive=True).capitalize(),
+                            syntax.name(fighter.owner, possesive=True).capitalize(),
                             verb[1],
-                            syntax.name(target.name)), libtcod.grey)
+                            syntax.name(target)), libtcod.grey)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)
@@ -723,9 +724,9 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             verb = ('attack', 'attacks')
         #ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
         ui.message('%s %s %s, but %s!' % (
-                            syntax.name(fighter.owner.name).capitalize(),
+                            syntax.name(fighter.owner).capitalize(),
                             syntax.conjugate(fighter.owner is player.instance, verb),
-                            syntax.name(target.name),
+                            syntax.name(target),
                             syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
@@ -747,7 +748,7 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
     #dark immunity
     if target.fighter.has_status('lichform') and spell_element == 'dark':
         ui.message('%s %s unnaffected by dark energy!' % (
-            syntax.name(target.name),
+            syntax.name(target),
             syntax.conjugate(fighter.owner is player.instance, ('are', 'is'))),
             libtcod.darker_crimson)
         return
@@ -787,9 +788,9 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
             verbs = damage_description_tables['deflected']
             verb = verbs[libtcod.random_get_int(0, 0, len(verbs) - 1)]
             ui.message('%s attack %s %s' % (
-                            syntax.name(fighter.owner.name, possesive=True).capitalize(),
+                            syntax.name(fighter.owner, possesive=True).capitalize(),
                             verb[0],
-                            syntax.name(target.name)), libtcod.grey)
+                            syntax.name(target)), libtcod.grey)
             weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
             if weapon:
                 main.check_breakage(weapon)
@@ -797,9 +798,9 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
     else:
         #ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
         ui.message('%s %s %s, but %s!' % (
-                            syntax.name(fighter.owner.name).capitalize(),
+                            syntax.name(fighter.owner).capitalize(),
                             syntax.conjugate(fighter.owner is player.instance, ('attack', 'attacks')),
-                            syntax.name(target.name),
+                            syntax.name(target),
                             syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
@@ -839,19 +840,19 @@ def attack_text_ex(fighter,target,verb,location,damage,damage_type,severity):
     if verb is None:
         verb = main.normalized_choice(damage_description_tables[damage_type], severity)
 
-    target_name = syntax.name(target.name)
+    target_name = syntax.name(target)
 
     if damage is not None:
         if location is not None:
             ui.message('%s %s %s in the %s for %s%d damage!' % (
-                syntax.name(fighter.owner.name).capitalize(),
+                syntax.name(fighter.owner).capitalize(),
                 syntax.conjugate(fighter.owner is player.instance, verb),
                 target_name, location,
                 syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
                 damage), libtcod.grey)
         else:
             ui.message('%s %s %s for %s%d damage!' % (
-                syntax.name(fighter.owner.name).capitalize(),
+                syntax.name(fighter.owner).capitalize(),
                 syntax.conjugate(fighter.owner is player.instance, verb),
                 target_name,
                 syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
@@ -929,7 +930,7 @@ def on_hit_chain_lightning(attacker, target, damage, zapped=None):
                 if obj.x == adj[0] and obj.y == adj[1] and obj.fighter.team != attacker.fighter.team and obj not in zapped:
                     on_hit_chain_lightning(attacker, obj, damage, zapped)
     else:
-        ui.message('The shock does not damage %s' % syntax.name(target.name), libtcod.grey)
+        ui.message('The shock does not damage %s' % syntax.name(target), libtcod.grey)
 
 def on_hit_lifesteal(attacker, target, damage):
     attacker.fighter.heal(damage)
@@ -950,7 +951,7 @@ def on_hit_knockback(attacker, target, damage, force=6):
         steps += 1
         against = main.get_objects(target.x + direction[0], target.y + direction[1], lambda o: o.blocks)
         if against is None or len(against) == 0:
-            against = syntax.name(main.current_map.tiles[target.x + direction[0]][target.y + direction[1]].name)
+            against = syntax.name(main.current_map.tiles[target.x + direction[0]][target.y + direction[1]])
         else:
             against = 'the ' + against.name
         if not target.move(direction[0], direction[1]):
@@ -958,7 +959,7 @@ def on_hit_knockback(attacker, target, damage, force=6):
             damage = roll_damage_ex('%dd4' % steps, '0d0', target.fighter.armor, 0, 'budgeoning', 1.0,
                                     target.fighter.getResists(), target.fighter.getWeaknesses())
             ui.message('%s %s backwards and collides with %s, taking %d damage.' % (
-                syntax.name(target.name).capitalize(),
+                syntax.name(target).capitalize(),
                 syntax.conjugate(target is player.instance, ('fly', 'flies')),
                 against,
                 damage), libtcod.gray)

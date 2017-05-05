@@ -752,9 +752,9 @@ def create_v_tunnel(y1, y2, x, tile_type=default_floor):
         change_map_tile(x, y, tile_type)
 
 
-def scatter_reeds(tiles):
+def scatter_reeds(tiles, probability=20):
     for tile in tiles:
-        if libtcod.random_get_int(0, 0, 4) == 0 and not map.tiles[tile[0]][tile[1]].blocks:
+        if libtcod.random_get_int(0, 1, 100) < probability and not map.tiles[tile[0]][tile[1]].blocks:
             create_reed(tile[0], tile[1])
 
 
@@ -1024,13 +1024,13 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
 
         template.set_pos(x, y)
         adj_x = adj_y = 0
-        if template.min_x < 0:
+        if template.min_x < 1:
             adj_x = -template.min_x
-        if template.max_x >= consts.MAP_WIDTH:
+        if template.max_x >= consts.MAP_WIDTH - 1:
             adj_x = consts.MAP_WIDTH - template.max_x - 1
-        if template.min_y < 0:
+        if template.min_y < 1:
             adj_y = -template.min_y
-        if template.max_y >= consts.MAP_WIDTH:
+        if template.max_y >= consts.MAP_WIDTH - 1:
             adj_y = consts.MAP_WIDTH - template.max_y - 1
         template.set_pos(x + adj_x, y + adj_y)
 
@@ -1050,7 +1050,7 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
                 for tile in template.tiles.keys():
                     if tile in open_tiles:
                         open_tiles.remove(tile)
-            else:  # Otherwise remvove only the tiles that are now blocking and add the tiles that are now open
+            else:  # Otherwise remove only the tiles that are now blocking and add the tiles that are now open
                 for tile in template.get_blocked_tiles():
                     if tile in open_tiles:
                         open_tiles.remove(tile)
@@ -1058,18 +1058,18 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
                     if tile not in open_tiles:
                         open_tiles.append(tile)
 
-        apply_scripts(feature)
+        apply_scripts(feature, room=template)
 
         return 'success'
 
-def apply_scripts(feature):
+def apply_scripts(feature, room=None):
     for script in feature.scripts:
         if script == 'scatter_reeds':
-            scatter_reeds(feature.room.get_open_tiles())
+            scatter_reeds(room.get_open_tiles())
         elif script == 'fill_blightweed':
-            fill_blightweed(feature.room.get_open_tiles())
+            fill_blightweed(room.get_open_tiles())
         elif script == 'create_slopes':
-            create_slopes(feature.room.get_open_tiles())
+            create_slopes(room.get_open_tiles())
         elif script == 'your script here':
             pass
 

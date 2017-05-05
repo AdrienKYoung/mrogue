@@ -200,7 +200,7 @@ def berserk_self(actor=None, target=None):
             actor.fighter.apply_status_effect(effects.berserk())
             if actor is not player.instance:
                 ui.message('%s %s!' % (
-                                syntax.name(actor.name).capitalize(),
+                                syntax.name(actor).capitalize(),
                                 syntax.conjugate(False, ('roar', 'roars'))), libtcod.red)
             return 'success'
         else:
@@ -235,7 +235,8 @@ def spawn_vermin(actor=None, target=None):
                 summon_tiles.remove(pos)
 
 def raise_zombie(actor=None, target=None):
-
+    if actor is None:
+        actor = player.instance
     check_corpse = main.adjacent_tiles_diagonal(actor.x, actor.y)
     check_corpse.append((actor.x, actor.y))
     corpse = None
@@ -247,8 +248,11 @@ def raise_zombie(actor=None, target=None):
 
     if corpse is not None:
         spawn_tile = main.find_closest_open_tile(corpse.x, corpse.y)
-        ui.message('A dark aura emanates from the necroling... a corpse walks again.', libtcod.dark_violet)
-        main.spawn_monster('monster_rotting_zombie', spawn_tile[0], spawn_tile[1])
+        ui.message('A dark aura emanates from %s... a corpse walks again.' % syntax.name(actor), libtcod.dark_violet)
+        zombie = main.spawn_monster('monster_rotting_zombie', spawn_tile[0], spawn_tile[1])
+        if actor is player.instance:
+            zombie.fighter.team = 'ally'
+            zombie.behavior.follow_target = player.instance
         corpse.destroy()
         return 'rasied-zombie'
     else:
@@ -465,6 +469,16 @@ def flash_frost(actor=None, target=None):
         target = main.get_monster_at_tile(x, y)
     if target is not None:
         target.fighter.apply_status_effect(effects.frozen(5))
+        if actor is player.instance or fov.player_can_see(target.x, target.y):
+            ui.message('%s %s frozen solid!' %
+                       (syntax.name(target).capitalize(),
+                        syntax.conjugate(target is player.instance, ('are', 'is'))),
+                        spells.essence_colors['cold'])
+        return 'success'
+    else:
+        if actor is player.instance:
+            ui.message('There is no one to freeze here.', libtcod.gray)
+        return 'didnt-take-turn'
 
 def ice_shards(actor=None, target=None):
     x, y = 0, 0
@@ -690,13 +704,13 @@ def knock_back(actor,target):
         if target.fighter.apply_status_effect(
                 effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
             ui.message('%s %s with the %s, stunning %s!' % (
-                syntax.name(target.name).capitalize(),
+                syntax.name(target).capitalize(),
                 syntax.conjugate(target is actor, ('collide', 'collides')),
                 against,
                 syntax.pronoun(target.name, objective=True)), libtcod.gold)
     else:
         ui.message('%s %s knocked backwards.' % (
-            syntax.name(target.name).capitalize(),
+            syntax.name(target).capitalize(),
             syntax.conjugate(target is actor, ('are', 'is'))), libtcod.gray)
         target.set_position(target.x + direction[0], target.y + direction[1])
         main.render_map()
@@ -714,7 +728,7 @@ def confuse():
                 effects.StatusEffect('confusion', consts.CONFUSE_NUM_TURNS, color=libtcod.pink,
                                      on_apply=_set_confused_behavior)):
             ui.message('%s %s confused!' % (
-                syntax.name(monster.name).capitalize(),
+                syntax.name(monster).capitalize(),
                 syntax.conjugate(monster is player.instance, ('are', 'is'))), libtcod.light_blue)
 
 def silence(actor=None,target=None):
@@ -731,7 +745,7 @@ def silence(actor=None,target=None):
         return 'cancelled'
     elif target.fighter.apply_status_effect(effects.silence(),True):
         ui.message('%s %s silenced!' % (
-            syntax.name(target.name).capitalize(),
+            syntax.name(target).capitalize(),
             syntax.conjugate(target is player.instance, ('are', 'is'))), libtcod.light_blue)
 
 def check_doom(obj=None):
@@ -811,9 +825,18 @@ def waterbreathing():
     player.instance.fighter.apply_status_effect(effects.StatusEffect('waterbreathing', 31, libtcod.light_azure))
 
 
-def shielding():
-    player.instance.fighter.shred = 0
-    player.instance.fighter.apply_status_effect(effects.StatusEffect('shielded', 21, libtcod.dark_blue))
+def hardness(actor=None):
+    if actor is None:
+        actor = player.instance
+    if actor.fighter is None:
+        return 'failure'
+    actor.fighter.shred = 0
+    actor.fighter.apply_status_effect(effects.stoneskin(21))
+    if actor is player.instance or fov.player_can_see(actor.x, actor.y):
+        ui.message('%s armor is repaired and %s skin becomes as hard as stone.' % (
+            syntax.name(actor, possesive=True),
+            syntax.pronoun(actor.name, possesive=True).capitalize()),
+            spells.essence_colors['earth'])
     return 'success'
 
 def cleanse():
@@ -861,7 +884,7 @@ def ignite():
         obj = main.get_objects(target[0], target[1], lambda o: o.blocks)
         if len(obj) > 0:
             ui.message('%s %s in the way' % (
-                syntax.name(obj[0].name).capitalize(),
+                syntax.name(obj[0]).capitalize(),
                 syntax.conjugate(obj[0] is player.instance, ('are', 'is'))), libtcod.gray)
             return False
         ui.message('You conjure a spark of flame, igniting the ' + tile.name + '!', libtcod.flame)
@@ -869,28 +892,47 @@ def ignite():
         return True
     return False
 
-def dig(dx, dy):
-    import player, dungeon
-    changed_tiles = main.changed_tiles
+def pickaxe_dig(dx, dy):
+    result = dig(player.instance.x + dx, player.instance.y + dy)
+    if result == 'failed':
+        ui.message('You cannot dig there.', libtcod.orange)
+    else:
+        item = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
+        if item is not None:
+            main.check_breakage(item)
 
-    dig_x = player.instance.x + dx
-    dig_y = player.instance.y + dy
+def dig_line(x, y, dx, dy, length, actor=None):
+    if actor is None: actor = player.instance
+    result = 'failure'
+    for i in range(length):
+        d = dig(x + dx * i, y + dy * i)
+        if result != 'success':
+            result = d
+    if result == 'success':
+        if actor is player.instance or fov.player_can_see(actor.x, actor.y):
+            ui.message('The earth parts before %s.' % syntax.name(actor), spells.essence_colors['earth'])
+    else:
+        if actor is player.instance:
+            ui.message('There is nothing to dig in that direction.', libtcod.gray)
+    return result
+
+def dig(dig_x, dig_y):
+    import player, dungeon
+    if dig_x < 0 or dig_y < 0 or dig_x >= consts.MAP_WIDTH or dig_y >= consts.MAP_HEIGHT:
+        return 'failed'
+
     change_type = dungeon.branches[main.current_map.branch]['default_floor']
     if main.current_map.tiles[dig_x][dig_y].elevation != main.current_map.tiles[player.instance.x][player.instance.y].elevation:
         change_type = dungeon.branches[main.current_map.branch]['default_ramp']
     if main.current_map.tiles[dig_x][dig_y].diggable:
         main.current_map.tiles[dig_x][dig_y].tile_type = change_type
-        changed_tiles.append((dig_x, dig_y))
+        main.changed_tiles.append((dig_x, dig_y))
         if main.current_map.pathfinding:
             main.current_map.pathfinding.mark_unblocked((dig_x, dig_y))
         fov.set_fov_properties(dig_x, dig_y, False)
         fov.set_fov_recompute()
-        item = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
-        if item is not None:
-            main.check_breakage(item)
         return 'success'
     else:
-        ui.message('You cannot dig there.', libtcod.lightest_gray)
         return 'failed'
 
 forge_targets = ['weapon','armor']
@@ -995,7 +1037,7 @@ def summon_roaches(actor, attacker, damage):
     if len(actor.summons) >= actor.summon_limit:
         return
     if fov.player_can_see(actor.x, actor.y):
-        ui.message('Cockroaches crawl from %s wounds!' % syntax.name(actor.name, possesive=True), libtcod.dark_magenta)
+        ui.message('Cockroaches crawl from %s wounds!' % syntax.name(actor, possesive=True), libtcod.dark_magenta)
     for adj in main.adjacent_tiles_diagonal(actor.x, actor.y):
         if len(actor.summons) >= actor.summon_limit:
             break

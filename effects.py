@@ -19,6 +19,7 @@ import game as main
 import ui
 import player
 import actions
+import spells
 
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
@@ -121,7 +122,7 @@ def rot(duration = -1):
                         on_end=rot_end, description='This unit has reduced maximum HP.')
 
 def stoneskin(duration=30):
-    return StatusEffect('stoneskin', duration, libtcod.light_blue, armor_mod=1.5, message='Your skin turns to stone!',
+    return StatusEffect('stoneskin', duration, spells.essence_colors['earth'], armor_mod=1.5,
                         description='This unit has increased armor.', cleanseable=False)
 
 def swiftness(duration=30):
@@ -205,7 +206,7 @@ def poison_tick(effect,object=None):
     if object is not None and object.fighter is not None:
         if hasattr(effect,'timer'):
             if effect.timer > 2:
-                object.fighter.take_damage(1)
+                object.fighter.take_damage(1, affect_shred=False)
                 effect.timer = 0
             else:
                 effect.timer += 1
@@ -217,7 +218,7 @@ def bleed_tick(effect, object=None):
         damage = effect.stacks * 3
         if object is player.instance:
             ui.message("You bleed out for {} damage...".format(damage), libtcod.dark_red)
-        object.fighter.take_damage(damage)
+        object.fighter.take_damage(damage, affect_shred=False)
 
 def rot_apply(object=None):
     if object is not None and object.fighter is not None:
