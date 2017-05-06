@@ -443,8 +443,7 @@ def level_up():
          ], consts.LEVEL_SCREEN_WIDTH)
 
     if choice == 0:
-        instance.fighter.max_hp += 20
-        instance.fighter.hp += 20
+        instance.player_stats.con += 1
     elif choice == 1:
         instance.player_stats.str += 1
     elif choice == 2:
@@ -453,6 +452,13 @@ def level_up():
         instance.player_stats.int += 1
     elif choice == 4:
         instance.player_stats.wiz += 1
+
+    hp_growth = instance.player_stats.con / 2
+    if instance.player_stats.con % 2 == 1:
+        hp_growth += instance.level % 2
+
+    instance.fighter.max_hp += hp_growth
+    instance.fighter.hp += hp_growth
 
     instance.fighter.heal(int(instance.fighter.max_hp * consts.LEVEL_UP_HEAL))
 

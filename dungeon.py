@@ -47,7 +47,7 @@ branches = {
         },
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
-        'xp_amount':7,
+        'xp_amount':4,
         'encounter_range':7,
         'monsters':[
             {'encounter':['monster_cockroach'], 'party':'2d2+1'},
@@ -86,7 +86,7 @@ branches = {
         },
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
-        'xp_amount':7,
+        'xp_amount':4,
         'encounter_range':7,
         'monsters':[
             {'encounter':['monster_cockroach'], 'party':'2d2+2'},
@@ -115,7 +115,7 @@ branches = {
         'generate'      : mapgen.make_map_gtunnels,
         'map_color'     : libtcod.dark_orange,
         'encounter_dice':'1d4+5',
-        'xp_amount':7,
+        'xp_amount':4,
         'loot_level':1,
         'loot':{
             'armor_2':25,
@@ -153,7 +153,7 @@ branches = {
         'loot_level':2,
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
-        'xp_amount':7,
+        'xp_amount':4,
         'encounter_range':4,
         'monsters':[
             {'encounter':['monster_wolf']},
@@ -175,7 +175,7 @@ branches = {
         'loot_level':0,
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
-        'xp_amount':7,
+        'xp_amount':4,
         'encounter_range':6,
         'monsters':[
 
