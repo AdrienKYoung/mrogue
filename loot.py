@@ -86,14 +86,15 @@ table = {
     ],
 
      'consumables_1': [
-        'potion_healing',
-        'potion_healing',
-        'potion_healing',
-        'potion_waterbreathing',
-        'potion_shielding',
-        'potion_shielding',
-        'scroll_fireball',
-        'scroll_confusion',
+        'essence_life',
+        'essence_life',
+        'essence_life',
+        'essence_earth',
+        'essence_earth',
+        'essence_water',
+        'essence_water',
+        'essence_fire',
+        'essence_cold',
         'scroll_forge',
     ],
 
@@ -1327,6 +1328,48 @@ proto = {
         'level_costs': [
             1,1,1,2,2,2,3,3,3,3,4,4,4
         ]
+    },
+
+    #Essence
+    'essence_fire' : {
+        'category' : 'essence',
+        'essence_type' : 'fire'
+    },
+    'essence_water' : {
+        'category' : 'essence',
+        'essence_type' : 'water'
+    },
+    'essence_cold' : {
+        'category' : 'essence',
+        'essence_type' : 'cold'
+    },
+    'essence_wind' : {
+        'category' : 'essence',
+        'essence_type' : 'wind'
+    },
+    'essence_earth' : {
+        'category' : 'essence',
+        'essence_type' : 'earth'
+    },
+    'essence_life' : {
+        'category' : 'essence',
+        'essence_type' : 'life'
+    },
+    'essence_death' : {
+        'category' : 'essence',
+        'essence_type' : 'death'
+    },
+    'essence_arcane' : {
+        'category' : 'essence',
+        'essence_type' : 'arcane'
+    },
+    'essence_radiance' : {
+        'category' : 'essence',
+        'essence_type' : 'radiance'
+    },
+    'essence_void' : {
+        'category' : 'essence',
+        'essence_type' : 'void'
     },
 
     #Misc

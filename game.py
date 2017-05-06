@@ -1170,13 +1170,23 @@ def spawn_essence(x,y,type):
     essence_pickup = GameObject(x,y, '*', 'mote of ' + type + ' essence',
                     spells.essence_colors[type],
                     description='A colored orb that glows with elemental potential.',
-                    on_step=player.pick_up_essence, on_tick=expire_out_of_vision)
+                    on_step=player.pick_up_essence)
     essence_pickup.essence_type = type
     current_map.add_object(essence_pickup)
+    return essence_pickup
 
 
 def create_item(name, material=None, quality=''):
     p = loot.proto[name]
+
+    if p['category'] == 'essence':
+        essence_pickup = GameObject(0, 0, '*', 'mote of ' + p['essence_type'] + ' essence',
+                                    spells.essence_colors[p['essence_type']],
+                                    description='A colored orb that glows with elemental potential.',
+                                    on_step=player.pick_up_essence)
+        essence_pickup.essence_type = p['essence_type']
+        return essence_pickup
+
     ability = None
     if p.get('ability') is not None and p.get('ability') in abilities.data:
         ability = create_ability(p.get('ability'))
