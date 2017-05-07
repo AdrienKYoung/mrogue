@@ -168,7 +168,7 @@ data = {
         'function' : actions.great_dive,
         'cooldown' : 10,
         'range': 10,
-        'cast_time': 2,
+        'cast_time': 1,
     },
 
     'ability_fireball': {
