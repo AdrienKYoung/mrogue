@@ -108,7 +108,7 @@ class Room:
         self.max_y = None
         self.pos = 0, 0
         self.no_overwrite = False
-
+        self.link_points = []
 
     @property
     def bounds(self):
@@ -238,9 +238,11 @@ class Room:
                 tile_type = default_wall
             elif tile_type == 'ramp':
                 tile_type = default_ramp
+            if tile in self.data.keys():
+                if self.data[tile] == '>' or self.data[tile] == 'X':
+                    return_tiles.append(tile)
+                    continue
             if not terrain.data[tile_type].blocks and not terrain.data[tile_type].isPit and tile not in self.data.keys():
-                return_tiles.append(tile)
-            if tile in self.data.keys() and self.data[tile] == '>':
                 return_tiles.append(tile)
         return return_tiles
 
@@ -310,14 +312,14 @@ class Rect:
 
 
 def create_room_random(terrain_options=None):
-    choice = libtcod.random_get_int(0, 0, 2)
+    choice = libtcod.random_get_int(0, 0, 1)
 
     if choice == 0:
-        return create_room_rectangle(terrain_options)
+        return create_room_cloud(random_terrain(terrain_options))
     elif choice == 1:
         return create_room_circle(terrain_options)
-    elif choice == 2:
-        return create_room_cellular_automata(10, 10)
+    #elif choice == 2: #pretty sure this one was causing connectivity issues
+    #     return create_room_cellular_automata(10, 10)
 
 
 def random_terrain(options=None):
@@ -551,6 +553,9 @@ def apply_room(room, clear_objects=False, hard_override=False, avg_elevation=Fal
                     pass
                 else:
                     apply_data(tile[0], tile[1], line)
+                    if room.data[tile][0] == 'X':
+                        room.link_points.append(tile)
+
 
     # Find most common elevation. Set all tiles to that elevation
     if avg_elevation:
@@ -563,7 +568,6 @@ def apply_room(room, clear_objects=False, hard_override=False, avg_elevation=Fal
             map.tiles[tile[0]][tile[1]].elevation = most_common_elevation
             for obj in main.get_objects(tile[0], tile[1]):
                 obj.elevation = most_common_elevation
-
 
 def apply_data(x, y, data):
 
@@ -584,13 +588,14 @@ def apply_data(x, y, data):
             apply_item(x, y, data[i:])
             break
         elif data[i] == '>':
+            for o in main.get_objects(x, y):
+                o.destroy()
             map.objects.append(main.GameObject(x, y, '>', 'stairs', libtcod.white, always_visible=True))
         elif data[i] == '+' or data[i] == '*':
             door = create_door(x, y, locked=data[i] == '*')
             if door is not None:
                 map.objects.append(door)
                 door.send_to_back()
-
 
 def apply_object(x, y, data):
     monster_id = None
@@ -704,7 +709,82 @@ def change_map_tile(x, y, tile_type, no_overwrite=False, hard_override=False):
         map.tiles[x][y].no_overwrite = no_overwrite
 
 
-def create_wandering_tunnel(x1, y1, x2, y2, tile_type=None, wide=True):
+def create_perlin_tunnel(x1, y1, x2, y2, tile_type=None, min_width=1, max_width=1):
+    changed = []
+    if tile_type is None:
+        tile_type = default_floor
+    #determine longest axis
+    if abs(x2 - x1) > abs(y2 - y1):
+        # longest axis: X
+        if x1 <= x2:
+            start_x, end_x, start_y, end_y = x1, x2, y1, y2
+        else:
+            start_x, end_x, start_y, end_y = x2, x1, y2, y1
+        noise = perlin_interpolate(start_x, end_x, start_y, end_y, 8, y_bounds=(1, consts.MAP_HEIGHT - 2))
+
+        for i in range(len(noise) - 1):
+            x = noise[i][0]
+            y0 = int(noise[i][1])
+            y1 = int(noise[min(i + 1, len(noise) - 1)][1])
+            for y in range(min(y0, y1), max(y0, y1) + 1):
+                w = libtcod.random_get_int(0, min_width, max_width)
+                for i_x in range(w):
+                    for i_y in range(w):
+                        change_map_tile(x + i_x, y + i_y, tile_type)
+                        changed.append((x + i_x, y + i_y))
+    else:
+        # longest axis: Y
+        if y1 <= y2:
+            start_x, end_x, start_y, end_y = x1, x2, y1, y2
+        else:
+            start_x, end_x, start_y, end_y = x2, x1, y2, y1
+        noise = perlin_interpolate(start_y, end_y, start_x, end_x, 8, y_bounds=(1, consts.MAP_WIDTH - 2))
+
+        for i in range(len(noise) - 1):
+            y = noise[i][0]
+            x0 = int(noise[i][1])
+            x1 = int(noise[min(i + 1, len(noise) - 1)][1])
+            for x in range(min(x0, x1), max(x0, x1) + 1):
+                w = libtcod.random_get_int(0, min_width, max_width)
+                for i_x in range(w):
+                    for i_y in range(w):
+                        change_map_tile(x + i_x, y + i_y, tile_type)
+                        changed.append((x + i_x, y + i_y))
+    return changed
+
+
+def perlin_interpolate(x0, x1, y0, y1, height=None, y_bounds=None):
+    if height is None:
+        height = y1 - y0
+    return _perlin_interpolate(x0, x1, y0, y1, max(height, abs(y1 - y0)), y_bounds=y_bounds) + [(x1, float(y1))]
+
+def _perlin_interpolate(start_x, end_x, start_y, end_y, height, octave=1, y_bounds=None):
+    if end_x - start_x > 4:
+        v_half = start_x + int(math.floor((end_x - start_x) / 2))
+        range_half = (end_y + start_y) / 2
+        rand_range = height * (0.75 ** (octave - 1))
+        rand_min = range_half - 0.5 * rand_range
+        rand_max = range_half + 0.5 * rand_range
+        if y_bounds is not None:
+            if rand_min < y_bounds[0]:
+                adjustment = y_bounds[0] - rand_min
+                rand_min += adjustment
+                rand_max += adjustment
+            elif rand_max > y_bounds[1]:
+                adjustment = rand_max - y_bounds[1]
+                rand_min -= adjustment
+                rand_max -= adjustment
+        midpoint = libtcod.random_get_float(0, rand_min, rand_max)
+        return _perlin_interpolate(start_x, v_half, start_y, midpoint, height, octave=octave + 1, y_bounds=y_bounds) + \
+               _perlin_interpolate(v_half, end_x, midpoint, end_y, height, octave=octave + 1, y_bounds=y_bounds)
+    else:
+        values = []
+        for i in range(start_x, end_x):
+            g = float(i - start_x) / float(end_x - start_x)
+            values.append((i, start_y + (end_y - start_y) * g))
+        return values
+
+def create_wandering_tunnel(x1, y1, x2, y2, tile_type=None, wide=True, hardoverride=False):
     if tile_type is None:
         tile_type = default_floor
     current_x = x1
@@ -738,10 +818,10 @@ def create_wandering_tunnel(x1, y1, x2, y2, tile_type=None, wide=True):
         # replace terrain at current tile with floor
         change_map_tile(current_x, current_y, tile_type)
         if wide and (libtcod.random_get_int(0, 0, 1) == 0 or move == 'xy'):
-            change_map_tile(current_x - 1, current_y, tile_type)
-            change_map_tile(current_x + 1, current_y, tile_type)
-            change_map_tile(current_x, current_y - 1, tile_type)
-            change_map_tile(current_x, current_y + 1, tile_type)
+            change_map_tile(current_x - 1, current_y, tile_type, hard_override=hardoverride)
+            change_map_tile(current_x + 1, current_y, tile_type, hard_override=hardoverride)
+            change_map_tile(current_x, current_y - 1, tile_type, hard_override=hardoverride)
+            change_map_tile(current_x, current_y + 1, tile_type, hard_override=hardoverride)
 
 
 def create_h_tunnel(x1, x2, y, tile_type=default_floor):
@@ -806,7 +886,7 @@ def create_reed(x, y):
     type_here = map.tiles[x][y].tile_type
     if type_here == 'deep water':
         map.tiles[x][y].tile_type = 'shallow water'
-    elif type_here != 'shallow water':
+    elif type_here != 'shallow water' and type_here != 'mud':
         map.tiles[x][y].tile_type = 'grass floor'
     reed = main.GameObject(x, y, 244, 'reeds', libtcod.darker_green, always_visible=True, description='A thicket of '
                            'reeds so tall they obstruct your vision. They are easily crushed underfoot.'
@@ -840,7 +920,7 @@ def create_door(x, y, locked=False):
         description = 'A heavy stone door with a keyhole in the center. It is locked.'
     else:
         name = 'door'
-        color = libtcod.brass
+        color = libtcod.dark_sepia
         description = 'A sturdy wooden door'
     door = main.GameObject(x, y, '+', name, libtcod.brass, always_visible=True, description=description,
                            blocks_sight=True, blocks=False, burns=True, interact=main.door_interact,
@@ -974,21 +1054,11 @@ def load_feature(lines=[]):
                                 feature_room.data[(i_x, y_index)].append(s)
                         else:
                             feature_room.data[(i_x, y_index)] = loot_string
-                    elif c == '>':
+                    elif c == '>' or c == '+' or c == '*' or c == 'X':
                         if (i_x, y_index) in feature_room.data.keys():
-                            feature_room.data[(i_x, y_index)].append('>')
+                            feature_room.data[(i_x, y_index)].append(c)
                         else:
-                            feature_room.data[(i_x, y_index)] = '>'
-                    elif c == '+':
-                        if (i_x, y_index) in feature_room.data.keys():
-                            feature_room.data[(i_x, y_index)].append('+')
-                        else:
-                            feature_room.data[(i_x, y_index)] = '+'
-                    elif c == '*':
-                        if (i_x, y_index) in feature_room.data.keys():
-                            feature_room.data[(i_x, y_index)].append('*')
-                        else:
-                            feature_room.data[(i_x, y_index)] = '*'
+                            feature_room.data[(i_x, y_index)] = c
                     elif c.isdigit():
                         if (i_x, y_index) in feature_room.data.keys():
                             for s in data_strings[int(c)]:
@@ -1062,7 +1132,7 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
 
         apply_scripts(feature, room=template)
 
-        return 'success'
+        return template
 
 def apply_scripts(feature, room=None):
     for script in feature.scripts:
@@ -1508,46 +1578,87 @@ def make_map_badlands():
 
 def make_map_gtunnels():
     active_branch = dungeon.branches[map.branch]
-    rooms = []
-    num_rooms = 0
 
-    for r in range(consts.MG_MAX_ROOMS):
+    #Step 1: scatter key points:
+    key_points = []
+    for i in range(20):
+        key_points.append((libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 4),
+                           libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 4)))
+    #Step 2: link key points with perlin tunnels
+    for i in range(len(key_points) - 2):
+        create_perlin_tunnel(key_points[i][0], key_points[i][1], key_points[i + 1][0], key_points[i + 1][1])
+    open_tiles = []
+    for x in range(consts.MAP_WIDTH):
+        for y in range(consts.MAP_HEIGHT):
+            if not map.tiles[x][y].blocks:
+                open_tiles.append((x, y))
+    #Step 3: create rooms. Link them from their centers to nearest open points.
+    room_rects = []
+    room_count = 10 + libtcod.random_get_int(0, 0, 10)
+    num_rooms = 0
+    for i in range(room_count / 2):
         room = create_room_random(active_branch['terrain_types'])
         dimensions = room.bounds
 
-        x = libtcod.random_get_int(0, 1 + (dimensions[0] / 2), consts.MAP_WIDTH - (dimensions[0] / 2) - 1)
-        y = libtcod.random_get_int(0, 1 + (dimensions[1] / 2), consts.MAP_HEIGHT - (dimensions[1] / 2) - 1)
+        x = libtcod.random_get_int(0, 2 + (dimensions[0] / 2), consts.MAP_WIDTH - (dimensions[0] / 2) - 3)
+        y = libtcod.random_get_int(0, 2 + (dimensions[1] / 2), consts.MAP_HEIGHT - (dimensions[1] / 2) - 3)
 
-        room_bounds = Rect(x, y, dimensions[0], dimensions[1])
+        room_bounds = Rect(x - dimensions[0] / 2, y - dimensions[0] / 2, dimensions[0], dimensions[1])
 
         failed = False
-        for other_room in rooms:
+        for other_room in room_rects:
             if room_bounds.intersect(other_room):
                 failed = True
                 break
 
         if not failed:
             # create_room(new_room)
-            room.set_pos(room_bounds.x1, room_bounds.y1)
+            room.set_pos(room_bounds.center()[0], room_bounds.center()[1])
             apply_room(room)
             (new_x, new_y) = room.center()
             if num_rooms > 0:
-                (prev_x, prev_y) = rooms[num_rooms - 1].center()
-                create_wandering_tunnel(prev_x, prev_y, new_x, new_y)
-            main.place_objects(room.get_open_tiles())
+                (prev_x, prev_y) = room_rects[num_rooms - 1].center()
+                create_perlin_tunnel(prev_x, prev_y, new_x, new_y, min_width=1, max_width=2)
+                #create_wandering_tunnel(prev_x, prev_y, new_x, new_y)
             num_rooms += 1
-            rooms.append(room_bounds)
+            room_rects.append(room_bounds)
 
-    open_tiles = []
-    for x in range(consts.MAP_WIDTH):
-        for y in range(consts.MAP_HEIGHT):
-            if not map.tiles[x][y].blocks:
-                open_tiles.append((x, y))
+    #Step 4: scatter features. Link them from their link points to nearest open points.
+    room_count = 10 + libtcod.random_get_int(0, 0, 10)
+    connectors = []
+    for i in range(room_count / 2):
+        tile = (libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 4),
+                           libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 4))
+        feature_index = libtcod.random_get_int(0, 0, len(feature_categories['gtunnels']) - 1)
+        feature_name = feature_categories['gtunnels'][feature_index].name
+        result = create_feature(tile[0], tile[1], feature_name, open_tiles)
+        if isinstance(result, Room):
+            # A feature was created
+            if len(result.link_points) > 0:
+                inner_bounds = Rect(result.min_x + 1, result.min_y + 1, result.width - 2, result.height - 2)
+                for link in result.link_points:
+                    closest = main.find_closest_open_tile(link[0], link[1], result.tiles.keys())
+                    path_rect = Rect(min(link[0], closest[0]),
+                                     min(link[1], closest[1]),
+                                     abs(link[0] - closest[0]),
+                                     abs(link[1] - closest[1]))
+                    connectors += create_perlin_tunnel(link[0], link[1], closest[0], closest[1], tile_type='open')
+            else:
+                center = (result.min_x + result.max_x) / 2, (result.min_y + result.max_y) / 2
+                closest = main.find_closest_open_tile(center[0], center[1], result.tiles.keys())
+                if closest is not None:
+                    connectors += create_perlin_tunnel(center[0], center[1], closest[0], closest[1], tile_type='open')
+
+    for t in connectors:
+        change_map_tile(t[0], t[1], 'open', hard_override=True)
+        if t not in open_tiles:
+            open_tiles.append(t)
 
     main.place_objects(open_tiles,
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),
                        active_branch['xp_amount'])
+
     make_basic_map_links()
 
 def make_test_space():
@@ -1579,7 +1690,7 @@ def make_basic_map_links():
     for link in map.links:
         make_basic_map_link(link)
 
-def make_basic_map_link(link):
+def make_basic_map_link(link, connect_with_tunnels=True):
     hlink = True
     r = 0
     c = '>'
@@ -1619,8 +1730,9 @@ def make_basic_map_link(link):
             link_feature = feature_categories['default_gate'][0].name
         exclude = []
         create_feature(x, y, link_feature, hard_override=True, rotation=r, open_tiles=exclude)
-        closest = main.find_closest_open_tile(x, y, exclude=exclude)
-        create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='open')
+        if connect_with_tunnels:
+            closest = main.find_closest_open_tile(x, y, exclude=exclude)
+            create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='open', hardoverride=True)
     else:
         link_feature_category = link[1].branch + '_vlink'
         if link_feature_category in feature_categories and len(feature_categories[link_feature_category]) > 0:

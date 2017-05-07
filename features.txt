@@ -89,6 +89,7 @@
 
 IMPORT features/features-marsh.txt
 IMPORT features/features-badlands.txt
+IMPORT features/features-gtunnels.txt
 IMPORT features/features-forest.txt
 IMPORT features/branch-gates.txt
 IMPORT features/premades.txt

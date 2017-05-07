@@ -1725,6 +1725,7 @@ def generate_level(world_map):
 #############################################
 
 def main_menu():
+
     mapgen.initialize_features()
 
     while not libtcod.console_is_window_closed():

@@ -100,7 +100,7 @@ data = {
                              'dry stalks of grass that rustle in the wind. Might they burn?', flammable=15, isFloor=True),
 
     ###############################################
-    #                     MISC
+    #               GOBLIN TUNNELS
     ###############################################
 
     'tunnel wall' : TileData(True, True, 'tunnel wall', '#', (82, 91, 33), (54, 61, 22),

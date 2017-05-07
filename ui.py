@@ -1388,7 +1388,6 @@ def choose_essence_from_pool(charm_data):
     else:
         return options_ex[index]['essence']['text']
 
-
 def buy(item,payment_type,success,cancelled):
     inventory = player.instance.fighter.inventory
     options = [i.name for i in inventory if i.item.category == payment_type]

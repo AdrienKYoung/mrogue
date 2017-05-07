@@ -1,0 +1,268 @@
+//part of mrogue, an interactive adventure game
+//Copyright (C) 2017 Adrien Young and Tyler Soberanis
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+//*******************
+//      Cells
+//*******************
+FEATURE cells
+CATEGORY gtunnels
+DEFINE # stone brick wall
+    #####X#####
+    #___#.#___#
+    #___+.+___#
+    #___#.#___#
+#########.#########
+#___#___#.#___#___#
+#___#___+.#___#___#
+#___#___#.#___#___#
+##+######.##+###+##
+X.................X
+##+###+##.######+##
+#___#___#.#___#___#
+#___#___#.+___#___#
+#___#___#.#___#___#
+#########.#########
+    #___#.#___#
+    #___+.+___#
+    #___#.#___#
+    #####X#####
+
+ENDFEATURE
+//*******************
+//    Sludge Pits
+//*******************
+FEATURE sludge_pits
+CATEGORY gtunnels
+DEFINE - mud
+   .....
+  ..---..
+  .-----..
+  .-----..
+  .-----..
+  ..---..
+ .......
+..---..
+.-----.
+.-----.
+.-----.
+..---..
+......
+ENDFEATURE
+//*******************
+//    Farms1
+//*******************
+FEATURE farms1
+CATEGORY gtunnels
+SCRIPT scatter_reeds
+--------
+,,,,,,,,
+--------
+,,,,,,,,
+--------
+,,,,,,,,
+--------
+ENDFEATURE
+//*******************
+//    Hall Rooms
+//*******************
+FEATURE double_room
+CATEGORY gtunnels
+#X#######
+#.#.....#
+#.+.....#
+#.#.....#
+#.###+###
+#.#.....#
+#.+.....#
+#.#.....#
+#X#######
+ENDFEATURE
+//*******************
+//  Conjoined Rooms
+//*******************
+FEATURE conjoined_rooms
+CATEGORY gtunnels
+#X#############X#
+#.+...#####...#.#
+#.#...+...+...#.#
+#.#...#####...+.#
+#X#############X#
+ENDFEATURE
+//*******************
+//   Single Room
+//*******************
+FEATURE single_room
+CATEGORY gtunnels
+#X######
+#.#....##
+#.#.....#
+#.+.....#
+#.#.....#
+#.#....##
+#X######
+ENDFEATURE
+//*******************
+//    Chasm Edge
+//*******************
+FEATURE chasm_edge
+CATEGORY gtunnels
+  #####X##
+ ##:..:..#
+##::.:::.####
+#:::::::.##.X
+#::.:::.....#
+#::::.....###
+##::..#####
+ #::.##
+ #:..#
+ ##X##
+ENDFEATURE
+//*******************
+//    Courtyard
+//*******************
+FEATURE courtyard
+CATEGORY gtunnels
+     #X#
+ #####.#####
+ #---...---#
+ #--.....--#
+##-..#.#..-##
+X...........X
+##-..#.#..-##
+ #--.....--#
+ #---...---#
+ #####.#####
+     #X#
+ENDFEATURE
+//*******************
+//    Short Hall
+//*******************
+FEATURE short_hall
+CATEGORY gtunnels
+ #########
+ #.......#
+##.#.#.#.##
+X+.......+X
+##.#.#.#.##
+ #.......#
+ #########
+ENDFEATURE
+//*******************
+//    Long Hall
+//*******************
+FEATURE long_hall
+CATEGORY gtunnels
+       #X#
+ #######+#######
+ #.............#
+##.#.#.#.#.#.#.##
+X+.............+X
+##.#.#.#.#.#.#.##
+ #.............#
+ #######+#######
+       #X#
+ENDFEATURE
+//*******************
+//    S-Bend
+//*******************
+FEATURE s_bend
+CATEGORY gtunnels
+#X.######
+#..##...##
+#..#.....#
+#..#..#..#
+#..#..#..#
+#.....#..#
+##...##..#
+#######.X#
+ENDFEATURE
+//*******************
+//    Muck Pond
+//*******************
+FEATURE muck_pond
+CATEGORY gtunnels
+DEFINE - mud
+SCRIPT scatter_reeds
+  --
+------
+--------
+ --------
+ --------
+  ------
+    ---
+ENDFEATURE
+//*******************
+//   Chasm Bridge
+//*******************
+FEATURE chasm_bridge
+CATEGORY gtunnels
+   :::X:
+  ::::.:::
+  ::::.::::
+ X........X
+ :::::.::::
+  ::::.:::
+   :::.:::
+    ::.::
+     :X:
+ENDFEATURE
+//*******************
+//   Fighting Pit
+//*******************
+FEATURE fighting_pit
+CATEGORY gtunnels
+DEFINE # wooden palisade
+  .......
+ .........
+..##///##..
+..#     #..
+../     /..
+../     /..
+../     /..
+..#     #..
+..##///##..
+ .........
+  .......
+HEIGHT -1
+
+
+
+   .....
+   .....
+   .....
+   .....
+   .....
+ENDHEIGHT
+ENDFEATURE
+//*******************
+//  Blastcap Tunnel
+//*******************
+FEATURE blastcap_tunnel
+CATEGORY gtunnels
+DEFINE . damp soil
+DEFINE 1 MONSTER_ID monster_blastcap
+  _X##  ####_
+  __.####...._..__
+  ..##.....1....1__
+ _..#1..#####..._._
+ ._##.....##.1..._.
+ _..####....###..._
+  .._.####...#.._..
+    __._.....##.._
+     _.._.1###.___
+        #####X._
+ENDFEATURE
