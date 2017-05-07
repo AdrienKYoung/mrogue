@@ -314,6 +314,86 @@ def arcane_arrow(actor=None, target=None):
                 return 'success'
     return 'failure'
 
+def flame_breath(actor=None, target=None):
+    x, y = 0, 0
+    if actor is None:
+        actor = player.instance
+    spell = abilities.data['ability_flame_breath']
+    if actor is player.instance:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        tiles = ui.target_tile(max_range=spell['range'], targeting_type='cone')
+    else:
+        x = target.x
+        y = target.y
+        tiles = main.cone(actor.x,actor.y,x,y,max_range=spell['range'])
+
+    if tiles is None or len(tiles) == 0 or tiles[0] is None or tiles[1] is None:
+        return 'cancelled'
+
+    for tile in tiles:
+        t = main.current_map.tiles[tile[0]][tile[1]]
+        if t.flammable or main.roll_dice('1d2') == 1:
+            main.create_fire(tile[0],tile[1],12)
+
+        for obj in main.current_map.fighters:
+            if obj.x == tile[0] and obj.y == tile[1]:
+                combat.spell_attack(actor.fighter, obj, 'ability_flame_breath')
+                if obj.fighter is not None:
+                    obj.fighter.apply_status_effect(effects.burning())
+
+    return 'success'
+
+def great_dive(actor=None,target=None):
+    x,y = 0,0
+    data = abilities.data['ability_great_dive']
+    if actor is None:  # player is casting
+        actor = player.instance
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=data['range'])
+    else:
+        x = target.x
+        y = target.y
+
+    warning_particles = []
+    if actor is not player.instance:
+        for tile in main.adjacent_inclusive(x,y):
+            go = main.GameObject(tile[0],tile[1],'X','Warning',libtcod.red,
+                                 description="Spell Warning. Source: {}".format(actor.name.capitalize()))
+            main.current_map.add_object(go)
+            warning_particles.append(go)
+
+    ui.message("{} {} high into the air!".format(
+        syntax.conjugate(actor is player.instance,["You","The {}".format(actor.name.capitalize())]),
+        syntax.conjugate(actor is player.instance, ['rise','rises'])
+    ))
+
+    channel(actor, get_cast_time(actor,'ability_great_dive'), 'ability_great_dive',
+            lambda: _continuation_great_dive(actor, x,y,warning_particles))
+    return 'success'
+
+def _continuation_great_dive(actor,x,y,ui_particles):
+    data = abilities.data['ability_great_dive']
+    for p in ui_particles:
+        p.destroy()
+
+    ui.message("{} {} into the ground!".format(
+        syntax.conjugate(actor is player.instance, ["You", "The {}".format(actor.name.capitalize())]),
+        syntax.conjugate(actor is player.instance, ['slam', 'slams'])
+    ))
+
+    tiles = main.adjacent_inclusive(x,y)
+    for obj in main.current_map.fighters:
+        if (obj.x,obj.y) in tiles:
+            combat.attack_ex(actor.fighter,obj,0)
+
+    if not main.is_blocked(x,y):
+        actor.set_position(x,y)
+    else:
+        for t in tiles:
+            if not main.is_blocked(t[0],t[1]):
+                actor.set_position(t[0],t[1])
+                break
+
 def smite(actor=None, target=None):
     spell = abilities.data['ability_smite']
     x, y = 0, 0

@@ -154,6 +154,23 @@ data = {
         'cooldown' : 3
     },
 
+    'ability_flame_breath': {
+        'name': 'Flame Breath',
+        'function' : actions.flame_breath,
+        'element':'fire',
+        'cooldown' : 6,
+        'range': 4,
+        'damage': '2d8',
+    },
+
+    'ability_great_dive': {
+        'name': 'Great Dive',
+        'function' : actions.great_dive,
+        'cooldown' : 10,
+        'range': 10,
+        'cast_time': 2,
+    },
+
     'ability_fireball': {
         'name': 'fireball',
         'function': actions.fireball,

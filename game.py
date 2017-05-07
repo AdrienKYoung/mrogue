@@ -463,7 +463,7 @@ class GameObject:
         return math.sqrt(dx ** 2 + dy ** 2)
 
     def distance(self, x, y):
-        return math.sqrt((self.x - x) ** 2 + (self.y - y) ** 2)
+        return distance(self.x,x,self.y,y)
         
     def send_to_back(self):
         if self not in current_map.objects:
@@ -665,6 +665,10 @@ def adjacent_tiles_diagonal(x, y):
                 adjacent.append((i_x, i_y))
     return adjacent
 
+def adjacent_inclusive(x,y):
+    result = adjacent_tiles_diagonal(x,y)
+    result.append((x,y))
+    return result
 
 def is_adjacent_orthogonal(a_x, a_y, b_x, b_y):
     return (abs(a_x - b_x) <= 1 and a_y == b_y) or (abs(a_y - b_y) <= 1 and a_x == b_x)
@@ -984,6 +988,31 @@ def beam_interrupt(sourcex, sourcey, destx, desty):
         line_x, line_y = libtcod.line_step()
     return destx, desty
 
+
+def distance(x1, y1, x2, y2):
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+def cone(sourcex,sourcey,destx,desty,max_range):
+    affected_tiles = []
+    selected_angle = math.atan2(-(desty - sourcey), destx - sourcex)
+    if selected_angle < 0: selected_angle += math.pi * 2
+    for draw_x in range(max(sourcex - max_range, 0),
+                        min(sourcex + max_range, consts.MAP_WIDTH - 1) + 1):
+        for draw_y in range(max(sourcey - max_range, 0),
+                            min(sourcey + max_range, consts.MAP_HEIGHT - 1) + 1):
+            if draw_x == sourcex and draw_y == sourcey:
+                continue
+            #if not fov.player_can_see(draw_x, draw_y):
+            #    continue
+            this_angle = math.atan2(-(draw_y - sourcey), draw_x - sourcex)
+            if this_angle < 0: this_angle += math.pi * 2
+            phi = abs(this_angle - selected_angle)
+            if phi > math.pi:
+                phi = 2 * math.pi - phi
+
+            if phi <= math.pi / 4 and round(distance(sourcex,sourcey,draw_x, draw_y)) <= max_range:
+                affected_tiles.append((draw_x, draw_y))
+    return affected_tiles
 
 def closest_monster(max_range):
     closest_enemy = None

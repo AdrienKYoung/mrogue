@@ -703,6 +703,28 @@ proto = {
         'flags' : NO_CORPSE,
         'subtype' : 'treant',
     },
+    'monster_dragon': {
+        'name': 'dragon',
+        'char': 'D',
+        'color': libtcod.red,
+        'hp': 200,
+        'strength_dice' : '4d8',
+        'attack_bonus' : 0,
+        'armor': 5,
+        'evasion': 2,
+        'accuracy': 15,
+        'move_speed': 0.6,
+        'attack_speed': 0.5,
+        'ai': ai.AI_Default,
+        'description': 'A terrifying dragon. Breathes fire. Fairly slow, but can deliver diving attacks.',
+        'resistances': ['fire','burning'],
+        'weaknesses' : [],
+        'shred': 1,
+        'flags' : NO_CORPSE,
+        'subtype' : 'dragon',
+        'movement_type' : pathfinding.FLYING,
+        'attributes' : ['ability_flame_breath','ability_great_dive']
+    },
 }
 
 modifiers = {
