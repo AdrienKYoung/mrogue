@@ -458,12 +458,10 @@ class GameObject:
         libtcod.path_delete(my_path)
         
     def distance_to(self, other):
-        dx = other.x - self.x
-        dy = other.y - self.y
-        return math.sqrt(dx ** 2 + dy ** 2)
+        return distance(self.x, self.y, other.x, other.y)
 
     def distance(self, x, y):
-        return distance(self.x,x,self.y,y)
+        return distance(self.x,self.y,x,y)
         
     def send_to_back(self):
         if self not in current_map.objects:

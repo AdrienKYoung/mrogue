@@ -363,7 +363,7 @@ def great_dive(actor=None,target=None):
             warning_particles.append(go)
 
     ui.message("{} {} high into the air!".format(
-        syntax.conjugate(actor is player.instance,["You","The {}".format(actor.name.capitalize())]),
+        syntax.name(actor).capitalize(),
         syntax.conjugate(actor is player.instance, ['rise','rises'])
     ))
 
@@ -377,7 +377,7 @@ def _continuation_great_dive(actor,x,y,ui_particles):
         p.destroy()
 
     ui.message("{} {} into the ground!".format(
-        syntax.conjugate(actor is player.instance, ["You", "The {}".format(actor.name.capitalize())]),
+        syntax.name(actor).capitalize(),
         syntax.conjugate(actor is player.instance, ['slam', 'slams'])
     ))
 
