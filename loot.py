@@ -99,9 +99,9 @@ table = {
     ],
 
     'tomes_1': [
-        'book_lesser_fire'
-        'book_lesser_death'
-        'book_lesser_cold'
+        'book_lesser_fire',
+        'book_lesser_death',
+        'book_lesser_cold',
     ],
 
     'gems_1': [

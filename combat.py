@@ -381,7 +381,7 @@ class Fighter:
         if self.has_status('sluggish'):
             bonus -= 5
         if self.owner.player_stats:
-            return max(self.base_evasion + self.owner.player_stats.agi + bonus, 0)
+            return max(self.base_evasion + (self.owner.player_stats.agi / 3) + bonus, 0)
         else:
             return max(self.base_evasion + bonus, 0)
 

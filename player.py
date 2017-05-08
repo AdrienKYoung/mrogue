@@ -141,7 +141,7 @@ def create(loadout):
     global instance
 
     loadout = loadouts[loadout]
-    fighter_component = combat.Fighter(hp=100, stamina=100, death_function=on_death, on_get_hit=on_get_hit, team='ally')
+    fighter_component = combat.Fighter(hp=100, stamina=100, death_function=on_death, on_get_hit=on_get_hit, team='ally', evasion=5)
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),
                         int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
