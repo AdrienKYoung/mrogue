@@ -593,6 +593,10 @@ class Tile:
     def on_step(self):
         return terrain.data[self.tile_type].on_step
 
+    @property
+    def blocks_sight_all_elevs(self):
+        return terrain.data[self.tile_type].blocks_sight_all_elevs
+
                 
 #############################################
 # General Functions
@@ -676,28 +680,6 @@ def is_adjacent_diagonal(a_x, a_y, b_x, b_y):
     return abs(a_x - b_x) <= 1 and abs(a_y - b_y) <= 1
 
 
-def blastcap_explode(blastcap):
-    global changed_tiles
-
-    blastcap.fighter = None
-    current_map.fighters.remove(blastcap)
-    ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
-    for obj in current_map.fighters:
-        if is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
-            if obj.fighter.apply_status_effect(effects.StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
-                ui.message('%s %s stunned!' % (
-                                syntax.name(obj).capitalize(),
-                                syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.gold)
-
-    if ui.selected_monster is blastcap:
-        changed_tiles.append((blastcap.x, blastcap.y))
-        ui.selected_monster = None
-        ui.auto_target_monster()
-
-    blastcap.destroy()
-    return
-
-
 def centipede_on_hit(attacker, target, damage):
     if target.fighter is None:
         return
@@ -742,6 +724,11 @@ def water_elemental_tick(elemental):
             obj.fighter.apply_status_effect(effects.sluggish(duration=3))
             obj.fighter.apply_status_effect(effects.slowed(duration=3))
 
+def scum_glob_tick(glob):
+    tile = current_map.tiles[glob.x][glob.y]
+    if not tile.is_water and not tile.tile_type == 'oil' and not tile.is_ramp:
+        tile.tile_type = 'oil'
+        changed_tiles.append((glob.x, glob.y))
 
 # on_create function of tunnel spiders. Creates a web at the spiders location and several random adjacent spaces
 def tunnel_spider_spawn_web(obj):
@@ -894,6 +881,44 @@ def bomb_beetle_death(beetle):
         ui.selected_monster = None
         ui.auto_target_monster()
 
+def scum_glob_death(glob):
+    global changed_tiles
+    ui.message('%s divides!' % syntax.name(glob).capitalize(), libtcod.red)
+    pos = glob.x, glob.y
+    glob.fighter = None
+    glob.destroy()
+    for i in range(3):
+        spawn = find_closest_open_tile(pos[0], pos[1])
+        spawn_monster('monster_scum_glob_small', spawn[0], spawn[1])
+        tile = current_map.tiles[spawn[0]][spawn[1]]
+        if not tile.is_water and not tile.tile_type == 'oil' and not tile.is_ramp:
+            tile.tile_type = 'oil'
+
+    if ui.selected_monster is glob:
+        changed_tiles.append(pos)
+        ui.selected_monster = None
+        ui.auto_target_monster()
+
+def blastcap_explode(blastcap):
+    global changed_tiles
+
+    blastcap.fighter = None
+    current_map.fighters.remove(blastcap)
+    ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
+    for obj in current_map.fighters:
+        if is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
+            if obj.fighter.apply_status_effect(effects.StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
+                ui.message('%s %s stunned!' % (
+                                syntax.name(obj).capitalize(),
+                                syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.gold)
+
+    if ui.selected_monster is blastcap:
+        changed_tiles.append((blastcap.x, blastcap.y))
+        ui.selected_monster = None
+        ui.auto_target_monster()
+
+    blastcap.destroy()
+    return
 
 def monster_death(monster):
     global changed_tiles

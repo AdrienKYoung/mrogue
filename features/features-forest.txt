@@ -55,10 +55,10 @@ DEFINE X pine tree
 DEFINE $ LOOT_LEVEL 2
 __________
 __#####-__
-#--  $#-__
+#----$#-__
 __#--X#-__
 __#---#-__
-__###-- #-
+__###---#-
 ENDFEATURE
 
 //*******************
@@ -72,8 +72,62 @@ DEFINE $ LOOT_LEVEL 2
 DEFINE 1 MONSTER_ID monster_silencer
 _____________
 _1###-#####-_
-#__  -#--$#-_
+#__---#--$#-_
 __#---+---#-_
 _##---#####-_
 __#-#-#-----_
+ENDFEATURE
+
+//*******************
+//   Watch Tower
+//*******************
+FEATURE watchtower
+CATEGORY forest
+DEFINE # stone brick wall
+DEFINE . shale
+DEFINE / shale slope
+  _____
+ _______
+__# # #__
+__     __
+__#   #__
+__  .  __
+__# . #__
+ _______
+  _____
+HEIGHT 1
+
+
+   . .
+  .....
+   ./.
+  .. ..
+   . .
+ENDHEIGHT
+ENDFEATURE
+
+//*******************
+// Ruined Courtyard
+//*******************
+FEATURE ruined_courtyard
+CATEGORY forest
+DEFINE # stone brick wall
+DEFINE - snow drift
+  _   _     _
+ ____  __   ___
+_ ###________##_
+ _####-##...##_
+__###--.-...-##_
+  _#--.....#-#_
+_ _#.........#___
+  _#..........__
+ __#.........#_ _
+_ _#_........___
+_ __........___ _
+ __#....#+####_
+___#._..#----#_ _
+  __.__.#--_##__
+   __.####-__##_
+  _  ___  _  __
+   _  ____  _
 ENDFEATURE

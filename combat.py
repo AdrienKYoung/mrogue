@@ -255,6 +255,7 @@ class Fighter:
             if ability is not None and ability.on_tick is not None:
                 ability.on_tick()
 
+
     def apply_status_effect(self, new_effect,supress_message=False):
         # check for immunity
         if new_effect.name == 'burning' and self.owner is player.instance and main.has_skill('pyromaniac'):

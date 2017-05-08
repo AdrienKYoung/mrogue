@@ -822,7 +822,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
         if targeting_type == 'beam' or targeting_type == 'beam_interrupt':
             libtcod.line_init(player.instance.x, player.instance.y, cursor_x, cursor_y)
             line_x, line_y = libtcod.line_step()
-            while (not line_x is None):
+            while line_x is not None:
                 libtcod.console_put_char_ex(overlay, line_x - offsetx, line_y - offsety, ' ', libtcod.white, libtcod.yellow)
                 line_x, line_y = libtcod.line_step()
         libtcod.console_put_char_ex(overlay, selected_x - offsetx, selected_y - offsety, ' ', libtcod.light_yellow,
@@ -846,6 +846,28 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
                     if phi <= math.pi / 4 and round(player.instance.distance(draw_x, draw_y)) <= max_range:
                         affected_tiles.append((draw_x, draw_y))
                         libtcod.console_put_char_ex(overlay, draw_x - offsetx, draw_y - offsety, ' ', libtcod.white, libtcod.yellow)
+
+        elif targeting_type == 'beam_wide':
+            affected_tiles = []
+            p_x = player.instance.x
+            p_y = player.instance.y
+            origins = [(p_x, p_y), (p_x-1, p_y), (p_x+1, p_y), (p_x, p_y-1), (p_x, p_y+1)]
+            for origin in origins:
+                libtcod.line_init(origin[0], origin[1], origin[0] + (cursor_x - p_x), origin[1] + (cursor_y - p_y))
+                line_x, line_y = libtcod.line_step()
+                while line_x is not None:
+                    if not fov.player_can_see(line_x, line_y):
+                        line_x, line_y = libtcod.line_step()
+                        continue
+                    if line_x == p_x and line_y == p_y:
+                        line_x, line_y = libtcod.line_step()
+                        continue
+                    libtcod.console_put_char_ex(overlay, line_x - offsetx, line_y - offsety, ' ', libtcod.white, libtcod.yellow)
+                    if (line_x, line_y) not in affected_tiles:
+                        affected_tiles.append((line_x, line_y))
+                    line_x, line_y = libtcod.line_step()
+            libtcod.console_put_char_ex(overlay, selected_x - offsetx, selected_y - offsety, ' ', libtcod.light_yellow,
+                                        libtcod.white)
 
         libtcod.console_put_char_ex(overlay, selected_x - offsetx, selected_y - offsety, ' ',
                                     libtcod.light_yellow,
@@ -906,7 +928,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
             if max_range is None or round((player.instance.distance(x, y))) <= max_range:
                 if targeting_type == 'beam':
                     return beam_values
-                elif targeting_type == 'cone':
+                elif targeting_type == 'cone' or targeting_type == 'beam_wide':
                     return affected_tiles
                 else:
                     return selected_x, selected_y

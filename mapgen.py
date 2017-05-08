@@ -1348,7 +1348,7 @@ def make_map_forest():
         links = 0
         for neighbor in dist:
             if neighbor[1] not in connected and neighbor[1] != f:
-                create_wandering_tunnel(f[0], f[1], neighbor[1][0], neighbor[1][1], tile_type=default_floor, wide=False)
+                create_perlin_tunnel(f[0], f[1], neighbor[1][0], neighbor[1][1], tile_type=default_floor, max_width=2)
                 connected.append(neighbor[1])
                 links += 1
                 if links >= 2:
@@ -1356,7 +1356,7 @@ def make_map_forest():
         # if no connection was made
         if links == 0:
             neighbor = dist[1]
-            create_wandering_tunnel(f[0], f[1], neighbor[1][0], neighbor[1][1], tile_type=default_floor, wide=False)
+            create_perlin_tunnel(f[0], f[1], neighbor[1][0], neighbor[1][1], tile_type=default_floor, max_width=2)
             connected.append(neighbor[1])
 
     # flood fill to remove isolated pockets
@@ -1376,7 +1376,7 @@ def make_map_forest():
             if not map.tiles[x][y].blocks:
                 open_tiles.append((x, y))
 
-    feature_count = libtcod.random_get_int(0, 0, 10)
+    feature_count = libtcod.random_get_int(0, 5, 10)
     for i in range(feature_count):
         tile = choose_random_tile(open_tiles)
         feature_index = libtcod.random_get_int(0, 0, len(feature_categories['forest']) - 1)

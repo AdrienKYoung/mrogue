@@ -110,7 +110,7 @@ branches = {
         'default_wall'  : 'tunnel wall',
         'default_floor' : 'tunnel floor',
         'default_ramp'  : 'tunnel slope',
-        'terrain_types' : ['tunnel floor','tunnel floor','shallow water','mud'],
+        'terrain_types' : ['tunnel floor','tunnel floor','shallow water','mud', 'oil'],
         'scaling'       : 0,
         'generate'      : mapgen.make_map_gtunnels,
         'map_color'     : libtcod.dark_yellow,
@@ -130,7 +130,8 @@ branches = {
         'encounter_range':4,
         'monsters':[
             {'encounter':['monster_goblin'], 'party':'1d2+1'},
-            {'encounter':['monster_reeker'],},
+            {'encounter':['monster_reeker']},
+            {'encounter':['monster_scum_glob']},
             {'encounter':['monster_goblin_warrior'],},
             {'encounter':['monster_tunnel_spider']},
             {'encounter':['monster_verman']},

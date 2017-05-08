@@ -111,13 +111,13 @@ loadouts = {
         'spr':10,
         'con':8,
         'inventory':[
+            ['book_lesser_cold', 'book_lesser_fire'],
             'charm_raw',
             #'charm_farmers_talisman',
             #'charm_holy_symbol',
             #'charm_shard_of_creation',
             #'charm_primal_totem',
             'equipment_cloth_robes',
-            'book_lesser_fire',
             'gem_lesser_fire',
             'gem_lesser_water',
             'gem_lesser_earth',
@@ -613,7 +613,9 @@ def pick_up_item():
             else:
                 return 'didnt-take-turn'
         else:
-            interactable_here = main.get_objects(instance.x, instance.y, condition=lambda o:o.interact, distance=1) #get stuff that's adjacent too
+            interactable_here = main.get_objects(instance.x, instance.y, condition=lambda o:o.interact)  # prioritize this space
+            if len(interactable_here) == 0:
+                interactable_here = main.get_objects(instance.x, instance.y, condition=lambda o:o.interact, distance=1) #get stuff that's adjacent too
             if len(interactable_here) > 0:
                 result = interactable_here[0].interact(interactable_here[0], instance)
                 if result is None:

@@ -294,7 +294,7 @@ library = {
 
     'spell_avalanche' : Spell(
         'avalanche',
-        actions.magma_bolt,
+        actions.avalanche,
         'Summons an avalanche to bury your enemies.',
         [
             {'stamina_cost':70,'charges':1},

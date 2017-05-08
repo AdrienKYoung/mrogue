@@ -725,6 +725,47 @@ proto = {
         'movement_type' : pathfinding.FLYING,
         'attributes' : ['ability_flame_breath','ability_great_dive']
     },
+    'monster_scum_glob': {
+        'name': 'scum glob',
+        'char': 'O',
+        'color': libtcod.dark_yellow,
+        'hp': 125,
+        'strength_dice' : '2d8',
+        'attack_bonus' : 0,
+        'armor': 0,
+        'evasion': 2,
+        'accuracy': 21,
+        'move_speed': 1.0,
+        'attack_speed': 0.75,
+        'ai': ai.AI_Default,
+        'description': 'An oozing pile of oil, mud, and filth. Everything it touches becomes greased with its slime. '
+                       'Upon death, it divides itself into more, smaller globs.',
+        'weaknesses' : ['fire'],
+        'shred': 1,
+        'flags' : NO_CORPSE,
+        'death_function': main.scum_glob_death,
+        'on_tick' : main.scum_glob_tick,
+    },
+    'monster_scum_glob_small': {
+        'name': 'small scum glob',
+        'char': 'o',
+        'color': libtcod.dark_yellow,
+        'hp': 35,
+        'strength_dice' : '1d6',
+        'attack_bonus' : 0,
+        'armor': 0,
+        'evasion': 2,
+        'accuracy': 21,
+        'move_speed': 1.0,
+        'attack_speed': 0.75,
+        'ai': ai.AI_Default,
+        'description': 'A small, oozing pile of oil, mud, and filth. Everything it touches becomes greased with its slime. '
+                       'It lacks the mass to divide upon death.',
+        'weaknesses' : ['fire'],
+        'shred': 1,
+        'flags' : NO_CORPSE,
+        'on_tick' : main.scum_glob_tick,
+    },
 }
 
 modifiers = {

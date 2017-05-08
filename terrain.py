@@ -23,7 +23,7 @@ class TileData:
     def __init__(self, blocks, blocks_sight, name, char,
                  foreground_color, background_color, description='unremarkable terrain', stamina_cost=0, jumpable=True,
                  burnTemp=0, flammable=0, diggable=False, isWall = False, isFloor = False, isWater = False,
-                 isRamp=False, isPit=False, isIce=False, on_step=None):
+                 isRamp=False, isPit=False, isIce=False, on_step=None, blocks_sight_all_elevs=True):
         self.blocks = blocks
         self.blocks_sight = blocks_sight
         self.name = name
@@ -43,6 +43,7 @@ class TileData:
         self.isPit = isPit
         self.on_step = on_step
         self.isIce = isIce
+        self.blocks_sight_all_elevs = blocks_sight and blocks_sight_all_elevs
 
 data = {
     ###############################################
@@ -98,17 +99,21 @@ data = {
                             'a smooth slope of shale', isRamp=True),
     'dry grass': TileData(False, False, 'dry grass', ',', (56, 49, 43), (38, 33, 29),
                              'dry stalks of grass that rustle in the wind. Might they burn?', flammable=15, isFloor=True),
+    'barren tree': TileData(True, True, 'barren tree', chr(157), libtcod.sepia,libtcod.lightest_gray,
+                             'a frozen, barren tree', flammable=11, isWall=True, blocks_sight_all_elevs=False),
 
     ###############################################
     #               GOBLIN TUNNELS
     ###############################################
 
     'tunnel wall' : TileData(True, True, 'tunnel wall', '#', (82, 91, 33), (54, 61, 22),
-                             description='A roughly-carved tunnel wall, covered with stinking grime.', isWall=True, diggable=True),
+                            description='A roughly-carved tunnel wall, covered with stinking grime.', isWall=True, diggable=True),
     'tunnel floor' : TileData(False, False, 'tunnel floor', '.', (54, 61, 22), (29, 33, 12),
-                             description='The muddy tunnel floor, its slimy surface cratered with footprints and stinking puddles', isFloor=True),
+                            description='The muddy tunnel floor, its slimy surface cratered with footprints and stinking puddles', isFloor=True),
     'tunnel slope': TileData(False, False, 'tunnel slope', '/',(54, 61, 22), (29, 33, 12),
                             'a sloping tunnel floor', isRamp=True),
+    'oil' : TileData(False, False, 'oil', '~', libtcod.darker_gray, libtcod.darkest_gray, 'A slick sheen of highly flammable oil.',
+                            flammable=100, burnTemp=20, jumpable=False, isFloor=True),
 
     ###############################################
     #               FROZEN FOREST
@@ -119,16 +124,14 @@ data = {
     'frozen slope': TileData(False, False,'frozen soil','/',(128, 96, 0), (20, 20, 20),'A slope of frosty earth',
                             isRamp=True),
     'snow drift': TileData(False, False, 'snow drift', '~', libtcod.lightest_gray, libtcod.light_gray,
-                             'pristine, waist deep powdered snow. It will be difficult to move through until it has been crushed down.',
+                             'pristine, waist-deep powdered snow. It will be difficult to move through until it has been crushed down.',
                            consts.SNOW_COST, isFloor=True, on_step=main.step_on_snow_drift),
     'snowy ground': TileData(False, False, 'snowy ground', '.', libtcod.lightest_gray, libtcod.desaturated_amber,
                              'trampled snow, mixed with dirt', isFloor=True),
     'snowy slope': TileData(False, False, 'snowy slope', '/', libtcod.lightest_gray, libtcod.sepia,
                              'a slope covered in snow', isRamp=True),
-    'barren tree': TileData(True, True, 'barren tree', chr(157), libtcod.sepia,libtcod.lightest_gray,
-                             'a frozen, barren tree', flammable=11, isWall=True),
     'pine tree': TileData(True, True, 'pine tree', libtcod.CHAR_ARROW2_N, libtcod.darkest_green,libtcod.lightest_gray,
-                             'a pine tree, its needles ever green', flammable=2, isWall=True),
+                             'a pine tree, its needles ever green', flammable=2, isWall=True, blocks_sight_all_elevs=False),
     'ice': TileData(False, False, 'ice', '=', libtcod.lightest_blue, libtcod.light_blue,
                              'ground made of a thick sheet of ice', isFloor=True, isIce=True),
     'deep_ice': TileData(False, False, 'ice', '=', libtcod.white, libtcod.light_blue,

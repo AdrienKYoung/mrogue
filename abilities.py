@@ -284,7 +284,7 @@ data = {
 
     'ability_avalanche': {
         'name': 'avalanche',
-        'function': actions.magma_bolt,
+        'function': actions.avalanche,
         'cooldown': 20,
         'element':'cold',
         'dice' : 2,

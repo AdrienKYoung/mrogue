@@ -210,15 +210,17 @@ ENDFEATURE
 //*******************
 FEATURE chasm_bridge
 CATEGORY gtunnels
-   :::X:
+      X
+   :::.:
   ::::.:::
   ::::.::::
- X........X
+X..........X
  :::::.::::
   ::::.:::
    :::.:::
     ::.::
-     :X:
+     :.:
+      X
 ENDFEATURE
 //*******************
 //   Fighting Pit

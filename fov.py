@@ -56,7 +56,7 @@ def initialize_fov():
                         elevations.append(this_elevation)
                     # set properties for tile of different elevation
                     libtcod.map_set_properties(fov_height[elevation], x, y,
-                                               this_elevation <= elevation and not main.current_map.tiles[x][y].blocks_sight, True)
+                                               this_elevation <= elevation and not main.current_map.tiles[x][y].blocks_sight_all_elevs, True)
                 else:
                     # set properties for tile of same elevation
                     libtcod.map_set_properties(fov_height[elevation], x, y, not main.current_map.tiles[x][y].blocks_sight, True)
