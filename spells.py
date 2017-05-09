@@ -206,7 +206,7 @@ library = {
             {'stamina_cost':15,'charges':4},
             {'stamina_cost':10,'charges':5}
         ],
-        10),
+        8),
 
     'spell_flame_wall' : Spell(
         'flame wall',
@@ -227,7 +227,7 @@ library = {
             {'stamina_cost':45,'charges':2},
             {'stamina_cost':40,'charges':2}
         ],
-        10),
+        12),
 
     'spell_shatter_item' : Spell(
         'shatter item',
@@ -237,7 +237,7 @@ library = {
             {'stamina_cost':50,'charges':2}
             ,{'stamina_cost':40,'charges':3}
         ],
-        10),
+        15),
 
     'spell_magma_bolt' : Spell(
         'magma bolt',
@@ -248,7 +248,7 @@ library = {
             {'stamina_cost':50,'charges':3},
             {'stamina_cost':40,'charges':4}
         ],
-        10),
+        20),
 
     'spell_frozen_orb' : Spell(
         'frost orb',
@@ -259,7 +259,7 @@ library = {
             {'stamina_cost':20,'charges':4},
             {'stamina_cost':15,'charges':5}
         ],
-        10),
+        8),
 
     'spell_flash_frost' : Spell(
         'flash frost',
@@ -301,7 +301,7 @@ library = {
             {'stamina_cost':45,'charges':1},
             {'stamina_cost':45,'charges':2}
         ],
-        16),
+        20),
 
     'spell_hex' : Spell(
         'hex',
@@ -359,6 +359,42 @@ library = {
             {'stamina_cost':40,'charges':2}
         ],
         13
+    ),
+
+    'spell_green_touch' : Spell(
+        'green touch',
+        actions.green_touch,
+        'Creates a small patch of grass and reeds.',
+        [
+            {'stamina_cost':10,'charges':6},
+            {'stamina_cost':5,'charges':8},
+            {'stamina_cost':0,'charges':10}
+        ],
+        6
+    ),
+
+    'spell_fungal_growth' : Spell(
+        'fungal growth',
+        actions.fungal_growth,
+        'Create a Blastcap from target corpse.',
+        [
+            {'stamina_cost':25,'charges':3},
+            {'stamina_cost':20,'charges':4},
+            {'stamina_cost':15,'charges':5}
+        ],
+        8
+    ),
+
+    'spell_dragonseed' : Spell(
+        'dragonseed',
+        actions.summon_dragonweed,
+        'Plant a dragonweed sapling on a grass space. In a few turns, it will mature into a friendly dragonweed.',
+        [
+            {'stamina_cost':45,'charges':1},
+            {'stamina_cost':35,'charges':2},
+            {'stamina_cost':25,'charges':3}
+        ],
+        12
     ),
 }
 

@@ -174,6 +174,10 @@ def doom(duration=5,stacks=1):
     return StatusEffect('doom',duration, libtcod.dark_crimson, stacking_behavior='stack-refresh', message='Death comes closer...',
                         on_apply=actions.check_doom, description='At 13 stacks, this unit instantly dies.')
 
+def oiled(duration=20):
+    return StatusEffect('oiled', duration, libtcod.dark_gray, message='You are covered in oil!',
+                        description='This unit has reduced accuracy and takes triple damage from burning.', cleanseable=True)
+
 def lichform(duration=None):
     return StatusEffect('lichform',None,libtcod.darker_crimson,spell_resist_mod=1.5,resistance_mod=
         ['fire','cold','lightning','poison','radiance','dark','void','doom','slugish','curse'
@@ -195,6 +199,8 @@ def fire_tick(effect,object=None):
         if main.current_map.tiles[object.x][object.y].is_water:
             object.fighter.remove_status('burning')
         damage = effect.stacks * 3
+        if object.fighter.has_status('oiled'):
+            damage *= 3
         if object is player.instance:
             ui.message("You burn for {} damage!".format(damage),libtcod.flame)
         object.fighter.take_damage(damage)

@@ -25,6 +25,8 @@ branches = {
         'default_ramp'  : 'stone ramp',
         'scaling'       : 0,
         'loot'          : None,
+        'loot_level'    : 0,
+        'loot_dice'     : '1d1',
         'monsters'      : None,
         'generate'      : mapgen.make_map_beach,
         'map_color'     : libtcod.Color(0, 95, 191),

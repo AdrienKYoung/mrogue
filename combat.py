@@ -309,7 +309,7 @@ class Fighter:
                 self.status_effects.remove(effect)
                 return
 
-    def has_atribute(self, name):
+    def has_attribute(self, name):
         if self.owner is player.instance:
             return main.has_skill(name)
         else:
@@ -320,7 +320,9 @@ class Fighter:
         if self.base_accuracy == 0:
             return 0
         bonus = sum(equipment.accuracy_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus *  mul(effect.accuracy_mod for effect in self.status_effects))
+        bonus = int(bonus * mul(effect.accuracy_mod for effect in self.status_effects))
+        if self.has_status('oiled'):
+            bonus -= 3
         if self.owner.player_stats and main.get_equipped_in_slot(self.inventory, 'right hand'):
             bonus -= 5 * max(main.get_equipped_in_slot(self.inventory, 'right hand').str_requirement - self.owner.player_stats.str, 0)
 
@@ -584,7 +586,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
 
-        if fighter.has_atribute('attribute_rend') and target.fighter.armor - (fighter.attack_pierce + pierce_modifier) < 1:
+        if fighter.has_attribute('attribute_rend') and target.fighter.armor - (fighter.attack_pierce + pierce_modifier) < 1:
             damage_mod *= 1.5
 
         if fighter.owner is player.instance:

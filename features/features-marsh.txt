@@ -18,6 +18,7 @@
 //0   Pillar Room
 //*******************
 FEATURE pillar_room
+CATEGORY marsh
 FLAGS NOREFLECT
   _____
  __###__
@@ -33,6 +34,7 @@ ENDFEATURE
 //1   Tiny Pond
 //*******************
 FEATURE tiny_pond
+CATEGORY marsh
  __
 _--__
 _-~~--_
@@ -45,6 +47,7 @@ ENDFEATURE
 //2   Round Maze
 //*******************
 FEATURE round_maze
+CATEGORY marsh
    _________
  ___#.#####___
  _####...#.##_
@@ -65,6 +68,7 @@ ENDFEATURE
 //3      Brook
 //*******************
 FEATURE brook
+CATEGORY marsh
 ###
 #---
  #---,
@@ -83,6 +87,8 @@ ENDFEATURE
 //4    Fissure
 //*******************
 FEATURE fissure
+CATEGORY marsh gtunnels badlands
+SCRIPT create_slopes
  ...
 :::..
  ::::.....
@@ -94,6 +100,7 @@ ENDFEATURE
 //5   Verman Hut
 //*******************
 FEATURE verman_hut
+CATEGORY marsh gtunnels
 FLAGS NOSPAWNS
 DEFINE $ LOOT_LEVEL 1 CATEGORY consumables
 DEFINE 1 MONSTER_ID monster_verman
@@ -109,6 +116,7 @@ ENDFEATURE
 //6    Platform
 //*******************
 FEATURE platform
+CATEGORY marsh
 DEFAULT ,
   _______
  _::::::__
@@ -124,6 +132,7 @@ ENDFEATURE
 //7    Frog pond
 //*******************
 FEATURE frog_pond
+CATEGORY marsh
 DEFAULT ,
 DEFINE $ LOOT_LEVEL 2
 DEFINE 1 MONSTER_ID monster_giant_frog
@@ -149,6 +158,7 @@ ENDFEATURE
 //8  Reeker Field
 //*******************
 FEATURE reeker_field
+CATEGORY marsh
 DEFAULT ,
 DEFINE 1 MONSTER_ID monster_reeker
   , ,,
@@ -164,6 +174,7 @@ ENDFEATURE
 //9   Fairy Ring
 //*******************
 FEATURE fairy_ring
+CATEGORY marsh
 DEFAULT ,
 DEFINE 1 MONSTER_ID monster_blastcap
   , 1,
@@ -179,8 +190,10 @@ ENDFEATURE
 //10 Goblin Campfire
 //*******************
 FEATURE goblin_campfire
+CATEGORY marsh badlands
 DEFINE 1 MONSTER_ID monster_goblin
 DEFINE 2 GO_NAME campfire GO_DESCRIPTION a small firepit, burning low GO_CHAR ^ GO_COLOR 255 63 0 GO_BLOCKS True
+SCRIPT create_slopes
   ___
  _____
 ___1___
@@ -193,6 +206,7 @@ ENDFEATURE
 //11  Bear Ambush
 //*******************
 FEATURE bear_ambush
+CATEGORY marsh
 DEFINE 1 MONSTER_ID monster_bear
 DEFAULT ,
 SCRIPT scatter_reeds
@@ -207,6 +221,7 @@ ENDFEATURE
 //12  Goblin Fort
 //*******************
 FEATURE goblin_fort
+CATEGORY marsh
 DEFINE 1 MONSTER_ID monster_goblin_warrior
 DEFINE 2 MONSTER_ID monster_goblin_chief
 DEFINE 3 MONSTER_ID monster_goblin
@@ -261,6 +276,7 @@ ENDFEATURE
 //11   Small Hill
 //*******************
 FEATURE small_hill
+CATEGORY marsh
  _____
 __   __
 _     _
@@ -277,4 +293,16 @@ HEIGHT 1
  /.../
 
 ENDHEIGHT
+ENDFEATURE
+//*******************
+//      Chest
+//*******************
+FEATURE chest
+CATEGORY marsh badlands gtunnels forest gardens
+DEFINE $ CHEST
+_____
+_###_
+_#$#_
+_#.#_
+_____
 ENDFEATURE

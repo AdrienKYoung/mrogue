@@ -304,11 +304,13 @@ class GameObject:
                                     syntax.conjugate(self is player.instance, ('struggle', 'struggles'))))
                     web.destroy()
                     return True
+
                 door = object_at_tile(x,y, 'door')
                 if door is None: door = object_at_tile(x, y, 'locked door')
                 if door is not None and door.closed:
                     door_interact(door, self)
                     return True
+
                 fire = object_at_tile(x, y, 'Fire')
                 if fire is not None and self is player.instance and not ui.menu_y_n('Really walk into flame?'):
                     return False
@@ -334,7 +336,12 @@ class GameObject:
             self.set_position(x,y)
 
             return True
-        return False
+        else:
+            interactables = get_objects(x, y, lambda o: hasattr(o, 'interact') and o.interact and o.blocks)
+            if len(interactables) > 0:
+                interactables[0].interact(interactables[0], self)
+                return True
+            return False
 
     def player_can_see(self):
         if self.fighter is not None and self.fighter.stealth is not None and player.instance.distance_to(
@@ -730,6 +737,9 @@ def scum_glob_tick(glob):
         tile.tile_type = 'oil'
         changed_tiles.append((glob.x, glob.y))
 
+def scum_glob_on_create(obj):
+    obj.fighter.apply_status_effect(effects.oiled(duration=None))
+
 # on_create function of tunnel spiders. Creates a web at the spiders location and several random adjacent spaces
 def tunnel_spider_spawn_web(obj):
     adjacent = adjacent_tiles_diagonal(obj.x, obj.y)
@@ -749,13 +759,15 @@ def make_spiderweb(x, y):
     current_map.add_object(web)
     web.send_to_back()
 
-def raise_dead(actor,target):
+def raise_dead(actor,target, duration=None):
     if target.fighter is None and target.is_corpse:
         spawn_tile = find_closest_open_tile(target.x, target.y)
         monster = target.zombie_type if target.zombie_type is not None else 'monster_rotting_zombie'
         zombie = spawn_monster(monster, spawn_tile[0], spawn_tile[1])
         zombie.fighter.team = actor.fighter.team
         zombie.behavior.follow_target = actor
+        if duration is not None:
+            zombie.summon_time = duration
         target.destroy()
         ui.message('A corpse walks again...', libtcod.dark_violet)
 
@@ -1302,7 +1314,7 @@ def create_item(name, material=None, quality=''):
         go.name = equipment_component.material + ' ' + go.name
     if hasattr(equipment_component, 'quality') and equipment_component.quality != '':
         go.name = equipment_component.quality + ' ' + go.name
-    go.name = go.name.title()
+    go.name = string.capwords(go.name)
     return go
 
 
@@ -1387,20 +1399,37 @@ def create_fire(x,y,temp):
         obj.destroy()
     changed_tiles.append((x, y))
 
+def chest_interact(chest, actor):
+    if actor is player.instance:
+        if lock_interact(actor, 'chest'):
+            loot_drop = mapgen.create_random_loot(loot_level=dungeon.branches[current_map.branch]['loot_level'] + 2)
+            if loot_drop is not None:
+                loot_drop.x = chest.x
+                loot_drop.y = chest.y
+                current_map.add_object(loot_drop)
+                loot_drop.send_to_back()
+            chest.destroy()
+
+def lock_interact(actor=None, object_name='object'):
+    if actor is not None and actor is not player.instance:
+        return False
+    key = player.get_key()
+    if key is not None:
+        if ui.menu_y_n('This %s is locked. Use your glass key?' % object_name):
+            ui.message('The glass key fits into the lock and you hear a click. The key dissolves into sand.',
+                       libtcod.yellow)
+            player.instance.fighter.inventory.remove(key)
+            return True
+    else:
+        ui.menu('This %s is locked.' % object_name, ['Back'])
+    return False
+
 def door_interact(door, actor):
     if not is_blocked(door.x, door.y):
         if door.closed:
             do_open = False
             if door.locked:
-                if actor is player.instance:
-                    key = player.get_key()
-                    if key is not None:
-                        if ui.menu_y_n('This door is locked. Use your glass key?'):
-                            do_open = True
-                            ui.message('The glass key fits into the lock and you hear a click. Then it dissolves into sand.', libtcod.yellow)
-                            player.instance.fighter.inventory.remove(key)
-                    else:
-                        ui.menu('This door is locked.', ['Back'])
+                do_open = lock_interact(actor, 'door')
             else:
                 do_open = True
             if do_open:

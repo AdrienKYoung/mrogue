@@ -43,16 +43,23 @@ table = {
 
     'weapons_2' : [
         'weapon_dagger',
+        'weapon_messer',
         'weapon_hatchet',
         'weapon_longsword',
+        'weapon_greatsword',
         'weapon_mace',
+        'weapon_warhammer',
+        'weapon_dane_axe',
         'weapon_spear',
+        'weapon_halberd',
         'weapon_pickaxe',
+        'weapon_katar',
     ],
 
     'armor_0': [
         'equipment_shield',
         'equipment_leather_armor',
+        'equipment_cloth_robes',
         'equipment_iron_helm',
         'equipment_gauntlets'
     ],
@@ -60,6 +67,7 @@ table = {
     'armor_1': [
         'equipment_shield',
         'equipment_leather_armor',
+        'equipment_cloth_robes',
         'equipment_iron_helm',
         'equipment_greaves',
         'equipment_gauntlets',
@@ -94,7 +102,23 @@ table = {
         'essence_water',
         'essence_water',
         'essence_fire',
+        'essence_air',
         'essence_cold',
+        'essence_arcane',
+    ],
+
+     'consumables_2': [
+        'essence_life',
+        'essence_life',
+        'essence_life',
+        'essence_earth',
+        'essence_water',
+        'essence_fire',
+        'essence_air',
+        'essence_cold',
+        'essence_arcane',
+        'essence_death',
+        'essence_radiant',
         'scroll_forge',
     ],
 
@@ -146,7 +170,16 @@ def item_from_table(branch,loot_table=None):
         return None
 
     if not loot_table in table:
-        return None
+        split = loot_table.split('_')
+        i = int(split[1]) - 1
+        while i >= 0:
+            lower = split[0]+'_'+str(i)
+            if lower in table:
+                loot_table = lower
+                break
+            i -= 1
+        if loot_table not in table:
+            return None
 
     loot_level=int(loot_table.split('_')[1])
     category=loot_table.split('_')[0]
@@ -1255,10 +1288,10 @@ proto = {
         'name'          : 'Lesser Book of Fire',
         'category'      : 'book',
         'char'          : '#',
-        'color'         : libtcodpy.flame,
+        'color'         : spells.essence_colors['fire'],
         'type'          : 'item',
         'slot'          : 'left hand',
-        'description'   : 'A basic book of fire magic',
+        'description'   : 'A tome bound in red leather. The faint spell of smoke rises from its singed pages.',
         'essence':'fire',
         'level' : 1,
         'spells': [
@@ -1282,10 +1315,10 @@ proto = {
         'name'          : 'Book of Blizzards',
         'category'      : 'book',
         'char'          : '#',
-        'color'         : libtcodpy.lightest_gray,
+        'color'         : spells.essence_colors['cold'],
         'type'          : 'item',
         'slot'          : 'left hand',
-        'description'   : 'A basic book of ice magic',
+        'description'   : 'A book of the magic of winter. Its very pages are cold to the touch.',
         'essence': 'cold',
         'level' : 1,
         'spells': [
@@ -1309,10 +1342,10 @@ proto = {
         'name'          : 'The Dead Walk',
         'category'      : 'book',
         'char'          : '#',
-        'color'         : libtcodpy.dark_violet,
+        'color'         : spells.essence_colors['death'],
         'type'          : 'item',
         'slot'          : 'left hand',
-        'description'   : 'A basic book of death magic',
+        'description'   : 'A sinister grimoire holding the secrets of Death magic. The seal of the Cult of Eternity is stamped on its cover.',
         'essence': 'death',
         'level' : 1,
         'spells': [
@@ -1325,6 +1358,33 @@ proto = {
         'levels': [
             'spell_hex', 'spell_defile', 'spell_hex', 'spell_shackles_of_the_dead', 'spell_defile', 'spell_sacrifice',
             'spell_corpse_dance', 'spell_hex','spell_defile', 'spell_shackles_of_the_dead',
+            'spell_corpse_dance', 'spell_sacrifice', 'spell_corpse_dance'
+        ],
+        'level_costs': [
+            1,1,1,2,2,2,3,3,3,3,4,4,4
+        ]
+    },
+
+    'book_lesser_life' : {
+        'name'          : "The Gardener's Guide",
+        'category'      : 'book',
+        'char'          : '#',
+        'color'         : spells.essence_colors['life'],
+        'type'          : 'item',
+        'slot'          : 'left hand',
+        'description'   : 'A thin book of Life magic, its vivid green cover stained with soil.',
+        'essence': 'life',
+        'level' : 4,
+        'spells': [
+            'spell_green_touch',
+            'spell_fungal_growth',
+            'spell_dragonseed',
+            'spell_sacrifice',
+            'spell_corpse_dance'
+        ],
+        'levels': [
+            'spell_green_touch', 'spell_fungal_growth', 'spell_green_touch', 'spell_dragonseed', 'spell_fungal_growth', 'spell_sacrifice',
+            'spell_corpse_dance', 'spell_green_touch','spell_fungal_growth', 'spell_dragonseed',
             'spell_corpse_dance', 'spell_sacrifice', 'spell_corpse_dance'
         ],
         'level_costs': [
@@ -1345,9 +1405,9 @@ proto = {
         'category' : 'essence',
         'essence_type' : 'cold'
     },
-    'essence_wind' : {
+    'essence_air' : {
         'category' : 'essence',
-        'essence_type' : 'wind'
+        'essence_type' : 'air'
     },
     'essence_earth' : {
         'category' : 'essence',

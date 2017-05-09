@@ -127,7 +127,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
         libtcod.console_set_default_foreground(menu_window, libtcod.white)
         x = 0
         for category in categories:
-            libtcod.console_print(menu_window, 5 + x, draw_height, category.title())
+            libtcod.console_print(menu_window, 5 + x, draw_height, string.capwords(category))
             x += col_widths[category]
         draw_height += 1
         libtcod.console_set_default_foreground(menu_window, libtcod.gray)
@@ -366,7 +366,7 @@ def get_names_under_mouse():
 
     names = ', '.join(names)
 
-    return names.title()
+    return string.capwords(names)
 
 
 def message(new_msg, color=libtcod.white):

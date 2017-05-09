@@ -141,6 +141,12 @@ data = {
         'cooldown': 3
     },
 
+    'ability_dragonweed_pull': {
+        'name': 'Dragonweed Pull',
+        'function': actions.dragonweed_pull,
+        'cooldown': 1
+    },
+
     'ability_silence': {
         'name': 'Silence',
         'function': actions.silence,
@@ -316,7 +322,7 @@ data = {
 
     'ability_shackles_of_the_dead': {
         'name': 'shackles of the dead',
-        'function': actions.hex,
+        'function': actions.shackles_of_the_dead,
         'cooldown': 20,
         'element':'death',
         'dice' : 0,
@@ -328,7 +334,7 @@ data = {
 
     'ability_sacrifice': {
         'name': 'profane',
-        'function': actions.hex,
+        'function': actions.sacrifice,
         'cooldown': 10,
         'element':'death',
         'dice' : 2,
@@ -339,7 +345,7 @@ data = {
 
     'ability_corpse_dance': {
         'name': 'corpse dance',
-        'function': actions.hex,
+        'function': actions.corpse_dance,
         'cooldown': 40,
         'element':'death',
         'dice' : 0,
@@ -349,6 +355,31 @@ data = {
         'radius':3,
         'cast_time':3,
         'buff_duration':50
+    },
+
+    'ability_green_touch': {
+        'name': 'green touch',
+        'function': actions.green_touch,
+        'cooldown': 5,
+        'element':'life',
+        'range':8,
+        'radius':3,
+    },
+
+    'ability_fungal_growth': {
+        'name': 'fungal growth',
+        'function': actions.fungal_growth,
+        'cooldown': 10,
+        'element':'life',
+        'range':4,
+    },
+
+    'ability_summon_dragonweed': {
+        'name': 'summon dragonweed',
+        'function': actions.summon_dragonweed,
+        'cooldown': 5,
+        'element':'life',
+        'range':2,
     },
 }
 

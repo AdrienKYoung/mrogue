@@ -24,6 +24,7 @@ import Queue
 import copy
 import player
 import dungeon
+import loot
 
 angles = [0,
           0.5 * math.pi,
@@ -646,7 +647,6 @@ def apply_object(x, y, data):
         map.add_object(new_obj)
 
 def apply_item(x, y, data):
-    import loot
     loot_level = None
     category = None
     item_id = None
@@ -654,6 +654,9 @@ def apply_item(x, y, data):
     material = None
     if len(data) > 1:
         for i in range(1, len(data)):
+            if data[i] == 'CHEST':
+                map.add_object(create_chest(x, y))
+                return
             if data[i] == 'LOOT_LEVEL':
                 loot_level = int(data[i + 1])
             elif data[i] == 'CATEGORY':
@@ -667,35 +670,41 @@ def apply_item(x, y, data):
     if item_id:
         main.spawn_item(item_id, x, y, material=material, quality=quality)
     else:
-        table = None
-        tables = dungeon.branches[map.branch]['loot']
-        if tables is not None:
-            if category is None and loot_level is None:
-                # choose a random loot table for this branch
-                table = tables.keys()[libtcod.random_get_int(0, 0, len(tables.keys()) - 1)]
-            elif category is not None and loot_level is None:
-                # choose the first table matching this category
-                for t in tables:
-                    if t.startswith(category):
-                        table = t
-                        break
-            elif category is None and loot_level is not None:
-                # choose a random table. Set its loot level to match.
-                table = tables.keys()[libtcod.random_get_int(0, 0, len(tables.keys()) - 1)]
-                table = table.split('_')[0]
-                table += '_%d' % loot_level
-            else:
-                # we have both a category and a loot level
-                table = category + '_' + str(loot_level)
+        item = create_random_loot(category=category, loot_level=loot_level)
+        if item is not None:
+            item.x = x
+            item.y = y
+            map.add_object(item)
+            item.send_to_back()
 
-        if table is not None:
-            item = loot.item_from_table(map.branch, table)
-            if item is not None:
-                item.x = x
-                item.y = y
-                map.add_object(item)
-                item.send_to_back()
+def create_random_loot(category=None, loot_level=None):
+    table = None
+    tables = dungeon.branches[map.branch]['loot']
+    if tables is not None:
+        if category is None and loot_level is None:
+            # choose a random loot table for this branch
+            table = tables.keys()[libtcod.random_get_int(0, 0, len(tables.keys()) - 1)]
+        elif category is not None and loot_level is None:
+            # choose the first table matching this category
+            for t in tables:
+                if t.startswith(category):
+                    table = t
+                    break
+        elif category is None and loot_level is not None:
+            # choose a random table. Set its loot level to match.
+            table = tables.keys()[libtcod.random_get_int(0, 0, len(tables.keys()) - 1)]
+            table = table.split('_')[0]
+            table += '_%d' % loot_level
+        else:
+            # we have both a category and a loot level
+            table = category + '_' + str(loot_level)
 
+    if table is not None:
+        item = loot.item_from_table(map.branch, table)
+        if item is not None:
+            return item
+        else:
+            return None
 
 def change_map_tile(x, y, tile_type, no_overwrite=False, hard_override=False):
     if not main.in_bounds(x, y):
@@ -905,6 +914,17 @@ def create_blightweed(x, y):
                            'A cursed, twisted plant bristling with menacing, blood-red thorns. It catches and shreds the'
                            ' armor of those who attempt to pass through it.', on_step=main.step_on_blightweed, burns=True)
     map.add_object(weed)
+
+
+def create_chest(x, y):
+    obj = main.get_objects(x, y)
+    if len(obj) > 0:
+        return None # object in the way
+    chest = main.GameObject(x, y, '$', 'locked chest', libtcod.yellow, always_visible=True,
+                            description='A sturdy wooden chest, secured by a lock. What loot might be inside?',
+                            blocks_sight=False, blocks=True, burns=False, interact=main.chest_interact,
+                            background_color=libtcod.dark_sepia)
+    return chest
 
 
 def create_door(x, y, locked=False):
@@ -1418,8 +1438,8 @@ def make_map_marsh():
     feature_count = libtcod.random_get_int(0, 0, 10)
     for i in range(feature_count):
         tile = choose_random_tile(open_tiles)
-        feature_index = libtcod.random_get_int(0, 0, len(feature_categories['default']) - 1)
-        feature_name = feature_categories['default'][feature_index].name
+        feature_index = libtcod.random_get_int(0, 0, len(feature_categories['marsh']) - 1)
+        feature_name = feature_categories['marsh'][feature_index].name
         create_feature(tile[0], tile[1], feature_name, open_tiles)
 
     active_branch = dungeon.branches[map.branch]

@@ -16,6 +16,7 @@
 
 import log
 import collections
+import string
 
 class PlayerStats:
 
@@ -111,7 +112,7 @@ loadouts = {
         'spr':10,
         'con':8,
         'inventory':[
-            ['book_lesser_cold', 'book_lesser_fire'],
+            ['book_lesser_cold', 'book_lesser_fire', 'book_lesser_life'],
             'charm_raw',
             #'charm_farmers_talisman',
             #'charm_holy_symbol',
@@ -160,7 +161,7 @@ def create(loadout):
         i = None
         prototype = item
         if not isinstance(item,basestring):
-            idx = ui.menu("Choose a starting item",[loot.proto[a]['name'].title() for a in item],30,x_center=consts.SCREEN_WIDTH / 2)
+            idx = ui.menu("Choose a starting item",[string.capwords(loot.proto[a]['name']) for a in item],30,x_center=consts.SCREEN_WIDTH / 2)
             if idx is None:
                 return 'cancelled'
             prototype = item[idx]

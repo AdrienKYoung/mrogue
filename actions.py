@@ -679,7 +679,7 @@ def defile(actor=None,target=None):
         target = main.object_at_coords(x, y)
     if target is not None:
         if target.is_corpse:
-            main.raise_dead(actor,target)
+            main.raise_dead(actor,target, duration=100)
         elif target.fighter is not None and (target.fighter.subtype == 'undead' or target.fighter.subtype == 'fiend'):
             target.fighter.heal(int(target.fighter.max_hp / 3))
             ui.message("Dark magic strengthens {}!".format(target.name))
@@ -744,6 +744,72 @@ def corpse_dance(actor=None,target=None):
         if obj is not None and obj.fighter.team == 'ally' and obj.fighter.subtype == 'undead':
             obj.fighter.apply_status_effect(effects.swiftness(spell['buff_duration']))
             obj.fighter.apply_status_effect(effects.berserk(spell['buff_duration']))
+    return 'success'
+
+def green_touch(actor=None, target=None):
+    spell = abilities.data['ability_green_touch']
+    if actor is None:
+        actor = player.instance
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        if x is None: return 'cancelled'
+    else:
+        x = target.x
+        y = target.y
+
+    import mapgen
+    t = main.current_map.tiles[x][y]
+    if not t.is_floor:
+        if actor is player.instance:
+            ui.message('You cannot grow grass here.', libtcod.gray)
+        return 'cancelled'
+    if actor is player.instance or fov.player_can_see(x, y):
+        ui.message('Grass springs from the ground!', spells.essence_colors['life'])
+    grass = mapgen.create_terrain_patch((x, y), 'grass floor', min_patch=4, max_patch=12)
+    mapgen.scatter_reeds(grass, probability=30)
+    for tile in grass:
+        main.changed_tiles.append(tile)
+        fov.set_fov_properties(tile[0], tile[1], len(main.get_objects(tile[0], tile[1], lambda o: o.blocks_sight)) > 0)
+    return 'success'
+
+def fungal_growth(actor=None, target=None):
+    spell = abilities.data['ability_fungal_growth']
+    if actor is None:
+        actor = player.instance
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        if x is None: return 'cancelled'
+        corpse = main.get_objects(x, y, lambda o: o.is_corpse)
+        if len(corpse) == 0:
+            ui.message('No suitable corpses here.', libtcod.gray)
+            return 'cancelled'
+        target = corpse[0]
+
+    if not target.is_corpse:
+        return 'failure'
+    main.spawn_monster('monster_blastcap', target.x, target.y)
+    if actor is player.instance or fov.player_can_see(target.x, target.y):
+        ui.message('A blastcap grows from %s.' % syntax.name(target), spells.essence_colors['life'])
+    target.destroy()
+    return 'success'
+
+def summon_dragonweed(actor=None, target=None):
+    spell = abilities.data['ability_summon_dragonweed']
+    if actor is None:
+        actor = player.instance
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        if x is None: return 'cancelled'
+    else:
+        (x, y) = main.find_closest_open_tile(target.x, target.y)
+    tile = main.current_map.tiles[x][y]
+    if tile.tile_type != 'grass floor':
+        if actor is player.instance:
+            ui.message('The dragonseed must be placed on grass.', libtcod.gray)
+        return 'cancelled'
+    summon_ally('monster_dragonweed', 10 + libtcod.random_get_int(0, 0, 20), x, y)
+    if actor is player.instance or fov.player_can_see(x, y):
+        ui.message('A dragonweed blooms!', spells.essence_colors['life'])
     return 'success'
 
 def battle_cry(actor=None,target=None):
@@ -981,12 +1047,26 @@ def invulnerable():
 def frog_tongue(actor, target):
     if actor.distance_to(target) <= consts.FROG_TONGUE_RANGE and fov.monster_can_see_object(actor, target):
         if target.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, target.x, target.y) == (target.x, target.y):
-            ui.message("The frog's tongue lashes out at you!", libtcod.dark_green)
+            ui.message("The frog's tongue lashes out at %s!" % syntax.name(target), libtcod.dark_green)
             result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=1.5, verb=('pull', 'pulls'))
             if result == 'hit':
                 beam = main.beam(actor.x, actor.y, target.x, target.y)
                 pull_to = beam[max(len(beam) - 3, 0)]
                 target.set_position(pull_to[0], pull_to[1])
+            return 'success'
+    return 'didnt-take-turn'
+
+def dragonweed_pull(actor, target):
+    if actor.distance_to(target) <= 3 and fov.monster_can_see_object(actor, target):
+        if target.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, target.x, target.y) == (target.x, target.y):
+            ui.message("The dragonweed's stem lashes out at %s!" % syntax.name(target), libtcod.dark_green)
+            result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=0.75, verb=('pull', 'pulls'))
+            if result == 'hit':
+                beam = main.beam(actor.x, actor.y, target.x, target.y)
+                pull_to = beam[max(len(beam) - 3, 0)]
+                target.set_position(pull_to[0], pull_to[1])
+                if target.fighter is not None and main.roll_dice('1d10') <= 5:
+                    target.fighter.apply_status_effect(effects.immobilized(duration=2))
             return 'success'
     return 'didnt-take-turn'
 
@@ -1172,6 +1252,14 @@ def poison_attack_1(actor,target,damage):
     if main.roll_dice('1d10') > target.fighter.armor:
         target.fighter.apply_status_effect(effects.poison())
 
+def oil_attack(actor, target, damage):
+    if target.fighter is not None:
+        target.fighter.apply_status_effect(effects.oiled())
+
+def immobilize_attack(actor, target, damage):
+    if target.fighter is not None and main.roll_dice('1d10') <= 5:
+        target.fighter.apply_status_effect(effects.immobilized(duration=2))
+
 def potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)
 
@@ -1216,18 +1304,21 @@ def create_teleportal(x, y):
                    spells.essence_colors['arcane'])
     return 'success'
 
-def summon_ally(name, duration):
+def summon_ally(name, duration, x=None, y=None):
     adj = main.adjacent_tiles_diagonal(player.instance.x, player.instance.y)
 
     # Get viable summoning position. Return failure if no position is available
-    summon_positions = []
-    for tile in adj:
-        if not main.is_blocked(tile[0], tile[1]):
-            summon_positions.append(tile)
-    if len(summon_positions) == 0:
-        ui.message('There is no room to summon an ally here.')
-        return
-    summon_pos = summon_positions[libtcod.random_get_int(0, 0, len(summon_positions) - 1)]
+    if x is None or y is None:
+        summon_positions = []
+        for tile in adj:
+            if not main.is_blocked(tile[0], tile[1]):
+                summon_positions.append(tile)
+        if len(summon_positions) == 0:
+            ui.message('There is no room to summon an ally here.')
+            return
+        summon_pos = summon_positions[libtcod.random_get_int(0, 0, len(summon_positions) - 1)]
+    else:
+        summon_pos = (x, y)
 
     # Select monster type - default to goblin
     import monsters
