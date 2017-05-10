@@ -161,7 +161,7 @@ def create(loadout):
         i = None
         prototype = item
         if not isinstance(item,basestring):
-            idx = ui.menu("Choose a starting item",[string.capwords(loot.proto[a]['name']) for a in item],30,x_center=consts.SCREEN_WIDTH / 2)
+            idx = ui.menu("Choose a starting item",[string.capwords(items.table()[a]['name']) for a in item],30,x_center=consts.SCREEN_WIDTH / 2)
             if idx is None:
                 return 'cancelled'
             prototype = item[idx]
@@ -820,3 +820,4 @@ import ui
 import perks
 import actions
 import abilities
+import items

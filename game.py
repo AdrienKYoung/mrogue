@@ -1241,7 +1241,7 @@ def spawn_essence(x,y,type):
 
 
 def create_item(name, material=None, quality=''):
-    p = loot.proto[name]
+    p = items.table()[name]
 
     if p['category'] == 'essence':
         essence_pickup = GameObject(0, 0, '*', 'mote of ' + p['essence_type'] + ' essence',
@@ -1336,7 +1336,7 @@ def set_quality(equipment, quality):
 
     # update name
     go = equipment.owner
-    go.name = loot.proto[equipment.base_id]['name']
+    go.name = items.table()[equipment.base_id]['name']
     if hasattr(equipment, 'material'):
         go.name = equipment.material + ' ' + go.name
     if hasattr(equipment, 'quality') and equipment.quality != '':
@@ -1590,7 +1590,7 @@ def get_loot(monster):
     loot_table = monster.loot_table
     drop = loot_table[libtcod.random_get_int(0,0,len(loot_table) - 1)]
     if drop:
-        proto = loot.proto[drop]
+        proto = items.table()[drop]
         item = Item(category=proto['category'], use_function=proto['on_use'], type=proto['type'])
         return GameObject(monster.owner.x, monster.owner.y, proto['char'], proto['name'], proto['color'], item=item)
 
@@ -1951,6 +1951,7 @@ import combat
 import terrain
 import equipment
 import charms
+import items
 
 # Globals
 
