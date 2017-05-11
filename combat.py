@@ -315,6 +315,9 @@ class Fighter:
         else:
             return name in self.attributes
 
+    def has_flag(self, flag):
+        return self.monster_flags is not None and self.monster_flags & flag == flag
+
     @property
     def accuracy(self):
         if self.base_accuracy == 0:

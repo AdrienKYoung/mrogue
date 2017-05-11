@@ -512,9 +512,14 @@ def move_or_attack(dx, dy, ctrl=False):
     else:
         target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
         if target is not None:
+            import monsters
             if target.fighter.team == 'ally':
-                value = instance.swap_positions(target)
-                return value
+                if target.fighter.has_flag(monsters.IMMOBILE):
+                    ui.message('%s cannot swap places with you.' % syntax.name(target).capitalize())
+                    return False
+                else:
+                    value = instance.swap_positions(target)
+                    return value
             else:
                 success = instance.fighter.attack(target) != 'failed'
                 if success and target.fighter:

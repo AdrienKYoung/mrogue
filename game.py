@@ -946,7 +946,7 @@ def monster_death(monster):
 
     ui.message('%s is dead!' % syntax.name(monster).capitalize(), libtcod.red)
 
-    if monster.fighter.monster_flags & monsters.NO_CORPSE == monsters.NO_CORPSE:
+    if monster.fighter.has_flag(monsters.NO_CORPSE):
         monster.destroy()
     elif monster.summon_time is not None:
         monster.destroy()

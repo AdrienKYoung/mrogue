@@ -805,12 +805,31 @@ def summon_dragonweed(actor=None, target=None):
     tile = main.current_map.tiles[x][y]
     if tile.tile_type != 'grass floor':
         if actor is player.instance:
-            ui.message('The dragonseed must be placed on grass.', libtcod.gray)
+            ui.message('The dragonseed must be planted on grass.', libtcod.gray)
         return 'cancelled'
-    summon_ally('monster_dragonweed', 10 + libtcod.random_get_int(0, 0, 20), x, y)
+    seed = main.GameObject(x, y, 'w', 'dragonweed sapling', libtcod.dark_chartreuse,
+                           description='A small, scaly blulb surrounded by sharp, thin leaves. In a few turns, '
+                                       'it will grow into a full-sized Dragonweed.')
+    main.current_map.add_object(seed)
+    seed_ticker = main.Ticker(4, _dragonseed_ticker)
+    seed_ticker.seed = seed
+    main.current_map.tickers.append(seed_ticker)
     if actor is player.instance or fov.player_can_see(x, y):
-        ui.message('A dragonweed blooms!', spells.essence_colors['life'])
+        ui.message('A dragonseed is planted...', libtcod.dark_chartreuse)
     return 'success'
+
+def _dragonseed_ticker(ticker):
+    dead_flag = False
+    if ticker.ticks >= ticker.max_ticks:
+        ticker.dead = True
+        ui.message("The dragonweed sapling matures.", libtcod.dark_chartreuse)
+        x = ticker.seed.x
+        y = ticker.seed.y
+        ticker.seed.destroy()
+        for obj in main.get_objects(x, y, lambda o: o.blocks):
+            t = main.find_closest_open_tile(x, y)
+            obj.set_position(t[0], t[1])
+        summon_ally('monster_dragonweed', 10 + libtcod.random_get_int(0, 0, 20), x, y)
 
 def battle_cry(actor=None,target=None):
     if actor is None:

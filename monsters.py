@@ -23,6 +23,7 @@ import actions
 
 # Monster Flags
 NO_CORPSE = 1
+IMMOBILE = 2
 
 proto = {
     'monster_target': {
@@ -307,7 +308,7 @@ proto = {
         'description': 'A short, stocky fungus that emits puffs of foul-smelling gas.',
         'weaknesses' : ['fire'],
         'resistances': ['confusion', 'stunned'],
-        'essence': [(65, 'life')],
+        'essence': [(25, 'life')],
         'flags' : NO_CORPSE,
         'subtype':'plant',
     },
@@ -769,8 +770,8 @@ proto = {
                        'menacingly. It can grab prey from a distance and strangle it when it is near.',
         'weaknesses' : ['fire'],
         'shred': 2,
-        'flags' : NO_CORPSE,
-        'resistances': ['confusion', 'stunned'],
+        'flags' : NO_CORPSE | IMMOBILE,
+        'resistances': ['confusion', 'stunned', 'poisoned'],
         'subtype' : 'plant',
         'body_type' : 'plant',
         'attributes' : ['ability_dragonweed_pull'],
