@@ -382,7 +382,7 @@ class Fighter:
         if weapon is not None:
             flat_bonus = weapon.shred_bonus
 
-        flat_bonus += sum(equipment.shred_bonus for equipment in main.get_all_equipped(self.inventory))
+        flat_bonus += sum(equipment.shred_bonus for equipment in main.get_all_equipped(self.inventory) if equipment.category != "weapon")
         bonus = int(mul(effect.shred_mod for effect in self.status_effects))
         return max((self.base_shred + flat_bonus) * bonus, 0)
 
@@ -394,7 +394,7 @@ class Fighter:
         if weapon is not None:
             flat_bonus = weapon.guaranteed_shred_bonus
 
-        flat_bonus += sum(equipment.guaranteed_shred_bonus for equipment in main.get_all_equipped(self.inventory))
+        flat_bonus += sum(equipment.guaranteed_shred_bonus for equipment in main.get_all_equipped(self.inventory) if equipment.category != "weapon")
         return max((self.base_shred + flat_bonus), 0)
 
     def attack_pierce(self,weapon=None):
@@ -406,7 +406,7 @@ class Fighter:
             flat_bonus = weapon.pierce_bonus
         bonus = int(mul(effect.pierce_mod for effect in self.status_effects))
 
-        flat_bonus += sum(equipment.pierce_bonus for equipment in main.get_all_equipped(self.inventory))
+        flat_bonus += sum(equipment.pierce_bonus for equipment in main.get_all_equipped(self.inventory) if equipment.category != "weapon")
         return max((self.base_shred + flat_bonus) * bonus, 0)
 
     @property
@@ -704,7 +704,8 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
             # Shred armor
-            for i in range(fighter.attack_shred(weapon) + shred_modifier):
+            shred = fighter.attack_shred(weapon) + shred_modifier
+            for i in range(shred):
                 if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
                     target.fighter.shred += 1
             target.fighter.shred += min(fighter.attack_guaranteed_shred(weapon) + guaranteed_shred_modifier, target.fighter.armor)

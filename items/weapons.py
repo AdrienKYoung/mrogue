@@ -23,6 +23,25 @@ table = {
         'attack_delay'       : 14,
         'crit_bonus'         : 1.5
     },
+    'weapon_rapier': {
+        'name'               : 'rapier',
+        'category'           : 'weapon',
+        'subtype'            : 'sword',
+        'damage_type'        : 'stabbing',
+        'char'               : '/',
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               :'right hand',
+        'description'        : 'A light, long, basket-hilted sword made for dueling',
+        'stamina_cost'       : 6,
+        'str_requirement'    : 12,
+        'shred'              : 1,
+        'accuracy'           : 1,
+        'weapon_dice'        : '2d6',
+        'str_dice'           : 2,
+        'attack_delay'       : 12,
+        'crit_bonus'         : 2.0
+    },
     'weapon_greatsword': { #called a spadone or montante in historical circles, but no one will recognize that
         'name'               : 'greatsword',
         'category'           : 'weapon',
@@ -275,7 +294,7 @@ table = {
     'weapon_crossbow': {
         'name'              : 'crossbow',
         'category'          : 'weapon',
-        'damage_type'       : 'piercing',
+        'damage_type'       : 'stabbing',
         'subtype'           : 'ranged',
         'char'              : chr(23),
         'color'             : libtcodpy.yellow,

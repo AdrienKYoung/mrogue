@@ -434,7 +434,7 @@ weapon_materials = {
 armor_materials = {
     ''              :   {},
     'reinforced'    :   {'resistance':'slashing'},
-    'hardened'      :   {'resistance':'piercing'},
+    'hardened'      :   {'resistance':'stabbing'},
     'padded'        :   {'resistance':'bludgeoning'},
     'fire-proof'    :   {'resistance':'fire'},
     'insulated'     :   {'resistance':'lightning'},
