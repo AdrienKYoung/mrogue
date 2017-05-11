@@ -28,7 +28,7 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
-                 resistances=[], modifiers = {}, base_id=None,
+                 resistances=[], modifiers = {}, base_id=None, _range=1,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0):
         self.is_equipped = False
         self.slot = slot
@@ -60,6 +60,7 @@ class Equipment:
         self._shred_bonus = shred_bonus
         self._guaranteed_shred_bonus = guaranteed_shred_bonus
         self._pierce_bonus = pierce
+        self.range = _range
 
         self._accuracy_bonus = accuracy
         self._crit_bonus = crit_bonus
@@ -250,7 +251,7 @@ class Equipment:
             libtcod.console_print(console, x, y + print_height, acc_str + str(self.crit_bonus))
             print_height += 1
         if self.attack_delay != 0:
-            attacks = max(round(float(player.instance.fighter.attack_speed) / float(self.attack_delay), 1), 1.0)
+            attacks = max(round(float(player.instance.fighter.attack_speed()) / float(self.attack_delay), 1), 1.0)
             libtcod.console_print(console, x, y + print_height, 'Attack Speed: ' + str(attacks))
             print_height += 1
         if self.evasion_bonus != 0:

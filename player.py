@@ -77,7 +77,7 @@ loadouts = {
             'weapon_dagger',
             'equipment_leather_armor',
             'glass_key',
-            'treasure_bejeweled_chalice'
+            'weapon_crossbow'
         ],
         'description' : "Nimble melee fighter. Starts with excellent agility."
     },

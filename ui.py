@@ -598,12 +598,12 @@ def render_side_panel(acc_mod=1.0):
 
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
-        s = 'Your Accuracy: %d%%' % int(100.0 * combat.get_chance_to_hit(selected_monster, player.instance.fighter.accuracy * acc_mod))
+        s = 'Your Accuracy: %d%%' % int(100.0 * combat.get_chance_to_hit(selected_monster, player.instance.fighter.accuracy() * acc_mod))
         s += '%'  # Yeah I know I suck with string formatting. Whatever, this works.  -T
         libtcod.console_print(side_panel, 2, drawHeight, s)
         drawHeight += 1
-        if selected_monster.fighter.accuracy > 0:
-            s = "Its Accuracy : %d%%" % int(100.0 * combat.get_chance_to_hit(player.instance, selected_monster.fighter.accuracy))
+        if selected_monster.fighter.accuracy() > 0:
+            s = "Its Accuracy : %d%%" % int(100.0 * combat.get_chance_to_hit(player.instance, selected_monster.fighter.accuracy()))
             s += '%'
             libtcod.console_print(side_panel, 2, drawHeight, s)
         else:

@@ -30,7 +30,7 @@ class Ability:
     def use(self, actor=None, target=None):
         if self.current_cd < 1:
             result = self.function(actor, target)
-            if result != 'didnt-take-turn':
+            if result != 'didnt-take-turn' or result != 'cancelled':
                 self.current_cd = self.cooldown
         else:
             if actor is player.instance:
@@ -381,6 +381,13 @@ data = {
         'element':'life',
         'range':2,
     },
+
+    'ability_off_hand_shoot': {
+        'name': 'Off Hand Shot',
+        'function': actions.offhand_shot,
+        'cooldown': 20,
+        'range': 10
+    }
 }
 
 vermin_summons = [

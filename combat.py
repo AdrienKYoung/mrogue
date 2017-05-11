@@ -94,11 +94,11 @@ class Fighter:
         # Print accuracy
         if self.owner is not player.instance:
             libtcod.console_set_default_foreground(console, libtcod.white)
-            s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(self.owner, player.instance.fighter.accuracy))
+            s = 'Your Accuracy: %d%%' % int(100.0 * get_chance_to_hit(self.owner, player.instance.fighter.accuracy()))
             s += '%'
             libtcod.console_print(console, x, y + print_height, s)
             print_height += 1
-            s = '%s Accuracy: %d%%' % (syntax.pronoun(self.owner.name, possesive=True).capitalize(), int(100.0 * get_chance_to_hit(player.instance, self.accuracy)))
+            s = '%s Accuracy: %d%%' % (syntax.pronoun(self.owner.name, possesive=True).capitalize(), int(100.0 * get_chance_to_hit(player.instance, self.accuracy())))
             s += '%'
             libtcod.console_print(console, x, y + print_height, s)
             print_height += 1
@@ -165,7 +165,7 @@ class Fighter:
     def calculate_attack_count(self):
 
         if self.owner is player.instance:
-            speed = self.attack_speed
+            speed = self.attack_speed()
         else:
             return 1  # monsters always get 1 attack per turn (though their turns may be faster)
 
@@ -318,26 +318,38 @@ class Fighter:
     def has_flag(self, flag):
         return self.monster_flags is not None and self.monster_flags & flag == flag
 
-    @property
-    def accuracy(self):
+    def accuracy(self, weapon=None):
+        if weapon is None:
+            weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
+
+        flat_bonus = 0
+        if weapon is not None:
+            flat_bonus = weapon.accuracy_bonus
+
         if self.base_accuracy == 0:
             return 0
-        bonus = sum(equipment.accuracy_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus * mul(effect.accuracy_mod for effect in self.status_effects))
+
+        flat_bonus += sum(equipment.accuracy_bonus for equipment in main.get_all_equipped(self.inventory) if equipment.category != "weapon")
+        mod = int(mul(effect.accuracy_mod for effect in self.status_effects))
         if self.has_status('oiled'):
-            bonus -= 3
-        if self.owner.player_stats and main.get_equipped_in_slot(self.inventory, 'right hand'):
-            bonus -= 5 * max(main.get_equipped_in_slot(self.inventory, 'right hand').str_requirement - self.owner.player_stats.str, 0)
+            flat_bonus -= 3
+        if self.owner.player_stats and weapon is not None:
+            flat_bonus -= 5 * max(weapon.str_requirement - self.owner.player_stats.str, 0)
 
-        return max(self.base_accuracy + bonus, 1)
+        return max((self.base_accuracy + flat_bonus) * mod, 1)
 
-    @property
     def damage_bonus(self):
         return self.base_damage_bonus
 
-    @property
-    def strength_dice_size(self):
-        bonus = sum(equipment.strength_dice_bonus for equipment in main.get_all_equipped(self.inventory))
+    def strength_dice_size(self, weapon=None):
+        if weapon is None:
+            weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
+
+        bonus = 0
+        if weapon is not None:
+            bonus = weapon._strength_dice_bonus
+
+        bonus += sum(equipment.strength_dice_bonus for equipment in main.get_all_equipped(self.inventory) if equipment.category != "weapon")
         if self.owner.player_stats:
             return max(self.owner.player_stats.str + bonus, 0)
         else:
@@ -362,22 +374,40 @@ class Fighter:
             bonus += 2
         return max(self.base_armor + bonus - self.shred, 0)
 
-    @property
-    def attack_shred(self):
-        bonus = sum(equipment.shred_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus *  mul(effect.shred_mod for effect in self.status_effects))
-        return max(self.base_shred + bonus, 0)
+    def attack_shred(self,weapon=None):
+        if weapon is None:
+            weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
 
-    @property
-    def attack_guaranteed_shred(self):
-        bonus = sum(equipment.guaranteed_shred_bonus for equipment in main.get_all_equipped(self.inventory))
-        return max(self.base_guaranteed_shred + bonus, 0)
+        flat_bonus = 0
+        if weapon is not None:
+            flat_bonus = weapon.shred_bonus
 
-    @property
-    def attack_pierce(self):
-        bonus = sum(equipment.pierce_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus *  mul(effect.pierce_mod for effect in self.status_effects))
-        return max(self.base_pierce + bonus, 0)
+        flat_bonus += sum(equipment.shred_bonus for equipment in main.get_all_equipped(self.inventory))
+        bonus = int(mul(effect.shred_mod for effect in self.status_effects))
+        return max((self.base_shred + flat_bonus) * bonus, 0)
+
+    def attack_guaranteed_shred(self,weapon=None):
+        if weapon is None:
+            weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
+
+        flat_bonus = 0
+        if weapon is not None:
+            flat_bonus = weapon.guaranteed_shred_bonus
+
+        flat_bonus += sum(equipment.guaranteed_shred_bonus for equipment in main.get_all_equipped(self.inventory))
+        return max((self.base_shred + flat_bonus), 0)
+
+    def attack_pierce(self,weapon=None):
+        if weapon is None:
+            weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
+
+        flat_bonus = 0
+        if weapon is not None:
+            flat_bonus = weapon.pierce_bonus
+        bonus = int(mul(effect.pierce_mod for effect in self.status_effects))
+
+        flat_bonus += sum(equipment.pierce_bonus for equipment in main.get_all_equipped(self.inventory))
+        return max((self.base_shred + flat_bonus) * bonus, 0)
 
     @property
     def evasion(self):
@@ -390,7 +420,6 @@ class Fighter:
         else:
             return max(self.base_evasion + bonus, 0)
 
-    @property
     def spell_power(self):
         bonus = sum(equipment.spell_power_bonus for equipment in main.get_all_equipped(self.inventory))
         bonus = int(bonus * mul(effect.spell_power_mod for effect in self.status_effects))
@@ -399,7 +428,6 @@ class Fighter:
         else:
             return self.base_spell_power + bonus
 
-    @property
     def spell_resist(self):
         bonus = sum(equipment.spell_resist_bonus for equipment in main.get_all_equipped(self.inventory))
         bonus = int(bonus * mul(effect.spell_resist_mod for effect in self.status_effects))
@@ -413,13 +441,19 @@ class Fighter:
         bonus = sum(equipment.max_hp_bonus for equipment in main.get_all_equipped(self.inventory))
         return self.base_max_hp + bonus
 
-    @property
-    def attack_speed(self):
+    def attack_speed(self,weapon=None):
         # NOTE: this is a player-only stat
         if self.owner.player_stats:
-            bonus = sum(equipment.attack_speed_bonus for equipment in main.get_all_equipped(self.inventory))
-            bonus = int(bonus * mul(effect.attack_speed_mod for effect in self.status_effects))
-            return self.owner.player_stats.agi + bonus
+            if weapon is None:
+                weapon = main.get_equipped_in_slot(self.inventory, 'right hand')
+
+            flat_bonus = 0
+            if weapon is not None:
+                flat_bonus = weapon.attack_speed_bonus
+            bonus = int(mul(effect.attack_speed_mod for effect in self.status_effects))
+
+            flat_bonus += sum(equipment.attack_speed_bonus for equipment in main.get_all_equipped(self.inventory))
+            return max((self.base_shred + flat_bonus) * bonus, 0)
         else:
             return 0
 
@@ -556,7 +590,10 @@ damage_description_tables = {
 }
 
 def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_modifier=1, damage_multiplier=1, shred_modifier=0,
-              guaranteed_shred_modifier=0, pierce_modifier=0):
+              guaranteed_shred_modifier=0, pierce_modifier=0, weapon=None):
+    if weapon is None:
+        weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
+
     # check stamina
     if main.has_skill('combat_training'):
         stamina_cost = int(round(stamina_cost * main.skill_value('combat_training')))
@@ -568,7 +605,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         else:
             fighter.adjust_stamina(-stamina_cost)
 
-    if roll_to_hit(target, fighter.accuracy * accuracy_modifier):
+    if roll_to_hit(target, fighter.accuracy(weapon) * accuracy_modifier):
         # Target was hit
 
         #Determine location based effects
@@ -578,7 +615,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         damage_mod = location_damage_tables[location]['damage']
 
         # Attacks against stunned targets are critical
-        weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
+
         if weapon and ((target.fighter.has_status('stunned') and verb != 'bashes')
                        or target.fighter.has_status('off balance')):
             damage_mod *= weapon.crit_bonus
@@ -589,7 +626,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
 
-        if fighter.has_attribute('attribute_rend') and target.fighter.armor - (fighter.attack_pierce + pierce_modifier) < 1:
+        if fighter.has_attribute('attribute_rend') and target.fighter.armor - (fighter.attack_pierce(weapon) + pierce_modifier) < 1:
             damage_mod *= 1.5
 
         if fighter.owner is player.instance:
@@ -597,7 +634,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             if main.has_skill('find_the_gap') and weapon.subtype == 'dagger':
                 pierce_modifier += 1
 
-            if main.has_skill('ravager') and target.fighter.armor - (fighter.attack_pierce + pierce_modifier) < 1:
+            if main.has_skill('ravager') and target.fighter.armor - (fighter.attack_pierce(weapon) + pierce_modifier) < 1:
                 damage_mod *= 1.0 + main.skill_value('ravager')
 
             if main.has_skill('lord_of_the_fray'):
@@ -637,7 +674,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         if weapon is not None:
             subtype = weapon.subtype
 
-        str_dice_size = fighter.strength_dice_size
+        str_dice_size = fighter.strength_dice_size(weapon)
         if fighter.owner is player.instance:
             str_dice_size += main.skill_value("{}_mastery".format(subtype))
 
@@ -661,16 +698,16 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             strength_dice = "{}d{}".format(strength_dice_number, str_dice_size)
 
         damage = roll_damage_ex(weapon_dice,strength_dice, target.fighter.armor,
-                            fighter.attack_pierce + pierce_modifier, hit_type, damage_mod, target.fighter.getResists(),
-                            target.fighter.getWeaknesses(), flat_bonus=fighter.damage_bonus)
+                            fighter.attack_pierce(weapon) + pierce_modifier, hit_type, damage_mod, target.fighter.getResists(),
+                            target.fighter.getWeaknesses(), flat_bonus=fighter.damage_bonus())
 
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
             # Shred armor
-            for i in range(fighter.attack_shred + shred_modifier):
+            for i in range(fighter.attack_shred(weapon) + shred_modifier):
                 if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
                     target.fighter.shred += 1
-            target.fighter.shred += min(fighter.attack_guaranteed_shred + guaranteed_shred_modifier, target.fighter.armor)
+            target.fighter.shred += min(fighter.attack_guaranteed_shred(weapon) + guaranteed_shred_modifier, target.fighter.armor)
             # Receive effect
             if effect is not None and percent_hit > 0.1:
                 target.fighter.apply_status_effect(effect)

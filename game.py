@@ -1289,7 +1289,8 @@ def create_item(name, material=None, quality=''):
             resistances=p.get('resistances',[]),
             subtype=p.get('subtype'),
             starting_level=p.get('level',0),
-            weight=p.get('weight',0)
+            weight=p.get('weight',0),
+            _range=p.get('range',1)
         )
 
         if material is None:

@@ -272,26 +272,27 @@ table = {
         'crit_bonus'         : 1.5
     },
 
+    'weapon_crossbow': {
+        'name'              : 'crossbow',
+        'category'          : 'weapon',
+        'damage_type'       : 'piercing',
+        'subtype'           : 'ranged',
+        'char'              : chr(23),
+        'color'             : libtcodpy.yellow,
+        'type'              : 'item',
+        'slot'              : 'left hand',
+        'description'       : "A crossbow, made so it can be worn over the left forearm. Can't be "
+                              "reloaded during battle.",
+        'str_requirement'   : 10,
+        'shred'             : 2,
+        'garunteed_shred'   : 1,
+        'accuracy'          : 20,
+        'weapon_dice'       : '2d10',
+        'str_dice'          : 0,
+        'attack_delay'      : 1000,
+        'crit_bonus'        : 1.5,
+        'range'             : 10,
+        'ability'           : 'ability_off_hand_shoot'
 
-    'weapon_sword_of_holy_wrath': {
-        'name'               : 'sword of holy wrath',
-        'category'           : 'weapon',
-        'subtype'            : 'sword',
-        'damage_type'        : 'slashing',
-        'char'               : '/',
-        'color'              : libtcodpy.lighter_yellow,
-        'type'               : 'item',
-        'slot'               :'both hands',
-        'description'        : 'A blessed blade that calls down judgement on foes',
-        'stamina_cost'       : 8,
-        'str_requirement'    : 1,
-        'pierce'             : 1,
-        'shred'              : 1,
-        'accuracy'           : 4,
-        'weapon_dice'        : '2d10',
-        'str_dice'           : 2,
-        'on_hit'             : [actions.on_hit_judgement],
-        'attack_delay'       : 10,
-        'crit_bonus'         : 1.5
-    },
+    }
 }

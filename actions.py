@@ -314,6 +314,27 @@ def arcane_arrow(actor=None, target=None):
                 return 'success'
     return 'failure'
 
+def offhand_shot(actor=None, target=None):
+    x, y = 0, 0
+
+    if actor is None:
+        actor = player.instance
+
+    weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'left hand')
+
+    if actor is player.instance:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        target = main.get_monster_at_tile(*ui.target_tile(weapon.range, 'pick', default_target=default_target))
+
+    if target is not None:
+        combat.attack_ex(actor.fighter,target,0,verb=("shoot","shoots"),weapon=weapon)
+        return 'success'
+    else:
+        return "cancelled"
+
 def flame_breath(actor=None, target=None):
     x, y = 0, 0
     if actor is None:
