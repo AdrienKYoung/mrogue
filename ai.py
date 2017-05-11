@@ -49,11 +49,17 @@ def acquire_target(monster, priority=None):
 
 
 def aggro_on_hit(monster, attacker):
-    if attacker is not None and fov.monster_can_see_object(monster, attacker) and libtcod.random_get_int(0, 0, 1) == 1:
+    if attacker is None:
+        return
+    if fov.monster_can_see_object(monster, attacker):
+        if libtcod.random_get_int(0, 0, 1) == 0:
         # 50% chance to aggro onto the attacker
-        monster.behavior.behavior.target = attacker
-        monster.behavior.behavior.last_seen_position = attacker.x, attacker.y
-        monster.behavior.ai_state = 'pursuing'
+            monster.behavior.behavior.target = attacker
+            monster.behavior.behavior.last_seen_position = attacker.x, attacker.y
+            monster.behavior.ai_state = 'pursuing'
+    else:
+        monster.behavior.behavior.wander_destination = attacker.x, attacker.y
+        monster.behavior.behavior.ai_state = 'wandering'
 
 
 class AI_Default:

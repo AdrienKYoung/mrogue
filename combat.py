@@ -420,6 +420,7 @@ class Fighter:
         else:
             return max(self.base_evasion + bonus, 0)
 
+    @property
     def spell_power(self):
         bonus = sum(equipment.spell_power_bonus for equipment in main.get_all_equipped(self.inventory))
         bonus = int(bonus * mul(effect.spell_power_mod for effect in self.status_effects))
@@ -428,6 +429,7 @@ class Fighter:
         else:
             return self.base_spell_power + bonus
 
+    @property
     def spell_resist(self):
         bonus = sum(equipment.spell_resist_bonus for equipment in main.get_all_equipped(self.inventory))
         bonus = int(bonus * mul(effect.spell_resist_mod for effect in self.status_effects))
@@ -819,7 +821,7 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
 
         if damage > 0:
             attack_text_ex(fighter,target,None,None,damage,spell_element,float(damage) / float(target.fighter.max_hp))
-            target.fighter.take_damage(damage)
+            target.fighter.take_damage(damage, attacker=fighter.owner)
             # Shred armor
 
             if fighter.owner is player.instance and main.has_skill('spellshards'):
