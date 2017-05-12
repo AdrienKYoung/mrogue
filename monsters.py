@@ -142,7 +142,10 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'Small vicious humanoid that scavenged some equipment.',
         'resistances': [],
-        'equipment': [{'weapon_dagger':50,'weapon_longsword':50},{'none':50,'equipment_shield':50},{'none':50,'equipment_leather_armor':50}],
+        'equipment': [
+            {'weapon_dagger':25,'weapon_longsword':30, 'weapon_hatchet':15, 'weapon_spear':15, 'weapon_mace':15},
+            {'none':50,'shield_leather_buckler':10,'shield_wooden_buckler':25,'shield_iron_buckler':10,'shield_kite_shield':5,},
+            {'none':50,'equipment_leather_armor':40, 'equipment_mail_armor':10}],
         'shred': 1,
         'modifier_category':'goblin',
         'subtype':'goblin',
@@ -184,7 +187,10 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'Slightly larger, much more vicious humanoid that tells other goblins what to do.',
         'resistances': [],
-        'equipment': [{'weapon_spear':50,'weapon_longsword':50},{'none':50,'equipment_shield':50},{'equipment_leather_armor':100}],
+        'equipment': [
+            {'weapon_spear':50,'weapon_longsword':50},
+            {'none':50,'shield_kite_shield':25, 'shield_round_shield':25},
+            {'equipment_leather_armor':50, 'equipment_mail_armor':50}],
         'shred': 1,
         'modifier_category':'goblin',
         'subtype':'goblin',

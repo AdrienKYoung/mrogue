@@ -402,5 +402,6 @@ vermin_summons = [
 default_abilities = {
     'attack' : Ability('Attack','Attack an enemy',actions.attack,0),
     'bash' : Ability('Bash','Knock an enemy back',actions.bash_attack,0),
-    'jump' : Ability('Jump','Jump to a tile',player.jump,0)
+    'jump' : Ability('Jump','Jump to a tile',player.jump,0),
+    'raise shield' : Ability('Raise Shield', 'Spend stamina to recover your shield after it has been knocked aside.', actions.recover_shield, 0)
 }

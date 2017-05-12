@@ -52,8 +52,7 @@ class Item:
 
     def use(self):
         if self.owner.equipment:
-            self.owner.equipment.toggle()
-            return
+            return self.owner.equipment.toggle()
         elif self.use_function is not None:
             if self.use_function() != 'cancelled':
                 if self.type == 'item' and self.category != 'charm' and not(self.category == 'gem' and consts.DEBUG_INFINITE_GEMS):
@@ -68,7 +67,8 @@ class Item:
         if self.owner not in self.holder.fighter.inventory:
             return
         if self.owner.equipment:
-            self.owner.equipment.dequip(no_message=no_message)
+            if self.owner.equipment.dequip(no_message=no_message) == 'cancelled':
+                return 'cancelled'
         current_map.add_object(self.owner)
         self.holder.fighter.inventory.remove(self.owner)
         self.owner.x = self.holder.x
@@ -753,7 +753,7 @@ def tunnel_spider_spawn_web(obj):
 
 # creates a spiderweb at the target location
 def make_spiderweb(x, y):
-    web = GameObject(x, y, '*', 'spiderweb', libtcod.lightest_gray,
+    web = GameObject(x, y, 'x', 'spiderweb', libtcod.lightest_gray,
                      description='a web of spider silk. Stepping into a web will impede movement for a turn.',
                      burns=True)
     current_map.add_object(web)
@@ -1290,7 +1290,10 @@ def create_item(name, material=None, quality=''):
             subtype=p.get('subtype'),
             starting_level=p.get('level',0),
             weight=p.get('weight',0),
-            _range=p.get('range',1)
+            _range=p.get('range',1),
+            sh_max=p.get('sh_max', 0),
+            sh_raise_cost=p.get('sh_raise_cost', 0),
+            sh_recovery=p.get('sh_recovery', 0),
         )
 
         if material is None:

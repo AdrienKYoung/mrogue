@@ -57,21 +57,29 @@ table = {
     ],
 
     'armor_0': [
-        'equipment_shield',
         'equipment_leather_armor',
         'equipment_cloth_robes',
         'equipment_iron_helm',
-        'equipment_gauntlets'
+        'equipment_gauntlets',
+        'shield_leather_buckler',
+        'shield_wooden_buckler',
     ],
 
     'armor_1': [
-        'equipment_shield',
+        'equipment_leather_armor',
         'equipment_leather_armor',
         'equipment_cloth_robes',
         'equipment_iron_helm',
+        'equipment_iron_helm',
+        'equipment_greaves',
         'equipment_greaves',
         'equipment_gauntlets',
-        'equipment_mail_armor'
+        'equipment_gauntlets',
+        'equipment_mail_armor',
+        'shield_wooden_buckler',
+        'shield_iron_buckler',
+        'shield_heater_shield',
+        'shield_round_shield',
     ],
 
     'armor_2' : [
@@ -81,7 +89,11 @@ table = {
         'equipment_mail_armor',
         'equipment_brigandine',
         'equipment_great_helm',
-        'equipment_greaves'
+        'equipment_greaves',
+        'shield_iron_buckler',
+        'shield_heater_shield',
+        'shield_round_shield',
+        'shield_escutcheon',
     ],
 
     'armor_3' : [
@@ -91,6 +103,11 @@ table = {
         'equipment_gauntlets',
         'equipment_armet_helm',
         'equipment_plate_armor',
+        'shield_duelists_buckler',
+        'shield_round_shield',
+        'shield_escutcheon',
+        'shield_kite_shield',
+        'shield_tower_shield',
     ],
 
      'consumables_1': [
@@ -294,7 +311,10 @@ qualities = {
         'armor': {
             'evasion_bonus' : -5,
             'armor_bonus' : -1,
-            'weight_bonus' : 0
+            'weight_bonus' : 0,
+            'sh_max_bonus' : 0,
+            'sh_recovery_bonus' : 5,
+            'sh_raise_cost_bonus' : 10,
         }
     },
     'crude' : {
@@ -307,7 +327,10 @@ qualities = {
         'armor': {
             'evasion_bonus' : -1,
             'armor_bonus' : 0,
-            'weight_bonus' : 1
+            'weight_bonus' : 1,
+            'sh_max_bonus' : 0,
+            'sh_recovery_bonus' : 2,
+            'sh_raise_cost_bonus' : 5,
         }
     },
     '' : { # standard
@@ -319,7 +342,10 @@ qualities = {
         'armor': {
             'evasion_bonus' : 0,
             'armor_bonus' : 0,
-            'weight_bonus' : 0
+            'weight_bonus' : 0,
+            'sh_max_bonus' : 0,
+            'sh_recovery_bonus' : 0,
+            'sh_raise_cost_bonus' : 0,
         }
     },
     'military' : {
@@ -331,7 +357,10 @@ qualities = {
         'armor': {
             'evasion_bonus' : 0,
             'armor_bonus' : 0,
-            'weight_bonus' : -1
+            'weight_bonus' : -1,
+            'sh_max_bonus' : 2,
+            'sh_recovery_bonus' : -1,
+            'sh_raise_cost_bonus' : 0,
         }
     },
     'fine' : {
@@ -344,7 +373,10 @@ qualities = {
         'armor': {
             'evasion_bonus' : 1,
             'armor_bonus' : 0,
-            'weight_bonus' : -2
+            'weight_bonus' : -2,
+            'sh_max_bonus' : 5,
+            'sh_recovery_bonus' : -2,
+            'sh_raise_cost_bonus' : -5,
         }
     },
     'masterwork' : {
@@ -358,7 +390,10 @@ qualities = {
         'armor':{
             'evasion_bonus' : 2,
             'armor_bonus' : 0,
-            'weight_bonus' : -3
+            'weight_bonus' : -3,
+            'sh_max_bonus' : 9,
+            'sh_recovery_bonus' : -3,
+            'sh_raise_cost_bonus' : -5,
         }
     },
     'artifact' : {
@@ -373,7 +408,10 @@ qualities = {
         'armor':{
             'evasion_bonus' : 3,
             'armor_bonus' : 1,
-            'weight' : -5
+            'weight' : -5,
+            'sh_max_bonus' : 15,
+            'sh_recovery_bonus' : -5,
+            'sh_raise_cost_bonus' : -10,
         }
     },
 }

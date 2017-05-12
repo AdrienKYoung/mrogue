@@ -655,7 +655,9 @@ def apply_item(x, y, data):
     if len(data) > 1:
         for i in range(1, len(data)):
             if data[i] == 'CHEST':
-                map.add_object(create_chest(x, y))
+                chest = create_chest(x, y)
+                if chest is not None:
+                    map.add_object(chest)
                 return
             if data[i] == 'LOOT_LEVEL':
                 loot_level = int(data[i + 1])

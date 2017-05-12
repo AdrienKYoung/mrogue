@@ -118,21 +118,35 @@ class Fighter:
         if self.stamina > self.max_stamina:
             self.stamina = self.max_stamina
 
-    def take_damage(self, damage, attacker=None, affect_shred=True):
+    def take_damage(self, damage, attacker=None, affect_shred=True, blockable=False):
         if self.owner == player.instance and consts.DEBUG_INVINCIBLE:
             damage = 0
 
         if damage > 0:
-            self.get_hit(attacker,damage)
-            self.hp -= damage
-            if self.hp <= 0:
-                self.drop_essence()
-                self.owner.is_corpse = True
-                function = self.death_function
-                if function is not None:
-                    function(self.owner)
-            if affect_shred:
-                self.time_since_last_damaged = 0
+            sh = self.get_equipped_shield()
+            if blockable and sh is not None and sh.raised and sh.sh_points > 0:
+                sh.sh_points -= damage
+                sh.sh_timer = sh.sh_recovery
+                if sh.sh_points <= 0:
+                    sh.sh_points = 0
+                    sh.raised = False
+                    ui.message('%s shield is knocked away!' % syntax.name(self.owner, possesive=True).capitalize(), libtcod.blue)
+                return 'blocked'
+            else:
+                self.get_hit(attacker,damage)
+                self.hp -= damage
+                if self.hp <= 0:
+                    self.drop_essence()
+                    self.owner.is_corpse = True
+                    function = self.death_function
+                    if function is not None:
+                        if sh is not None:
+                            sh.sh_points = sh.sh_max
+                            sh.timer = 0
+                            sh.raised = True
+                        function(self.owner)
+                if affect_shred:
+                    self.time_since_last_damaged = 0
         return damage
 
     def get_hit(self, attacker,damage):
@@ -208,6 +222,13 @@ class Fighter:
             self.shred = 0
             if self.owner is player.instance:
                 ui.message('You repair your armor')
+
+        # Track shield recovery timer
+        sh = self.get_equipped_shield()
+        if sh is not None and sh.sh_timer > 0:
+            sh.sh_timer -= 1
+            if sh.sh_timer <= 0:
+                sh.sh_raise()
 
         # Manage breath/drowning
         tile = main.current_map.tiles[self.owner.x][self.owner.y]
@@ -357,17 +378,16 @@ class Fighter:
             return max(str_dice_size + bonus, 0)
 
     @property
+    def shield(self):
+        sh = self.get_equipped_shield()
+        if sh is not None:
+            return sh.sh_points
+        return 0
+
+    @property
     def armor(self):
         bonus = sum(equipment.armor_bonus for equipment in main.get_all_equipped(self.inventory))
         bonus = int(bonus * mul(effect.armor_mod for effect in self.status_effects))
-        if self.owner is player.instance and main.has_skill('Iron Skin'):
-            has_armor = False
-            for item in main.get_all_equipped(self.inventory):
-                if item.owner.item.category == 'armor':
-                    has_armor = True
-                    break
-            if not has_armor:
-                bonus += 3
         if self.has_status('stoneskin'):
             bonus += 2
         if main.has_skill('guardian_of_light') and (self.owner is player.instance or self.team == 'ally'):
@@ -479,6 +499,15 @@ class Fighter:
     def getWeaknesses(self):
         from_effects = reduce(lambda a, b: a | set(b.weakness_mod), self.status_effects, set())
         return list(set(self.weaknesses) | from_effects)
+
+    def get_equipped_shield(self):
+        shield = main.get_equipped_in_slot(self.inventory, 'left hand')
+        if shield is not None\
+                and hasattr(shield, 'sh_points')\
+                and hasattr(shield, 'sh_recovery')\
+                and hasattr(shield, 'sh_raise_cost'):
+            return shield
+        return None
 
 
 hit_tables = {
@@ -592,7 +621,7 @@ damage_description_tables = {
 }
 
 def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_modifier=1, damage_multiplier=1, shred_modifier=0,
-              guaranteed_shred_modifier=0, pierce_modifier=0, weapon=None):
+              guaranteed_shred_modifier=0, pierce_modifier=0, weapon=None, blockable=True):
     if weapon is None:
         weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
 
@@ -705,31 +734,31 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
-            # Shred armor
-            shred = fighter.attack_shred(weapon) + shred_modifier
-            for i in range(shred):
-                if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
-                    target.fighter.shred += 1
-            target.fighter.shred += min(fighter.attack_guaranteed_shred(weapon) + guaranteed_shred_modifier, target.fighter.armor)
+            # Shred armor if not blocked by a shield
+            if target.fighter.shield == 0:
+                shred = fighter.attack_shred(weapon) + shred_modifier
+                for i in range(shred):
+                    if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
+                        target.fighter.shred += 1
+                target.fighter.shred += min(fighter.attack_guaranteed_shred(weapon) + guaranteed_shred_modifier, target.fighter.armor)
             # Receive effect
             if effect is not None and percent_hit > 0.1:
                 target.fighter.apply_status_effect(effect)
 
             attack_text_ex(fighter,target,verb,location,damage,hit_type,percent_hit)
 
-            target.fighter.take_damage(damage)
-            # Trigger on-hit effects
-            if on_hit is not None and target.fighter is not None:
-                if isinstance(on_hit,(list,set,tuple)):
-                    for h in on_hit:
-                        h(fighter.owner, target, damage)
-                else:
-                    on_hit(fighter.owner, target, damage)
-            if weapon is not None and weapon.on_hit is not None:
-                for oh in weapon.on_hit:
-                    oh(fighter.owner, target, damage)
-            weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
-            if weapon:
+            if target.fighter.take_damage(damage, blockable=blockable) != 'blocked':
+                # Trigger on-hit effects
+                if on_hit is not None and target.fighter is not None:
+                    if isinstance(on_hit,(list,set,tuple)):
+                        for h in on_hit:
+                            h(fighter.owner, target, damage)
+                    else:
+                        on_hit(fighter.owner, target, damage)
+                if weapon is not None and weapon.on_hit is not None:
+                    for oh in weapon.on_hit:
+                        oh(fighter.owner, target, damage)
+            if weapon is not None:
                 main.check_breakage(weapon)
 
             if fighter.owner is player.instance:
@@ -843,7 +872,6 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
                 main.check_breakage(weapon)
             return 'blocked'
     else:
-        #ui.message(fighter.owner.name.title() + ' ' + verb + ' ' + target.name + ', but misses!', libtcod.grey)
         ui.message('%s %s %s, but %s!' % (
                             syntax.name(fighter.owner).capitalize(),
                             syntax.conjugate(fighter.owner is player.instance, ('attack', 'attacks')),

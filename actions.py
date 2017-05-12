@@ -71,6 +71,25 @@ def bash_attack(actor=None, target=None):
             return result
     return 'didnt-take-turn'
 
+def recover_shield(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+    if actor is not player.instance:  # this should only ever be used by the player
+        return 'failure'
+    sh = player.instance.fighter.get_equipped_shield()
+    if sh is not None:
+        cost = sh.sh_raise_cost
+        if player.instance.fighter.stamina > cost:
+            player.instance.fighter.adjust_stamina(-sh.sh_raise_cost)
+            sh.sh_raise()
+            return 'success'
+        else:
+            ui.message("You don't have enough stamina to raise your shield (Need %d)." % sh.sh_raise_cost, libtcod.gray)
+            return 'didnt-take-turn'
+    else:
+        ui.message("You have no shield to raise.", libtcod.gray)
+        return 'didnt-take-turn'
+
 # todo: make more interesting
 def essence_fist(actor=None, target=None):
     ability_data = abilities.data['ability_essence_fist']

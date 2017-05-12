@@ -61,6 +61,7 @@ loadouts = {
         'inventory':[
             ['weapon_longsword','weapon_hatchet','weapon_mace'],
             'charm_raw',
+            'shield_wooden_buckler',
             'equipment_leather_armor',
             'equipment_iron_helm',
         ],
@@ -176,7 +177,7 @@ def create(loadout):
         instance.fighter.inventory.append(i)
         i.item.holder = instance
         if i.equipment is not None:
-            i.equipment.equip()
+            i.equipment.equip(no_message=True)
 
     if consts.DEBUG_STARTING_ITEM is not None:
         test = main.create_item(consts.DEBUG_STARTING_ITEM)
@@ -258,8 +259,10 @@ def handle_keys():
             if key_char == 'd':
                 chosen_item = ui.inventory_menu('Drop which item?')
                 if chosen_item is not None:
-                    chosen_item.drop()
-                    return 'dropped-item'
+                    if chosen_item.drop() == 'cancelled':
+                        return 'didnt-take-turn'
+                    else:
+                        return 'dropped-item'
             if key_char == 'c':
                 ui.msgbox('Character Information\n\nLevel: ' + str(instance.level) + '\n\nMaximum HP: ' +
                        str(instance.fighter.max_hp),

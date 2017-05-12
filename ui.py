@@ -434,18 +434,26 @@ def render_side_panel(acc_mod=1.0):
 
     drawHeight = 2
 
+    # Health bar
     render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', player.instance.fighter.hp, player.instance.fighter.max_hp,
-               libtcod.dark_red, libtcod.darker_red, align=libtcod.LEFT)
+               libtcod.dark_red, libtcod.darker_red, align=libtcod.CENTER)
     # Display armor/shred
-    armor_string = 'AR:' + str(player.instance.fighter.armor)
-    if player.instance.fighter.shred > 0:
-        libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
-    libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, 2, libtcod.BKGND_DEFAULT, libtcod.RIGHT, armor_string)
+    #armor_string = 'AR:' + str(player.instance.fighter.armor)
+    #if player.instance.fighter.shred > 0:
+    #    libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
+    #libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, 2, libtcod.BKGND_DEFAULT, libtcod.RIGHT, armor_string)
     drawHeight += 1
 
+    # Stamina bar
     render_bar(2, drawHeight, consts.BAR_WIDTH, 'Stamina', player.instance.fighter.stamina, player.instance.fighter.max_stamina,
                libtcod.dark_green, libtcod.darker_green)
     drawHeight += 1
+
+    # Shield bar
+    if player.instance.fighter.get_equipped_shield() is not None:
+        render_bar(2, drawHeight, consts.BAR_WIDTH, 'Shield', player.instance.fighter.shield,
+                   player.instance.fighter.get_equipped_shield().sh_max, libtcod.blue, libtcod.dark_blue)
+        drawHeight += 1
 
     # New armor graphics
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
@@ -588,13 +596,37 @@ def render_side_panel(acc_mod=1.0):
             health_bar_color = libtcod.dark_red
             health_bar_bkgnd_color = libtcod.darker_red
         render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
-                   health_bar_color, health_bar_bkgnd_color, align=libtcod.LEFT)
+                   health_bar_color, health_bar_bkgnd_color, align=libtcod.CENTER)
         libtcod.console_set_default_foreground(side_panel, libtcod.white)
-        armor_string = 'AR:' + str(selected_monster.fighter.armor)
-        if selected_monster.fighter.shred > 0:
-            libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
-        libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, drawHeight, libtcod.BKGND_DEFAULT, libtcod.RIGHT,
-                                     armor_string)
+        drawHeight += 1
+
+        # Shield bar
+        if selected_monster.fighter.get_equipped_shield() is not None:
+            render_bar(2, drawHeight, consts.BAR_WIDTH, 'Shield', selected_monster.fighter.shield,
+                       selected_monster.fighter.get_equipped_shield().sh_max, libtcod.blue, libtcod.dark_blue)
+            drawHeight += 1
+
+        #armor_string = 'AR:' + str(selected_monster.fighter.armor)
+        #if selected_monster.fighter.shred > 0:
+        #    libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
+        #libtcod.console_print_ex(side_panel, consts.SIDE_PANEL_WIDTH - 4, drawHeight, libtcod.BKGND_DEFAULT, libtcod.RIGHT,
+        #                             armor_string)
+        # New armor graphics
+        libtcod.console_set_default_foreground(side_panel, libtcod.white)
+        libtcod.console_print(side_panel, 2, drawHeight, 'AR: ')
+        if selected_monster.fighter.armor == 0:
+            libtcod.console_set_default_foreground(side_panel, libtcod.black)
+            libtcod.console_set_default_background(side_panel, libtcod.red)
+            libtcod.console_print_ex(side_panel, 6, drawHeight, libtcod.BKGND_SET, libtcod.LEFT, 'NONE')
+        else:
+            for i in range(min(selected_monster.fighter.armor, 15)):
+                libtcod.console_put_char_ex(side_panel, 6 + i, drawHeight, ')', libtcod.black, libtcod.light_gray)
+            libtcod.console_set_default_foreground(side_panel, libtcod.dark_gray)
+            for i in range(selected_monster.fighter.shred):
+                libtcod.console_put_char_ex(side_panel, 6 + min(selected_monster.fighter.armor + i, 15), drawHeight, ')',
+                                            libtcod.black, libtcod.darker_gray)
+        libtcod.console_set_default_background(side_panel, libtcod.black)
+        drawHeight += 1
 
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
@@ -1208,22 +1240,27 @@ def examine(x=None, y=None):
 
 def show_ability_screen():
     import abilities
-    opts = [abilities.default_abilities['attack']]
+    opts = [abilities.default_abilities['attack'], abilities.default_abilities['jump']]
     # Weapon ability, or bash if none
     weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
 
     if weapon is not None and weapon.owner.item.ability is not None:
         opts.append(weapon.owner.item.ability)
 
-    #if weapon is not None and weapon.ctrl_attack is not None:
-    #    opts.append(weapon.ctrl_attack)
+    if weapon is not None and weapon.ctrl_attack is not None:
+        opts.append(weapon.ctrl_attack)
     else:
         opts.append(abilities.default_abilities['bash'])
     # Other equipment abilities
     for i in main.get_all_equipped(player.instance.fighter.inventory):
         if i is not weapon and i.owner.item.ability is not None:
             opts.append(i.owner.item.ability)
-    opts += [v for k,v in abilities.default_abilities.items() if k not in ['attack','bash']]
+
+    sh = player.instance.fighter.get_equipped_shield()
+    if sh is not None and not sh.raised:
+        opts.append(abilities.default_abilities['raise shield'])
+
+    #opts += [v for k,v in abilities.default_abilities.items() if k not in ['attack','bash']]
     index = menu('Abilities',[opt.name for opt in opts],20)
     if index is not None:
         choice = opts[index]

@@ -1,20 +1,6 @@
 import libtcodpy
 
 table = {
-    'equipment_shield': {
-        'name'          : 'Shield',
-        'category'      : 'armor',
-        'char'          : chr(233), #theta
-        'color'         : libtcodpy.yellow,
-        'type'          : 'item',
-        'armor_bonus'   : 1,
-        'slot'          : 'left hand',
-        'description'   : 'An iron kite shield.',
-        'ability'       : 'block', #not implemented
-        'evasion_bonus' : -2,
-        'weight'        : 3
-    },
-
     'equipment_cloth_robes': {
         'name'          : 'Cloth Robes',
         'category'      : 'armor',
@@ -170,5 +156,154 @@ table = {
         'slot'          : 'feet',
         'description'   : 'Steel plates that protect the shins',
         'weight'        : 3
+    },
+
+    'shield_leather_buckler': {
+        'name': 'Leather Buckler',
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 0,
+        'slot': 'left hand',
+        'description': 'A small round shield made from stiff boiled leather. It is lightweight and easy to lift,'
+                       ' but easily knocked away.',
+        'evasion_bonus': 0,
+        'weight': 4,
+        'sh_max': 1,
+        'sh_raise_cost': 20,
+        'sh_recovery': 7,
+    },
+
+    'shield_wooden_buckler': {
+        'name': 'Wooden Buckler',
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 0,
+        'slot': 'left hand',
+        'description': 'A small round shield made from wooden planks bound in an iron ring. It is lightweight and easy'
+                       ' to lift, but easily knocked away.',
+        'evasion_bonus': 0,
+        'weight': 5,
+        'sh_max': 5,
+        'sh_raise_cost': 25,
+        'sh_recovery': 10,
+    },
+
+    'shield_iron_buckler': {
+        'name': 'Iron Buckler',
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 0,
+        'slot': 'left hand',
+        'description': 'A small round shield made of roughly hammered iron. It is lightweight and easy to lift,'
+                       ' but easily knocked away.',
+        'evasion_bonus': -1,
+        'weight': 6,
+        'sh_max': 8,
+        'sh_raise_cost': 30,
+        'sh_recovery': 12,
+    },
+
+    'shield_duelists_buckler': {
+        'name': "Duelist's Buckler",
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 0,
+        'slot': 'left hand',
+        'description': 'A small, bronze shield emblazoned with a red serpent. It is the sigil of the Taguinnes, a family'
+                       ' who left no slight to their honor unpaid in blood.',
+        'evasion_bonus': 2,
+        'weight': 2,
+        'sh_max': 3,
+        'sh_raise_cost': 17,
+        'sh_recovery': 5,
+    },
+
+    'shield_heater_shield': {
+        'name': 'Heater Shield',
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 1,
+        'slot': 'left hand',
+        'description': 'A simple, sturdy shield carried by footsoldiers.',
+        'evasion_bonus': -2,
+        'weight': 8,
+        'sh_max': 12,
+        'sh_raise_cost': 45,
+        'sh_recovery': 12,
+    },
+
+    'shield_escutcheon': {
+        'name': 'Escutcheon',
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 1,
+        'slot': 'left hand',
+        'description': 'A decorative shield bearing the faded heraldry of some long-forgotten knight.',
+        'evasion_bonus': -2,
+        'weight': 9,
+        'sh_max': 15,
+        'sh_raise_cost': 45,
+        'sh_recovery': 10,
+    },
+
+    'shield_round_shield': {
+        'name': 'Round Shield',
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 1,
+        'slot': 'left hand',
+        'description': 'A large round shield made of wood and flecked with colored paint. Shields like these were '
+                       'carried by raiders from the Stormy Seas.',
+        'evasion_bonus': -1,
+        'weight': 9,
+        'sh_max': 10,
+        'sh_raise_cost': 30,
+        'sh_recovery': 12,
+    },
+
+    'shield_kite_shield': {
+        'name': 'Kite Shield',
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 2,
+        'slot': 'left hand',
+        'description': 'A long shield with a rounded top and a pointed tip.',
+        'evasion_bonus': -4,
+        'weight': 14,
+        'sh_max': 20,
+        'sh_raise_cost': 55,
+        'sh_recovery': 18,
+    },
+
+    'shield_tower_shield': {
+        'name': 'Tower Shield',
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 3,
+        'slot': 'left hand',
+        'description': 'A massive iron shield offering complete protection - for those that can heft its weight.',
+        'evasion_bonus': -6,
+        'weight': 24,
+        'sh_max': 35,
+        'sh_raise_cost': 80,
+        'sh_recovery': 25,
     },
 }

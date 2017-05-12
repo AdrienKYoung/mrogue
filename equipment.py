@@ -21,6 +21,8 @@ import player
 import spells
 import ui
 import collections
+import fov
+import syntax
 
 class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, strength_dice_bonus=0,
@@ -29,7 +31,8 @@ class Equipment:
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
                  resistances=[], modifiers = {}, base_id=None, _range=1,
-                 crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0):
+                 crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
+                 sh_max=0, sh_recovery=0, sh_raise_cost=0):
         self.is_equipped = False
         self.slot = slot
         self.base_id = base_id
@@ -50,6 +53,14 @@ class Equipment:
         self._armor_bonus = armor_bonus
         self._evasion_bonus = evasion_bonus
         self._resistances = list(resistances)
+
+        self._sh_max = sh_max
+        self._sh_recovery = sh_recovery
+        self._sh_raise_cost = sh_raise_cost
+        if self._sh_max > 0:
+            self.raised = True
+            self.sh_timer = self.sh_recovery
+            self.sh_points = self.sh_max
 
         self.damage_type = damage_type
         self.weapon_dice = weapon_dice
@@ -180,13 +191,25 @@ class Equipment:
     def holder(self):
         return self.owner.item.holder
 
+    @property
+    def sh_max(self):
+        return self._sh_max + self.get_bonus('sh_max_bonus')
+
+    @property
+    def sh_recovery(self):
+        return self._sh_recovery + self.get_bonus('sh_recovery_bonus')
+
+    @property
+    def sh_raise_cost(self):
+        return self._sh_raise_cost + self.get_bonus('sh_raise_cost_bonus')
+
     def toggle(self):
         if self.is_equipped:
-            self.dequip()
+            return self.dequip()
         else:
-            self.equip()
+            return self.equip()
 
-    def equip(self):
+    def equip(self, no_message=False):
         old_equipment = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
         # First check weight
         if self.holder is player.instance:
@@ -197,22 +220,31 @@ class Equipment:
                 ui.message('That is too heavy.', libtcod.orange)
                 return
 
+        # Attempt to dequip
         if self.slot == 'both hands':
             rh = main.get_equipped_in_slot(self.holder.fighter.inventory, 'right hand')
             lh = main.get_equipped_in_slot(self.holder.fighter.inventory, 'left hand')
-            if rh is not None: rh.dequip()
-            if lh is not None: lh.dequip()
+            if not ((rh is None or rh.dequip() != 'cancelled') and (lh is None or lh.dequip() != 'cancelled')):
+                return 'cancelled'
         else:
             if old_equipment is not None:
-                old_equipment.dequip(self.holder)
+                if old_equipment.dequip(self.holder) == 'cancelled':
+                    return 'cancelled'
         self.is_equipped = True
-        if self.holder is player.instance:
+        if self.holder is player.instance and not no_message:
             ui.message('Equipped ' + self.owner.name + ' on ' + self.slot + '.', libtcod.orange)
+        return 'success'
 
     def dequip(self, no_message=False):
+        if self.holder.fighter.get_equipped_shield() is self and self.sh_points < self.sh_max:
+            # We are trying to dequip an occupied shield
+            if self.holder is player.instance:
+                ui.message('You cannot remove your shield until it is raised.', libtcod.gray)
+            return 'cancelled'
         self.is_equipped = False
         if not no_message and self.holder is player.instance:
             ui.message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
+        return 'success'
 
     def print_description(self, console, x, y, width):
         print_height = 1
@@ -275,6 +307,15 @@ class Equipment:
         if self.spell_resist_bonus != 0:
             libtcod.console_print(console, x, y + print_height, 'Spell Resist: ' + str(self.spell_resist_bonus))
             print_height += 1
+        if self.sh_max > 0:
+            libtcod.console_print(console, x, y + print_height, 'Shield: ' + str(self.sh_max))
+            print_height += 1
+        if self.sh_recovery > 0:
+            libtcod.console_print(console, x, y + print_height, 'Recovery Time: ' + str(self.sh_recovery))
+            print_height += 1
+        if self.sh_raise_cost > 0:
+            libtcod.console_print(console, x, y + print_height, 'Raise Cost: ' + str(self.sh_raise_cost))
+            print_height += 1
         if self.weight > 0:
             libtcod.console_print(console, x, y + print_height, 'Weight: ' + str(self.weight))
             print_height += 1
@@ -306,6 +347,7 @@ class Equipment:
                                           spell_data.max_level))
                 libtcod.console_set_default_foreground(console, libtcod.white)
                 print_height += 1
+
 
         return print_height
 
@@ -377,3 +419,13 @@ class Equipment:
         self.spell_list[spell] = level
         self.flat_spell_list.append(spell)
         self.spell_charges[spell] = spells.library[spell].max_spell_charges(self.spell_list[spell])
+
+    def sh_raise(self):
+        self.sh_timer = 0
+        if not self.raised and (self.holder is player.instance or fov.monster_can_see_object(self.holder, player.instance)):
+            ui.message('%s %s %s shield.' %
+                       (syntax.name(self.holder).capitalize(),
+                        syntax.conjugate(self.holder is player.instance, ('raise', 'raises')),
+                        syntax.pronoun(self.holder.name, possesive=True)), libtcod.blue)
+        self.raised = True
+        self.sh_points = self.sh_max
