@@ -70,7 +70,7 @@ proto = {
         'color': libtcod.dark_red,
         'body_type': 'insect',
         'hp': 1,
-        'strength_dice' : '2d6',
+        'strength_dice' : '2d4',
         'attack_bonus' : 0,
         'armor': 0,
         'evasion': 0,

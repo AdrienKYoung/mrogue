@@ -50,7 +50,7 @@ class StatusEffect:
 
 
 def burning(duration = 6, stacks = 1):
-    return StatusEffect('burning', duration, libtcod.red, stacking_behavior='stack-refresh', stacks=stacks,
+    return StatusEffect('burning', duration, spells.essence_colors['fire'], stacking_behavior='stack-refresh', stacks=stacks,
                         on_tick=fire_tick, message="You are on fire!",
                         description='This unit will take fire damage at the end of every turn.', cleanseable=True)
 
@@ -59,7 +59,7 @@ def exhausted(duration = 10):
                         description='This unit deals reduced damage.', attack_power_mod=0.55, cleanseable=True)
 
 def cursed(duration = 10):
-    return StatusEffect('cursed',duration,libtcod.yellow, message="You have been cursed!",
+    return StatusEffect('cursed',duration,spells.essence_colors['death'], message="You have been cursed!",
                         description='This unit has reduced defenses.', armor_mod=0.65, spell_resist_mod=0.65,
                         evasion_mod=0.5, cleanseable=True)
 
@@ -68,11 +68,11 @@ def stunned(duration = 1):
                         description='This unit cannot act.')
 
 def frozen(duration = 1):
-    return StatusEffect('frozen',duration,libtcod.blue, message="You have been frozen solid!",
+    return StatusEffect('frozen',duration,spells.essence_colors['cold'], message="You have been frozen solid!",
                         description='This unit cannot act.')
 
 def judgement(duration = 30, stacks=10):
-    return StatusEffect('judgement',duration,libtcod.yellow, message="You are marked for judgement!", stacks=stacks,
+    return StatusEffect('judgement',duration,spells.essence_colors['radiance'], message="You are marked for judgement!", stacks=stacks,
                         description='This unit could be punished with smiting.', stacking_behavior='stack-refresh',
                         cleanseable=True, on_apply=check_judgement)
 
@@ -107,7 +107,7 @@ def bleeding(duration = 5):
                         cleanseable=True)
 
 def invulnerable(duration = 5):
-    return StatusEffect('invulnerable', duration, libtcod.blue, message="A golden shield protects you from harm!",
+    return StatusEffect('invulnerable', duration, spells.essence_colors['radiance'], message="A golden shield protects you from harm!",
                         description='This unit is immune to damage.', cleanseable=False)
 
 def confusion(duration = 10):

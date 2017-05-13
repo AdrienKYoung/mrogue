@@ -54,6 +54,13 @@ data = {
         'cooldown': 0
     },
 
+    'ability_cleave': {
+        'name': 'Cleave',
+        'description': 'Make an attack against all adjacent enemies',
+        'function': actions.cleave_attack,
+        'cooldown': 0
+    },
+
     'ability_pommel_strike': {
         'name': 'Pommel Strike',
         'description': 'Smash your opponent with your sword pommel for extra damage and shred at the expense of'

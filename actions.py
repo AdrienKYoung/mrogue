@@ -58,6 +58,13 @@ def attack_reach(actor=None, target=None):
             return result
     return 'didnt-take-turn'
 
+def cleave_attack(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+    if actor is player.instance:
+        return player.cleave_attack(0, 0)
+    return 'cancelled' #TODO: Implement cleave for non-player
+
 def bash_attack(actor=None, target=None):
     x,y = ui.target_tile(max_range=1)
     target = None
@@ -79,7 +86,7 @@ def recover_shield(actor=None, target=None):
     sh = player.instance.fighter.get_equipped_shield()
     if sh is not None:
         cost = sh.sh_raise_cost
-        if player.instance.fighter.stamina > cost:
+        if player.instance.fighter.stamina >= cost:
             player.instance.fighter.adjust_stamina(-sh.sh_raise_cost)
             sh.sh_raise()
             return 'success'

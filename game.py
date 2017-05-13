@@ -1766,13 +1766,15 @@ def enter_map(world_map, direction=None):
                 player.instance.y = obj.y
                 player.instance.elevation = current_map.tiles[obj.x][obj.y].elevation
 
+    if player.instance not in current_map.objects or player.instance not in current_map.fighters:
+        current_map.add_object(player.instance)
+
     fov.initialize_fov()
 
     ui.display_fading_text(string.capwords(dungeon.branches[current_map.branch]['name']), 60, 20)
 
 
 def generate_level(world_map):
-    global spawned_bosses
     mapgen.make_map(world_map)
 
 

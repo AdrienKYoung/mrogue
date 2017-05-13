@@ -25,6 +25,7 @@ import syntax
 import pathfinding
 import abilities
 import actions
+import spells
 
 class Fighter:
 
@@ -119,7 +120,12 @@ class Fighter:
             self.stamina = self.max_stamina
 
     def take_damage(self, damage, attacker=None, affect_shred=True, blockable=False):
-        if self.owner == player.instance and consts.DEBUG_INVINCIBLE:
+        if self.has_status('invulnerable'):
+            if self.owner is player.instance or fov.player_can_see(self.owner.x, self.owner.y):
+                ui.message('%s %s protected by a radiant shield!' %
+                           (syntax.name(self.owner).capitalize(),
+                            syntax.conjugate(self.owner is player.instance, ('are', 'is'))),
+                           spells.essence_colors['radiance'])
             damage = 0
 
         if damage > 0:
@@ -735,7 +741,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
             # Shred armor if not blocked by a shield
-            if target.fighter.shield == 0:
+            if target.fighter.shield == 0 and not target.fighter.has_status('invulnerable'):
                 shred = fighter.attack_shred(weapon) + shred_modifier
                 for i in range(shred):
                     if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
@@ -747,7 +753,8 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
             attack_text_ex(fighter,target,verb,location,damage,hit_type,percent_hit)
 
-            if target.fighter.take_damage(damage, blockable=blockable) != 'blocked':
+            result = target.fighter.take_damage(damage, blockable=blockable)
+            if result != 'blocked' and result > 0:
                 # Trigger on-hit effects
                 if on_hit is not None and target.fighter is not None:
                     if isinstance(on_hit,(list,set,tuple)):

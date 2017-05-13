@@ -157,6 +157,8 @@ def create(loadout):
     instance.skill_point_progress = 0
     instance.fighter.xp = 0
     instance.perk_abilities = []
+    if consts.DEBUG_INVINCIBLE:
+        instance.fighter.apply_status_effect(effects.invulnerable(duration=None))
 
     for item in loadout['inventory']:
         i = None

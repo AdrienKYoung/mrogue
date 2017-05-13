@@ -1247,10 +1247,10 @@ def show_ability_screen():
     if weapon is not None and weapon.owner.item.ability is not None:
         opts.append(weapon.owner.item.ability)
 
-    if weapon is not None and weapon.ctrl_attack is not None:
-        opts.append(weapon.ctrl_attack)
-    else:
-        opts.append(abilities.default_abilities['bash'])
+    #if weapon is not None and weapon.ctrl_attack is not None:
+    #    opts.append(weapon.ctrl_attack)
+    #else:
+    #    opts.append(abilities.default_abilities['bash'])
     # Other equipment abilities
     for i in main.get_all_equipped(player.instance.fighter.inventory):
         if i is not weapon and i.owner.item.ability is not None:
