@@ -24,7 +24,7 @@ table = {
         'slot'          : 'body',
         'description'   : 'A hardened leather vest.',
         'evasion_bonus' : -1,
-        'weight'        : 5
+        'weight'        : 8
     },
 
     'equipment_mail_armor': {
@@ -37,7 +37,7 @@ table = {
         'evasion_bonus' : -3,
         'slot'          : 'body',
         'description'   : 'A coat of mail made of interlocking iron rings',
-        'weight'        : 10
+        'weight'        : 15
     },
 
     'equipment_brigandine': {
@@ -50,7 +50,7 @@ table = {
         'evasion_bonus' : -5,
         'slot'          : 'body',
         'description'   : 'A vest of articulated steel plates',
-        'weight'        : 20
+        'weight'        : 25
     },
 
     'equipment_plate_armor': {
@@ -63,7 +63,7 @@ table = {
         'evasion_bonus' : -7,
         'slot'          : 'body',
         'description'   : 'A hardened steel breastplate',
-        'weight'        : 30
+        'weight'        : 35
     },
 
     'equipment_boob_plate': {
@@ -76,7 +76,7 @@ table = {
         'evasion_bonus' : -4,
         'slot'          : 'body',
         'description'   : 'A steel bra that deflects harm from the entire torso by an unknown mechanism',
-        'weight'        : 10
+        'weight'        : 12
     },
 
     'equipment_iron_helm': {
@@ -89,7 +89,7 @@ table = {
         'evasion_bonus' : -1,
         'slot'          : 'head',
         'description'   : 'A conical iron helm with a nose guard',
-        'weight'        : 3
+        'weight'        : 6
     },
 
     'equipment_great_helm': {
@@ -102,7 +102,7 @@ table = {
         'evasion_bonus' : -3,
         'slot'          : 'head',
         'description'   : 'A large cylindrical steel helm. Very heavy and cumbersome',
-        'weight'        : 7
+        'weight'        : 10
     },
 
     'equipment_armet_helm': {
@@ -115,7 +115,7 @@ table = {
         'evasion_bonus' : -1,
         'slot'          : 'head',
         'description'   : 'A crested steel helm with visor and bevor.',
-        'weight'        : 6
+        'weight'        : 9
     },
 
     'equipment_witch_hat': {
@@ -129,7 +129,7 @@ table = {
         'slot'          : 'head',
         'description'   : 'A black pointed hat, suitable for the fashionable culdron stirrer.',
         'resistances'   : ['fire','burning'],
-        'weight'        : 1
+        'weight'        : 3
     },
 
     'equipment_gauntlets' : {
@@ -142,7 +142,7 @@ table = {
         'evasion_bonus' : 0,
         'slot'          : 'hands',
         'description'   : 'An armored pair of gloves',
-        'weight'        : 3
+        'weight'        : 6
     },
 
     'equipment_greaves' : {
@@ -155,7 +155,7 @@ table = {
         'evasion_bonus' : -1,
         'slot'          : 'feet',
         'description'   : 'Steel plates that protect the shins',
-        'weight'        : 3
+        'weight'        : 6
     },
 
     'shield_leather_buckler': {
@@ -169,10 +169,10 @@ table = {
         'description': 'A small round shield made from stiff boiled leather. It is lightweight and easy to lift,'
                        ' but easily knocked away.',
         'evasion_bonus': 0,
-        'weight': 4,
+        'weight': 6,
         'sh_max': 1,
-        'sh_raise_cost': 20,
-        'sh_recovery': 7,
+        'sh_raise_cost': 25,
+        'sh_recovery': 15,
     },
 
     'shield_wooden_buckler': {
@@ -186,10 +186,10 @@ table = {
         'description': 'A small round shield made from wooden planks bound in an iron ring. It is lightweight and easy'
                        ' to lift, but easily knocked away.',
         'evasion_bonus': 0,
-        'weight': 5,
+        'weight': 8,
         'sh_max': 5,
-        'sh_raise_cost': 25,
-        'sh_recovery': 10,
+        'sh_raise_cost': 30,
+        'sh_recovery': 18,
     },
 
     'shield_iron_buckler': {
@@ -203,10 +203,10 @@ table = {
         'description': 'A small round shield made of roughly hammered iron. It is lightweight and easy to lift,'
                        ' but easily knocked away.',
         'evasion_bonus': -1,
-        'weight': 6,
+        'weight': 8,
         'sh_max': 8,
-        'sh_raise_cost': 30,
-        'sh_recovery': 12,
+        'sh_raise_cost': 35,
+        'sh_recovery': 20,
     },
 
     'shield_duelists_buckler': {
@@ -220,10 +220,10 @@ table = {
         'description': 'A small, bronze shield emblazoned with a red serpent. It is the sigil of the Taguinnes, a family'
                        ' who left no slight to their honor unpaid in blood.',
         'evasion_bonus': 2,
-        'weight': 2,
+        'weight': 4,
         'sh_max': 3,
-        'sh_raise_cost': 17,
-        'sh_recovery': 5,
+        'sh_raise_cost': 20,
+        'sh_recovery': 12,
     },
 
     'shield_heater_shield': {
@@ -236,10 +236,10 @@ table = {
         'slot': 'left hand',
         'description': 'A simple, sturdy shield carried by footsoldiers.',
         'evasion_bonus': -2,
-        'weight': 8,
+        'weight': 12,
         'sh_max': 12,
-        'sh_raise_cost': 45,
-        'sh_recovery': 12,
+        'sh_raise_cost': 50,
+        'sh_recovery': 20,
     },
 
     'shield_escutcheon': {
@@ -252,10 +252,10 @@ table = {
         'slot': 'left hand',
         'description': 'A decorative shield bearing the faded heraldry of some long-forgotten knight.',
         'evasion_bonus': -2,
-        'weight': 9,
+        'weight': 14,
         'sh_max': 15,
-        'sh_raise_cost': 45,
-        'sh_recovery': 10,
+        'sh_raise_cost': 50,
+        'sh_recovery': 18,
     },
 
     'shield_round_shield': {
@@ -269,10 +269,10 @@ table = {
         'description': 'A large round shield made of wood and flecked with colored paint. Shields like these were '
                        'carried by raiders from the Stormy Seas.',
         'evasion_bonus': -1,
-        'weight': 9,
+        'weight': 13,
         'sh_max': 10,
-        'sh_raise_cost': 30,
-        'sh_recovery': 12,
+        'sh_raise_cost': 35,
+        'sh_recovery': 20,
     },
 
     'shield_kite_shield': {
@@ -285,10 +285,10 @@ table = {
         'slot': 'left hand',
         'description': 'A long shield with a rounded top and a pointed tip.',
         'evasion_bonus': -4,
-        'weight': 14,
+        'weight': 18,
         'sh_max': 20,
-        'sh_raise_cost': 55,
-        'sh_recovery': 18,
+        'sh_raise_cost': 60,
+        'sh_recovery': 26,
     },
 
     'shield_tower_shield': {
@@ -301,9 +301,9 @@ table = {
         'slot': 'left hand',
         'description': 'A massive iron shield offering complete protection - for those that can heft its weight.',
         'evasion_bonus': -6,
-        'weight': 24,
+        'weight': 28,
         'sh_max': 35,
-        'sh_raise_cost': 80,
-        'sh_recovery': 25,
+        'sh_raise_cost': 85,
+        'sh_recovery': 33,
     },
 }

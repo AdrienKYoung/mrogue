@@ -188,7 +188,7 @@ proto = {
         'description': 'Slightly larger, much more vicious humanoid that tells other goblins what to do.',
         'resistances': [],
         'equipment': [
-            {'weapon_spear':50,'weapon_longsword':50},
+            {'weapon_spear':30,'weapon_longsword':40, 'weapon_hatchet':30},
             {'none':50,'shield_kite_shield':25, 'shield_round_shield':25},
             {'equipment_leather_armor':50, 'equipment_mail_armor':50}],
         'shred': 1,

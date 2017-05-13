@@ -1309,6 +1309,8 @@ def create_item(name, material=None, quality=''):
             equipment_component.modifiers[material] = loot.armor_materials[material]
             equipment_component.quality = quality
             equipment_component.material = material
+            if equipment_component.sh_max > 0:
+                equipment_component.sh_points = equipment_component.sh_max
 
     go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))

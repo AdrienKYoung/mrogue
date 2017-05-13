@@ -139,7 +139,6 @@ instance = None
 is_meditating = False
 
 def create(loadout):
-    import loot
     global instance
 
     loadout = loadouts[loadout]
@@ -171,7 +170,7 @@ def create(loadout):
 
         if 'weapon' in prototype:
             i = main.create_item(prototype, material='iron', quality='')
-        elif 'equipment' in prototype:
+        elif 'equipment' in prototype or 'shield' in prototype:
             i = main.create_item(prototype, material='', quality='')
         else:
             i = main.create_item(prototype)
@@ -815,7 +814,30 @@ def on_get_hit(this,other,damage):
             instance.fighter.adjust_stamina(10)
             ui.message('You feel a surge of adrenaline!', libtcod.light_yellow)
 
+def get_abilities():
+    import abilities
 
+    # Always available
+    opts = [abilities.default_abilities['attack'], abilities.default_abilities['jump']]
+
+    # Weapon ability, or bash if none
+    weapon = main.get_equipped_in_slot(instance.fighter.inventory, 'right hand')
+    if weapon is not None and weapon.owner.item.ability is not None:
+        opts.append(weapon.owner.item.ability)
+    else:
+        opts.append(abilities.default_abilities['bash'])
+
+    # Activatable items other than weapon
+    for i in main.get_all_equipped(instance.fighter.inventory):
+        if i is not weapon and i.owner.item.ability is not None:
+            opts.append(i.owner.item.ability)
+
+    # Raise shield
+    sh = instance.fighter.get_equipped_shield()
+    if sh is not None and not sh.raised:
+        opts.append(abilities.default_abilities['raise shield'])
+
+    return opts
 
 import game as main
 import libtcodpy as libtcod

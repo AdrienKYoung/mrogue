@@ -388,7 +388,7 @@ def scroll_message(amount):
     global msg_render_height
     msg_render_height = main.clamp(msg_render_height + amount, 0, len(game_msgs) - consts.MSG_HEIGHT - 1)
 
-def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, align=libtcod.CENTER):
+def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, align=libtcod.CENTER, print_ratio=True, text_color=libtcod.white):
     bar_width = int(float(value) / maximum * total_width)
 
     libtcod.console_set_default_background(side_panel, back_color)
@@ -398,7 +398,7 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, a
     if bar_width > 0:
         libtcod.console_rect(side_panel, x, y, bar_width, 1, False, libtcod.BKGND_SCREEN)
 
-    libtcod.console_set_default_foreground(side_panel, libtcod.white)
+    libtcod.console_set_default_foreground(side_panel, text_color)
     pos = x + 1
     if align == libtcod.LEFT:
         pos = x + 1
@@ -406,8 +406,11 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, a
         pos = x + total_width / 2
     elif align == libtcod.RIGHT:
         pos = x + total_width - 1
-    libtcod.console_print_ex(side_panel, pos, y, libtcod.BKGND_NONE, align,
-                             name + ': ' + str(value) + '/' + str(maximum))
+    if print_ratio:
+        print_string = name + ':' + str(value) + '/' + str(maximum)
+    else:
+        print_string = name
+    libtcod.console_print_ex(side_panel, pos, y, libtcod.BKGND_NONE, align, print_string)
 
 def draw_border(console, x0, y0, width, height, foreground=libtcod.gray, background=libtcod.black):
 
@@ -451,8 +454,16 @@ def render_side_panel(acc_mod=1.0):
 
     # Shield bar
     if player.instance.fighter.get_equipped_shield() is not None:
-        render_bar(2, drawHeight, consts.BAR_WIDTH, 'Shield', player.instance.fighter.shield,
-                   player.instance.fighter.get_equipped_shield().sh_max, libtcod.blue, libtcod.dark_blue)
+        raised = player.instance.fighter.get_equipped_shield().raised
+        if raised:
+            shield_text = 'Shield'
+            text_color = libtcod.white
+        else:
+            shield_text = 'Knocked Away'
+            text_color = libtcod.dark_red
+        render_bar(2, drawHeight, consts.BAR_WIDTH, shield_text, player.instance.fighter.shield,
+                   player.instance.fighter.get_equipped_shield().sh_max, libtcod.blue, libtcod.dark_blue,
+                   print_ratio=raised, text_color=text_color)
         drawHeight += 1
 
     # New armor graphics
@@ -602,8 +613,17 @@ def render_side_panel(acc_mod=1.0):
 
         # Shield bar
         if selected_monster.fighter.get_equipped_shield() is not None:
-            render_bar(2, drawHeight, consts.BAR_WIDTH, 'Shield', selected_monster.fighter.shield,
-                       selected_monster.fighter.get_equipped_shield().sh_max, libtcod.blue, libtcod.dark_blue)
+
+            raised = selected_monster.fighter.get_equipped_shield().raised
+            if raised:
+                shield_text = 'Shield'
+                text_color = libtcod.white
+            else:
+                shield_text = 'Knocked Away'
+                text_color = libtcod.dark_red
+            render_bar(2, drawHeight, consts.BAR_WIDTH, shield_text, selected_monster.fighter.shield,
+                       selected_monster.fighter.get_equipped_shield().sh_max, libtcod.blue, libtcod.dark_blue,
+                       print_ratio=raised, text_color=text_color)
             drawHeight += 1
 
         #armor_string = 'AR:' + str(selected_monster.fighter.armor)
@@ -1239,28 +1259,7 @@ def examine(x=None, y=None):
                 menu(desc, ['back'], 50)
 
 def show_ability_screen():
-    import abilities
-    opts = [abilities.default_abilities['attack'], abilities.default_abilities['jump']]
-    # Weapon ability, or bash if none
-    weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
-
-    if weapon is not None and weapon.owner.item.ability is not None:
-        opts.append(weapon.owner.item.ability)
-
-    #if weapon is not None and weapon.ctrl_attack is not None:
-    #    opts.append(weapon.ctrl_attack)
-    #else:
-    #    opts.append(abilities.default_abilities['bash'])
-    # Other equipment abilities
-    for i in main.get_all_equipped(player.instance.fighter.inventory):
-        if i is not weapon and i.owner.item.ability is not None:
-            opts.append(i.owner.item.ability)
-
-    sh = player.instance.fighter.get_equipped_shield()
-    if sh is not None and not sh.raised:
-        opts.append(abilities.default_abilities['raise shield'])
-
-    #opts += [v for k,v in abilities.default_abilities.items() if k not in ['attack','bash']]
+    opts = player.get_abilities()
     index = menu('Abilities',[opt.name for opt in opts],20)
     if index is not None:
         choice = opts[index]

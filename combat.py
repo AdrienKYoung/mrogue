@@ -59,7 +59,7 @@ class Fighter:
         self.on_hit = on_hit
         self.shred = 0
         self.time_since_last_damaged = 0
-        self.abilities = abilities
+        self._abilities = abilities
         self.hit_table = hit_table
         self.monster_flags = monster_flags
         self.subtype = subtype
@@ -256,9 +256,6 @@ class Fighter:
                         player.instance.fighter.adjust_stamina('50')
                         if main.roll_dice('1d20') > 18:
                             main.spawn_essence(self.owner.x,self.owner.y,'water')
-
-
-
         elif self.breath < self.max_breath:
             self.breath += 1
 
@@ -382,6 +379,19 @@ class Fighter:
         else:
             str_dice_size = int(self.monster_str_dice.split('+')[0].split('d')[1])
             return max(str_dice_size + bonus, 0)
+
+    @property
+    def abilities(self):
+        if self.owner is player.instance:
+            return player.get_abilities()
+        else:
+            a = []
+            for ability in self._abilities:
+                a.append(ability)
+            for item in main.get_all_equipped(self.inventory):
+                if item.owner.item.ability:
+                    a.append(item.owner.item.ability)
+            return a
 
     @property
     def shield(self):
@@ -753,7 +763,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
             attack_text_ex(fighter,target,verb,location,damage,hit_type,percent_hit)
 
-            result = target.fighter.take_damage(damage, blockable=blockable)
+            result = target.fighter.take_damage(damage, attacker=fighter.owner, blockable=blockable)
             if result != 'blocked' and result > 0:
                 # Trigger on-hit effects
                 if on_hit is not None and target.fighter is not None:
@@ -779,7 +789,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
                     for t in main.get_objects(target.x,target.y,distance=1,
                                               condition=lambda o: o.fighter is not None and o.fighter.team is not 'ally'):
                         if t != target:
-                            t.fighter.take_damage(main.roll_dice('1d6'),fighter)
+                            t.fighter.take_damage(main.roll_dice('1d6'), attacker=fighter.owner)
 
                 if main.has_skill('gatekeeper') and target.fighter is not None:
                     if libtcod.random_get_int(0,0,10 + target.fighter.armor) < 5:
@@ -1006,7 +1016,7 @@ def on_hit_chain_lightning(attacker, target, damage, zapped=None):
     if damage > 0:
         attack_text_ex(attacker.fighter, target, None, None, damage, 'lightning', float(damage) / float(target.fighter.max_hp))
 
-        target.fighter.take_damage(damage)
+        target.fighter.take_damage(damage, attacker=attacker)
         for adj in main.adjacent_tiles_diagonal(target.x, target.y):
             for obj in main.current_map.fighters:
                 if obj.x == adj[0] and obj.y == adj[1] and obj.fighter.team != attacker.fighter.team and obj not in zapped:
@@ -1045,7 +1055,7 @@ def on_hit_knockback(attacker, target, damage, force=6):
                 syntax.conjugate(target is player.instance, ('fly', 'flies')),
                 against,
                 damage), libtcod.gray)
-            target.fighter.take_damage(damage)
+            target.fighter.take_damage(damage, attacker=attacker)
             steps = force + 1
 
 def on_hit_reanimate(attacker, target, damage):

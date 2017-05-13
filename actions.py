@@ -46,24 +46,38 @@ def attack(actor=None, target=None):
     return 'didnt-take-turn'
 
 def attack_reach(actor=None, target=None):
-    x, y = ui.target_tile(max_range=1)
-    target = None
-    for object in main.current_map.fighters:
-        if object.x == x and object.y == y:
-            target = object
-            break
-    if target is not None and target is not player.instance:
-        result = player.reach_attack(target.x - actor.x, target.y - actor.y)
-        if result != 'failed':
-            return result
-    return 'didnt-take-turn'
+    if actor is None:
+        actor = player.instance
+        x, y = ui.target_tile(max_range=1)
+        target = None
+        for object in main.current_map.fighters:
+            if object.x == x and object.y == y:
+                target = object
+                break
+        if target is not None and target is not player.instance:
+            result = player.reach_attack(target.x - actor.x, target.y - actor.y)
+            if result != 'failed':
+                return result
+        return 'didnt-take-turn'
+    else:
+        if abs(actor.x - target.x) <= 2 and abs(actor.y - target.y) <= 2:
+            return actor.fighter.attack(target)
+        else:
+            return 'didnt-take-turn'
+
 
 def cleave_attack(actor=None, target=None):
     if actor is None:
         actor = player.instance
     if actor is player.instance:
         return player.cleave_attack(0, 0)
-    return 'cancelled' #TODO: Implement cleave for non-player
+    if actor.distance_to(target) > 1:
+        return 'didnt-take-turn'
+    for adj in main.adjacent_tiles_diagonal(actor.x, actor.y):
+        targets = main.get_objects(adj[0], adj[1], lambda o: o.fighter and o.fighter.team == 'ally')
+        for t in targets:
+            actor.fighter.attack(t)
+    return 'success'
 
 def bash_attack(actor=None, target=None):
     x,y = ui.target_tile(max_range=1)
@@ -513,12 +527,15 @@ def shatter_item(actor=None, target=None):
         if x is None:
             return 'cancelled'
         actor = player.instance
-        choices = main.get_objects(x, y)
+        choices = main.get_objects(x, y, lambda o:o.fighter and o.fighter.inventory and len(o.fighter.inventory) > 0)
+        if len(choices) == 0:
+            choices = main.get_objects(x, y, lambda o:o.item is not None)
         if len(choices) > 1:
             target = choices[ui.menu('Which target?', [i.name for i in choices], 24)]
         elif len(choices) > 0:
             target = choices[0]
         else:
+            ui.message('No valid targets here', libtcod.gray)
             return 'cancelled'
         dc += 4
     else:
@@ -534,22 +551,22 @@ def shatter_item(actor=None, target=None):
             if actor == player.instance:
                 ui.message('Target has no items', libtcod.light_blue)
             return 'cancelled'
-        item = inventory[main.random_choice_index(inventory)]
+        item = inventory[libtcod.random_get_int(0, 0, len(inventory) - 1)]
         dc += 5
     elif target.item is not None:
         item = target
 
     if main.roll_dice('1d20') + main.roll_dice('1d{}'.format(actor.fighter.spell_power)) > dc:
-        ui.message("{} shatters into pieces!".format(item.name), libtcod.flame)
+        ui.message("The {} shatters into pieces!".format(item.name), libtcod.flame)
         if inventory is not None:
             inventory.remove(item)
         item.destroy()
         for obj in main.current_map.fighters:
             if obj.distance(x, y) <= consts.FIREBALL_RADIUS:
-                combat.spell_attack_ex(actor.fighter, obj, None, 'shrapnel', '4d4', 1, 'slashing', 0)
+                combat.spell_attack_ex(actor.fighter, obj, None, '4d4', 1, 'slashing', 0)
         return 'success'
     else:
-        ui.message("Shatter failed to break {}!".format(item), libtcod.yellow)
+        ui.message("Shatter failed to break the {}!".format(item.name), libtcod.yellow)
         return 'success'
 
 
@@ -760,7 +777,7 @@ def sacrifice(actor=None,target=None):
         actor = player.instance
 
     spell = abilities.data['ability_sacrifice']
-    actor.fighter.take_damage(min(30,int(actor.fighter.hp / 2)))
+    actor.fighter.take_damage(min(30,int(actor.fighter.hp / 2)), attacker=actor)
     damage_mod = int((actor.fighter.max_hp - actor.fighter.hp )/ actor.fighter.max_hp)
 
     for (_x,_y) in main.adjacent_tiles_diagonal(actor.x,actor.y):

@@ -358,9 +358,9 @@ qualities = {
             'evasion_bonus' : 0,
             'armor_bonus' : 0,
             'weight_bonus' : -1,
-            'sh_max_bonus' : 2,
-            'sh_recovery_bonus' : -1,
-            'sh_raise_cost_bonus' : 0,
+            'sh_max_bonus' : 1,
+            'sh_recovery_bonus' : 0,
+            'sh_raise_cost_bonus' : -1,
         }
     },
     'fine' : {
@@ -374,9 +374,9 @@ qualities = {
             'evasion_bonus' : 1,
             'armor_bonus' : 0,
             'weight_bonus' : -2,
-            'sh_max_bonus' : 5,
-            'sh_recovery_bonus' : -2,
-            'sh_raise_cost_bonus' : -5,
+            'sh_max_bonus' : 3,
+            'sh_recovery_bonus' : -1,
+            'sh_raise_cost_bonus' : -2,
         }
     },
     'masterwork' : {
@@ -388,12 +388,12 @@ qualities = {
             'break_chance_bonus' : -10.0,
         },
         'armor':{
-            'evasion_bonus' : 2,
+            'evasion_bonus' : 1,
             'armor_bonus' : 0,
             'weight_bonus' : -3,
-            'sh_max_bonus' : 9,
-            'sh_recovery_bonus' : -3,
-            'sh_raise_cost_bonus' : -5,
+            'sh_max_bonus' : 6,
+            'sh_recovery_bonus' : -2,
+            'sh_raise_cost_bonus' : -3,
         }
     },
     'artifact' : {
@@ -406,12 +406,12 @@ qualities = {
             'break_chance_bonus' : -1000.0,
         },
         'armor':{
-            'evasion_bonus' : 3,
+            'evasion_bonus' : 2,
             'armor_bonus' : 1,
             'weight' : -5,
-            'sh_max_bonus' : 15,
-            'sh_recovery_bonus' : -5,
-            'sh_raise_cost_bonus' : -10,
+            'sh_max_bonus' : 10,
+            'sh_recovery_bonus' : -3,
+            'sh_raise_cost_bonus' : -5,
         }
     },
 }
