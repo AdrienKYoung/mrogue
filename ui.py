@@ -601,8 +601,8 @@ def render_side_panel(acc_mod=1.0):
             libtcod.console_print(side_panel, 2, drawHeight, ai_state_text)
         drawHeight += 2
         if selected_monster.fighter.team == 'ally':
-            health_bar_color = libtcod.darker_blue
-            health_bar_bkgnd_color = libtcod.darkest_blue
+            health_bar_color = libtcod.darker_sky
+            health_bar_bkgnd_color = libtcod.darkest_sky
         else:
             health_bar_color = libtcod.dark_red
             health_bar_bkgnd_color = libtcod.darker_red

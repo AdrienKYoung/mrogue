@@ -833,7 +833,8 @@ def green_touch(actor=None, target=None):
     mapgen.scatter_reeds(grass, probability=30)
     for tile in grass:
         main.changed_tiles.append(tile)
-        fov.set_fov_properties(tile[0], tile[1], len(main.get_objects(tile[0], tile[1], lambda o: o.blocks_sight)) > 0)
+        fov.set_fov_properties(tile[0], tile[1], len(main.get_objects(tile[0], tile[1], lambda o: o.blocks_sight)) > 0,
+                               elevation=main.current_map.tiles[tile[0]][tile[1]].elevation)
     return 'success'
 
 def fungal_growth(actor=None, target=None):

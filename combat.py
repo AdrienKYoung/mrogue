@@ -75,7 +75,7 @@ class Fighter:
         print_height = 1
         # Print ally status
         if self.team == 'ally':
-            libtcod.console_set_default_foreground(console, libtcod.blue)
+            libtcod.console_set_default_foreground(console, libtcod.dark_sky)
             libtcod.console_print(console, x, y + print_height, 'ALLY')
             print_height += 2
 

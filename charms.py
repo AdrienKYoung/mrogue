@@ -88,7 +88,7 @@ def shard_of_creation():
         for t in tiles:
             blocks = main.current_map.tiles[t[0]][t[1]].blocks_sight or \
                      len(main.get_objects(t[0], t[1], lambda o: o.blocks_sight)) > 0
-            fov.set_fov_properties(t[0], t[1], blocks)
+            fov.set_fov_properties(t[0], t[1], blocks, elevation=main.current_map.tiles[t[0]][t[1]].elevation)
         return 'success'
     else:
         return 'didnt-take-turn'
