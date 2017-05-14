@@ -172,6 +172,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
     # Draw 'description' prompt
     if has_descriptions:
         draw_height += 1
+        libtcod.console_set_default_foreground(menu_window, libtcod.white)
         libtcod.console_print(menu_window, 1, draw_height, '[Shift] + option for descriptions')
 
 
@@ -1260,7 +1261,62 @@ def examine(x=None, y=None):
 
 def show_ability_screen():
     opts = player.get_abilities()
-    index = menu('Abilities',[opt.name for opt in opts],20)
+
+    opts_ex = collections.OrderedDict()
+    letter_index = ord('a')
+    for opt in opts:
+        if opt.current_cd > 0:
+            name_color = libtcod.dark_gray
+        else:
+            name_color = libtcod.white
+        if opt.cooldown is None or opt.cooldown == 0:
+            cooldown_text = '-'
+            cooldown_color = libtcod.dark_gray
+            name_color = libtcod.white
+        else:
+            if opt.current_cd > 0:
+                cooldown_text = str(opt.cooldown) + ' (' + str(opt.current_cd) + ')'
+                cooldown_color = libtcod.dark_red
+                name_color = libtcod.dark_gray
+            else:
+                cooldown_text = str(opt.cooldown)
+                cooldown_color = libtcod.white
+                name_color = libtcod.white
+
+        #determine stamina cost
+        stamina_color = libtcod.dark_green
+        if opt.name == 'Attack':
+            stamina_cost = player.instance.fighter.calculate_attack_stamina_cost()
+        elif opt.name == 'Raise Shield':
+            stamina_cost = player.instance.fighter.get_equipped_shield().sh_raise_cost
+        elif opt.name == 'Cleave':
+            stamina_cost = player.instance.fighter.calculate_attack_stamina_cost() * 2
+        else:
+            stamina_cost = opt.stamina_cost
+        if stamina_cost > player.instance.fighter.stamina:
+            name_color = libtcod.dark_gray
+            stamina_color = libtcod.dark_red
+
+        d = collections.OrderedDict()
+        d['ability'] = {
+                'text' : opt.name,
+                'color' : name_color,
+            }
+        d['stamina'] = {
+                'text' : '[' + str(stamina_cost) + ']',
+                'color' : stamina_color
+            }
+        d['cooldown'] = {
+                'text': cooldown_text,
+                'color': cooldown_color
+            }
+        d['description'] = opt.description
+        opts_ex[chr(letter_index)] = d
+
+        letter_index += 1
+
+    index = menu_ex('Abilities', opts_ex, 40)
+    #index = menu('Abilities',[opt.name for opt in opts],20)
     if index is not None:
         choice = opts[index]
         if choice is not None:

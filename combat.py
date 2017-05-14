@@ -179,7 +179,7 @@ class Fighter:
                 stamina_cost = int((float(main.get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) /
                                     (float(self.owner.player_stats.str) / float(
                                         main.get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
-            stamina_cost = int(stamina_cost * (1.0 + main.skill_value('combat_training')))
+            stamina_cost = int(stamina_cost * (1.0 - main.skill_value('combat_training')))
         return stamina_cost
 
     def calculate_attack_count(self):
@@ -642,9 +642,6 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
 
     # check stamina
-    if main.has_skill('combat_training'):
-        stamina_cost = int(round(stamina_cost * main.skill_value('combat_training')))
-
     if fighter.owner.name == 'player':
         if fighter.stamina < stamina_cost:
             ui.message("You can't find the strength to swing your weapon!", libtcod.light_yellow)

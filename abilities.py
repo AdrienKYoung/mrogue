@@ -20,12 +20,13 @@ import ui
 import player
 
 class Ability:
-    def __init__(self, name, description, function, cooldown):
+    def __init__(self, name, description, function, cooldown, stamina_cost=0):
         self.name = name
         self.function = function
         self.description = description
         self.cooldown = cooldown
         self.current_cd = 0
+        self.stamina_cost = stamina_cost
 
     def use(self, actor=None, target=None):
         if self.current_cd < 1:
@@ -408,7 +409,7 @@ vermin_summons = [
 
 default_abilities = {
     'attack' : Ability('Attack','Attack an enemy',actions.attack,0),
-    'bash' : Ability('Bash','Knock an enemy back',actions.bash_attack,0),
-    'jump' : Ability('Jump','Jump to a tile',player.jump,0),
+    'bash' : Ability('Bash','Knock an enemy back',actions.bash_attack,0, stamina_cost=20),
+    'jump' : Ability('Jump','Jump to a tile',player.jump,0, stamina_cost=50),
     'raise shield' : Ability('Raise Shield', 'Spend stamina to recover your shield after it has been knocked aside.', actions.recover_shield, 0)
 }

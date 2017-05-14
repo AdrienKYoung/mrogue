@@ -971,7 +971,7 @@ def knock_back(actor,target):
     if stun:
         #  stun the target
         if target.fighter.apply_status_effect(
-                effects.StatusEffect('stunned', time_limit=2, color=libtcod.light_yellow)):
+                effects.stunned(duration=2)):
             ui.message('%s %s with the %s, stunning %s!' % (
                 syntax.name(target).capitalize(),
                 syntax.conjugate(target is actor, ('collide', 'collides')),

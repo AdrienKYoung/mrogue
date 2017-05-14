@@ -357,25 +357,29 @@ class Equipment:
     def can_cast(self, spell_name, actor):
         sl = self.spell_list[spell_name]
         if actor is player.instance:
-            if player.instance.player_stats.int < spells.library[spell_name].int_requirement - main.skill_value('scholar'):
-                ui.message("This spell is too difficult for you to understand.", libtcod.blue)
-                return False
+            miscast = player.get_miscast_chance(spells.library[spell_name])
+            if main.roll_dice('1d100') <= miscast:
+                ui.message("You miscast %s." % spells.library[spell_name].name, libtcod.gray)
+                return 'miscast'
+            #if player.instance.player_stats.int < spells.library[spell_name].int_requirement - main.skill_value('scholar'):
+            #    ui.message("This spell is too difficult for you to understand.", libtcod.blue)
+            #    return False
         level = spells.library[spell_name].levels[sl - 1]
 
         if spell_name not in self.spell_list:
             ui.message("You don't have that spell.")
             return False
         elif sl <= 0:
-            ui.message('That spell has not been learned!', libtcod.blue)
+            ui.message('That spell has not been learned!', libtcod.gray)
             return False
         elif self.spell_charges[spell_name] <= 0:
-            ui.message('That spell is out of charges.', libtcod.blue)
+            ui.message('That spell is out of charges.', libtcod.gray)
             return False
         elif actor.fighter.stamina < level['stamina_cost']:
             if main.has_skill('blood_magic'):
                 if actor.fighter.stamina + actor.fighter.hp > level['stamina_cost']:
                     return True
-            ui.message("You don't have the stamina to cast that spell.", libtcod.light_yellow)
+            ui.message("You don't have the stamina to cast that spell.", libtcod.gray)
             return False
         return True
 

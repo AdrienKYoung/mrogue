@@ -263,7 +263,7 @@ class AI_Lifeplant:
         monster = self.owner
         for obj in game.current_map.fighters:
             if is_adjacent_diagonal(obj.x, obj.y, monster.x, monster.y):
-                obj.fighter.heal(libtcod.random_get_int(0, 1, 2))
+                obj.fighter.heal(game.roll_dice('1d4'))
         return monster.behavior.attack_speed
 
 

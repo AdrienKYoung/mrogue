@@ -544,7 +544,7 @@ def apply_room(room, clear_objects=False, hard_override=False, avg_elevation=Fal
             #else:
             #    old_tile.tile_type = room.tiles[tile[0], tile[1]]
             #old_tile.no_overwrite = room.no_overwrite
-            if clear_objects or old_tile.blocks:
+            if clear_objects or old_tile.blocks or old_tile.is_pit:
                 for o in map.objects:
                     if o.x == tile[0] and o.y == tile[1] and o is not player.instance:
                         o.destroy()
@@ -1445,7 +1445,10 @@ def make_map_marsh():
         create_feature(tile[0], tile[1], feature_name, open_tiles)
 
     active_branch = dungeon.branches[map.branch]
-    main.place_objects(open_tiles,main.roll_dice(active_branch['encounter_dice']),main.roll_dice(active_branch['loot_dice']), active_branch['xp_amount'])
+    main.place_objects(open_tiles,
+                       main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d'+str(map.difficulty + 1)),
+                       main.roll_dice(active_branch['loot_dice']),
+                       active_branch['xp_amount'])
     #stair_tile = choose_random_tile(open_tiles)
     #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white, always_visible=True)
     #map.objects.append(main.stairs)

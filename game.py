@@ -788,6 +788,9 @@ def create_temp_terrain(type,tiles,duration):
             changed_tiles.append((x, y))
             if terrain_data.blocks:
                 current_map.pathfinding.mark_blocked((x, y))
+            else:
+                current_map.pathfinding.mark_unblocked((x, y))
+            fov.set_fov_properties(x, y, terrain_data.blocks_sight)
 
     current_map.tickers.append(ticker)
 
@@ -800,6 +803,9 @@ def _temp_terrain_on_tick(ticker):
             changed_tiles.append((x, y))
             if terrain_data.blocks:
                 current_map.pathfinding.mark_blocked((x, y))
+            else:
+                current_map.pathfinding.mark_unblocked((x, y))
+            fov.set_fov_properties(x, y, terrain_data.blocks_sight)
 
 def get_all_equipped(equipped_list):
     result = []
@@ -919,7 +925,7 @@ def blastcap_explode(blastcap):
     ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
     for obj in current_map.fighters:
         if is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
-            if obj.fighter.apply_status_effect(effects.StatusEffect('stunned', consts.BLASTCAP_STUN_DURATION, libtcod.light_yellow)):
+            if obj.fighter.apply_status_effect(effects.stunned(duration=consts.BLASTCAP_STUN_DURATION)):
                 ui.message('%s %s stunned!' % (
                                 syntax.name(obj).capitalize(),
                                 syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.gold)

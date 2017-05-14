@@ -84,11 +84,10 @@ def shard_of_creation():
             main.create_temp_terrain('deep water', [(x, y)], 100)
         if terrain == 'grass floor':
             mapgen.scatter_reeds(tiles, 75)
+            for t in tiles:
+                fov.set_fov_properties(t[0], t[1], len(main.get_objects(t[0], t[1], lambda o: o.blocks_sight)) > 0,
+                                       elevation=main.current_map.tiles[t[0]][t[1]].elevation)
         player.instance.essence.remove(essence)
-        for t in tiles:
-            blocks = main.current_map.tiles[t[0]][t[1]].blocks_sight or \
-                     len(main.get_objects(t[0], t[1], lambda o: o.blocks_sight)) > 0
-            fov.set_fov_properties(t[0], t[1], blocks, elevation=main.current_map.tiles[t[0]][t[1]].elevation)
         return 'success'
     else:
         return 'didnt-take-turn'

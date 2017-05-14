@@ -315,7 +315,7 @@ proto = {
         'weaknesses' : ['fire'],
         'resistances': ['confusion', 'stunned'],
         'essence': [(25, 'life')],
-        'flags' : NO_CORPSE,
+        'flags' : NO_CORPSE | IMMOBILE,
         'subtype':'plant',
     },
     'monster_blastcap': {
@@ -333,6 +333,7 @@ proto = {
                        'deafening crack, stunning anything adjacent (but not diagonally) for several turns.',
         'resistances': ['confusion', 'stunned'],
         'death_function': main.blastcap_explode,
+        'flags' : NO_CORPSE | IMMOBILE,
         'subtype':'plant',
         'team' : 'neutral'
     },
@@ -650,6 +651,7 @@ proto = {
                        'It glows with a soft warmth - those close enough to touch'
                        ' it can feel that warmth flow through them, healing their wounds.',
         'resistances': [],
+        'flags' : NO_CORPSE | IMMOBILE,
         'shred': 3,
         'subtype':'plant',
     },

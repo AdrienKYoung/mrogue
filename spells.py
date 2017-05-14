@@ -206,7 +206,7 @@ library = {
             {'stamina_cost':15,'charges':4},
             {'stamina_cost':10,'charges':5}
         ],
-        8),
+        14),
 
     'spell_flame_wall' : Spell(
         'flame wall',
@@ -216,7 +216,7 @@ library = {
             {'stamina_cost':40,'charges':1},
             {'stamina_cost':35,'charges':2}
         ],
-        10),
+        18),
 
     'spell_fireball' : Spell(
         'fireball',
@@ -227,7 +227,7 @@ library = {
             {'stamina_cost':45,'charges':2},
             {'stamina_cost':40,'charges':2}
         ],
-        12),
+        20),
 
     'spell_shatter_item' : Spell(
         'shatter item',
@@ -237,7 +237,7 @@ library = {
             {'stamina_cost':50,'charges':2}
             ,{'stamina_cost':40,'charges':3}
         ],
-        15),
+        24),
 
     'spell_magma_bolt' : Spell(
         'magma bolt',
@@ -248,7 +248,7 @@ library = {
             {'stamina_cost':50,'charges':3},
             {'stamina_cost':40,'charges':4}
         ],
-        20),
+        26),
 
     'spell_frozen_orb' : Spell(
         'frost orb',
@@ -259,7 +259,7 @@ library = {
             {'stamina_cost':20,'charges':4},
             {'stamina_cost':15,'charges':5}
         ],
-        8),
+        15),
 
     'spell_flash_frost' : Spell(
         'flash frost',
@@ -269,7 +269,7 @@ library = {
             {'stamina_cost':40,'charges':1},
             {'stamina_cost':40,'charges':2},
         ],
-        11),
+        18),
 
     'spell_ice_shards' : Spell(
         'ice shards',
@@ -280,7 +280,7 @@ library = {
             {'stamina_cost':35,'charges':3},
             {'stamina_cost':30,'charges':4}
         ],
-        12),
+        24),
 
     'spell_snowstorm' : Spell(
         'snowstorm',
@@ -290,7 +290,7 @@ library = {
             {'stamina_cost':45,'charges':1},
             {'stamina_cost':35,'charges':2}
         ],
-        14),
+        24),
 
     'spell_avalanche' : Spell(
         'avalanche',
@@ -301,7 +301,7 @@ library = {
             {'stamina_cost':45,'charges':1},
             {'stamina_cost':45,'charges':2}
         ],
-        20),
+        30),
 
     'spell_hex' : Spell(
         'hex',
@@ -312,7 +312,7 @@ library = {
             {'stamina_cost':20,'charges':4},
             {'stamina_cost':15,'charges':5}
         ],
-        8
+        10
     ),
 
     'spell_defile' : Spell(
@@ -324,7 +324,7 @@ library = {
             {'stamina_cost':30,'charges':3},
             {'stamina_cost':25,'charges':4}
         ],
-        10
+        12
     ),
 
     'spell_shackles_of_the_dead' : Spell(
@@ -335,7 +335,7 @@ library = {
             {'stamina_cost':40,'charges':1},
             {'stamina_cost':30,'charges':2},
         ],
-        11
+        15
     ),
 
     'spell_sacrifice' : Spell(
@@ -346,7 +346,7 @@ library = {
             {'stamina_cost':25,'charges':2},
             {'stamina_cost':20,'charges':3},
         ],
-        12
+        15
     ),
 
     'spell_corpse_dance' : Spell(
@@ -358,7 +358,7 @@ library = {
             {'stamina_cost':40,'charges':1},
             {'stamina_cost':40,'charges':2}
         ],
-        13
+        19
     ),
 
     'spell_green_touch' : Spell(
@@ -370,7 +370,7 @@ library = {
             {'stamina_cost':5,'charges':8},
             {'stamina_cost':0,'charges':10}
         ],
-        6
+        10
     ),
 
     'spell_fungal_growth' : Spell(
@@ -382,7 +382,7 @@ library = {
             {'stamina_cost':20,'charges':4},
             {'stamina_cost':15,'charges':5}
         ],
-        8
+        12
     ),
 
     'spell_dragonseed' : Spell(
@@ -394,7 +394,7 @@ library = {
             {'stamina_cost':35,'charges':2},
             {'stamina_cost':25,'charges':3}
         ],
-        12
+        18
     ),
 }
 

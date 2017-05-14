@@ -94,9 +94,9 @@ loadouts = {
         'description' : "Generalist class with great stats, especially spirit. Starts with no gear."
     },
     'fanatic' : {
-        'str':12,
+        'str':13,
         'agi':9,
-        'int':11,
+        'int':10,
         'spr':10,
         'con':9,
         'inventory':[
@@ -117,7 +117,7 @@ loadouts = {
             'charm_raw',
             #'charm_farmers_talisman',
             #'charm_holy_symbol',
-            #'charm_shard_of_creation',
+            'charm_shard_of_creation',
             #'charm_primal_totem',
             'equipment_cloth_robes',
             'gem_lesser_fire',
@@ -342,58 +342,107 @@ def _cast_spell():
         sp = {}
         for spell,level,charges in m_spells:
             spell_data = spells.library[spell]
-            ops[chr(letter_index)] = {
-                'spell' : {
-                    'text' : spell_data.name.title()
-                },
-                'stamina' : {
-                    'text': '[%d]' % spell_data.levels[level-1]['stamina_cost'],
-                    'color': libtcod.dark_green
-                },
-                'charges' : {
+
+            name_color = libtcod.white
+            stamina_cost = spell_data.levels[level-1]['stamina_cost']
+            if stamina_cost > instance.fighter.stamina:
+                stamina_color = libtcod.dark_red
+                name_color = libtcod.dark_gray
+            else:
+                stamina_color = libtcod.dark_green
+
+            miscast = get_miscast_chance(spells.library[spell])
+            miscast_color = libtcod.color_lerp(libtcod.blue, libtcod.red, float(miscast) / 100.0)
+            if miscast >= 100:
+                name_color = libtcod.dark_gray
+
+            if charges <= 0:
+                charges_color = libtcod.dark_red
+                name_color = libtcod.dark_gray
+            else:
+                charges_color = libtcod.yellow
+
+            d = collections.OrderedDict()
+            d['spell'] = {
+                    'text' : spell_data.name.title(),
+                    'color' : name_color
+                }
+            d['stamina'] = {
+                    'text': '[%d]' % stamina_cost,
+                    'color': stamina_color
+                }
+            d['charges'] = {
                     'text': '%d/%d' % (charges, spell_data.max_spell_charges(level)),
-                    'color': libtcod.yellow
-                },
-                'description' : spell_data.description
-            }
+                    'color': charges_color
+                }
+            d['miscast'] = {
+                    'text': str(miscast) + '%%',
+                    'color': miscast_color
+                }
+            d['description'] = string.capwords(spell_data.name) + '\n\n' + spell_data.description
+
+            ops[chr(letter_index)] = d
             sp[chr(letter_index)] = spell
             letter_index += 1
+
         selection = ui.menu_ex('Cast which spell?', ops, 50, return_as_char=True)
         if selection is not None:
             s = sp[selection]
-            if left_hand is not None and left_hand.can_cast(s,instance):
-                if spells.library[s].function() == 'success':
-                    left_hand.spell_charges[s] -= 1
-                    level = left_hand.spell_list[s]
-                    cost = spells.library[s].levels[level-1]['stamina_cost']
-                    if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
-                        instance.fighter.hp -= cost - instance.fighter.stamina
-                        instance.fighter.stamina = 0
+            if left_hand is not None:
+                level = left_hand.spell_list[s]
+                cost = spells.library[s].levels[level-1]['stamina_cost']
+                cast_check = left_hand.can_cast(s,instance)
+                if cast_check == 'miscast':
+                    instance.fighter.adjust_stamina(-2 * cost)
+                    return 'miscast'
+                elif cast_check:
+                    if spells.library[s].function() == 'success':
+                        left_hand.spell_charges[s] -= 1
+                        if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
+                            instance.fighter.hp -= cost - instance.fighter.stamina
+                            instance.fighter.stamina = 0
+                        else:
+                            instance.fighter.adjust_stamina(-cost)
+                        instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
+                                          color=libtcod.yellow, description='Meditating will renew your missing spells.'))
+                        return 'cast-spell'
                     else:
-                        instance.fighter.adjust_stamina(-cost)
-                    instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
-                                      color=libtcod.yellow, description='Meditating will renew your missing spells.'))
-                    return 'cast-spell'
+                        return 'didnt-take-turn'
                 else:
                     return 'didnt-take-turn'
             if s in instance.memory.spell_list and instance.memory.can_cast(s, instance):
-                if spells.library[s].function() == 'success':
-                    instance.memory.spell_charges[s] -= 1
-                    level = instance.memory.spell_list[s]
-                    cost = spells.library[s].levels[level - 1]['stamina_cost']
-                    if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
-                        instance.fighter.hp -= cost - instance.fighter.stamina
-                        instance.fighter.stamina = 0
+                cast_check = instance.memory.can_cast(s, instance)
+                level = instance.memory.spell_list[s]
+                cost = spells.library[s].levels[level - 1]['stamina_cost']
+                if cast_check == 'miscast':
+                    instance.fighter.adjust_stamina(-2 * cost)
+                    return 'miscast'
+                elif cast_check:
+                    if spells.library[s].function() == 'success':
+                        instance.memory.spell_charges[s] -= 1
+                        if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
+                            instance.fighter.hp -= cost - instance.fighter.stamina
+                            instance.fighter.stamina = 0
+                        else:
+                            instance.fighter.adjust_stamina(-cost)
+                        instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
+                                          color=libtcod.yellow, description='Meditating will renew your missing spells.'))
+                        return 'cast-spell'
                     else:
-                        instance.fighter.adjust_stamina(-cost)
-                    instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
-                                      color=libtcod.yellow, description='Meditating will renew your missing spells.'))
-                    return 'cast-spell'
+                        return 'didnt-take-turn'
                 else:
                     return 'didnt-take-turn'
             else:
                 return 'didnt-take-turn'
     return 'didnt-take-turn'
+
+def get_miscast_chance(spell):
+    requirement = spell.int_requirement - main.skill_value('scholar')
+    if instance.player_stats.int > requirement:
+        return 0
+    else:
+        diff = requirement - instance.player_stats.int
+        return min(100, diff * int(requirement / 2))
 
 def pick_up_essence(essence, obj):
     if obj is not instance:
