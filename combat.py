@@ -357,6 +357,8 @@ class Fighter:
         mod = int(mul(effect.accuracy_mod for effect in self.status_effects))
         if self.has_status('oiled'):
             flat_bonus -= 3
+        if self.has_status('focused'):
+            flat_bonus += 5 + (main.has_skill('focus') * 8)
         if self.owner.player_stats and weapon is not None:
             flat_bonus -= 5 * max(weapon.str_requirement - self.owner.player_stats.str, 0)
 

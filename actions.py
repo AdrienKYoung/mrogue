@@ -370,10 +370,17 @@ def offhand_shot(actor=None, target=None):
         target = main.get_monster_at_tile(*ui.target_tile(weapon.range, 'pick', default_target=default_target))
 
     if target is not None:
+        ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
         combat.attack_ex(actor.fighter,target,0,verb=("shoot","shoots"),weapon=weapon)
         return 'success'
     else:
         return "cancelled"
+
+def focus(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+    actor.fighter.apply_status_effect(effects.focused(duration=2))
+    return 'success'
 
 def flame_breath(actor=None, target=None):
     x, y = 0, 0

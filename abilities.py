@@ -393,8 +393,18 @@ data = {
     'ability_off_hand_shoot': {
         'name': 'Off Hand Shot',
         'function': actions.offhand_shot,
-        'cooldown': 20,
-        'range': 10
+        'cooldown': 5,
+        'range': 10,
+        'description': 'Fire your weapon at an enemy you can see.'
+    },
+
+    'ability_focus': {
+        'name' : 'Focus',
+        'function': actions.focus,
+        'cooldown': 0,
+        'range': 10,
+        'stamina_cost' : 5,
+        'description' : 'Focus on hitting your target, increasing your accuracy for a turn.'
     }
 }
 

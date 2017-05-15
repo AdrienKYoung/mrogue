@@ -35,6 +35,7 @@ def meets_requirements(perk):
         return main.has_skill(requirement)
 
 perk_keys = [
+    'focus',
     'ravager',
     'adrenaline',
     'combat_training',
@@ -435,6 +436,17 @@ perk_list = {
         'on_acquire': lambda: actions.gaze_into_the_void(player.instance),
         'requires' : 'void_affinity 3',
         'category' : 'Void Magic'
+    },
+    'focus': {
+        'name': 'Focus',
+        'description': ['Ability: Gain increased accuracy for your next attack',
+                        'Ability: Gain increased accuracy for your next attack',
+                        'Ability: Gain increased accuracy for your next attack'],
+        'max_rank': 3,
+        'sp_cost': 10,
+        'on_acquire': player.learn_ability('ability_focus'),
+        'requires': None,
+        'category': 'Martial'
     },
     'ravager' : {
         'name' : 'Ravager',

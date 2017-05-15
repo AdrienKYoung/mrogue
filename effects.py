@@ -194,6 +194,10 @@ def resistant(element=None,effect=None,color=None,duration=99):
         return StatusEffect('resist ' + effect, duration, color, resistance_mod=[effect],
                             message='You feel more resistant!', description='This unit is resistant to %s.' % effect, cleanseable=False)
 
+def focused(duration=1):
+    return StatusEffect('focused', duration, libtcod.white, message='You focus on your target...',
+                        description='This unit has increased accuracy', cleanseable=False)
+
 def fire_tick(effect,object=None):
     if object is not None and object.fighter is not None:
         if main.current_map.tiles[object.x][object.y].is_water:

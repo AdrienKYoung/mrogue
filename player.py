@@ -826,9 +826,12 @@ def learn_ability(name):
 
 def _learn_ability(name):
     import abilities
+    for a in instance.perk_abilities:
+        if a.name == abilities.data[name]['name']:
+            return
     ability = abilities.data[name]
-    abilities.default_abilities[name] = abilities.Ability(ability['name'],ability['description'],
-                                                                  ability['function'],ability['cooldown'])
+    instance.perk_abilities.append(abilities.Ability(ability['name'],ability['description'],
+                                                                  ability['function'],ability['cooldown']))
 
 def on_tick(this):
     if main.has_skill('pyromaniac'):
@@ -880,6 +883,10 @@ def get_abilities():
     for i in main.get_all_equipped(instance.fighter.inventory):
         if i is not weapon and i.owner.item.ability is not None:
             opts.append(i.owner.item.ability)
+
+    # Perk abilities
+    for p in instance.perk_abilities:
+        opts.append(p)
 
     # Raise shield
     sh = instance.fighter.get_equipped_shield()
