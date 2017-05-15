@@ -142,7 +142,8 @@ def create(loadout):
     global instance
 
     loadout = loadouts[loadout]
-    fighter_component = combat.Fighter(hp=100, stamina=100, death_function=on_death, on_get_hit=on_get_hit, team='ally', evasion=5)
+    fighter_component = combat.Fighter(hp=100, stamina=100, death_function=on_death, on_get_hit=on_get_hit,
+                                       on_get_kill=on_get_kill, team='ally', evasion=5)
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),
                         int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
@@ -848,8 +849,8 @@ def on_tick(this):
             instance.rising_storm_last_attack += 1
         else:
             instance.rising_storm_last_attack = 0
-    if instance.fighter.has_item_equipped("equipment_ring_of_stamina"):
-        instance.fighter.adjust_stamina(2)
+    if instance.fighter.stamina_regen > 0:
+        instance.fighter.adjust_stamina(instance.fighter.stamina_regen)
 
     for ability in abilities.default_abilities.values():
         ability.on_tick()
@@ -868,6 +869,9 @@ def on_get_hit(this,other,damage):
         if libtcod.random_get_float(0, 0.0, 1.0) < adrenaline_chance:
             instance.fighter.adjust_stamina(10)
             ui.message('You feel a surge of adrenaline!', libtcod.light_yellow)
+
+def on_get_kill(this,other,damage):
+    this.fighter.has_item_equipped()
 
 def get_abilities():
     import abilities

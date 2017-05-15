@@ -32,7 +32,7 @@ class Equipment:
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
                  resistances=[], modifiers = {}, base_id=None, _range=1,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
-                 sh_max=0, sh_recovery=0, sh_raise_cost=0):
+                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0):
         self.is_equipped = False
         self.slot = slot
         self.base_id = base_id
@@ -76,6 +76,7 @@ class Equipment:
         self._accuracy_bonus = accuracy
         self._crit_bonus = crit_bonus
         self._attack_speed_bonus = attack_speed_bonus
+        self._stamina_regen = stamina_regen
 
         self._spell_power_bonus = spell_power_bonus
         self._spell_resist_bonus = spell_resist_bonus
@@ -134,6 +135,10 @@ class Equipment:
     @property
     def accuracy_bonus(self):
         return self._accuracy_bonus + self.get_bonus('accuracy_bonus')
+
+    @property
+    def stamina_regen(self):
+        return self._stamina_regen + self.get_bonus('stamina_regen_bonus')
 
     @property
     def resistances(self):
@@ -210,7 +215,17 @@ class Equipment:
             return self.equip()
 
     def equip(self, no_message=False):
-        old_equipment = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
+        old_equipment = None
+        if self.slot == 'ring':
+            rings = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
+            if len(rings) >= 2:
+                options_ex = collections.OrderedDict()
+                options_ex['a'] = {'option': {'text': rings[0].owner.name}}
+                options_ex['b'] = {'option': {'text': rings[1].owner.name}}
+                old_equipment = rings[ord(ui.menu_ex("Unequip which ring?", options_ex, 40)) - ord('a')]
+        else:
+            old_equipment = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
+
         # First check weight
         if self.holder is player.instance:
             old_weight = 0
@@ -230,6 +245,7 @@ class Equipment:
             if old_equipment is not None:
                 if old_equipment.dequip(self.holder) == 'cancelled':
                     return 'cancelled'
+
         self.is_equipped = True
         if self.holder is player.instance and not no_message:
             ui.message('Equipped ' + self.owner.name + ' on ' + self.slot + '.', libtcod.orange)

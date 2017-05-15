@@ -33,7 +33,7 @@ class Fighter:
                  can_breath_underwater=False, resistances=[], weaknesses=[], inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
                  damage_bonus=0, monster_str_dice=None, spell_resist=0, team='enemy', on_get_hit=None, stealth=None,
-                 attributes=[], _range=1):
+                 attributes=[], _range=1, on_get_kill=None):
         self.owner = None
         self.base_max_hp = hp
         self.hp = hp
@@ -67,6 +67,7 @@ class Fighter:
         self.on_get_hit = on_get_hit
         self.stealth = stealth
         self.range = _range
+        self.on_get_kill = on_get_kill
 
         self.base_damage_bonus = damage_bonus
         self.monster_str_dice = monster_str_dice
@@ -151,6 +152,8 @@ class Fighter:
                             sh.timer = 0
                             sh.raised = True
                         function(self.owner)
+                    if attacker.fighter.on_get_kill is not None:
+                        attacker.fighter.on_get_kill(attacker,self,damage)
                 if affect_shred:
                     self.time_since_last_damaged = 0
         return damage
@@ -485,6 +488,11 @@ class Fighter:
     def max_hp(self):
         bonus = sum(equipment.max_hp_bonus for equipment in main.get_all_equipped(self.inventory))
         return self.base_max_hp + bonus
+
+    @property
+    def stamina_regen(self):
+        bonus = sum(equipment.stamina_regen for equipment in main.get_all_equipped(self.inventory))
+        return bonus
 
     def attack_speed(self,weapon=None):
         # NOTE: this is a player-only stat

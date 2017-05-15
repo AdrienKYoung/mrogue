@@ -816,6 +816,9 @@ def get_all_equipped(equipped_list):
 
 
 def get_equipped_in_slot(equipped_list,slot):
+    if(slot == 'ring'):
+        return [r for r in equipped_list if r.equipment is not None and r.equipment.is_equipped and r.equipment.slot == 'ring']
+
     for obj in equipped_list:
         if obj.equipment and obj.equipment.is_equipped:
             if obj.equipment.slot == slot or (obj.equipment.slot == 'both hands' and
@@ -1300,6 +1303,7 @@ def create_item(name, material=None, quality=''):
             sh_max=p.get('sh_max', 0),
             sh_raise_cost=p.get('sh_raise_cost', 0),
             sh_recovery=p.get('sh_recovery', 0),
+            stamina_regen=p.get('stamina_regen', 0),
         )
 
         if material is None:

@@ -9,7 +9,8 @@ table = {
         'type'          : 'item',
         'slot'          : 'ring',
         'description'   : 'A ring with the imagine of an oxen carved around it. Grants its wearer extra stamina.',
-        'weight'        : 1
+        'weight'        : 1,
+        'stamina_regen' : 2
     },
     'equipment_ring_of_waterbreathing': {
         'name'          : 'Ring of Waterbreathing',
