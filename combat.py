@@ -221,10 +221,15 @@ class Fighter:
         if self.hp > self.max_hp:
             self.hp = self.max_hp
 
+    def has_item_equipped(self, name):
+        return name in [e.base_id for e in main.get_all_equipped(self.inventory)]
+
     def on_tick(self, object=None):
         # Track time since damaged (for repairing shred)
         self.time_since_last_damaged += 1
-        if self.time_since_last_damaged >= 20 and self.shred > 0:
+        repair_time = 20
+        if self.has_item_equipped('equipment_ring_of_mending'): repair_time /= 2
+        if self.time_since_last_damaged >= repair_time and self.shred > 0:
             self.shred = 0
             if self.owner is player.instance:
                 ui.message('You repair your armor')
@@ -242,7 +247,7 @@ class Fighter:
                 and self.owner.movement_type & pathfinding.FLYING != pathfinding.FLYING \
                 and self.owner.movement_type & pathfinding.AQUATIC != pathfinding.AQUATIC:  # deep water / deep seawater
             if not (self.can_breath_underwater or self.has_status('waterbreathing') or self.has_status('lichform') or
-                    self is player.instance and main.has_skill('aquatic')):
+                    self is player.instance and main.has_skill('aquatic') or self.has_item_equipped("ring_of_waterbreathing")):
                 if self.breath > 0:
                     self.breath -= 1
                 else:

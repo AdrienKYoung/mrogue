@@ -45,7 +45,8 @@ branches = {
             'gems_1':10,
             'tomes_1':4,
             'keys_1':1,
-            'charms_1':5
+            'charms_1':5,
+            'rings_1':10
         },
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
@@ -85,7 +86,8 @@ branches = {
             'gems_1':10,
             'tomes_1':4,
             'keys_1':1,
-            'charms_1':5
+            'charms_1':5,
+            'rings_1':10
         },
         'loot_dice':'1d4',
         'encounter_dice':'1d4+5',
@@ -128,7 +130,8 @@ branches = {
             'gems_1':10,
             'tomes_1':4,
             'keys_1':1,
-            'charms_1':5
+            'charms_1':5,
+            'rings_1':10
         },
         'loot_dice':'2d3',
         'encounter_range':4,
@@ -155,7 +158,8 @@ branches = {
             'consumables_1':35,
             'gems_1':10,
             'tomes_1':4,
-            'keys_1':1
+            'keys_1':1,
+            'rings_1':10
         },
         'loot_level':2,
         'loot_dice':'1d4',

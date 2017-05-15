@@ -63,7 +63,7 @@ loadouts = {
             'charm_raw',
             'shield_wooden_buckler',
             'equipment_leather_armor',
-            'equipment_iron_helm',
+            'equipment_iron_helm'
         ],
         'description' : "Balanced melee fighter. Starts with good weapon and armor."
     },
@@ -848,6 +848,9 @@ def on_tick(this):
             instance.rising_storm_last_attack += 1
         else:
             instance.rising_storm_last_attack = 0
+    if instance.fighter.has_item_equipped("equipment_ring_of_stamina"):
+        instance.fighter.adjust_stamina(2)
+
     for ability in abilities.default_abilities.values():
         ability.on_tick()
 

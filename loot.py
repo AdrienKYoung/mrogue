@@ -176,6 +176,12 @@ table = {
         'charm_primal_totem',
         'charm_holy_symbol',
         'charm_shard_of_creation'
+    ],
+
+    'rings_1': [
+        'equipment_ring_of_stamina',
+        'equipment_ring_of_evasion',
+        'equipment_ring_of_accuracy',
     ]
 }
 
@@ -287,7 +293,8 @@ item_categories = {
     'charm' : { 'plural' : 'charms'},
     'gem' : { 'plural' : 'gems'},
     'key' : { 'plural' : 'keys'},
-    'treasure' : { 'plural' : 'treasure' }
+    'treasure' : { 'plural' : 'treasure' },
+    'accessory' : {'plural': 'accessories'},
 }
 
 quality_progression = [

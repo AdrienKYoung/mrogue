@@ -1262,7 +1262,7 @@ def create_item(name, material=None, quality=''):
         ability = create_ability(p.get('ability'))
     item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], ability=ability)
     equipment_component = None
-    if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book':
+    if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book' or p['category'] == 'accessory':
         equipment_component = equipment.Equipment(
             slot=p['slot'],
             category=p['category'],

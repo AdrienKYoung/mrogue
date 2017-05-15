@@ -10,6 +10,8 @@ def table():
         import summoned_weapons
         import tomes
         import weapons
+        import rings
         _item_table_cache = dict(armor.table.items() + consumables.table.items() + items_charms.table.items() +
-                                 summoned_weapons.table.items() + tomes.table.items() + weapons.table.items())
+                                 summoned_weapons.table.items() + tomes.table.items() + weapons.table.items() +
+                                 rings.table.items())
     return _item_table_cache
