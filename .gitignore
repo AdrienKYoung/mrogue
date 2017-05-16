@@ -97,3 +97,4 @@ libtcodgui.dylib
 libtcodxx.dylib
 savegame.db
 log.txt
+*.zip
