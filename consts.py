@@ -15,8 +15,8 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # GAME
-SCREEN_WIDTH = 100
-SCREEN_HEIGHT = 55
+SCREEN_WIDTH = 80
+SCREEN_HEIGHT = 50
 MAP_WIDTH = 50
 MAP_HEIGHT = 50
 LIMIT_FPS = 20

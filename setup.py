@@ -18,13 +18,18 @@ from distutils.core import setup
 import py2exe
 import zipfile, os
 
-project_name = "roguelike-prealpha"
-version = "0.1.0"
-dependencies = ['SDL2.dll','libtcod.dll','libtcod-gui.dll','terminal16x16_gs_ro.png','menu_background.png','features.txt']
+project_name = "mrogue-prealpha"
+version = "0.1.1"
+dependencies = ['SDL2.dll','libtcod.dll',
+                'terminal16x16_gs_ro.png','menu_background.png','features.txt',
+                'legal/COPYING','legal/LIBTCOD-LICENSE.txt','legal/MROGUE-LICENSE.txt']
+
+features = ['features/branch-gates.txt','features/features-badlands.txt','features/features-forest.txt',
+                'features/features-gtunnels.txt','features/features-marsh.txt','features/premades.txt']
 
 setup(
     version=version,
-    data_files=[('.',dependencies)],
+    data_files=[('.',dependencies),('features',features)],
     console=['main.py'],
     zipfile=None,
     options = {
@@ -39,10 +44,11 @@ setup(
 arc_exclude = ['w9xpopen.exe']
 
 target = zipfile.ZipFile("{}-{}.zip".format(project_name,version),"w")
-for dirname, _, files in os.walk("dist"):
+os.chdir("dist")
+for a,b, files in os.walk("."):
     for f in files:
         if f not in arc_exclude:
-            target.write(os.path.join(dirname,f),f)
+            target.write(os.path.join(a,f),os.path.join(a,f))
 target.close()
 
 for dirname, _, files in os.walk("."):
