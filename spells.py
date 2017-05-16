@@ -65,7 +65,26 @@ charm_volatile_orb = {
     },
     'arcane': {
         'name': 'Time bomb',
-        'description' : 'Create a time bomb, which explodes after a time'
+        'description' : 'Create a time bomb, which explodes after a delay'
+    },
+}
+
+charm_elementalists_lens = {
+    'fire': {
+        'name': 'Fire elemental',
+        'description' : 'Summon an allied Fire Elemental'
+    },
+    'water': {
+        'name': 'Water elemental',
+        'description' : 'Summon an allied Water Elemental'
+    },
+    'earth': {
+        'name': 'Earth elemental',
+        'description' : 'Summon an allied Earth Elemental'
+    },
+    'air': {
+        'name': 'Air elemental',
+        'description' : 'Summon an allied Air Elemental'
     },
 }
 

@@ -871,6 +871,7 @@ def bomb_beetle_corpse_tick(object=None):
         object.color = libtcod.red
     elif object.bomb_timer <= 0:
         ui.message('The bomb beetle corpse explodes!', libtcod.orange)
+        ui.render_explosion(object.x, object.y, 1, libtcod.yellow, libtcod.flame)
         create_fire(object.x, object.y, 10)
         for tile in adjacent_tiles_diagonal(object.x, object.y):
             if libtcod.random_get_int(0, 0, 3) != 0:

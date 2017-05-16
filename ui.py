@@ -1473,6 +1473,36 @@ def render_projectile(start, end, color, character=None):
         prev = bolt.x, bolt.y
     bolt.destroy()
 
+def render_explosion(x, y, radius, start_color, end_color, character=None):
+    if character is None:
+        character = libtcod.CHAR_BLOCK2
+    blast = main.GameObject(x, y, character, 'explosion', color=start_color)
+    blast.t = 4
+    main.current_map.add_object(blast)
+    blasts = { (x, y) : blast}
+    dead = []
+    r = 0
+    while len(blasts) > 0:
+        if r < radius: r += 1
+        for i_y in range(y - radius, y + radius + 1):
+            for i_x in range(x - radius, x + radius + 1):
+                if (i_x, i_y) in blasts.keys():
+                    blast = blasts[ (i_x, i_y) ]
+                    blast.t -= 1
+                    blast.color = libtcod.color_lerp(end_color, start_color, float(blast.t) / 4.0)
+                    if blast.t <= 0:
+                        blast.destroy()
+                        dead.append((i_x, i_y))
+                        del blasts[ (i_x, i_y) ]
+                elif round(main.distance(i_x, i_y, x, y)) <= r and (i_x, i_y) not in dead:
+                    blast = main.GameObject(i_x, i_y, character, 'explosion', color=start_color)
+                    blast.t = 4
+                    main.current_map.add_object(blast)
+                    blasts[i_x, i_y] = blast
+        main.render_map()
+        libtcod.console_flush()
+
+
 def choose_essence_from_pool(charm_data):
     options_ex = collections.OrderedDict()
     letter_index = ord('a')

@@ -131,7 +131,8 @@ branches = {
             'tomes_1':4,
             'keys_1':1,
             'charms_1':5,
-            'rings_1':10
+            'rings_1':8,
+            'charms_2':3,
         },
         'loot_dice':'2d3',
         'encounter_range':4,

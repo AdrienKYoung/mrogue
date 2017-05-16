@@ -175,7 +175,14 @@ table = {
         'charm_farmers_talisman',
         'charm_primal_totem',
         'charm_holy_symbol',
-        'charm_shard_of_creation'
+        'charm_shard_of_creation',
+        'charm_volatile_orb',
+    ],
+
+    'charms_2': [
+        'charm_holy_symbol',
+        'charm_volatile_orb',
+        'charm_elementalists_lens'
     ],
 
     'rings_1': [

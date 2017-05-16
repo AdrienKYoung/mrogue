@@ -309,13 +309,17 @@ def _continuation_fireball(actor, target):
     x, y = 0, 0
     spell = abilities.data['ability_fireball']
     if actor is player.instance:  # player is casting
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        (x, y) = ui.target_tile(max_range=spell['range'])
+        (x, y) = ui.target_tile(max_range=spell['range'], default_target=default_target)
     else:
         x = target.x
         y = target.y
     if x is None: return 'cancelled'
     ui.message('The fireball explodes!', libtcod.flame)
+    ui.render_explosion(x, y, 1, libtcod.yellow, libtcod.flame)
     for obj in main.current_map.fighters:
         if obj.distance(x, y) <= spell['radius']:
             combat.spell_attack(actor.fighter, obj, 'ability_fireball')
@@ -564,6 +568,7 @@ def shatter_item(actor=None, target=None):
         item = target
 
     if main.roll_dice('1d20') + main.roll_dice('1d{}'.format(actor.fighter.spell_power)) > dc:
+        ui.render_explosion(x, y, 1, libtcod.yellow, libtcod.flame)
         ui.message("The {} shatters into pieces!".format(item.name), libtcod.flame)
         if inventory is not None:
             inventory.remove(item)
@@ -786,6 +791,7 @@ def sacrifice(actor=None,target=None):
     spell = abilities.data['ability_sacrifice']
     actor.fighter.take_damage(min(30,int(actor.fighter.hp / 2)), attacker=actor)
     damage_mod = int((actor.fighter.max_hp - actor.fighter.hp )/ actor.fighter.max_hp)
+    ui.render_explosion(actor.x, actor.y, 1, libtcod.violet, libtcod.darkest_violet)
 
     for (_x,_y) in main.adjacent_tiles_diagonal(actor.x,actor.y):
         obj = main.get_monster_at_tile(_x,_y)
@@ -954,6 +960,85 @@ def mass_reflect(actor=None,target=None):
         if unit.fighter.team == actor.fighter.team:
             unit.fighter.apply_status_effect(effects.reflect_magic())
     return 'success'
+
+def firebomb(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        (x, y) = ui.target_tile(max_range=6, default_target=default_target, targeting_type='beam_interrupt')
+        if x is None: return 'cancelled'
+        actor = player.instance
+    else:
+        (x, y) = target.x, target.y
+    ui.render_projectile((actor.x, actor.y), (x, y), spells.essence_colors['fire'], chr(7))
+    ui.render_explosion(x, y, 1, libtcod.yellow, libtcod.flame)
+    if actor is player.instance or fov.player_can_see(x, y):
+        ui.message('The firebomb explodes!', spells.essence_colors['fire'])
+    for adj in main.adjacent_inclusive(x, y):
+        for f in main.current_map.fighters:
+            if f.x == adj[0] and f.y == adj[1]:
+                if combat.spell_attack_ex(actor.fighter, f, None, '4d10', 0, 'fire', 0) == 'hit' and f.fighter is not None:
+                    f.fighter.apply_status_effect(effects.burning())
+
+def icebomb(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        (x, y) = ui.target_tile(max_range=6, default_target=default_target, targeting_type='beam_interrupt')
+        if x is None: return 'cancelled'
+        actor = player.instance
+    else:
+        (x, y) = target.x, target.y
+    ui.render_projectile((actor.x, actor.y), (x, y), spells.essence_colors['cold'], chr(7))
+    ui.render_explosion(x, y, 1, libtcod.white, libtcod.light_sky)
+    if actor is player.instance or fov.player_can_see(x, y):
+        ui.message('The icebomb explodes!', spells.essence_colors['cold'])
+    for adj in main.adjacent_inclusive(x, y):
+        for f in main.current_map.fighters:
+            if f.x == adj[0] and f.y == adj[1]:
+                if combat.spell_attack_ex(actor.fighter, f, None, '3d10', 0, 'cold', 0) == 'hit' and f.fighter is not None:
+                    f.fighter.apply_status_effect(effects.frozen(duration=6))
+
+def timebomb(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        (x, y) = ui.target_tile(max_range=6, default_target=default_target)
+        if x is None: return 'cancelled'
+    else:
+        (x, y) = main.find_closest_open_tile(target.x, target.y)
+    rune = main.GameObject(x, y, chr(21), 'time bomb', spells.essence_colors['arcane'],
+                           description='"I prepared explosive runes this morning"')
+    main.current_map.add_object(rune)
+    rune_ticker = main.Ticker(3, _timebomb_ticker)
+    rune_ticker.rune = rune
+    rune_ticker.actor = actor
+    main.current_map.tickers.append(rune_ticker)
+    if actor is player.instance or fov.player_can_see(x, y):
+        ui.message('A glowing rune forms...', spells.essence_colors['arcane'])
+    return 'success'
+
+def _timebomb_ticker(ticker):
+    if ticker.ticks >= ticker.max_ticks:
+        ticker.dead = True
+        ui.message("The rune explodes!", spells.essence_colors['arcane'])
+        ui.render_explosion(ticker.rune.x, ticker.rune.y, 1, libtcod.white, spells.essence_colors['arcane'])
+        x = ticker.rune.x
+        y = ticker.rune.y
+        ticker.rune.destroy()
+        for adj in main.adjacent_inclusive(x, y):
+            for f in main.current_map.fighters:
+                if f.x == adj[0] and f.y == adj[1]:
+                    combat.spell_attack_ex(ticker.actor.fighter, f, None, '6d10', 0, 'lightning', 0)
 
 def knock_back(actor,target):
     # knock the target back one space. Stun it if it cannot move.

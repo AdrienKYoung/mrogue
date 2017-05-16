@@ -56,4 +56,22 @@ table = {
         'on_use'        : charms.primal_totem,
         'description'   : 'A charm made from charred bone. It is said these battle charms were soaked in sacrificial blood.'
     },
+    'charm_volatile_orb' : {
+        'name'          : 'Volatile Orb',
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : charms.volatile_orb,
+        'description'   : 'A faintly vibrating sphere of polished marble. Streaks of color dance just beneath its milky surface.'
+    },
+    'charm_elementalists_lens' : {
+        'name'          : "Elementalist's Lens",
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : charms.elementalists_lens,
+        'description'   : 'An intricate device of polished brass by which elementalists give life to essence itself.'
+    },
 }

@@ -30,6 +30,10 @@ def get_charm_data(charm):
         return spells.charm_primal_totem
     elif charm.use_function == shard_of_creation:
         return spells.charm_shard_of_creation
+    elif charm.use_function == volatile_orb:
+        return spells.charm_volatile_orb
+    elif charm.use_function == elementalists_lens:
+        return spells.charm_elementalists_lens
 
 def print_charm_description(charm, console, x, y, width):
     data = get_charm_data(charm)
@@ -166,7 +170,7 @@ def charm_raw():
     if essence is None:
         return 'didnt-take-turn'
 
-    if essence == 'fire':
+    elif essence == 'fire':
         result = actions.flame_wall()
     elif essence == 'life':
         result = actions.heal(amount=20, use_percentage=False)
@@ -192,5 +196,50 @@ def charm_raw():
         result = 'didnt-take-turn'
 
     if result != 'didnt-take-turn' and result != 'cancelled':
+        player.instance.essence.remove(essence)
+    return result
+
+def volatile_orb():
+    essence = select_essence(spells.charm_volatile_orb)
+    if essence is None:
+        return 'didnt-take-turn'
+
+    result = 'didnt-take-turn'
+
+    if essence == 'fire':
+        result = actions.firebomb()
+    elif essence == 'cold':
+        result = actions.icebomb()
+    elif essence == 'arcane':
+        result = actions.timebomb()
+
+    if result != 'didnt-take-turn' and result != 'cancelled':
+        player.instance.essence.remove(essence)
+    return result
+
+def elementalists_lens():
+    essence = select_essence(spells.charm_elementalists_lens)
+    if essence is None:
+        return 'didnt-take-turn'
+
+    summon = None
+    duration = 0
+
+    if essence == 'fire':
+        summon = 'monster_fire_elemental'
+        duration = 15 + main.roll_dice('1d10')
+    elif essence == 'water':
+        summon = 'monster_water_elemental'
+        duration = 30 + main.roll_dice('1d10')
+    elif essence == 'earth':
+        summon = 'monster_earth_elemental'
+        duration = 50 + main.roll_dice('1d10')
+    elif essence == 'air':
+        summon = 'monster_air_elemental'
+        duration = 30 + main.roll_dice('1d10')
+    result = actions.summon_ally(summon, duration)
+
+    if result != 'didnt-take-turn' and result != 'cancelled':
+        ui.message('An elemental appears before you.', color=spells.essence_colors[essence])
         player.instance.essence.remove(essence)
     return result
