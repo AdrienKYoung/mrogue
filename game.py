@@ -1979,7 +1979,7 @@ import items
 
 # Libtcod initialization
 libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GRAYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
-libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'Magic Roguelike', False)
+libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'mrogue', False)
 libtcod.sys_set_fps(consts.LIMIT_FPS)
 
 # Consoles
