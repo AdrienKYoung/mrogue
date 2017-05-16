@@ -177,12 +177,14 @@ table = {
         'charm_holy_symbol',
         'charm_shard_of_creation',
         'charm_volatile_orb',
+        'charm_prayer_beads',
     ],
 
     'charms_2': [
         'charm_holy_symbol',
         'charm_volatile_orb',
-        'charm_elementalists_lens'
+        'charm_elementalists_lens',
+        'charm_prayer_beads',
     ],
 
     'rings_1': [

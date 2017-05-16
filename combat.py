@@ -152,7 +152,7 @@ class Fighter:
                             sh.timer = 0
                             sh.raised = True
                         function(self.owner)
-                    if attacker.fighter.on_get_kill is not None:
+                    if attacker is not None and attacker.fighter.on_get_kill is not None:
                         attacker.fighter.on_get_kill(attacker,self,damage)
                 if affect_shred:
                     self.time_since_last_damaged = 0
@@ -220,6 +220,8 @@ class Fighter:
     def heal(self, amount):
         if self.owner is player.instance and main.has_skill('vitality'):
             amount = int(amount * 1.25)
+        if self.has_status('toxic'):
+            amount = int(amount / 2)
         self.hp += amount
         if self.hp > self.max_hp:
             self.hp = self.max_hp
@@ -416,6 +418,8 @@ class Fighter:
         bonus = int(bonus * mul(effect.armor_mod for effect in self.status_effects))
         if self.has_status('stoneskin'):
             bonus += 2
+        if self.has_status('frozen'):
+            bonus += 5
         if main.has_skill('guardian_of_light') and (self.owner is player.instance or self.team == 'ally'):
             bonus += 2
         return max(self.base_armor + bonus - self.shred, 0)

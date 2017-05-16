@@ -1447,6 +1447,9 @@ def display_fading_text(text, display_time, fade_time):
 
 def render_projectile(start, end, color, character=None):
 
+    if start[0] == end[0] and start[1] == end[1]:
+        return
+
     if character is None: bolt_char = chr(7)
     else: bolt_char = character
     bolt = main.GameObject(start[0], start[1], bolt_char, 'bolt', color=color)

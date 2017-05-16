@@ -22,6 +22,8 @@ import game as main
 
 # Monster Flags
 NO_CORPSE = 1
+IMMOBILE = 2
+EVIL = 4
 
 proto = {
     'monster_zombie_goblin': {
@@ -42,6 +44,7 @@ proto = {
         'resistances': [],
         'weaknesses' : ['radiance'],
         'shred': 1,
+        'flags' : NO_CORPSE | EVIL,
         'subtype':'zombie',
     },
     'monster_zombie_vermin': {
@@ -62,7 +65,7 @@ proto = {
         'resistances': [],
         'weaknesses' : ['radiance'],
         'shred': 1,
-        'flags' : NO_CORPSE,
+        'flags' : NO_CORPSE | EVIL,
         'subtype':'undead',
     },
     'monster_zombie_insect': {
@@ -83,6 +86,7 @@ proto = {
         'resistances': [],
         'shred': 1,
         'subtype':'insect',
+        'flags' : NO_CORPSE | EVIL,
     },
     'monster_zombie_beast': {
         'name': 'zombie beast',
@@ -102,7 +106,7 @@ proto = {
         'weaknesses' : ['radiance'],
         'shred': 1,
         'subtype':'zombie',
-        'flags': NO_CORPSE,
+        'flags' : NO_CORPSE | EVIL,
     },
     'monster_dark_angel': {
         'name': 'dark angel',
@@ -127,6 +131,6 @@ proto = {
         'loot_level':15,
         'equipment': [{'weapon_greatsword':30,'weapon_halberd':30,'weapon_warhammer':30},{'equipment_plate_armor':100}],
         'movement_type': pathfinding.FLYING,
-        'flags': NO_CORPSE,
+        'flags' : NO_CORPSE | EVIL,
     },
 }

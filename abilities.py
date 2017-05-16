@@ -405,7 +405,21 @@ data = {
         'range': 10,
         'stamina_cost' : 5,
         'description' : 'Focus on hitting your target, increasing your accuracy for a turn.'
-    }
+    },
+
+    'ability_summon_spiders': {
+        'name': 'Summon Spiders',
+        'function': actions.spawn_spiders,
+        'cooldown': 8,
+        'max_summons': 4,
+        'summons_per_cast': '1d2',
+    },
+
+    'ability_web_bomb': {
+        'name': 'Web Bomb',
+        'function': actions.web_bomb,
+        'cooldown': 6,
+    },
 }
 
 vermin_summons = [

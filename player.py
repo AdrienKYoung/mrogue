@@ -121,6 +121,7 @@ loadouts = {
             #'charm_volatile_orb',
             #'charm_elementalists_lens',
             #'charm_primal_totem',
+            #'charm_prayer_beads',
             'equipment_cloth_robes',
             'gem_lesser_fire',
             'gem_lesser_water',
@@ -212,8 +213,11 @@ def handle_keys():
 
     if game_state == 'playing':
 
-        if instance.fighter and instance.fighter.has_status('stunned'):
-            return 'stunned'
+        if instance.fighter:
+            if instance.fighter.has_status('stunned'):
+                return 'stunned'
+            if instance.fighter.has_status('frozen'):
+                return 'frozen'
 
         if instance.action_queue is not None and len(instance.action_queue) > 0:
             action = instance.action_queue[0]
@@ -873,6 +877,7 @@ def on_get_hit(this,other,damage):
             ui.message('You feel a surge of adrenaline!', libtcod.light_yellow)
 
 def on_get_kill(this,other,damage):
+    return
     this.fighter.has_item_equipped()
 
 def get_abilities():

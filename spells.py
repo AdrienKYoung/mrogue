@@ -129,6 +129,21 @@ charm_primal_totem = {
     },
 }
 
+charm_prayer_beads = {
+    'life': {
+        'name': 'Healing Trance',
+        'description': 'Stun yourself and regenerate health'
+    },
+    'air': {
+        'name': 'Breath of Life',
+        'description': 'Gain 100 stamina'
+    },
+    'water': {
+        'name': 'Holy Water',
+        'description': 'Damages and stuns an evil creature'
+    },
+}
+
 charm_raw_effects = {
     'fire': {
         'name': 'Ignite',

@@ -24,6 +24,8 @@ import actions
 # Monster Flags
 NO_CORPSE = 1
 IMMOBILE = 2
+EVIL = 4
+WEB_IMMUNE = 4
 
 proto = {
     'monster_target': {
@@ -123,7 +125,7 @@ proto = {
         'weaknesses' : ['radiance'],
         'on_hit': main.zombie_on_hit,
         'shred': 1,
-        'flags' : NO_CORPSE,
+        'flags' : NO_CORPSE | EVIL,
         'modifier_category':'default',
         'subtype':'undead',
     },
@@ -254,17 +256,17 @@ proto = {
         'resistances': [],
         'attributes':['ability_raise_zombie'],
         'essence': [(15, 'death')],
-        'flags' : NO_CORPSE,
+        'flags' : NO_CORPSE | EVIL,
         'subtype':'undead',
     },
     'monster_verman': {
         'name': 'verman',
         'char': 'v',
         'color': libtcod.amber,
-        'hp': 30,
+        'hp': 35,
         'strength_dice' : '1d8',
         'attack_bonus' : 4,
-        'armor': 1,
+        'armor': 2,
         'evasion': 13,
         'accuracy': 21,
         'move_speed': 0.5,
@@ -276,7 +278,7 @@ proto = {
         'attributes':['ability_summon_vermin'],
         'shred': 1,
         'essence': [(10, 'earth')],
-        'subtype':'beast',
+        'subtype':'verman',
     },
     'monster_marsh_hunter': {
         'name': 'marsh hunter',
@@ -418,6 +420,7 @@ proto = {
         'resistances': [],
         'shred': 1,
         'subtype':'insect',
+        'flags': WEB_IMMUNE
     },
     'monster_witch': {
         'name': 'witch',
@@ -440,6 +443,7 @@ proto = {
         'shred': 0,
         'equipment': [{'none':30,'weapon_dagger':30,'weapon_messer':30},{'none':90,'book_lesser_fire':10},{'equipment_witch_hat':100}],
         'subtype':'human',
+        'flags' : EVIL,
     },
     'monster_wolf': {
         'name': 'tundra wolf',
@@ -504,12 +508,13 @@ proto = {
         'shred': 3,
         'essence': [(15, 'fire')],
         'subtype':'undead',
+        'fags' : EVIL,
     },
     'monster_demon_hunter': {
         'name': 'demon hunter',
         'char': 'H',
         'color': libtcod.darkest_grey,
-        'hp': 60,
+        'hp': 65,
         'strength_dice' : '3d8',
         'attack_bonus' : 0,
         'armor': 2,
@@ -812,6 +817,54 @@ proto = {
         'body_type' : 'plant',
         'attributes' : ['ability_dragonweed_pull'],
         'on_hit': [actions.immobilize_attack],
+    },
+    'monster_bloodfly': {
+        'name': 'bloodfly',
+        'char': 'b',
+        'color': libtcod.pink,
+        'hp': 32,
+        'strength_dice': '2d4',
+        'attack_bonus': 0,
+        'armor': 0,
+        'evasion': 12,
+        'accuracy': 18,
+        'move_speed': 1.1,
+        'attack_speed': 0.6,
+        'ai': ai.AI_Default,
+        'description': 'A bloated and mutated mosquito that scours the land in search of blood. '
+                       'As it feeds, it grows healthier.',
+        'resistances': [],
+        'shred': 1,
+        'body_type': 'insect',
+        'subtype': 'insect',
+        'essence': [(20, 'life')],
+        'on_create': main.bloodfly_on_create,
+        'on_hit': [combat.on_hit_lifesteal],
+        'movement_type': pathfinding.FLYING,
+    },
+    'monster_arachnomancer': {
+        'name': 'arachnomancer',
+        'char': 'v',
+        'color': libtcod.light_gray,
+        'hp': 70,
+        'strength_dice': '4d6',
+        'attack_bonus': 0,
+        'armor': 2,
+        'evasion': 17,
+        'accuracy': 23,
+        'move_speed': 1.0,
+        'attack_speed': 1.0,
+        'ai': ai.AI_Default,
+        'description': 'A verman shrouded in cobwebs and crawling with spiders.',
+        'resistances': ['poisoned'],
+        'shred': 3,
+        'subtype': 'verman',
+        'essence': [(10, 'life'), (10, 'water')],
+        'on_hit': [actions.toxic_attack],
+        'attributes' : ['ability_summon_spiders','ability_web_bomb'],
+        'flags': WEB_IMMUNE,
+        'loot_level':1,
+        'equipment': [{'weapon_dagger':40, 'weapon_messer':30, 'weapon_rapier':30}, {'none':25,'equipment_cloth_robes':75}],
     },
 }
 

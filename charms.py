@@ -34,6 +34,8 @@ def get_charm_data(charm):
         return spells.charm_volatile_orb
     elif charm.use_function == elementalists_lens:
         return spells.charm_elementalists_lens
+    elif charm.use_function == prayer_beads:
+        return spells.charm_prayer_beads
 
 def print_charm_description(charm, console, x, y, width):
     data = get_charm_data(charm)
@@ -241,5 +243,25 @@ def elementalists_lens():
 
     if result != 'didnt-take-turn' and result != 'cancelled':
         ui.message('An elemental appears before you.', color=spells.essence_colors[essence])
+        player.instance.essence.remove(essence)
+    return result
+
+def prayer_beads():
+    essence = select_essence(spells.charm_prayer_beads)
+    if essence is None:
+        return 'didnt-take-turn'
+
+    result = 'didnt-take-turn'
+
+    if essence == 'life':
+        result = actions.healing_trance()
+    elif essence == 'air':
+        player.instance.fighter.adjust_stamina(100)
+        ui.message('Fresh air fills your lungs!', spells.essence_colors['air'])
+        result = 'success'
+    elif essence == 'water':
+        result = actions.holy_water()
+
+    if result != 'didnt-take-turn' and result != 'cancelled':
         player.instance.essence.remove(essence)
     return result

@@ -55,11 +55,12 @@ branches = {
         'monsters':[
             {'encounter':['monster_cockroach'], 'party':'2d2+1'},
             {'encounter':['monster_rotting_zombie'], 'party':'1d3'},
+            {'encounter':['monster_bloodfly'], 'party':'1d3'},
             {'encounter':['monster_goblin']},
             {'encounter':['monster_centipede']},
             {'encounter':['monster_tunnel_spider']},
             {'encounter':['monster_cockroach'], 'party':'3d2'},
-            {'encounter':['monster_rotting_zombie'], 'party':'1d3+2'},
+            {'encounter':['monster_bloodfly'], 'party':'3d2'},
             {'encounter':['monster_goblin','monster_goblin_warrior'],'party':'2d3'},
             {'encounter':['monster_golem']},
             {'encounter':['monster_snow_kite']},
@@ -145,6 +146,7 @@ branches = {
             {'encounter':['monster_verman']},
             {'encounter':['monster_bear']},
             {'encounter':['monster_goblin','monster_goblin_warrior'],'party':'2d3'},
+            {'encounter':['monster_arachnomancer']},
         ],
     },
     'forest': {

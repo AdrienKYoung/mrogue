@@ -298,7 +298,7 @@ class GameObject:
                 if self.fighter.has_status('immobilized'):
                     return True
                 web = object_at_tile(self.x, self.y, 'spiderweb')
-                if web is not None and not self.name == 'tunnel spider':
+                if web is not None and not (self.fighter and self.fighter.has_flag(monsters.WEB_IMMUNE)):
                     ui.message('%s %s against the web' % (
                                     syntax.name(self).capitalize(),
                                     syntax.conjugate(self is player.instance, ('struggle', 'struggles'))))
@@ -739,6 +739,9 @@ def scum_glob_tick(glob):
 
 def scum_glob_on_create(obj):
     obj.fighter.apply_status_effect(effects.oiled(duration=None))
+
+def bloodfly_on_create(obj):
+    obj.fighter.hp = obj.fighter.max_hp / 2
 
 # on_create function of tunnel spiders. Creates a web at the spiders location and several random adjacent spaces
 def tunnel_spider_spawn_web(obj):

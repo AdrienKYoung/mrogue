@@ -51,7 +51,7 @@ class StatusEffect:
 
 def burning(duration = 6, stacks = 1):
     return StatusEffect('burning', duration, spells.essence_colors['fire'], stacking_behavior='stack-refresh', stacks=stacks,
-                        on_tick=fire_tick, message="You are on fire!",
+                        on_tick=fire_tick, message="You are on fire!", on_apply=burn_apply,
                         description='This unit will take fire damage at the end of every turn.', cleanseable=True)
 
 def exhausted(duration = 10):
@@ -69,7 +69,7 @@ def stunned(duration = 1):
 
 def frozen(duration = 1):
     return StatusEffect('frozen',duration,spells.essence_colors['cold'], message="You have been frozen solid!",
-                        description='This unit cannot act.')
+                        description='This unit cannot act.', on_apply=freeze_apply)
 
 def judgement(duration = 30, stacks=10):
     return StatusEffect('judgement',duration,spells.essence_colors['radiance'], message="You are marked for judgement!", stacks=stacks,
@@ -100,6 +100,10 @@ def poison(duration = 30):
                         stacking_behavior='extend', cleanseable=True)
     fx.timer = 0
     return fx
+
+def toxic(duration = 30):
+    return StatusEffect('toxic', duration, libtcod.chartreuse, message="You feel sick...", description=
+                        'This unit heals half as much and takes triple damage from poison', cleanseable=True)
 
 def bleeding(duration = 5):
     return StatusEffect('bleeding', duration, libtcod.red, message="You are bleeding badly!",
@@ -198,6 +202,14 @@ def focused(duration=1):
     return StatusEffect('focused', duration, libtcod.white, message='You focus on your target...',
                         description='This unit has increased accuracy', cleanseable=False)
 
+def burn_apply(object=None):
+    if object is not None and object.fighter is not None and object.fighter.has_status('frozen'):
+        object.fighter.remove_status('frozen')
+
+def freeze_apply(object=None):
+    if object is not None and object.fighter is not None and object.fighter.has_status('burning'):
+        object.fighter.remove_status('burning')
+
 def fire_tick(effect,object=None):
     if object is not None and object.fighter is not None:
         if main.current_map.tiles[object.x][object.y].is_water:
@@ -215,7 +227,9 @@ def regeneration_tick(effect,object=None):
 
 def poison_tick(effect,object=None):
     if object is not None and object.fighter is not None:
-        if hasattr(effect,'timer'):
+        if object.fighter.has_status('toxic'):
+            object.fighter.take_damage(1, affect_shred=False)
+        elif hasattr(effect,'timer'):
             if effect.timer > 2:
                 object.fighter.take_damage(1, affect_shred=False)
                 effect.timer = 0

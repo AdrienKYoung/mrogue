@@ -274,6 +274,45 @@ def spawn_vermin(actor=None, target=None):
                 actor.summons.append(spawn)
                 summon_tiles.remove(pos)
 
+def spawn_spiders(actor=None, target=None):
+    #Filthy hackery to add some state
+    ability = abilities.data['ability_summon_spiders']
+    if not hasattr(actor, 'summons'):
+        actor.summons = []
+
+    for s in actor.summons:  # clear dead things from summoned list
+        if not s.fighter:
+            actor.summons.remove(s)
+
+    if len(actor.summons) < ability['max_summons']:
+        summon_tiles = []
+        for y in range(3):
+            for x in range(3):
+                pos = actor.x - 1 + x, actor.y - 1 + y
+                if main.in_bounds(pos[0], pos[1]) and not main.is_blocked(pos[0], pos[1]):
+                    summon_tiles.append(pos)
+        summon_count = main.roll_dice(ability['summons_per_cast'])
+        for i in range(summon_count):
+            if len(summon_tiles) > 0 and len(actor.summons) < ability['max_summons']:
+                pos = summon_tiles[libtcod.random_get_int(0, 0, len(summon_tiles) - 1)]
+                spawn = main.spawn_monster('monster_tunnel_spider', pos[0], pos[1])
+                ui.message('A ' + spawn.name + " crawls from beneath %s cloak." % syntax.name(actor, possesive=True), actor.color)
+                actor.summons.append(spawn)
+                summon_tiles.remove(pos)
+        return 'success'
+    return 'cancelled'
+
+def web_bomb(actor=None, target=None):
+    if actor is None:
+        ui.message('Yo implement this', libtcod.red)
+        return 'failure'
+    if target is not None:
+        main.tunnel_spider_spawn_web(target)
+        if actor is player.instance or fov.player_can_see(target.x, target.y):
+            ui.message('%s summons spiderwebs.' % syntax.name(actor).capitalize(), actor.color)
+        return 'success'
+    return 'cancelled'
+
 def raise_zombie(actor=None, target=None):
     if actor is None:
         actor = player.instance
@@ -385,6 +424,15 @@ def focus(actor=None, target=None):
         actor = player.instance
     actor.fighter.apply_status_effect(effects.focused(duration=2))
     return 'success'
+
+def healing_trance(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+    if actor.fighter:
+        actor.fighter.apply_status_effect(effects.stunned(duration=15))
+        actor.fighter.apply_status_effect(effects.regeneration(duration=15))
+        return 'success'
+    return 'cancelled'
 
 def flame_breath(actor=None, target=None):
     x, y = 0, 0
@@ -1040,6 +1088,33 @@ def _timebomb_ticker(ticker):
                 if f.x == adj[0] and f.y == adj[1]:
                     combat.spell_attack_ex(ticker.actor.fighter, f, None, '6d10', 0, 'lightning', 0)
 
+def holy_water(actor=None, target=None):
+    import monsters
+    if actor is None:
+        actor = player.instance
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        (x, y) = ui.target_tile(max_range=2, default_target=default_target, targeting_type='beam_interrupt')
+        if x is None: return 'cancelled'
+        target = main.get_monster_at_tile(x, y)
+        if target is None:
+            ui.message('No susceptible targets here.', libtcod.gray)
+            return 'cancelled'
+        actor = player.instance
+    else:
+        (x, y) = target.x, target.y
+    if not target.fighter.has_flag(monsters.EVIL):
+        if actor is player.instance:
+            ui.message('That target is not vulnerable to holy water.', libtcod.gray)
+        return 'cancelled'
+    ui.render_projectile((actor.x, actor.y), (target.x, target.y), color=spells.essence_colors['water'], character=libtcod.CHAR_BLOCK2)
+    combat.spell_attack_ex(actor.fighter, target, None, '8d10', 0, 'radiance', 3)
+    if target.fighter is not None:
+        target.fighter.apply_status_effect(effects.stunned(duration=(3 + main.roll_dice('1d6'))))
+    return 'success'
+
 def knock_back(actor,target):
     # knock the target back one space. Stun it if it cannot move.
     direction = target.x - actor.x, target.y - actor.y  # assumes the instance is adjacent
@@ -1435,6 +1510,11 @@ def oil_attack(actor, target, damage):
 def immobilize_attack(actor, target, damage):
     if target.fighter is not None and main.roll_dice('1d10') <= 5:
         target.fighter.apply_status_effect(effects.immobilized(duration=2))
+
+def toxic_attack(actor, target, damage):
+    if target.fighter is not None:
+        target.fighter.apply_status_effect(effects.toxic())
+
 
 def potion_essence(essence):
     return lambda : player.pick_up_essence(essence,player.instance)

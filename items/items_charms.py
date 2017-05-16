@@ -74,4 +74,13 @@ table = {
         'on_use'        : charms.elementalists_lens,
         'description'   : 'An intricate device of polished brass by which elementalists give life to essence itself.'
     },
+    'charm_prayer_beads' : {
+        'name'          : "Prayer Beads",
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : charms.prayer_beads,
+        'description'   : 'A simple string of wooden beads, as carried by the monks of the Arang Mountains.'
+    },
 }
