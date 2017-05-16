@@ -123,31 +123,4 @@ def initialize_world():
     world_maps['gtunnels_1_2'].add_link(world_maps['marsh_2_0'], 'up')
     world_maps['gtunnels_3_2'].add_link(world_maps['badlands_0_1'], 'up')
 
-    # Add Frozen Forest maps and link back to badlands/goblin tunnels
-    for y in range(2):
-        for x in range(3):
-            new_map = Map('forest', coord=(x, y))
-            if x > 0:
-                new_map.add_link(world_maps['forest_' + str(x - 1) + '_' + str(y)], 'west')
-            if y > 0:
-                new_map.add_link(world_maps['forest_' + str(x) + '_' + str(y - 1)], 'north')
-            world_maps[new_map.name] = new_map
-    world_maps['forest_2_1'].add_link(world_maps['badlands_1_0'], 'south')
-    world_maps['forest_1_1'].add_link(world_maps['gtunnels_3_0'], 'down')
-
-    # Add Garden maps and link back to marsh/goblin tunnels
-    for y in range(3):
-        for x in range(2):
-            new_map = Map('garden', coord=(x, y))
-            if x > 0:
-                new_map.add_link(world_maps['garden_' + str(x - 1) + '_' + str(y)], 'west')
-            if y > 0:
-                new_map.add_link(world_maps['garden_' + str(x) + '_' + str(y - 1)], 'north')
-            world_maps[new_map.name] = new_map
-    world_maps['garden_0_2'].add_link(world_maps['marsh_1_0'], 'south')
-    world_maps['garden_1_2'].add_link(world_maps['gtunnels_1_1'], 'down')
-
-    # Link gardens and forest
-    world_maps['garden_1_0'].add_link(world_maps['forest_0_0'], 'east')
-
 world_maps = None
