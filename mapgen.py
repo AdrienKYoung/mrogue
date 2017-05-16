@@ -25,6 +25,7 @@ import copy
 import player
 import dungeon
 import loot
+import log
 
 angles = [0,
           0.5 * math.pi,
@@ -83,6 +84,40 @@ class BSP_Leaf:
         if self.split():
             self.left.split_recursive()
             self.right.split_recursive()
+
+class NSP_Node:
+    def __init__(self,rect,type):
+        self.rect = rect
+        self.type = type
+        self.children = []
+
+    def split(self,max_size,min_size,partition_options,partition_strat=None):
+        wf = float(self.rect.w - min_size) / float(max_size - min_size)
+        hf = float(self.rect.h - min_size) / float(max_size - min_size)
+        f = min(wf,hf)
+
+        if self.rect.w <= min_size or self.rect.h <= min_size or libtcod.random_get_double(0, 0, 1) > f:
+            self.type = "leaf"
+            return
+
+        if partition_strat is None:
+            partition_strat = main.random_choice(partition_options)
+
+        symetrical = None
+        if libtcod.random_get_double(0, 0, 1) < 0.35:
+            symetrical = main.random_choice(partition_options)
+
+        for part in partition_strat(self.rect,min_size):
+            child = NSP_Node(part[0],part[1])
+            self.children.append(child)
+            if child.type == "branch":
+                child.split(max_size, min_size, partition_options,symetrical)
+
+    def dump_log(self, level=0):
+        log.info("mapgen","{}{}",["  " * level,str(self.rect)])
+        for c in self.children:
+            c.dump_log(level + 1)
+
 
 
 # It's not a bug, it's a
@@ -293,6 +328,9 @@ class Rect:
         self.y1 = y
         self.x2 = x + w
         self.y2 = y + h
+
+    def __str__(self):
+        return "(({},{}),({},{}))".format(self.x1,self.y1,self.x2,self.y2)
 
     def center(self):
         center_x = (self.x1 + self.x2) / 2
@@ -1309,7 +1347,7 @@ def make_rooms_and_corridors():
     if boss is not None:
         main.spawn_monster(boss, sample[1].center()[0], sample[1].center()[1])
 
-def make_garden_rooms(leaf):
+def make_garden_rooms_legacy(leaf):
     if leaf.left is None or leaf.right is None:
         room = Room()
         for x in range(leaf.w):
@@ -1324,7 +1362,7 @@ def make_garden_rooms(leaf):
         make_garden_rooms(leaf.left)
         make_garden_rooms(leaf.right)
 
-def make_map_garden():
+def make_map_garden_legacy():
 
     for x in range(consts.MAP_WIDTH):
         for y in range(consts.MAP_HEIGHT):
@@ -1333,6 +1371,101 @@ def make_map_garden():
     root.split_recursive()
     make_garden_rooms(root)
 
+def make_garden_rooms(node):
+    if 'leaf' in node.type:
+        room = Room()
+        for x in range(node.rect.w):
+            room.set_tile(x, 0, default_wall)
+            room.set_tile(x, node.rect.h, default_wall)
+        for y in range(node.rect.h):
+            room.set_tile(0, y, default_wall)
+            room.set_tile(node.rect.w, y, default_wall)
+        room.set_pos(node.rect.x1 + room.width / 2, node.rect.y1 + room.height / 2)
+        apply_room(room)
+    elif 'path' in node.type:
+        room = Room()
+        for x in range(node.rect.w):
+            for y in range(node.rect.h):
+                room.set_tile(x, y,'grass floor')
+        room.set_pos(node.rect.x1 + room.width / 2, node.rect.y1 + room.height / 2)
+        apply_room(room)
+    else:
+        for c in node.children:
+            make_garden_rooms(c)
+
+def make_map_garden():
+    for x in range(consts.MAP_WIDTH):
+        for y in range(consts.MAP_HEIGHT):
+            change_map_tile(x, y, default_floor)
+    root = NSP_Node(Rect(0, 0, consts.MAP_WIDTH - 1, consts.MAP_HEIGHT - 1),"branch")
+    root.split(15,4,{garden_wall_partition:10,garden_path_partition:10})
+    make_garden_rooms(root)
+
+def garden_wall_partition(rect,min_size):
+    dir = rect.w / rect.h
+    result = None
+
+    if(dir < libtcod.random_get_float(0,0,2)):
+        if(rect.h < min_size):
+            return []
+
+        split_value = libtcod.random_get_int(0, min_size, rect.h - min_size)
+
+        result = [
+            (Rect(rect.x1, rect.y1, rect.w, split_value), "branch"),
+            (Rect(rect.x1, rect.y1 + split_value, rect.w, rect.h - split_value), "branch")
+        ]
+        log.info("mapgen", "Horizontal split from {} at h={} into: {} and {}",
+                 [rect, split_value, result[0][0], result[1][0]])
+    else:
+        if (rect.w < min_size):
+            return []
+
+        split_value = libtcod.random_get_int(0, min_size, rect.w - min_size) + min_size
+
+        result = [
+            (Rect(rect.x1, rect.y1, split_value, rect.h), "branch"),
+            (Rect(rect.x1 + split_value, rect.y1, rect.w - split_value, rect.h), "branch")
+        ]
+        log.info("mapgen", "Vertical split from {} at w={} into: {} and {}",
+                 [rect, split_value, result[0][0], result[1][0]])
+    return result
+
+def garden_path_partition(rect,min_size):
+    dir = rect.w / rect.h
+    result = None
+
+    if (dir < libtcod.random_get_float(0, 0, 2)):
+        path_width = int(rect.h / 8)
+
+        if (rect.h < min_size or path_width < 1):
+            return []
+
+        split_value = libtcod.random_get_int(0, min_size, rect.h - min_size)
+
+        result = [
+            (Rect(rect.x1, rect.y1, rect.w, split_value - path_width), "branch"),
+            (Rect(rect.x1, rect.y1 + split_value - path_width, rect.w, path_width * 2), "path"),
+            (Rect(rect.x1, rect.y1 + split_value + path_width, rect.w, rect.h - split_value - path_width), "branch")
+        ]
+        log.info("mapgen", "Horizontal path split from {} at h={} into: {}, {} and {}",
+                 [rect, split_value, result[0][0], result[1][0], result[2][0]])
+    else:
+        path_width = min(int(rect.w / 8),2)
+
+        if (rect.h < min_size or path_width < 1):
+            return []
+
+        split_value = libtcod.random_get_int(0, min_size, rect.w - min_size)
+
+        result = [
+            (Rect(rect.x1, rect.y1, split_value - path_width, rect.h), "branch"),
+            (Rect(rect.x1 + split_value - path_width, rect.y1, path_width * 2, rect.h), "path"),
+            (Rect(rect.x1 + split_value + path_width, rect.y1, rect.w - split_value - path_width, rect.h), "branch")
+        ]
+        log.info("mapgen", "Vertical path split from {} at h={} into: {}, {} and {}",
+                 [rect, split_value, result[0][0], result[1][0], result[2][0]])
+    return result
 
 def make_map_forest():
 
