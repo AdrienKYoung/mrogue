@@ -861,6 +861,9 @@ def on_tick(this):
     for ability in abilities.default_abilities.values():
         ability.on_tick()
 
+    if instance.fighter.hp < 25:
+        instance.fighter.heal(instance.fighter.item_equipped_count('equipment_ring_of_tenacity'))
+
 def on_get_hit(this,other,damage):
     if main.has_skill('heir_to_the_heavens'):
         if not hasattr(instance,'heir_to_the_heavens_cd'):
@@ -869,6 +872,7 @@ def on_get_hit(this,other,damage):
             if actions.summon_guardian_angel() != 'failed':
                 instance.heir_to_the_heavens_cd = 70
                 instance.fighter.apply_status_effect(effects.invulnerable(1),True)
+
     if main.has_skill('adrenaline'):
         health_percentage = float(instance.fighter.hp) / float(instance.fighter.max_hp)
         adrenaline_chance = (1.0 - health_percentage) * 0.75
@@ -876,9 +880,14 @@ def on_get_hit(this,other,damage):
             instance.fighter.adjust_stamina(10)
             ui.message('You feel a surge of adrenaline!', libtcod.light_yellow)
 
+    if main.roll_dice('1d20' <= instance.fighter.item_equipped_count('equipment_ring_of_rage')):
+        instance.fighter.apply_status_effect(effects.berserk())
+
+    if main.roll_dice('1d20' <= instance.fighter.item_equipped_count('equipment_ring_of_vengeance')):
+        other.fighter.apply_status_effect(effects.cursed())
+
 def on_get_kill(this,other,damage):
-    return
-    this.fighter.has_item_equipped()
+    this.fighter.heal(this.fighter.item_equipped_count('equipment_ring_of_vampirism') * 2)
 
 def get_abilities():
     import abilities

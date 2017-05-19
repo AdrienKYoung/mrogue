@@ -54,4 +54,54 @@ table = {
         'description'   : '',
         'weight'        : 1
     },
+    'equipment_ring_of_vampirism': {
+        'name'          : 'Ring of Vampirism',
+        'category'      : 'accessory',
+        'char'          : chr(147),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'slot'          : 'ring',
+        'description'   : '',
+        'weight'        : 1
+    },
+    'equipment_ring_of_tenacity': {
+        'name'          : 'Ring of Tenacity',
+        'category'      : 'accessory',
+        'char'          : chr(147),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'slot'          : 'ring',
+        'description'   : '',
+        'weight'        : 1
+    },
+    'equipment_ring_of_fortitude': {
+        'name'          : 'Ring of Fortitude',
+        'category'      : 'accessory',
+        'char'          : chr(147),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'slot'          : 'ring',
+        'description'   : '',
+        'weight'        : 1
+    },
+    'equipment_ring_of_rage': {
+        'name'          : 'Ring of Rage',
+        'category'      : 'accessory',
+        'char'          : chr(147),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'slot'          : 'ring',
+        'description'   : '',
+        'weight'        : 1
+    },
+    'equipment_ring_of_vengeance': {
+        'name'          : 'Ring of Vengeance',
+        'category'      : 'accessory',
+        'char'          : chr(147),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'slot'          : 'ring',
+        'description'   : '',
+        'weight'        : 1
+    },
 }

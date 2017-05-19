@@ -226,14 +226,13 @@ class Fighter:
         if self.hp > self.max_hp:
             self.hp = self.max_hp
 
-    def has_item_equipped(self, name):
-        return name in [e.base_id for e in main.get_all_equipped(self.inventory)]
+    def item_equipped_count(self, name):
+        return len([e.base_id for e in main.get_all_equipped(self.inventory)])
 
     def on_tick(self, object=None):
         # Track time since damaged (for repairing shred)
         self.time_since_last_damaged += 1
-        repair_time = 20
-        if self.has_item_equipped('equipment_ring_of_mending'): repair_time /= 2
+        repair_time = 20 / (self.item_equipped_count('equipment_ring_of_mending') * 2)
         if self.time_since_last_damaged >= repair_time and self.shred > 0:
             self.shred = 0
             if self.owner is player.instance:
@@ -252,7 +251,7 @@ class Fighter:
                 and self.owner.movement_type & pathfinding.FLYING != pathfinding.FLYING \
                 and self.owner.movement_type & pathfinding.AQUATIC != pathfinding.AQUATIC:  # deep water / deep seawater
             if not (self.can_breath_underwater or self.has_status('waterbreathing') or self.has_status('lichform') or
-                    self is player.instance and main.has_skill('aquatic') or self.has_item_equipped("ring_of_waterbreathing")):
+                    self is player.instance and main.has_skill('aquatic') or self.item_equipped_count("ring_of_waterbreathing") > 0):
                 if self.breath > 0:
                     self.breath -= 1
                 else:
@@ -301,6 +300,10 @@ class Fighter:
                     ui.message('%s %s.' % (syntax.name(self.owner).capitalize(), syntax.conjugate(
                                     self.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
                 return False
+
+        new_effect.time_limit = int(new_effect.time_limit -
+                                    (1 - self.item_equipped_count('equipment_ring_of_fortitude') * 0.3))
+
         # check for existing matching effects
         add_effect = True
         for effect in self.status_effects:

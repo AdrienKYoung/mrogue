@@ -81,7 +81,7 @@ def immobilized(duration = 5):
                         description='This unit cannot move.', cleanseable=True)
 
 def berserk(duration = 20):
-    return StatusEffect('berserk',duration,libtcod.red, on_end=berserk_end, attack_power_mod=1.5,
+    return StatusEffect('berserk',duration,libtcod.red, on_end=berserk_end, attack_power_mod=1.5, stacking_behavior='refresh',
                         message="You are overcome by rage!",
                         description='This unit attacks harder and faster.')
 
