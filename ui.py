@@ -663,6 +663,22 @@ def render_side_panel(acc_mod=1.0):
             libtcod.console_print(side_panel, 2, drawHeight, 'Does not attack')
 
         drawHeight += 2
+
+        # Weapon
+        weapon = main.get_equipped_in_slot(selected_monster.fighter.inventory, 'right hand')
+        if weapon is not None:
+            libtcod.console_print(side_panel, 2, drawHeight, 'Weapon:')
+            drawHeight += 1
+            weapon_string = weapon.owner.name.title()
+            weapon_color = loot.qualities[weapon.quality]['color']
+            weapon_string_height = libtcod.console_get_height_rect(side_panel, 2, drawHeight, consts.SIDE_PANEL_WIDTH - 3,
+                                                                   5, weapon_string)
+            libtcod.console_set_default_foreground(side_panel, weapon_color)
+            libtcod.console_print_rect_ex(side_panel, 2, drawHeight, consts.SIDE_PANEL_WIDTH - 3, weapon_string_height,
+                                          libtcod.BKGND_DEFAULT, libtcod.LEFT, weapon_string)
+            libtcod.console_set_default_foreground(side_panel, libtcod.white)
+            drawHeight += weapon_string_height + 2
+
         for effect in selected_monster.fighter.status_effects:
             libtcod.console_set_default_foreground(side_panel, effect.color)
             effect_str = effect.name
