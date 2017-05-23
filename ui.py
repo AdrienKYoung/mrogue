@@ -389,17 +389,20 @@ def scroll_message(amount):
     global msg_render_height
     msg_render_height = main.clamp(msg_render_height + amount, 0, len(game_msgs) - consts.MSG_HEIGHT - 1)
 
-def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, align=libtcod.CENTER, print_ratio=True, text_color=libtcod.white):
+def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, align=libtcod.CENTER, print_ratio=True,
+               text_color=libtcod.white, console=None):
     bar_width = int(float(value) / maximum * total_width)
+    if console is None:
+        console = side_panel
 
-    libtcod.console_set_default_background(side_panel, back_color)
-    libtcod.console_rect(side_panel, x, y, total_width, 1, False, libtcod.BKGND_SCREEN)
+    libtcod.console_set_default_background(console, back_color)
+    libtcod.console_rect(console, x, y, total_width, 1, False, libtcod.BKGND_SCREEN)
 
-    libtcod.console_set_default_background(side_panel, bar_color)
+    libtcod.console_set_default_background(console, bar_color)
     if bar_width > 0:
-        libtcod.console_rect(side_panel, x, y, bar_width, 1, False, libtcod.BKGND_SCREEN)
+        libtcod.console_rect(console, x, y, bar_width, 1, False, libtcod.BKGND_SCREEN)
 
-    libtcod.console_set_default_foreground(side_panel, text_color)
+    libtcod.console_set_default_foreground(console, text_color)
     pos = x + 1
     if align == libtcod.LEFT:
         pos = x + 1
@@ -411,7 +414,7 @@ def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, a
         print_string = name + ':' + str(value) + '/' + str(maximum)
     else:
         print_string = name
-    libtcod.console_print_ex(side_panel, pos, y, libtcod.BKGND_NONE, align, print_string)
+    libtcod.console_print_ex(console, pos, y, libtcod.BKGND_NONE, align, print_string)
 
 def draw_border(console, x0, y0, width, height, foreground=libtcod.gray, background=libtcod.black):
 
@@ -1566,6 +1569,17 @@ def buy(item,payment_type,success,cancelled):
         inventory.remove(payment)
         inventory.append(main.create_item(item))
         return success
+
+def character_info_screen(console, x, y, width):
+    print_height = 0
+
+    prev_lvl = consts.LEVEL_UP_BASE + (player.instance.level - 1) * consts.LEVEL_UP_FACTOR
+    next_lvl = consts.LEVEL_UP_BASE + player.instance.level * consts.LEVEL_UP_FACTOR
+    render_bar(x + 2, y, consts.BAR_WIDTH, 'XP', player.instance.fighter.xp - prev_lvl, next_lvl - prev_lvl, libtcod.light_sky, libtcod.dark_sky, console=console)
+    print_height += 2
+
+    return print_height
+
 
 show_action_panel = True
 overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)

@@ -272,9 +272,10 @@ def handle_keys():
                     else:
                         return 'dropped-item'
             if key_char == 'c':
-                ui.msgbox('Character Information\n\nLevel: ' + str(instance.level) + '\n\nMaximum HP: ' +
-                       str(instance.fighter.max_hp),
-                       consts.CHARACTER_SCREEN_WIDTH)
+                ui.menu('Character Information', ['back'], render_func=ui.character_info_screen)
+                #ui.msgbox('Character Information\n\nLevel: ' + str(instance.level) + '\n\nMaximum HP: ' +
+                #       str(instance.fighter.max_hp),
+                #       consts.CHARACTER_SCREEN_WIDTH)
             if key_char == 'z':
                 return cast_spell()
             if key_char == 'v':
@@ -880,11 +881,13 @@ def on_get_hit(this,other,damage):
             instance.fighter.adjust_stamina(10)
             ui.message('You feel a surge of adrenaline!', libtcod.light_yellow)
 
-    if main.roll_dice('1d20' <= instance.fighter.item_equipped_count('equipment_ring_of_rage')):
-        instance.fighter.apply_status_effect(effects.berserk())
-
-    if main.roll_dice('1d20' <= instance.fighter.item_equipped_count('equipment_ring_of_vengeance')):
-        other.fighter.apply_status_effect(effects.cursed())
+    if instance.fighter is not None:
+        rage_count = instance.fighter.item_equipped_count('equipment_ring_of_rage')
+        if main.roll_dice('1d20') <= rage_count:
+            instance.fighter.apply_status_effect(effects.berserk())
+        if other is not None and other.fighter is not None:
+            if main.roll_dice('1d20') <= instance.fighter.item_equipped_count('equipment_ring_of_vengeance'):
+                other.fighter.apply_status_effect(effects.cursed())
 
 def on_get_kill(this,other,damage):
     this.fighter.heal(this.fighter.item_equipped_count('equipment_ring_of_vampirism') * 2)

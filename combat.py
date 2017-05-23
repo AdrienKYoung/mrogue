@@ -152,7 +152,7 @@ class Fighter:
                             sh.timer = 0
                             sh.raised = True
                         function(self.owner)
-                    if attacker is not None and attacker.fighter.on_get_kill is not None:
+                    if attacker is not None and attacker.fighter is not None and attacker.fighter.on_get_kill is not None:
                         attacker.fighter.on_get_kill(attacker,self,damage)
                 if affect_shred:
                     self.time_since_last_damaged = 0
@@ -227,12 +227,21 @@ class Fighter:
             self.hp = self.max_hp
 
     def item_equipped_count(self, name):
-        return len([e.base_id for e in main.get_all_equipped(self.inventory)])
+        match = []
+        for item in main.get_all_equipped(self.inventory):
+            if item.base_id == name:
+                match.append(item)
+        return len(match)
+        #return len([e.base_id == name for e in main.get_all_equipped(self.inventory)])
 
     def on_tick(self, object=None):
         # Track time since damaged (for repairing shred)
         self.time_since_last_damaged += 1
-        repair_time = 20 / (self.item_equipped_count('equipment_ring_of_mending') * 2)
+        mending_count = self.item_equipped_count('equipment_ring_of_mending')
+        if mending_count > 0:
+            repair_time = 20 / (mending_count * 2)
+        else:
+            repair_time = 20
         if self.time_since_last_damaged >= repair_time and self.shred > 0:
             self.shred = 0
             if self.owner is player.instance:
@@ -301,8 +310,9 @@ class Fighter:
                                     self.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
                 return False
 
-        new_effect.time_limit = int(new_effect.time_limit -
-                                    (1 - self.item_equipped_count('equipment_ring_of_fortitude') * 0.3))
+        #if new_effect.time_limit is not None:
+        #   new_effect.time_limit = int(new_effect.time_limit -
+        #                               (1 - self.item_equipped_count('equipment_ring_of_fortitude') * 0.3))
 
         # check for existing matching effects
         add_effect = True

@@ -191,6 +191,15 @@ table = {
         'equipment_ring_of_stamina',
         'equipment_ring_of_evasion',
         'equipment_ring_of_accuracy',
+        'equipment_ring_of_vengeance',
+        'equipment_ring_of_rage',
+        'equipment_ring_of_fortitude',
+        'equipment_ring_of_tenacity',
+        'equipment_ring_of_vampirism',
+        'equipment_ring_of_mending',
+        'equipment_ring_of_waterbreathing',
+
+
     ]
 }
 
