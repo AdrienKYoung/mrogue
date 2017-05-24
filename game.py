@@ -28,12 +28,13 @@ import string
 #############################################
 
 class Item:
-    def __init__(self, category, use_function=None, type='item', ability=None, holder=None):
+    def __init__(self, category, use_function=None, type='item', ability=None, holder=None, charges=None):
         self.category = category
         self.use_function = use_function
         self.type = type
         self.ability = ability
         self.holder = holder
+        self.charges = charges
 
     def pick_up(self, actor):
         if self.type == 'item':
@@ -55,8 +56,15 @@ class Item:
             return self.owner.equipment.toggle()
         elif self.use_function is not None:
             if self.use_function() != 'cancelled':
-                if self.type == 'item' and self.category != 'charm' and not(self.category == 'gem' and consts.DEBUG_INFINITE_GEMS):
-                    self.holder.fighter.inventory.remove(self.owner)
+                if self.type == 'item' and not(self.category == 'gem' and consts.DEBUG_INFINITE_GEMS):
+                    if self.category == 'charm':
+                        if self.charges is not None:
+                            self.charges -= 1
+                            if self.charges <= 0:
+                                self.holder.fighter.inventory.remove(self.owner)
+                                ui.message('The %s crumbles to dust, its energy spent.' % self.owner.name, libtcod.gray)
+                    else:
+                        self.holder.fighter.inventory.remove(self.owner)
             else:
                 return 'cancelled'
         elif self.holder is player.instance:
@@ -1267,7 +1275,7 @@ def create_item(name, material=None, quality=''):
     ability = None
     if p.get('ability') is not None and p.get('ability') in abilities.data:
         ability = create_ability(p.get('ability'))
-    item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], ability=ability)
+    item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], ability=ability, charges=p.get('charges'))
     equipment_component = None
     if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book' or p['category'] == 'accessory':
         equipment_component = equipment.Equipment(

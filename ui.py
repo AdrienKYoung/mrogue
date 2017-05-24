@@ -1544,6 +1544,7 @@ def choose_essence_from_pool(charm_data):
 
             }
             letter_index += 1
+
     if len(options_ex) > 0:
         index = menu_ex('Select essence:', options_ex, 50, return_as_char=True)
     else:

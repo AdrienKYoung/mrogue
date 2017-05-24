@@ -90,6 +90,7 @@ loadouts = {
         'con':12,
         'inventory':[
             'charm_raw',
+            'equipment_cloth_robes',
         ],
         'description' : "Generalist class with great stats, especially spirit. Starts with no gear."
     },
@@ -103,6 +104,7 @@ loadouts = {
             ['book_lesser_death'],
             'charm_raw',
             'weapon_coal_mace'
+            'equipment_cloth_robes',
         ],
         'description' : "Melee magic caster. Starts with a tome, no armor and a mace."
     },

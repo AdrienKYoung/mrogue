@@ -41,7 +41,11 @@ def print_charm_description(charm, console, x, y, width):
     data = get_charm_data(charm)
     draw_height = 1
 
-    libtcod.console_set_default_foreground(console, libtcod.white)
+    if charm.charges is not None:
+        libtcod.console_set_default_foreground(console, libtcod.white)
+        libtcod.console_print(console, x + 1, y + draw_height, 'Charges: %d' % charm.charges)
+        draw_height += 2
+
     libtcod.console_print(console, x + 1, y + draw_height, 'Abilities:')
     draw_height += 1
     libtcod.console_set_default_foreground(console, libtcod.dark_gray)

@@ -114,6 +114,7 @@ class Equipment:
 
     @property
     def weight(self):
+        if self._weight < 0: return self._weight
         return max(self._weight + self.get_bonus('weight_bonus'),0)
 
     @property
@@ -257,6 +258,11 @@ class Equipment:
             if self.holder is player.instance:
                 ui.message('You cannot remove your shield until it is raised.', libtcod.gray)
             return 'cancelled'
+        if self.holder is player.instance:
+            weight_after = self.holder.fighter.equip_weight - self.weight
+            if weight_after > self.holder.fighter.max_equip_weight:
+                ui.message('Removing that would cause your equipment to overburden you.', libtcod.gray)
+                return 'cancelled'
         self.is_equipped = False
         if not no_message and self.holder is player.instance:
             ui.message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
@@ -332,7 +338,7 @@ class Equipment:
         if self.sh_raise_cost > 0:
             libtcod.console_print(console, x, y + print_height, 'Raise Cost: ' + str(self.sh_raise_cost))
             print_height += 1
-        if self.weight > 0:
+        if self.weight != 0:
             libtcod.console_print(console, x, y + print_height, 'Weight: ' + str(self.weight))
             print_height += 1
         if self.break_chance > 0:

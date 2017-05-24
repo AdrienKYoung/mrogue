@@ -135,7 +135,7 @@ table = {
         'essence_cold',
         'essence_arcane',
         'essence_death',
-        'essence_radiant',
+        'essence_radiance',
     ],
 
     'tomes_1': [
@@ -197,6 +197,7 @@ table = {
         'equipment_ring_of_vampirism',
         'equipment_ring_of_mending',
         'equipment_ring_of_waterbreathing',
+        'equipment_ring_of_burdens',
     ],
 
     'elixirs_0': [
@@ -335,10 +336,10 @@ def check_special_drop():
     if main.roll_dice('1d500') <= elixir_life_ticker:
         elixir_life_ticker = 0
         return 'elixir_life'
-    elif main.roll_dice('1d500') <= elixir_stat_ticker:
+    elif main.roll_dice('1d350') <= elixir_stat_ticker:
         elixir_stat_ticker = 0
         return table['elixirs_0'][libtcodpy.random_get_int(0,0,len(table['elixirs_0']))-1]
-    elif main.roll_dice('1d300') <= scroll_forge_ticker:
+    elif main.roll_dice('1d200') <= scroll_forge_ticker:
         scroll_forge_ticker = 0
         return 'scroll_forge'
     else:
@@ -475,7 +476,7 @@ qualities = {
         'armor':{
             'evasion_bonus' : 2,
             'armor_bonus' : 1,
-            'weight' : -5,
+            'weight_bonus' : -5,
             'sh_max_bonus' : 10,
             'sh_recovery_bonus' : -3,
             'sh_raise_cost_bonus' : -5,

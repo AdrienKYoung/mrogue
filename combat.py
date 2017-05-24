@@ -129,6 +129,9 @@ class Fighter:
                            spells.essence_colors['radiance'])
             damage = 0
 
+        if self.has_status('cursed') or self.has_status('stung') and damage > 0:
+            damage = int(damage * 1.25)
+
         if damage > 0:
             sh = self.get_equipped_shield()
             if blockable and sh is not None and sh.raised and sh.sh_points > 0:
@@ -260,7 +263,7 @@ class Fighter:
                 and self.owner.movement_type & pathfinding.FLYING != pathfinding.FLYING \
                 and self.owner.movement_type & pathfinding.AQUATIC != pathfinding.AQUATIC:  # deep water / deep seawater
             if not (self.can_breath_underwater or self.has_status('waterbreathing') or self.has_status('lichform') or
-                    self is player.instance and main.has_skill('aquatic') or self.item_equipped_count("ring_of_waterbreathing") > 0):
+                    self is player.instance and main.has_skill('aquatic') or self.item_equipped_count("equipment_ring_of_waterbreathing") > 0):
                 if self.breath > 0:
                     self.breath -= 1
                 else:
@@ -310,9 +313,10 @@ class Fighter:
                                     self.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
                 return False
 
-        #if new_effect.time_limit is not None:
-        #   new_effect.time_limit = int(new_effect.time_limit -
-        #                               (1 - self.item_equipped_count('equipment_ring_of_fortitude') * 0.3))
+        if new_effect.time_limit is not None:
+           new_effect.time_limit = int(new_effect.time_limit *
+                                       (1 - (self.item_equipped_count('equipment_ring_of_fortitude') * 0.3)))
+
 
         # check for existing matching effects
         add_effect = True
@@ -476,7 +480,7 @@ class Fighter:
     def evasion(self):
         bonus = sum(equipment.evasion_bonus for equipment in main.get_all_equipped(self.inventory))
         bonus = int(bonus * mul(effect.evasion_mod for effect in self.status_effects))
-        if self.has_status('sluggish'):
+        if self.has_status('sluggish') or self.has_status('cursed'):
             bonus -= 5
         if self.owner.player_stats:
             return max(self.base_evasion + (self.owner.player_stats.agi / 3) + bonus, 0)
@@ -531,13 +535,21 @@ class Fighter:
     def equip_weight(self):
         if self.owner is not player.instance:
             return 0
-        return sum(equipment.weight for equipment in main.get_all_equipped(self.inventory))
+        w = 0
+        for equipment in main.get_all_equipped(self.inventory):
+            if equipment.weight and equipment.weight > 0:
+                w += equipment.weight
+        return w
 
     @property
     def max_equip_weight(self):
         if self.owner is not player.instance:
             return 0
-        return self.owner.player_stats.str * 2
+        bonus = 0
+        for i in main.get_all_equipped(self.inventory):
+            if i.weight < 0:
+                bonus += -i.weight
+        return self.owner.player_stats.str * 2 + bonus
 
     def getResists(self):
         from_equips = reduce(lambda a,b: a | set(b.resistances), main.get_all_equipped(self.inventory), set())
@@ -925,7 +937,7 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
                             syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
-def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_modifier_ex, resists,weaknesses, flat_bonus=0):
+def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_modifier_ex, resists, weaknesses, flat_bonus=0):
     damage_mod = damage_modifier_ex
 
     if damage_type in resists:
