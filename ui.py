@@ -1567,17 +1567,33 @@ def buy(item,payment_type,success,cancelled):
     else:
         payment = next((n for n in inventory if n.name == selection))
         inventory.remove(payment)
-        inventory.append(main.create_item(item))
+        main.create_item(item).item.pick_up(player.instance)
         return success
 
 def character_info_screen(console, x, y, width):
     print_height = 0
 
-    prev_lvl = consts.LEVEL_UP_BASE + (player.instance.level - 1) * consts.LEVEL_UP_FACTOR
+    # XP Progress
     next_lvl = consts.LEVEL_UP_BASE + player.instance.level * consts.LEVEL_UP_FACTOR
-    render_bar(x + 2, y, consts.BAR_WIDTH, 'XP', player.instance.fighter.xp - prev_lvl, next_lvl - prev_lvl, libtcod.light_sky, libtcod.dark_sky, console=console)
+    render_bar(x + 2, y, consts.BAR_WIDTH, 'XP', player.instance.fighter.xp, next_lvl, libtcod.light_sky, libtcod.dark_sky, console=console)
     print_height += 2
 
+    # Skill Progress
+    render_bar(x + 2, y + print_height, consts.BAR_WIDTH, 'Skill', player.instance.skill_point_progress, 100, libtcod.violet, libtcod.dark_violet, console=console)
+    print_height += 2
+
+    # Accuracy/Evasion
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    libtcod.console_print(console, 2, y + print_height, 'Accuracy: ')
+    libtcod.console_set_default_foreground(console, libtcod.yellow)
+    libtcod.console_print(console, 12, y + print_height, str(player.instance.fighter.accuracy()))
+    print_height += 1
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    libtcod.console_print(console, 2, y + print_height, 'Evasion: ')
+    libtcod.console_set_default_foreground(console, libtcod.yellow)
+    libtcod.console_print(console, 11, y + print_height, str(player.instance.fighter.evasion))
+
+    print_height += 1
     return print_height
 
 

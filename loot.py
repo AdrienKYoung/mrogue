@@ -136,7 +136,6 @@ table = {
         'essence_arcane',
         'essence_death',
         'essence_radiant',
-        'scroll_forge',
     ],
 
     'tomes_1': [
@@ -198,9 +197,28 @@ table = {
         'equipment_ring_of_vampirism',
         'equipment_ring_of_mending',
         'equipment_ring_of_waterbreathing',
+    ],
 
+    'elixirs_0': [
+        'elixir_con',
+        'elixir_str',
+        'elixir_agi',
+        'elixir_int',
+        'elixir_wis',
+    ],
 
-    ]
+    'chest_0': [
+        'elixirs_0',
+        'elixir_life',
+        'rings_1',
+        'charms_1',
+        'keys_1',
+        'tomes_1',
+        'armor_2',
+        'weapons_2',
+        'scroll_forge',
+    ],
+
 }
 
 def item_from_table(branch,loot_table=None):
@@ -235,6 +253,9 @@ def item_from_table(branch,loot_table=None):
     loot_table = category+'_'+str(loot_level)
 
     item_id = table[loot_table][libtcodpy.random_get_int(0,0,len(table[loot_table]))-1]
+    if item_id in table.keys():
+        return item_from_table(branch, loot_table=item_id)
+
     material = None
     quality = ''
     if category == 'weapon':
@@ -256,7 +277,7 @@ def choose_loot_table(branch):
 def choose_weapon_material(loot_level=0):
     roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 150))
     if roll < 5:
-        return choose_weapon_material(loot_level + 5)
+        return choose_weapon_material(loot_level + 1)
     elif roll < 15:
         return 'wooden'
     elif roll < 30:
@@ -286,7 +307,7 @@ def choose_armor_material(loot_level=0):
 def choose_quality(loot_level=0):
     roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 130))
     if roll < 5:
-        return choose_quality(loot_level + 5)
+        return choose_quality(loot_level + 1)
     elif roll < 10:
         return 'broken'
     elif roll < 20:
@@ -301,6 +322,27 @@ def choose_quality(loot_level=0):
         return 'masterwork'
     else:
         return 'artifact'
+
+elixir_life_ticker = 0
+elixir_stat_ticker = 0
+scroll_forge_ticker = 0
+
+def check_special_drop():
+    global elixir_life_ticker, elixir_stat_ticker, scroll_forge_ticker
+    elixir_stat_ticker += 1
+    scroll_forge_ticker += 1
+    elixir_life_ticker += 1
+    if main.roll_dice('1d500') <= elixir_life_ticker:
+        elixir_life_ticker = 0
+        return 'elixir_life'
+    elif main.roll_dice('1d500') <= elixir_stat_ticker:
+        elixir_stat_ticker = 0
+        return table['elixirs_0'][libtcodpy.random_get_int(0,0,len(table['elixirs_0']))-1]
+    elif main.roll_dice('1d300') <= scroll_forge_ticker:
+        scroll_forge_ticker = 0
+        return 'scroll_forge'
+    else:
+        return None
 
 item_categories = {
     'weapon' : { 'plural' : 'weapons' },

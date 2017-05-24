@@ -1422,7 +1422,8 @@ def create_fire(x,y,temp):
 def chest_interact(chest, actor):
     if actor is player.instance:
         if lock_interact(actor, 'chest'):
-            loot_drop = mapgen.create_random_loot(loot_level=dungeon.branches[current_map.branch]['loot_level'] + 2)
+            #loot_drop = mapgen.create_random_loot(loot_level=dungeon.branches[current_map.branch]['loot_level'] + 2)
+            loot_drop = loot.item_from_table(current_map.branch, 'chest_0')
             if loot_drop is not None:
                 loot_drop.x = chest.x
                 loot_drop.y = chest.y
@@ -1570,7 +1571,11 @@ def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
 
         if not is_blocked(random_pos[0], random_pos[1]):
-            item = loot.item_from_table(current_map.branch)
+            special = loot.check_special_drop()
+            if special is not None:
+                item = create_item(special)
+            else:
+                item = loot.item_from_table(current_map.branch)
             if item is not None:
                 item.x = random_pos[0]
                 item.y = random_pos[1]
