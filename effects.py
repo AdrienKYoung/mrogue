@@ -140,6 +140,10 @@ def serenity(duration=30):
                         message='Your mind becomes calm.',
                         description='This unit has increased evasion and accuracy.', cleanseable=False)
 
+def blessed(duration=20):
+    return StatusEffect('blessed', duration, libtcod.light_blue, armor_mod=1.5, spell_power_mod=1.25, spell_resist_mod=1.5,
+                        message="You are blessed by radiance!", description="This unit has increased armor, spell resist, and spell power")
+
 def blinded(duration=10):
     return StatusEffect('serenity', duration, libtcod.light_blue, accuracy_mod=0.35,
                         message="Your can't see anything!",

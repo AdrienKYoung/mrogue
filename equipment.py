@@ -254,7 +254,7 @@ class Equipment:
 
         self.is_equipped = True
         if self.holder is player.instance and not no_message:
-            ui.message('Equipped ' + self.owner.name + ' on ' + self.slot + '.', libtcod.orange)
+            ui.message('Equipped ' + self.owner.name + '.', libtcod.orange)
         return 'success'
 
     def dequip(self, no_message=False):

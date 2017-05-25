@@ -97,13 +97,13 @@ loadouts = {
     'fanatic' : {
         'str':13,
         'agi':9,
-        'int':10,
+        'int':20,
         'spr':10,
         'con':9,
         'inventory':[
-            ['book_lesser_death'],
+            ['book_lesser_death','book_lesser_radiance'],
             'charm_raw',
-            'weapon_coal_mace'
+            'weapon_coal_mace',
             'equipment_cloth_robes',
         ],
         'description' : "Melee magic caster. Starts with a tome, no armor and a mace."

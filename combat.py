@@ -569,7 +569,9 @@ class Fighter:
         return list(set(self.weaknesses) | from_effects)
 
     def get_equipped_shield(self):
-        shield = main.get_equipped_in_slot(self.inventory, 'left hand')
+        shield = main.get_equipped_in_slot(self.inventory, 'floating shield')
+        if shield is None:
+            shield = main.get_equipped_in_slot(self.inventory, 'left hand')
         if shield is not None\
                 and hasattr(shield, 'sh_points')\
                 and hasattr(shield, 'sh_recovery')\
@@ -812,6 +814,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
             attack_text_ex(fighter,target,verb,location,damage,hit_type,percent_hit)
 
+
             result = target.fighter.take_damage(damage, attacker=fighter.owner, blockable=blockable)
             if result != 'blocked' and result > 0:
                 # Trigger on-hit effects
@@ -824,6 +827,10 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
                 if weapon is not None and weapon.on_hit is not None:
                     for oh in weapon.on_hit:
                         oh(fighter.owner, target, damage)
+
+                if target.fighter is not None and target.fighter.has_status('judgement'):
+                    target.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('1d4')))
+
             if weapon is not None:
                 main.check_breakage(weapon)
 
@@ -917,14 +924,15 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
         if damage > 0:
             attack_text_ex(fighter,target,None,None,damage,spell_element,float(damage) / float(target.fighter.max_hp))
             target.fighter.take_damage(damage, attacker=fighter.owner)
-            # Shred armor
 
-            if fighter.owner is player.instance and main.has_skill('spellshards'):
-                spell_shred += 2
+            if target.fighter is not None:
+                # Shred armor
+                if fighter.owner is player.instance and main.has_skill('spellshards'):
+                    spell_shred += 2
 
-            for i in range(spell_shred):
-                if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
-                    target.fighter.shred += 1
+                for i in range(spell_shred):
+                    if libtcod.random_get_int(0, 0, 2) == 0 and target.fighter.armor > 0:
+                        target.fighter.shred += 1
             return 'hit'
         else:
             verbs = damage_description_tables['deflected']

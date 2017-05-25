@@ -136,7 +136,7 @@ def primal_totem():
     elif essence == 'air':
         result = actions.battle_cry(player.instance)
     elif essence == 'death':
-        result = actions.summon_weapon('weapon_soul_reaper')
+        result = actions.summon_equipment('weapon_soul_reaper')
 
     if result == 'success':
         player.instance.essence.remove(essence)

@@ -242,6 +242,22 @@ table = {
         'sh_recovery': 20,
     },
 
+    'shield_blessed_aegis': { #note - not a valid item, summoned by spell "Holy Aegis"
+        'name': 'Blessed Aegis',
+        'category': 'armor',
+        'char': chr(233),  # theta
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'armor_bonus': 0,
+        'slot': 'floating shield',
+        'description': 'A mote of radiance that intercepts attacks',
+        'evasion_bonus': 0,
+        'weight': 0,
+        'sh_max': 12,
+        'sh_raise_cost': 50,
+        'sh_recovery': 20,
+    },
+
     'shield_escutcheon': {
         'name': 'Escutcheon',
         'category': 'armor',

@@ -36,7 +36,7 @@ class Item:
         self.holder = holder
         self.charges = charges
 
-    def pick_up(self, actor):
+    def pick_up(self, actor, no_message=False):
         if self.type == 'item':
             if len(actor.fighter.inventory) >= 26:
                 if actor is player.instance:
@@ -45,11 +45,11 @@ class Item:
                 self.holder = actor
                 actor.fighter.inventory.append(self.owner)
                 self.owner.destroy()
-                if actor is player.instance:
+                if actor is player.instance and not no_message:
                     ui.message('You picked up a ' + string.capwords(self.owner.name) + '.', libtcod.light_grey)
                 equipment = self.owner.equipment
                 if equipment and get_equipped_in_slot(actor.fighter.inventory,equipment.slot) is None:
-                    equipment.equip()
+                    equipment.equip(no_message)
 
     def use(self):
         if self.owner.equipment:
@@ -142,7 +142,7 @@ class Ticker:
 class GameObject:
 
     def __init__(self, x, y, char, name, color, blocks=False, fighter=None, behavior=None, item=None, equipment=None,
-                 player_stats=None, always_visible=False, interact=None, description=None, on_create=None,
+                 player_stats=None, always_visible=False, interact=None, description="", on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
                  elevation=None, background_color=None, movement_type=0, summon_time = None, zones=[], is_corpse=False,
                  zombie_type=None, npc =None):
@@ -1008,6 +1008,10 @@ def get_monster_at_tile(x, y):
         if obj.x == x and obj.y == y and obj is not player.instance:
             return obj
     return None
+
+def get_fighters_in_burst(x,y,radius,fov_source=None,team='ally'):
+    return [obj for obj in current_map.fighters if distance(x,y,obj.x,obj.y) <= radius and \
+            obj.fighter.team != team and fov.monster_can_see_object(fov_source,obj)]
 
 
 def object_at_coords(x, y):
