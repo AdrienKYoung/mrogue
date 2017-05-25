@@ -306,7 +306,8 @@ class GameObject:
                 if self.fighter.has_status('immobilized'):
                     return True
                 web = object_at_tile(self.x, self.y, 'spiderweb')
-                if web is not None and not (self.fighter and self.fighter.has_flag(monsters.WEB_IMMUNE)):
+                if web is not None and not (self.fighter and (self.fighter.has_flag(monsters.WEB_IMMUNE) or
+                                                  self.fighter.item_equipped_count('equipment_ring_of_freedom') > 0)):
                     ui.message('%s %s against the web' % (
                                     syntax.name(self).capitalize(),
                                     syntax.conjugate(self is player.instance, ('struggle', 'struggles'))))
@@ -827,7 +828,7 @@ def get_all_equipped(equipped_list):
 
 
 def get_equipped_in_slot(equipped_list,slot):
-    if(slot == 'ring'):
+    if slot == 'ring':
         return [r for r in equipped_list if r.equipment is not None and r.equipment.is_equipped and r.equipment.slot == 'ring']
 
     for obj in equipped_list:
@@ -1260,6 +1261,21 @@ def spawn_essence(x,y,type):
     current_map.add_object(essence_pickup)
     return essence_pickup
 
+def opposite_essence(essence):
+    if essence == 'water':
+        return 'fire'
+    elif essence == 'fire':
+        return 'water'
+    elif essence == 'earth':
+        return 'air'
+    elif essence == 'air':
+        return 'earth'
+    elif essence == 'life':
+        return 'death'
+    elif essence == 'death':
+        return 'life'
+    else:
+        return essence
 
 def create_item(name, material=None, quality=''):
     p = items.table()[name]
@@ -1308,6 +1324,7 @@ def create_item(name, material=None, quality=''):
             level_costs=p.get('level_costs'),
             crit_bonus=p.get('crit_bonus',1.0),
             resistances=p.get('resistances',[]),
+            immunities=p.get('immunities',[]),
             subtype=p.get('subtype'),
             starting_level=p.get('level',0),
             weight=p.get('weight',0),

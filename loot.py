@@ -198,6 +198,11 @@ table = {
         'equipment_ring_of_mending',
         'equipment_ring_of_waterbreathing',
         'equipment_ring_of_burdens',
+        'equipment_ring_of_alchemy',
+        'equipment_ring_of_poison_immunity',
+        'equipment_ring_of_freedom',
+        'equipment_ring_of_salvation',
+        'equipment_ring_of_blessings',
     ],
 
     'elixirs_0': [

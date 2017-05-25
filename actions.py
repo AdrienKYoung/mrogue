@@ -1116,6 +1116,13 @@ def holy_water(actor=None, target=None):
     return 'success'
 
 def knock_back(actor,target):
+    # check for resistance
+    if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
+        if fov.player_can_see(target.x, target.y):
+            ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
+                target is player.instance, ('resist', 'resists'))), libtcod.gray)
+        return 'resisted'
+
     # knock the target back one space. Stun it if it cannot move.
     direction = target.x - actor.x, target.y - actor.y  # assumes the instance is adjacent
     stun = False
@@ -1301,6 +1308,11 @@ def frog_tongue(actor, target):
             ui.message("The frog's tongue lashes out at %s!" % syntax.name(target), libtcod.dark_green)
             result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=1.5, verb=('pull', 'pulls'))
             if result == 'hit':
+                if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
+                    if fov.player_can_see(target.x, target.y):
+                        ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
+                            target is player.instance, ('resist', 'resists'))), libtcod.gray)
+                    return 'success'
                 beam = main.beam(actor.x, actor.y, target.x, target.y)
                 pull_to = beam[max(len(beam) - 3, 0)]
                 target.set_position(pull_to[0], pull_to[1])
@@ -1313,6 +1325,11 @@ def dragonweed_pull(actor, target):
             ui.message("The dragonweed's stem lashes out at %s!" % syntax.name(target), libtcod.dark_green)
             result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=0.75, verb=('pull', 'pulls'))
             if result == 'hit':
+                if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
+                    if fov.player_can_see(target.x, target.y):
+                        ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
+                            target is player.instance, ('resist', 'resists'))), libtcod.gray)
+                    return 'success'
                 beam = main.beam(actor.x, actor.y, target.x, target.y)
                 pull_to = beam[max(len(beam) - 3, 0)]
                 target.set_position(pull_to[0], pull_to[1])
@@ -1515,9 +1532,16 @@ def toxic_attack(actor, target, damage):
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.toxic())
 
-
 def potion_essence(essence):
-    return lambda : player.pick_up_essence(essence,player.instance)
+    return lambda : use_gem(essence)
+
+def use_gem(essence):
+    if player.instance.fighter.item_equipped_count('equipment_ring_of_alchemy') > 0:
+        old_essence = essence
+        essence = main.opposite_essence(essence)
+        if old_essence != essence:
+            ui.message('Your ring of alchemy glows!', spells.essence_colors[essence])
+    player.pick_up_essence(essence, player.instance)
 
 def teleport(actor, x, y):
     if actor is None:

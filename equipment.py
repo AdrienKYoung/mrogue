@@ -30,7 +30,7 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
-                 resistances=[], modifiers = {}, base_id=None, _range=1,
+                 resistances=[], immunities=[], modifiers = {}, base_id=None, _range=1,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
                  sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0):
         self.is_equipped = False
@@ -53,6 +53,7 @@ class Equipment:
         self._armor_bonus = armor_bonus
         self._evasion_bonus = evasion_bonus
         self._resistances = list(resistances)
+        self._immunities = list(immunities)
 
         self._sh_max = sh_max
         self._sh_recovery = sh_recovery
@@ -144,6 +145,10 @@ class Equipment:
     @property
     def resistances(self):
         return self._resistances + [mod.get('resistance') for mod in self.modifiers.values() if mod.get('resistance') is not None]
+
+    @property
+    def immunities(self):
+        return self._immunities + [mod.get('resistance') for mod in self.modifiers.values() if mod.get('immunities') is not None]
 
     @property
     def strength_dice_bonus(self):

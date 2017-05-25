@@ -581,12 +581,23 @@ def purchase_skill():
             ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
 def on_death(instance):
-    if instance.fighter.has_status('auto-res'):
+    if instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
+        rings = main.get_equipped_in_slot(instance.fighter.inventory, 'ring')
+        broken = None
+        for r in rings:
+            if r.equipment.base_id == 'equipment_ring_of_salvation':
+                broken = r.equipment
+                break
+        broken.dequip(no_message=True)
+        instance.fighter.inventory.remove(broken.owner)
+        ui.message('Your ring of salvation flashes with a blinding white light, then shatters. Your wounds are healed.', spells.essence_colors['radiance'])
+        instance.fighter.heal(instance.fighter.max_hp)
+    elif instance.fighter.has_status('auto-res'):
         instance.fighter.remove_status('auto-res')
         instance.fighter.heal(instance.fighter.max_hp)
         ui.message("Not today, death.", libtcod.green)
     else:
-        ui.message("You're dead, sucka.", libtcod.dark_red)
+        ui.message("You died.", libtcod.dark_red)
         main.game_state = 'dead'
         instance.char = '%'
         instance.color = libtcod.darker_red
