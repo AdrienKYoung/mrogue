@@ -953,6 +953,7 @@ def blastcap_explode(blastcap):
 
     blastcap.fighter = None
     current_map.fighters.remove(blastcap)
+    ui.render_explosion(blastcap.x, blastcap.y, 1, libtcod.gold, libtcod.white)
     ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
     for obj in current_map.fighters:
         if is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):

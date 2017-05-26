@@ -149,7 +149,7 @@ charm_raw_effects = {
         'description':'Create a fire on a space'
     },
     'earth': {
-        'name' : 'Hardness',
+        'name' : 'Stoneskin',
         'description':'Instantly repair your armor and gain an armor boost'
     },
     'air': {

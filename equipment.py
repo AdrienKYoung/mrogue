@@ -226,8 +226,8 @@ class Equipment:
             rings = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
             if len(rings) >= 2:
                 options_ex = collections.OrderedDict()
-                options_ex['a'] = {'option': {'text': rings[0].owner.name}}
-                options_ex['b'] = {'option': {'text': rings[1].owner.name}}
+                options_ex['a'] = {'option': {'text': rings[0].name}}
+                options_ex['b'] = {'option': {'text': rings[1].name}}
                 old_equipment = rings[ord(ui.menu_ex("Unequip which ring?", options_ex, 40)) - ord('a')]
         else:
             old_equipment = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
@@ -258,6 +258,8 @@ class Equipment:
         return 'success'
 
     def dequip(self, no_message=False):
+        if not self.is_equipped:
+            return 'success'
         if self.holder.fighter.get_equipped_shield() is self and self.sh_points < self.sh_max:
             # We are trying to dequip an occupied shield
             if self.holder is player.instance:
