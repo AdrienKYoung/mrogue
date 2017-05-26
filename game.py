@@ -1819,7 +1819,7 @@ def enter_map(world_map, direction=None):
             load_string = 'Loading...'
         libtcod.console_print(map_con, 0, 0, load_string)
         libtcod.console_blit(map_con, 0, 0, len(load_string), 1, 0, ui.MAP_VIEWPORT_X + 4, ui.MAP_VIEWPORT_Y + 4)
-        ui.draw_border(0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y, ui.MAP_VIEWPORT_WIDTH, ui.MAP_VIEWPORT_HEIGHT())
+        ui.draw_border(0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y, ui.MAP_VIEWPORT_WIDTH(), ui.MAP_VIEWPORT_HEIGHT())
 
         libtcod.console_flush()
 

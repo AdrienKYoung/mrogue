@@ -825,7 +825,7 @@ def render_action_panel():
         libtcod.console_print_ex(action_panel, ACTION_MENU_WIDTH / 2 - 2, ACTION_MENU_HEIGHT() - 2, libtcod.BKGND_DEFAULT, libtcod.CENTER, '(A) Actions')
 
         libtcod.console_blit(action_panel, 0, ACTION_MENU_HEIGHT() - 3, ACTION_MENU_WIDTH, 3, 0,
-                             ACTION_MENU_X, ACTION_MENU_Y + ACTION_MENU_HEIGHT() - 3)
+                             ACTION_MENU_X(), ACTION_MENU_Y + ACTION_MENU_HEIGHT() - 3)
 
 
 def render_ui_overlay():
