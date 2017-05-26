@@ -92,7 +92,7 @@ table = {
         'slot'          : 'left hand',
         'description'   : 'A book of blessed radiance magic. It is adorned with an icon of The Martyr.',
         'essence': 'radiance',
-        'level' : 10,
+        'level' : 1,
         'spells': [
             'spell_bless',
             'spell_smite',
