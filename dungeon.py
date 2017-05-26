@@ -148,6 +148,7 @@ branches = {
             {'encounter':['monster_bear']},
             {'encounter':['monster_goblin','monster_goblin_warrior'],'party':'2d3'},
             {'encounter':['monster_arachnomancer']},
+            {'encounter':['monster_mycosaur']},
         ],
     },
     'forest': {

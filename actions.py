@@ -434,6 +434,31 @@ def healing_trance(actor=None, target=None):
         return 'success'
     return 'cancelled'
 
+def reeker_breath(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+    spell = abilities.data['ability_reeker_breath']
+    if actor is player.instance:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        tiles = ui.target_tile(max_range=spell['range'], targeting_type='cone')
+    else:
+        x = target.x
+        y = target.y
+        tiles = main.cone(actor.x,actor.y,x,y,max_range=spell['range'])
+
+    if tiles is None or len(tiles) == 0 or tiles[0] is None:
+        return 'cancelled'
+
+    if fov.player_can_see(target.x, target.y) or actor is player.instance:
+        ui.message('%s %s a cloud of acrid fumes!' %
+                   (syntax.name(actor).capitalize(),
+                    syntax.conjugate(actor is player.instance, ('breathe', 'breathes'))), libtcod.fuchsia)
+    for tile in tiles:
+        main.create_reeker_gas(tile[0], tile[1], duration=main.roll_dice('1d6')+3)
+        for obj in main.current_map.fighters:
+            if obj.x == tile[0] and obj.y == tile[1]:
+                combat.spell_attack(actor.fighter, obj, 'ability_reeker_breath')
+1
 def flame_breath(actor=None, target=None):
     x, y = 0, 0
     if actor is None:

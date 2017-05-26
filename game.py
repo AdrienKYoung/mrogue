@@ -1476,6 +1476,14 @@ def create_fire(x,y,temp):
     changed_tiles.append((x, y))
 
 
+def create_reeker_gas(x, y, duration=consts.REEKER_PUFF_DURATION):
+    if not current_map.tiles[x][y].blocks and \
+                    len(get_objects(x, y, lambda o: o.name == 'reeker gas' or o.name == 'reeker')) == 0:
+        puff = GameObject(x, y, libtcod.CHAR_BLOCK3, 'reeker gas', libtcod.dark_fuchsia,
+                          description='a puff of reeker gas', misc=ai.ReekerGasBehavior(duration=duration))
+        current_map.add_object(puff)
+
+
 def chest_interact(chest, actor):
     if actor is player.instance:
         if lock_interact(actor, 'chest'):

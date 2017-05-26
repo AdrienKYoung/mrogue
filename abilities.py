@@ -177,6 +177,15 @@ data = {
         'damage': '2d8',
     },
 
+    'ability_reeker_breath': {
+        'name': 'Reeker Breath',
+        'function' : actions.reeker_breath,
+        'element':'life',
+        'cooldown' : 5,
+        'range': 4,
+        'damage': '1d8',
+    },
+
     'ability_great_dive': {
         'name': 'Great Dive',
         'function' : actions.great_dive,

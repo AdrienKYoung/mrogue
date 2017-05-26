@@ -26,6 +26,7 @@ NO_CORPSE = 1
 IMMOBILE = 2
 EVIL = 4
 WEB_IMMUNE = 4
+NO_BREATH = 8
 
 proto = {
     'monster_target': {
@@ -322,7 +323,7 @@ proto = {
         'weaknesses' : ['fire'],
         'resistances': ['confusion', 'stunned'],
         'essence': [(25, 'life')],
-        'flags' : NO_CORPSE | IMMOBILE,
+        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH,
         'subtype':'plant',
     },
     'monster_blastcap': {
@@ -340,7 +341,7 @@ proto = {
                        'deafening crack, stunning anything adjacent (but not diagonally) for several turns.',
         'resistances': ['confusion', 'stunned'],
         'death_function': main.blastcap_explode,
-        'flags' : NO_CORPSE | IMMOBILE,
+        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH,
         'subtype':'plant',
         'team' : 'neutral'
     },
@@ -361,7 +362,7 @@ proto = {
         'resistances': ['stun','fire','burn'],
         'shred': 2,
         'essence': [(70, 'earth')],
-        'flags' : NO_CORPSE,
+        'flags' : NO_CORPSE | NO_BREATH,
         'subtype':'construct',
     },
     'monster_alligator': {
@@ -510,6 +511,7 @@ proto = {
         'attributes': {'perk_flying', 'ability_warp_weapon', 'ability_blink'},
         'description': 'Ancient vampire and servant to a dark god. Fast and dangerous in melee combat.',
         'resistances': [],
+        'flags' : NO_BREATH,
         'shred': 3,
         'essence': [(15, 'fire')],
         'subtype':'undead',
@@ -542,7 +544,6 @@ proto = {
         'essence': [(50, 'radiance')],
     },
 
-
     'monster_fire_elemental': {
         'name': 'fire elemental',
         'char': 'E',
@@ -559,6 +560,7 @@ proto = {
         'description': 'A roaring vortex of living flame. '
                        'It fights with searing fury, leaving its victims charred and burned',
         'resistances': ['fire'],
+        'flags' : NO_CORPSE | NO_BREATH,
         'shred': 3,
         'subtype':'elemental',
         'on_hit': combat.on_hit_burn
@@ -579,6 +581,7 @@ proto = {
         'description': 'A form of stone, sand, and soil given life. '
                        'Attacks hardly phase it as it lumbers steadily forward.',
         'resistances': ['earth'],
+        'flags' : NO_CORPSE | NO_BREATH,
         'shred': 2,
         'subtype':'elemental',
     },
@@ -598,6 +601,7 @@ proto = {
         'description': 'A playful spirit made of whirling gusts of wind. '
                        'It moves swiftly, leaving swirling dust and leaves in its wake.',
         'resistances': ['air'],
+        'flags' : NO_CORPSE | NO_BREATH,
         'shred': 1,
         'subtype':'elemental',
         'movement_type' : pathfinding.FLYING
@@ -618,6 +622,7 @@ proto = {
         'description': 'An amorphous being of pure water. '
                        'Anything caught in its flows will struggle to move or evade attacks.',
         'resistances': ['water'],
+        'flags' : NO_CORPSE | NO_BREATH,
         'shred': 2,
         'subtype':'elemental',
         'movement_type' : pathfinding.AQUATIC | pathfinding.NORMAL,
@@ -639,6 +644,7 @@ proto = {
         'description': 'A frigid creature made of blue glacial ice. '
                        'Heat drains away in its presence, leaving an aura of winter in its absence.',
         'resistances': ['cold'],
+        'flags' : NO_CORPSE | NO_BREATH,
         'shred': 2,
         'pierce': 1,
         'subtype':'elemental',
@@ -661,7 +667,7 @@ proto = {
                        'It glows with a soft warmth - those close enough to touch'
                        ' it can feel that warmth flow through them, healing their wounds.',
         'resistances': [],
-        'flags' : NO_CORPSE | IMMOBILE,
+        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH,
         'shred': 3,
         'subtype':'plant',
     },
@@ -685,6 +691,7 @@ proto = {
                        'It bombards its enemies with magical energy from a distance.',
         'resistances': ['cold'],
         'shred': 0,
+        'flags' : NO_CORPSE | NO_BREATH,
         'subtype':'elemental',
         'movement_type' : pathfinding.FLYING
     },
@@ -729,7 +736,7 @@ proto = {
         'weaknesses' : ['fire'],
         'on_get_hit' : actions.summon_roaches,
         'shred': 1,
-        'flags' : NO_CORPSE,
+        'flags' : NO_CORPSE | NO_BREATH,
         'subtype' : 'treant',
     },
     'monster_dragon': {
@@ -749,7 +756,6 @@ proto = {
         'resistances': ['fire','burning','stunned'],
         'weaknesses' : [],
         'shred': 2,
-        'flags' : NO_CORPSE,
         'subtype' : 'dragon',
         'movement_type' : pathfinding.FLYING,
         'attributes' : ['ability_flame_breath','ability_great_dive']
@@ -816,7 +822,7 @@ proto = {
                        'menacingly. It can grab prey from a distance and strangle it when it is near.',
         'weaknesses' : ['fire'],
         'shred': 2,
-        'flags' : NO_CORPSE | IMMOBILE,
+        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH,
         'resistances': ['confusion', 'stunned', 'poisoned'],
         'subtype' : 'plant',
         'body_type' : 'plant',
@@ -870,6 +876,27 @@ proto = {
         'flags': WEB_IMMUNE,
         'loot_level':1,
         'equipment': [{'weapon_dagger':40, 'weapon_messer':30, 'weapon_rapier':30}, {'none':25,'equipment_cloth_robes':75}],
+    },
+    'monster_mycosaur': {
+        'name': 'mycosaur',
+        'char': 'M',
+        'color': libtcod.fuchsia,
+        'hp': 215,
+        'strength_dice' : '4d8',
+        'attack_bonus' : 0,
+        'armor': 4,
+        'evasion': 6,
+        'accuracy': 24,
+        'move_speed': 0.8,
+        'attack_speed': 1.0,
+        'ai': ai.AI_Default,
+        'description': 'A great lumbering quadruped covered completely in multicolored fungi. '
+                       'It breaths clouds of acrid fumes.',
+        'shred': 1,
+        'subtype' : 'beast',
+        'movement_type' : pathfinding.NORMAL | pathfinding.AQUATIC,
+        'flags': NO_BREATH,
+        'attributes' : ['ability_reeker_breath']
     },
 }
 
