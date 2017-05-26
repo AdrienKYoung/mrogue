@@ -16,12 +16,6 @@
 
 import libtcodpy
 import game as main
-import player
-import combat
-import dungeon
-import spells
-import actions
-import charms
 
 table = {
     'weapons_0': [
@@ -274,6 +268,7 @@ def item_from_table(branch,loot_table=None):
     return main.create_item(item_id, material, quality)
 
 def choose_loot_table(branch):
+    import dungeon
     b = dungeon.branches[branch]
     if b.get('loot') is None:
         return None

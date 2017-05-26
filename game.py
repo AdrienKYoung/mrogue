@@ -203,7 +203,7 @@ class GameObject:
         self.npc = npc
 
     def print_description(self, console, x, y, width):
-        height = libtcod.console_get_height_rect(console, x, y, width, consts.SCREEN_HEIGHT, self.description)
+        height = libtcod.console_get_height_rect(console, x, y, width, SCREEN_HEIGHT(), self.description)
         draw_height = y
         if self.description is None:
             self.description = ''
@@ -1737,9 +1737,12 @@ def render_map():
             obj.draw(map_con)
     player.instance.draw(map_con)
 
-    libtcod.console_blit(map_con, player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2, player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2,
-                consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y)
-    ui.draw_border(0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
+    vw = ui.MAP_VIEWPORT_WIDTH()
+    vh = ui.MAP_VIEWPORT_HEIGHT()
+
+    libtcod.console_blit(map_con, player.instance.x - vw / 2, player.instance.y - vh / 2,
+                ui.MAP_VIEWPORT_WIDTH(), ui.MAP_VIEWPORT_HEIGHT(), 0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y)
+    ui.draw_border(0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y, vw, vh)
 
 
 def render_all():
@@ -1768,10 +1771,10 @@ def render_main_menu_splash():
     libtcod.console_clear(0)
     libtcod.image_blit_2x(img, 0, 0, 0)
     libtcod.console_set_default_foreground(0, libtcod.light_yellow)
-    libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT / 2 - 8, libtcod.BKGND_NONE,
+    libtcod.console_print_ex(0, SCREEN_WIDTH() / 2, SCREEN_HEIGHT() / 2 - 8, libtcod.BKGND_NONE,
                              libtcod.CENTER,
                              'MAGIC-ROGUELIKE')
-    libtcod.console_print_ex(0, consts.SCREEN_WIDTH / 2, consts.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.CENTER,
+    libtcod.console_print_ex(0, SCREEN_WIDTH() / 2, SCREEN_HEIGHT() - 2, libtcod.BKGND_NONE, libtcod.CENTER,
                              'by Tyler Soberanis and Adrien Young')
 
 
@@ -1788,16 +1791,16 @@ def enter_map(world_map, direction=None):
 
     if current_map is not None:
         clear_map()
-        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y)
-        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, consts.SCREEN_WIDTH - consts.MAP_WIDTH, consts.MAP_VIEWPORT_Y)
+        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y)
+        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, SCREEN_WIDTH() - consts.MAP_WIDTH, ui.MAP_VIEWPORT_Y)
         libtcod.console_set_default_foreground(map_con, libtcod.white)
         if world_map.tiles is None:
             load_string = 'Generating...'
         else:
             load_string = 'Loading...'
         libtcod.console_print(map_con, 0, 0, load_string)
-        libtcod.console_blit(map_con, 0, 0, len(load_string), 1, 0, consts.MAP_VIEWPORT_X + 4, consts.MAP_VIEWPORT_Y + 4)
-        ui.draw_border(0, consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT)
+        libtcod.console_blit(map_con, 0, 0, len(load_string), 1, 0, ui.MAP_VIEWPORT_X + 4, ui.MAP_VIEWPORT_Y + 4)
+        ui.draw_border(0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y, ui.MAP_VIEWPORT_WIDTH, ui.MAP_VIEWPORT_HEIGHT())
 
         libtcod.console_flush()
 
@@ -1833,13 +1836,14 @@ def generate_level(world_map):
 #############################################
 
 def main_menu():
+    global windowx,windowy, tilex, tiley
 
     mapgen.initialize_features()
 
     while not libtcod.console_is_window_closed():
         render_main_menu_splash()
 
-        choice = ui.menu('', ['NEW GAME', 'CONTINUE', 'QUIT'], 24, x_center=consts.SCREEN_WIDTH / 2)
+        choice = ui.menu('', ['NEW GAME', 'CONTINUE', 'QUIT'], 24, x_center=SCREEN_WIDTH() / 2)
         
         if choice == 0: #new game
             if new_game() != 'cancelled':
@@ -1865,12 +1869,12 @@ def new_game():
 
     while not confirm:
         options = list(player.loadouts.keys())
-        choice = ui.menu('Select your starting class',options,36,x_center=consts.SCREEN_WIDTH / 2)
+        choice = ui.menu('Select your starting class',options,36,x_center=SCREEN_WIDTH() / 2)
         if choice is None:
             return 'cancelled'
         loadout = options[choice]
         confirm = ui.menu('Confirm starting as ' + loadout.title() + ":\n\n" + player.loadouts[loadout]['description'],
-                          ['Start','Back'],36,x_center=consts.SCREEN_WIDTH / 2) == 0
+                          ['Start','Back'],36,x_center=SCREEN_WIDTH() / 2) == 0
 
     learned_skills = {}
     player.create(loadout)
@@ -1941,9 +1945,14 @@ def load_game():
     #    for x in range(consts.MAP_WIDTH):
     #        changed_tiles.append((x, y))
 
+def SCREEN_WIDTH():
+    return windowx / tilex
+
+def SCREEN_HEIGHT():
+    return (windowy / tiley) - 2 #filthy hack to deal with the header-bar
 
 def play_game():
-    global key, mouse, game_state, in_game
+    global key, mouse, game_state, in_game, windowx, windowy
     
     mouse = libtcod.Mouse()
     key = libtcod.Key()
@@ -1988,9 +1997,30 @@ def play_game():
         # Handle auto-targeting
         ui.auto_target_monster()
 
+# Globals
+
+# Libtcod initialization
+libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GRAYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
+windowx,windowy = libtcod.sys_get_current_resolution()
+tilex, tiley = 16,16
+libtcod.console_init_root(SCREEN_WIDTH(), SCREEN_HEIGHT(), 'mrogue', False)
+libtcod.sys_set_fps(consts.LIMIT_FPS)
+
+# Consoles
+con = libtcod.console_new(SCREEN_WIDTH(), SCREEN_HEIGHT())
+map_con = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
+
+# Flags
+in_game = False
+
+# Graphics
+changed_tiles = []
+visible_tiles = []
+
+# Level
+current_map = None
 
 # my modules
-import actions
 import loot
 import spells
 import monsters
@@ -2008,24 +2038,3 @@ import terrain
 import equipment
 import charms
 import items
-
-# Globals
-
-# Libtcod initialization
-libtcod.console_set_custom_font('terminal16x16_gs_ro.png', libtcod.FONT_TYPE_GRAYSCALE | libtcod.FONT_LAYOUT_ASCII_INROW)
-libtcod.console_init_root(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT, 'mrogue', False)
-libtcod.sys_set_fps(consts.LIMIT_FPS)
-
-# Consoles
-con = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
-map_con = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
-
-# Flags
-in_game = False
-
-# Graphics
-changed_tiles = []
-visible_tiles = []
-
-# Level
-current_map = None

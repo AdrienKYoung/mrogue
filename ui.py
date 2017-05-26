@@ -27,6 +27,30 @@ import collections
 import math
 import string
 
+BAR_WIDTH = 20
+INVENTORY_WIDTH = 40
+SIDE_PANEL_WIDTH = 24
+def SIDE_PANEL_HEIGHT(): return main.SCREEN_HEIGHT()
+SIDE_PANEL_X = 0
+SIDE_PANEL_Y = 0
+PANEL_HEIGHT = 8
+def PANEL_WIDTH(): return main.SCREEN_WIDTH() - SIDE_PANEL_WIDTH + 1
+PANEL_Y = 0
+PANEL_X = SIDE_PANEL_WIDTH - 1
+def MAP_VIEWPORT_WIDTH(): return PANEL_WIDTH()
+def MAP_VIEWPORT_HEIGHT(): return main.SCREEN_HEIGHT() - PANEL_HEIGHT
+MAP_VIEWPORT_X = SIDE_PANEL_WIDTH - 1
+MAP_VIEWPORT_Y = PANEL_HEIGHT
+MSG_X = 2
+def MSG_WIDTH(): return PANEL_WIDTH() - 2
+MSG_HEIGHT = PANEL_HEIGHT - 2
+LEVEL_SCREEN_WIDTH = 40
+CHARACTER_SCREEN_WIDTH = 30
+ACTION_MENU_WIDTH = 18
+def ACTION_MENU_HEIGHT(): return main.SCREEN_HEIGHT() - PANEL_HEIGHT
+def ACTION_MENU_X(): return main.SCREEN_WIDTH() - ACTION_MENU_WIDTH
+ACTION_MENU_Y = PANEL_HEIGHT
+
 def msgbox(text, width=50):
     menu(text, [], width)
 
@@ -68,13 +92,13 @@ def menu_y_n(header, width=30, x_center=None):
 #    }
 def menu_ex(header, options, width, x_center=None, render_func=None, return_as_char=False):
 
-    menu_window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
+    menu_window = libtcod.console_new(main.SCREEN_WIDTH(), main.SCREEN_HEIGHT())
 
     # Prepare header spacing
     if header is None:
         header = ''
     no_header = False
-    header_height = libtcod.console_get_height_rect(main.con, 0, 0, width - 2, consts.SCREEN_HEIGHT, header)
+    header_height = libtcod.console_get_height_rect(main.con, 0, 0, width - 2, main.SCREEN_HEIGHT(), header)
     if header == '':
         header_height = 0
         no_header = True
@@ -181,10 +205,10 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
 
     # Blit the window to the screen
     if x_center is None:
-        x = consts.MAP_VIEWPORT_X + consts.MAP_VIEWPORT_WIDTH / 2 - width / 2
+        x = MAP_VIEWPORT_X + MAP_VIEWPORT_WIDTH() / 2 - width / 2
     else:
         x = x_center - width / 2
-    y = consts.SCREEN_HEIGHT / 2 - height / 2
+    y = main.SCREEN_HEIGHT() / 2 - height / 2
     libtcod.console_blit(menu_window, 0, 0, width, height, 0, x, y, 1.0, 1.0)
     libtcod.console_flush()
 
@@ -230,7 +254,7 @@ def inventory_menu(header):
 
     if len(player.instance.fighter.inventory) == 0:
         height = 5
-        draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
+        draw_border(window, 0, 0, INVENTORY_WIDTH, height)
         libtcod.console_set_default_foreground(window, libtcod.dark_grey)
         libtcod.console_print(window, 1, 3, 'Inventory is empty.')
     else:
@@ -238,17 +262,17 @@ def inventory_menu(header):
             if not item.item.category in item_categories:
                 item_categories.append(item.item.category)
         height = 4 + len(item_categories) + len(player.instance.fighter.inventory)
-        draw_border(window, 0, 0, consts.INVENTORY_WIDTH, height)
+        draw_border(window, 0, 0, INVENTORY_WIDTH, height)
 
         for item_category in loot.item_categories:
             if not item_category in item_categories:
                 continue
             libtcod.console_set_default_foreground(window, libtcod.gray)
-            for i in range(consts.INVENTORY_WIDTH):
+            for i in range(INVENTORY_WIDTH):
                 libtcod.console_put_char(window, i, y, libtcod.CHAR_HLINE)
             libtcod.console_put_char(window, 0, y, 199)
-            libtcod.console_put_char(window, consts.INVENTORY_WIDTH - 1, y, 182)
-            libtcod.console_print_ex(window, consts.INVENTORY_WIDTH / 2, y, libtcod.BKGND_DEFAULT, libtcod.CENTER,
+            libtcod.console_put_char(window, INVENTORY_WIDTH - 1, y, 182)
+            libtcod.console_print_ex(window, INVENTORY_WIDTH / 2, y, libtcod.BKGND_DEFAULT, libtcod.CENTER,
                                      loot.item_categories[item_category]['plural'].title())
             y += 1
             for item in player.instance.fighter.inventory:
@@ -262,14 +286,14 @@ def inventory_menu(header):
 
                     if item.equipment and item.equipment.is_equipped:
                         libtcod.console_set_default_foreground(window, libtcod.orange)
-                        libtcod.console_print_ex(window, consts.INVENTORY_WIDTH - 2, y, libtcod.BKGND_DEFAULT,
+                        libtcod.console_print_ex(window, INVENTORY_WIDTH - 2, y, libtcod.BKGND_DEFAULT,
                                                  libtcod.RIGHT, '[E]')
                     y += 1
                     letter_index += 1
 
-    x = consts.MAP_VIEWPORT_X + 1
-    y = consts.MAP_VIEWPORT_Y + 1
-    libtcod.console_blit(window, 0, 0, consts.INVENTORY_WIDTH, height, 0, x, y, 1.0, 1.0)
+    x = MAP_VIEWPORT_X + 1
+    y = MAP_VIEWPORT_Y + 1
+    libtcod.console_blit(window, 0, 0, INVENTORY_WIDTH, height, 0, x, y, 1.0, 1.0)
     libtcod.console_flush()
 
     key = libtcod.console_wait_for_keypress(True)
@@ -337,8 +361,8 @@ def mouse_select_monster():
     mouse = main.mouse
 
     if mouse.lbutton_pressed:
-        offsetx, offsety = player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2 - consts.MAP_VIEWPORT_X, \
-                           player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
+        offsetx, offsety = player.instance.x - MAP_VIEWPORT_WIDTH() / 2 - MAP_VIEWPORT_X, \
+                           player.instance.y - MAP_VIEWPORT_HEIGHT() / 2 - MAP_VIEWPORT_Y
         (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
         monster = None
@@ -354,8 +378,8 @@ def mouse_select_monster():
 def get_names_under_mouse():
     mouse = main.mouse
 
-    offsetx, offsety = player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2 - consts.MAP_VIEWPORT_X, \
-                       player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2 - consts.MAP_VIEWPORT_Y
+    offsetx, offsety = player.instance.x - MAP_VIEWPORT_WIDTH() / 2 - MAP_VIEWPORT_X, \
+                       player.instance.y - MAP_VIEWPORT_HEIGHT() / 2 - MAP_VIEWPORT_Y
     (x, y) = (mouse.cx + offsetx, mouse.cy + offsety)
 
     names = []
@@ -372,7 +396,7 @@ def get_names_under_mouse():
 
 def message(new_msg, color=libtcod.white):
     global game_msgs, msg_render_height
-    new_msg_lines = textwrap.wrap(new_msg, consts.MSG_WIDTH)
+    new_msg_lines = textwrap.wrap(new_msg, MSG_WIDTH())
 
     for line in new_msg_lines:
         if len(game_msgs) == 100:
@@ -387,7 +411,7 @@ def message_flush(new_msg, color=libtcod.white):
 
 def scroll_message(amount):
     global msg_render_height
-    msg_render_height = main.clamp(msg_render_height + amount, 0, len(game_msgs) - consts.MSG_HEIGHT - 1)
+    msg_render_height = main.clamp(msg_render_height + amount, 0, len(game_msgs) - MSG_HEIGHT - 1)
 
 def render_bar(x, y, total_width, name, value, maximum, bar_color, back_color, align=libtcod.CENTER, print_ratio=True,
                text_color=libtcod.white, console=None):
@@ -442,7 +466,7 @@ def render_side_panel(acc_mod=1.0):
     drawHeight = 2
 
     # Health bar
-    render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', player.instance.fighter.hp, player.instance.fighter.max_hp,
+    render_bar(2, drawHeight, BAR_WIDTH, 'HP', player.instance.fighter.hp, player.instance.fighter.max_hp,
                libtcod.dark_red, libtcod.darker_red, align=libtcod.CENTER)
     # Display armor/shred
     #armor_string = 'AR:' + str(player.instance.fighter.armor)
@@ -452,7 +476,7 @@ def render_side_panel(acc_mod=1.0):
     drawHeight += 1
 
     # Stamina bar
-    render_bar(2, drawHeight, consts.BAR_WIDTH, 'Stamina', player.instance.fighter.stamina, player.instance.fighter.max_stamina,
+    render_bar(2, drawHeight, BAR_WIDTH, 'Stamina', player.instance.fighter.stamina, player.instance.fighter.max_stamina,
                libtcod.dark_green, libtcod.darker_green)
     drawHeight += 1
 
@@ -465,7 +489,7 @@ def render_side_panel(acc_mod=1.0):
         else:
             shield_text = 'Knocked Away'
             text_color = libtcod.dark_red
-        render_bar(2, drawHeight, consts.BAR_WIDTH, shield_text, player.instance.fighter.shield,
+        render_bar(2, drawHeight, BAR_WIDTH, shield_text, player.instance.fighter.shield,
                    player.instance.fighter.get_equipped_shield().sh_max, libtcod.blue, libtcod.dark_blue,
                    print_ratio=raised, text_color=text_color)
         drawHeight += 1
@@ -542,9 +566,9 @@ def render_side_panel(acc_mod=1.0):
     else:
         weapon_string = weapon.owner.name.title()
         weapon_color = loot.qualities[weapon.quality]['color']
-    weapon_string_height = libtcod.console_get_height_rect(side_panel, 2, drawHeight, consts.SIDE_PANEL_WIDTH - 3, 5, weapon_string)
+    weapon_string_height = libtcod.console_get_height_rect(side_panel, 2, drawHeight, SIDE_PANEL_WIDTH - 3, 5, weapon_string)
     libtcod.console_set_default_foreground(side_panel, weapon_color)
-    libtcod.console_print_rect_ex(side_panel, 2, drawHeight, consts.SIDE_PANEL_WIDTH - 3, weapon_string_height, libtcod.BKGND_DEFAULT, libtcod.LEFT, weapon_string)
+    libtcod.console_print_rect_ex(side_panel, 2, drawHeight, SIDE_PANEL_WIDTH - 3, weapon_string_height, libtcod.BKGND_DEFAULT, libtcod.LEFT, weapon_string)
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
     drawHeight += weapon_string_height + 1
 
@@ -575,7 +599,7 @@ def render_side_panel(acc_mod=1.0):
             end = 8
         for i in range(end):
             line = objects_here[i].name
-            line = (line[:consts.SIDE_PANEL_WIDTH - 8] + '...') if len(line) > consts.SIDE_PANEL_WIDTH - 5 else line
+            line = (line[:SIDE_PANEL_WIDTH - 8] + '...') if len(line) > SIDE_PANEL_WIDTH - 5 else line
             if objects_here[i].item:
                 libtcod.console_set_default_foreground(side_panel, libtcod.yellow)
             else:
@@ -593,7 +617,7 @@ def render_side_panel(acc_mod=1.0):
 
     # Selected Monster
     if selected_monster is not None and selected_monster.fighter is not None:
-        drawHeight = consts.SIDE_PANEL_HEIGHT - 16
+        drawHeight = SIDE_PANEL_HEIGHT() - 16
         libtcod.console_print(side_panel, 2, drawHeight, selected_monster.name.title())
         drawHeight += 1
         libtcod.console_set_default_foreground(side_panel, libtcod.gray)
@@ -610,7 +634,7 @@ def render_side_panel(acc_mod=1.0):
         else:
             health_bar_color = libtcod.dark_red
             health_bar_bkgnd_color = libtcod.darker_red
-        render_bar(2, drawHeight, consts.BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
+        render_bar(2, drawHeight, BAR_WIDTH, 'HP', selected_monster.fighter.hp, selected_monster.fighter.max_hp,
                    health_bar_color, health_bar_bkgnd_color, align=libtcod.CENTER)
         libtcod.console_set_default_foreground(side_panel, libtcod.white)
         drawHeight += 1
@@ -625,7 +649,7 @@ def render_side_panel(acc_mod=1.0):
             else:
                 shield_text = 'Knocked Away'
                 text_color = libtcod.dark_red
-            render_bar(2, drawHeight, consts.BAR_WIDTH, shield_text, selected_monster.fighter.shield,
+            render_bar(2, drawHeight, BAR_WIDTH, shield_text, selected_monster.fighter.shield,
                        selected_monster.fighter.get_equipped_shield().sh_max, libtcod.blue, libtcod.dark_blue,
                        print_ratio=raised, text_color=text_color)
             drawHeight += 1
@@ -690,15 +714,15 @@ def render_side_panel(acc_mod=1.0):
             libtcod.console_print(side_panel, 2, drawHeight, effect_str.capitalize())
             drawHeight += 1
 
-    draw_border(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
-    for x in range(1, consts.SIDE_PANEL_WIDTH - 1):
+    draw_border(side_panel, 0, 0, SIDE_PANEL_WIDTH, SIDE_PANEL_HEIGHT())
+    for x in range(1, SIDE_PANEL_WIDTH - 1):
         libtcod.console_put_char(side_panel, x, seperator_height, libtcod.CHAR_HLINE)
     libtcod.console_put_char(side_panel, 0, seperator_height, 199)
-    libtcod.console_put_char(side_panel, consts.SIDE_PANEL_WIDTH - 1, seperator_height, 182)
-    libtcod.console_put_char(side_panel, consts.SIDE_PANEL_WIDTH - 1, consts.PANEL_HEIGHT, 4)
+    libtcod.console_put_char(side_panel, SIDE_PANEL_WIDTH - 1, seperator_height, 182)
+    libtcod.console_put_char(side_panel, SIDE_PANEL_WIDTH - 1, PANEL_HEIGHT, 4)
 
-    libtcod.console_blit(side_panel, 0, 0, consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT, 0, consts.SIDE_PANEL_X,
-                         consts.SIDE_PANEL_Y)
+    libtcod.console_blit(side_panel, 0, 0, SIDE_PANEL_WIDTH, SIDE_PANEL_HEIGHT(), 0, SIDE_PANEL_X,
+                         SIDE_PANEL_Y)
 
 
 def render_message_panel():
@@ -706,22 +730,22 @@ def render_message_panel():
     libtcod.console_clear(panel)
 
     y = 1
-    start = -(consts.MSG_HEIGHT + msg_render_height + 1)
-    if start + consts.MSG_HEIGHT + 1 >= 0:
+    start = -(MSG_HEIGHT + msg_render_height + 1)
+    if start + MSG_HEIGHT + 1 >= 0:
         render_msgs = game_msgs[start:]
     else:
-        render_msgs = game_msgs[start:start + consts.MSG_HEIGHT + 1]
+        render_msgs = game_msgs[start:start + MSG_HEIGHT + 1]
     for (line, color) in render_msgs:
         libtcod.console_set_default_foreground(panel, color)
-        libtcod.console_print_ex(panel, consts.MSG_X, y, libtcod.BKGND_NONE, libtcod.LEFT, line)
+        libtcod.console_print_ex(panel, MSG_X, y, libtcod.BKGND_NONE, libtcod.LEFT, line)
         y += 1
 
     libtcod.console_set_default_foreground(panel, libtcod.light_grey)
     libtcod.console_print_ex(panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, get_names_under_mouse())
 
-    draw_border(panel, 0, 0, consts.PANEL_WIDTH, consts.PANEL_HEIGHT + 1)
+    draw_border(panel, 0, 0, PANEL_WIDTH(), PANEL_HEIGHT + 1)
 
-    libtcod.console_blit(panel, 0, 0, consts.PANEL_WIDTH, consts.PANEL_HEIGHT, 0, consts.PANEL_X, consts.PANEL_Y)
+    libtcod.console_blit(panel, 0, 0, PANEL_WIDTH(), PANEL_HEIGHT, 0, PANEL_X, PANEL_Y)
 
 
 def render_action_panel():
@@ -772,8 +796,8 @@ def render_action_panel():
                 if len(interactable_here) > 0:
                     libtcod.console_print(action_panel, 1, draw_height, '(g) ')
                     text = 'Use %s' % interactable_here[0].name.title()
-                    h = libtcod.console_get_height_rect(action_panel, 5, 0, consts.ACTION_MENU_WIDTH - 6, 3, text)
-                    libtcod.console_print_rect(action_panel, 5, draw_height, consts.ACTION_MENU_WIDTH - 6, h, text)
+                    h = libtcod.console_get_height_rect(action_panel, 5, 0, ACTION_MENU_WIDTH - 6, 3, text)
+                    libtcod.console_print_rect(action_panel, 5, draw_height, ACTION_MENU_WIDTH - 6, h, text)
                     draw_height += h + 1
         # Spells
         left_hand = main.get_equipped_in_slot(player.instance.fighter.inventory, 'left hand')
@@ -790,18 +814,18 @@ def render_action_panel():
         draw_height += 2
 
 
-        draw_border(action_panel, 0, 0, consts.ACTION_MENU_WIDTH, consts.ACTION_MENU_HEIGHT)
+        draw_border(action_panel, 0, 0, ACTION_MENU_WIDTH, ACTION_MENU_HEIGHT())
 
-        libtcod.console_blit(action_panel, 0, 0, consts.ACTION_MENU_WIDTH, consts.ACTION_MENU_HEIGHT, 0, consts.ACTION_MENU_X, consts.ACTION_MENU_Y)
+        libtcod.console_blit(action_panel, 0, 0, ACTION_MENU_WIDTH, ACTION_MENU_HEIGHT(), 0, ACTION_MENU_X(), ACTION_MENU_Y)
 
     else:
-        draw_border(action_panel, 0, consts.ACTION_MENU_HEIGHT - 3, consts.ACTION_MENU_WIDTH, 3)
+        draw_border(action_panel, 0, ACTION_MENU_HEIGHT() - 3, ACTION_MENU_WIDTH, 3)
 
         libtcod.console_set_default_foreground(action_panel, libtcod.white)
-        libtcod.console_print_ex(action_panel, consts.ACTION_MENU_WIDTH / 2 - 2, consts.ACTION_MENU_HEIGHT - 2, libtcod.BKGND_DEFAULT, libtcod.CENTER, '(A) Actions')
+        libtcod.console_print_ex(action_panel, ACTION_MENU_WIDTH / 2 - 2, ACTION_MENU_HEIGHT() - 2, libtcod.BKGND_DEFAULT, libtcod.CENTER, '(A) Actions')
 
-        libtcod.console_blit(action_panel, 0, consts.ACTION_MENU_HEIGHT - 3, consts.ACTION_MENU_WIDTH, 3, 0,
-                             consts.ACTION_MENU_X, consts.ACTION_MENU_Y + consts.ACTION_MENU_HEIGHT - 3)
+        libtcod.console_blit(action_panel, 0, ACTION_MENU_HEIGHT() - 3, ACTION_MENU_WIDTH, 3, 0,
+                             ACTION_MENU_X, ACTION_MENU_Y + ACTION_MENU_HEIGHT() - 3)
 
 
 def render_ui_overlay():
@@ -835,8 +859,8 @@ def render_ui_overlay():
             fade_factor = 1.0
         else:
             fade_factor = 1.0 - float(fade_value - display_ticker) / float(fade_value)
-        libtcod.console_blit(overlay, 0, 0, text_width, 1, 0, consts.MAP_VIEWPORT_X + consts.MAP_VIEWPORT_WIDTH / 2 -
-                             text_width / 2, consts.MAP_VIEWPORT_Y + 20, fade_factor, 0.0)
+        libtcod.console_blit(overlay, 0, 0, text_width, 1, 0, MAP_VIEWPORT_X + MAP_VIEWPORT_WIDTH() / 2 -
+                             text_width / 2, MAP_VIEWPORT_Y + 20, fade_factor, 0.0)
         display_ticker -= 1
         if display_ticker == 0:
             overlay_text = None
@@ -857,7 +881,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
     cursor_y = y
     oldMouseX = mouse.cx
     oldMouseY = mouse.cy
-    offsetx, offsety = player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2, player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2
+    offsetx, offsety = player.instance.x - MAP_VIEWPORT_WIDTH() / 2, player.instance.y - MAP_VIEWPORT_HEIGHT() / 2
     selected_x = x
     selected_y = y
     libtcod.console_set_default_background(0, libtcod.black)
@@ -883,10 +907,10 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
                         libtcod.console_put_char_ex(overlay, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.black)
                     else:
                         libtcod.console_put_char_ex(overlay, draw_x, draw_y, ' ', libtcod.light_yellow, libtcod.magenta)
-            libtcod.console_blit(overlay, player.instance.x - consts.MAP_VIEWPORT_WIDTH / 2,
-                                 player.instance.y - consts.MAP_VIEWPORT_HEIGHT / 2,
-                                 consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0,
-                                 consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 0.0, 0.2)
+            libtcod.console_blit(overlay, player.instance.x - MAP_VIEWPORT_WIDTH() / 2,
+                                 player.instance.y - MAP_VIEWPORT_HEIGHT() / 2,
+                                 MAP_VIEWPORT_WIDTH(), MAP_VIEWPORT_HEIGHT(), 0,
+                                 MAP_VIEWPORT_X, MAP_VIEWPORT_Y, 0.0, 0.2)
 
         # Render cursor
         libtcod.console_set_default_background(overlay, libtcod.magenta)
@@ -945,8 +969,8 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
                                     libtcod.light_yellow,
                                     libtcod.white)
 
-        libtcod.console_blit(overlay, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0, consts.MAP_VIEWPORT_X,
-                             consts.MAP_VIEWPORT_Y, 0, 0.5)
+        libtcod.console_blit(overlay, 0, 0, MAP_VIEWPORT_WIDTH(), MAP_VIEWPORT_HEIGHT(), 0, MAP_VIEWPORT_X,
+                             MAP_VIEWPORT_Y, 0, 0.5)
 
         if key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4:
             x -= 1
@@ -970,7 +994,7 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
             y += 1
 
         if oldMouseX != mouse.cx or oldMouseY != mouse.cy:
-            mouse_pos = mouse.cx + offsetx - consts.MAP_VIEWPORT_X, mouse.cy + offsety - consts.MAP_VIEWPORT_Y
+            mouse_pos = mouse.cx + offsetx - MAP_VIEWPORT_X, mouse.cy + offsety - MAP_VIEWPORT_Y
             if main.in_bounds(mouse_pos[0], mouse_pos[1]):
                 x = mouse_pos[0]
                 y = mouse_pos[1]
@@ -1060,9 +1084,9 @@ def skill_menu():
             menu_lines.append(None)
         menu_lines.append(k)
     sub_height = len(skill_categories) + len(perks.perk_keys)
-    scroll_limit = sub_height - (consts.MAP_VIEWPORT_HEIGHT - 10)
+    scroll_limit = sub_height - (MAP_VIEWPORT_HEIGHT() - 10)
 
-    sub_window = libtcod.console_new(consts.MAP_VIEWPORT_WIDTH, sub_height)
+    sub_window = libtcod.console_new(MAP_VIEWPORT_WIDTH(), sub_height)
     libtcod.console_set_key_color(sub_window, libtcod.magenta)
 
     while not libtcod.console_is_window_closed():
@@ -1087,8 +1111,8 @@ def skill_menu():
         else:
             libtcod.console_print(window, 1, 3, '[TAB] - Show Available')
         y = 0
-        draw_border(window, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 5)
-        draw_border(window, 0, consts.MAP_VIEWPORT_HEIGHT - 6, consts.MAP_VIEWPORT_WIDTH, 6)
+        draw_border(window, 0, 0, MAP_VIEWPORT_WIDTH(), MAP_VIEWPORT_HEIGHT() - 5)
+        draw_border(window, 0, MAP_VIEWPORT_HEIGHT() - 6, MAP_VIEWPORT_WIDTH(), 6)
 
         # Draw scrollable menu
         if len(skill_categories) <= 0:
@@ -1099,10 +1123,10 @@ def skill_menu():
             for skill_category in skill_categories:
                 # Draw category dividers
                 libtcod.console_set_default_foreground(sub_window, libtcod.light_gray)
-                for i in range(consts.MAP_VIEWPORT_WIDTH):
+                for i in range(MAP_VIEWPORT_WIDTH()):
                     libtcod.console_put_char_ex(sub_window, i, y, libtcod.CHAR_HLINE, libtcod.gray, libtcod.black)
                 libtcod.console_put_char_ex(sub_window, 0, y, 199, libtcod.gray, libtcod.black)
-                libtcod.console_put_char_ex(sub_window, consts.MAP_VIEWPORT_WIDTH - 1, y, 182, libtcod.gray, libtcod.black)
+                libtcod.console_put_char_ex(sub_window, MAP_VIEWPORT_WIDTH() - 1, y, 182, libtcod.gray, libtcod.black)
                 libtcod.console_print_ex(sub_window, 3, y, libtcod.black, libtcod.LEFT, skill_category.upper())
                 y += 1
                 # Draw all skills in category
@@ -1116,7 +1140,7 @@ def skill_menu():
                         if y == selected_index:
                             libtcod.console_set_default_background(sub_window, libtcod.white)
                             libtcod.console_set_default_foreground(sub_window, libtcod.black)
-                            for j in range(1, consts.MAP_VIEWPORT_WIDTH - 1):
+                            for j in range(1, MAP_VIEWPORT_WIDTH() - 1):
                                 libtcod.console_put_char_ex(sub_window, j, y, ' ', libtcod.black, libtcod.white)
                         else:
                             libtcod.console_set_default_background(sub_window, libtcod.black)
@@ -1144,7 +1168,7 @@ def skill_menu():
                                 break
                         y += 1
             # Blit sub_window to window. Select based on scroll height
-            libtcod.console_blit(sub_window, 0, scroll_height, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT - 10, window, 0, 4, 1.0, 1.0)
+            libtcod.console_blit(sub_window, 0, scroll_height, MAP_VIEWPORT_WIDTH(), MAP_VIEWPORT_HEIGHT() - 10, window, 0, 4, 1.0, 1.0)
 
             # print description
             selected_skill = menu_lines[selected_index]
@@ -1163,7 +1187,7 @@ def skill_menu():
                     lvl = req[1]
                 require_string = ', Requires: %s %s' % (perks.perk_list[req[0]]['name'], lvl)
 
-            libtcod.console_print(window, 2, consts.MAP_VIEWPORT_HEIGHT - 5, 'Cost: %dSP%s' % (perks.perk_list[selected_skill]['sp_cost'], require_string))
+            libtcod.console_print(window, 2, MAP_VIEWPORT_HEIGHT() - 5, 'Cost: %dSP%s' % (perks.perk_list[selected_skill]['sp_cost'], require_string))
 
             libtcod.console_set_default_foreground(window, libtcod.white)
             rank = main.has_skill(selected_skill)
@@ -1174,30 +1198,30 @@ def skill_menu():
                 desc_index = rank
             desc = perks.perk_list[selected_skill]['description'][desc_index]
 
-            libtcod.console_print_rect(window, 1, consts.MAP_VIEWPORT_HEIGHT - 4, consts.MAP_VIEWPORT_WIDTH - 2, 5, desc)
+            libtcod.console_print_rect(window, 1, MAP_VIEWPORT_HEIGHT() - 4, MAP_VIEWPORT_WIDTH() - 2, 5, desc)
 
             # print scroll bar
             libtcod.console_set_default_foreground(window, libtcod.gray)
-            libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, 4, 30)
-            libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, consts.MAP_VIEWPORT_HEIGHT - 7, 31)
-            for i in range(consts.MAP_VIEWPORT_HEIGHT - 12):
-                libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, 5 + i, libtcod.CHAR_VLINE)
-            bar_height = int(float((consts.MAP_VIEWPORT_HEIGHT - 12) ** 2) / float(sub_height))
-            bar_height = main.clamp(bar_height, 1, consts.MAP_VIEWPORT_HEIGHT - 12)
-            bar_y = int(float(consts.MAP_VIEWPORT_HEIGHT - 12 - bar_height) * (float(scroll_height) / float(scroll_limit)))
+            libtcod.console_put_char(window, MAP_VIEWPORT_WIDTH() - 2, 4, 30)
+            libtcod.console_put_char(window, MAP_VIEWPORT_WIDTH() - 2, MAP_VIEWPORT_HEIGHT() - 7, 31)
+            for i in range(MAP_VIEWPORT_HEIGHT() - 12):
+                libtcod.console_put_char(window, MAP_VIEWPORT_WIDTH() - 2, 5 + i, libtcod.CHAR_VLINE)
+            bar_height = int(float((MAP_VIEWPORT_HEIGHT() - 12) ** 2) / float(sub_height))
+            bar_height = main.clamp(bar_height, 1, MAP_VIEWPORT_HEIGHT() - 12)
+            bar_y = int(float(MAP_VIEWPORT_HEIGHT() - 12 - bar_height) * (float(scroll_height) / float(scroll_limit)))
             for i in range(bar_height):
-                libtcod.console_put_char(window, consts.MAP_VIEWPORT_WIDTH - 2, bar_y + 5 + i, 219)
+                libtcod.console_put_char(window, MAP_VIEWPORT_WIDTH() - 2, bar_y + 5 + i, 219)
 
         # Blit to main screen and flush
-        libtcod.console_blit(window, 0, 0, consts.MAP_VIEWPORT_WIDTH, consts.MAP_VIEWPORT_HEIGHT, 0,
-                             consts.MAP_VIEWPORT_X, consts.MAP_VIEWPORT_Y, 1.0, 1.0)
+        libtcod.console_blit(window, 0, 0, MAP_VIEWPORT_WIDTH(), MAP_VIEWPORT_HEIGHT(), 0,
+                             MAP_VIEWPORT_X, MAP_VIEWPORT_Y, 1.0, 1.0)
         libtcod.console_flush()
 
         # HANDLE INPUT
 
         # Mouse select
         if mouse.lbutton_pressed:
-            mouse_item = mouse.cy - consts.MAP_VIEWPORT_Y - 4 + scroll_height
+            mouse_item = mouse.cy - MAP_VIEWPORT_Y - 4 + scroll_height
             if 0 <= mouse_item < len(menu_lines) and menu_lines[mouse_item] is not None:
                 selected_index = mouse_item
         # ESC back
@@ -1220,8 +1244,8 @@ def skill_menu():
                     new_index = menu_lines[selected_index]
                 if selected_index < scroll_height + 1:
                     scroll_height = selected_index - 1
-                elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
-                    scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
+                elif selected_index > scroll_height + (MAP_VIEWPORT_HEIGHT() - 12):
+                    scroll_height = selected_index - (MAP_VIEWPORT_HEIGHT() - 12)
         # Up arrow decrements selection index
         elif key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP8 or key.vk == libtcod.KEY_KP4:
             #selected_index = max(selected_index - 1, 0)
@@ -1234,8 +1258,8 @@ def skill_menu():
                     new_index = menu_lines[selected_index]
                 if selected_index < scroll_height + 1:
                     scroll_height = selected_index - 1
-                elif selected_index > scroll_height + (consts.MAP_VIEWPORT_HEIGHT - 12):
-                    scroll_height = selected_index - (consts.MAP_VIEWPORT_HEIGHT - 12)
+                elif selected_index > scroll_height + (MAP_VIEWPORT_HEIGHT() - 12):
+                    scroll_height = selected_index - (MAP_VIEWPORT_HEIGHT() - 12)
         # Scroll wheel & pageup/pagedown adjust scroll height
         elif key.vk == libtcod.KEY_PAGEDOWN or mouse.wheel_down:
             scroll_height = min(scroll_height + 3, scroll_limit)
@@ -1256,7 +1280,7 @@ def skill_menu():
                     menu_lines.append(None)
                 menu_lines.append(k)
             sub_height = len(skill_categories) + len(perks.perk_keys)
-            scroll_limit = sub_height - (consts.MAP_VIEWPORT_HEIGHT - 10)
+            scroll_limit = sub_height - (MAP_VIEWPORT_HEIGHT() - 10)
 
 def examine(x=None, y=None):
     if x is None or y is None:
@@ -1426,8 +1450,8 @@ def show_map_screen():
 
         draw_border(console, 0, 0, 31, 31)
         libtcod.console_blit(console, 0, 0, 31, 31, 0,
-                             consts.MAP_VIEWPORT_X + consts.MAP_VIEWPORT_WIDTH / 2 - 15,
-                             consts.MAP_VIEWPORT_Y + consts.MAP_VIEWPORT_HEIGHT / 2 - 15)
+                             MAP_VIEWPORT_X + MAP_VIEWPORT_WIDTH() / 2 - 15,
+                             MAP_VIEWPORT_Y + MAP_VIEWPORT_HEIGHT() / 2 - 15)
         libtcod.console_flush()
 
         # Handle input and return index
@@ -1576,11 +1600,11 @@ def character_info_screen(console, x, y, width):
 
     # XP Progress
     next_lvl = consts.LEVEL_UP_BASE + player.instance.level * consts.LEVEL_UP_FACTOR
-    render_bar(x + 2, y, consts.BAR_WIDTH, 'XP', player.instance.fighter.xp, next_lvl, libtcod.light_sky, libtcod.dark_sky, console=console)
+    render_bar(x + 2, y, BAR_WIDTH, 'XP', player.instance.fighter.xp, next_lvl, libtcod.light_sky, libtcod.dark_sky, console=console)
     print_height += 2
 
     # Skill Progress
-    render_bar(x + 2, y + print_height, consts.BAR_WIDTH, 'Skill', player.instance.skill_point_progress, 100, libtcod.violet, libtcod.dark_violet, console=console)
+    render_bar(x + 2, y + print_height, BAR_WIDTH, 'Skill', player.instance.skill_point_progress, 100, libtcod.violet, libtcod.dark_violet, console=console)
     print_height += 2
 
     # Accuracy/Evasion
@@ -1600,10 +1624,10 @@ def character_info_screen(console, x, y, width):
 
 show_action_panel = True
 overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
-panel = libtcod.console_new(consts.PANEL_WIDTH, consts.PANEL_HEIGHT)
-side_panel = libtcod.console_new(consts.SIDE_PANEL_WIDTH, consts.SIDE_PANEL_HEIGHT)
-action_panel = libtcod.console_new(consts.ACTION_MENU_WIDTH, consts.ACTION_MENU_HEIGHT)
-window = libtcod.console_new(consts.SCREEN_WIDTH, consts.SCREEN_HEIGHT)
+panel = libtcod.console_new(PANEL_WIDTH(), PANEL_HEIGHT)
+side_panel = libtcod.console_new(SIDE_PANEL_WIDTH, SIDE_PANEL_HEIGHT())
+action_panel = libtcod.console_new(ACTION_MENU_WIDTH, ACTION_MENU_HEIGHT())
+window = libtcod.console_new(main.SCREEN_WIDTH(), main.SCREEN_HEIGHT())
 selected_monster = None
 game_msgs = []
 msg_render_height = 0

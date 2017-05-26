@@ -15,7 +15,6 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import libtcodpy as libtcod
-import effects
 import actions
 
 class Spell:

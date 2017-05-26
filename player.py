@@ -169,7 +169,7 @@ def create(loadout):
         i = None
         prototype = item
         if not isinstance(item,basestring):
-            idx = ui.menu("Choose a starting item",[string.capwords(items.table()[a]['name']) for a in item],30,x_center=consts.SCREEN_WIDTH / 2)
+            idx = ui.menu("Choose a starting item",[string.capwords(items.table()[a]['name']) for a in item],30,x_center=main.SCREEN_WIDTH() / 2)
             if idx is None:
                 return 'cancelled'
             prototype = item[idx]
@@ -274,7 +274,7 @@ def handle_keys():
                     else:
                         return 'dropped-item'
             if key_char == 'c':
-                ui.menu('Character Information', ['back'], render_func=ui.character_info_screen, width=50, x_center=consts.SCREEN_WIDTH / 2)
+                ui.menu('Character Information', ['back'], render_func=ui.character_info_screen, width=50, x_center=main.SCREEN_WIDTH() / 2)
             if key_char == 'z':
                 return cast_spell()
             if key_char == 'v':
@@ -513,7 +513,7 @@ def level_up():
         'can hold.'}
 
     while choice is None:
-        choice = ui.menu_ex('Level up! Choose a stat to raise:', opts, consts.LEVEL_SCREEN_WIDTH, return_as_char=True)
+        choice = ui.menu_ex('Level up! Choose a stat to raise:', opts, ui.LEVEL_SCREEN_WIDTH, return_as_char=True)
 
     if choice == 'c': gain_con()
     elif choice == 's': gain_str()
