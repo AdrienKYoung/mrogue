@@ -276,7 +276,7 @@ def choose_loot_table(branch):
         return main.random_choice(b['loot'])
 
 def choose_weapon_material(loot_level=0):
-    roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 150))
+    roll = libtcodpy.random_get_int(0, 0, min(100 + 30 * loot_level, 150))
     if roll < 5:
         return choose_weapon_material(loot_level + 1)
     elif roll < 15:
@@ -297,7 +297,7 @@ def choose_weapon_material(loot_level=0):
         return 'blightstone'
 
 def choose_armor_material(loot_level=0):
-    roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 150))
+    roll = libtcodpy.random_get_int(0, 0, min(100 + 30 * loot_level, 150))
     if roll > 100:
         ops = armor_materials.keys()
         return ops[libtcodpy.random_get_int(0,0,len(ops)-1)]

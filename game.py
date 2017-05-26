@@ -321,7 +321,7 @@ class GameObject:
                     return True
 
                 fire = object_at_tile(x, y, 'Fire')
-                if fire is not None and self is player.instance and not ui.menu_y_n('Really walk into flame?'):
+                if fire is not None and self is player.instance and not has_skill('pyromaniac') and not ui.menu_y_n('Really walk into flame?'):
                     return False
 
                 cost = current_map.tiles[self.x][self.y].stamina_cost
@@ -733,12 +733,12 @@ def object_at_tile(x, y, name):
             return obj
     return None
 
-
 def water_elemental_tick(elemental):
     for obj in current_map.fighters:
         if obj.fighter.team != elemental.fighter.team and is_adjacent_diagonal(obj.x, obj.y, elemental.x, elemental.y):
             obj.fighter.apply_status_effect(effects.sluggish(duration=3))
             obj.fighter.apply_status_effect(effects.slowed(duration=3))
+
 
 def scum_glob_tick(glob):
     tile = current_map.tiles[glob.x][glob.y]
@@ -746,11 +746,14 @@ def scum_glob_tick(glob):
         tile.tile_type = 'oil'
         changed_tiles.append((glob.x, glob.y))
 
+
 def scum_glob_on_create(obj):
     obj.fighter.apply_status_effect(effects.oiled(duration=None))
 
+
 def bloodfly_on_create(obj):
     obj.fighter.hp = obj.fighter.max_hp / 2
+
 
 # on_create function of tunnel spiders. Creates a web at the spiders location and several random adjacent spaces
 def tunnel_spider_spawn_web(obj):
@@ -765,11 +768,15 @@ def tunnel_spider_spawn_web(obj):
 
 # creates a spiderweb at the target location
 def make_spiderweb(x, y):
+    old_web = get_objects(x, y, lambda o: o.name == 'spiderweb')
+    if len(old_web) > 0:
+        return
     web = GameObject(x, y, 'x', 'spiderweb', libtcod.lightest_gray,
                      description='a web of spider silk. Stepping into a web will impede movement for a turn.',
                      burns=True)
     current_map.add_object(web)
     web.send_to_back()
+
 
 def raise_dead(actor,target, duration=None):
     if target.fighter is None and target.is_corpse:
@@ -782,6 +789,7 @@ def raise_dead(actor,target, duration=None):
             zombie.summon_time = duration
         target.destroy()
         ui.message('A corpse walks again...', libtcod.dark_violet)
+
 
 def create_temp_terrain(type,tiles,duration):
     terrain_data = terrain.data[type]
@@ -806,6 +814,7 @@ def create_temp_terrain(type,tiles,duration):
 
     current_map.tickers.append(ticker)
 
+
 def _temp_terrain_on_tick(ticker):
     if ticker.max_ticks <= ticker.ticks:
         ticker.dead = True
@@ -818,6 +827,7 @@ def _temp_terrain_on_tick(ticker):
             else:
                 current_map.pathfinding.mark_unblocked((x, y))
             fov.set_fov_properties(x, y, terrain_data.blocks_sight)
+
 
 def get_all_equipped(equipped_list):
     result = []
@@ -852,8 +862,10 @@ def normalized_choice(choices_list,factor):
         return None
     return choices_list[int((size - 1) * clamp(factor,0,1))]
 
+
 def random_entry(options):
     return options[libtcod.random_get_int(0,0,len(options)-1)]
+
 
 def random_choice(chances_dict):
     chances = chances_dict.values()
@@ -870,6 +882,7 @@ def random_choice_index(chances):
         if dice <= running_sum:
             return choice
         choice += 1
+
 
 def bomb_beetle_corpse_tick(object=None):
     if object is None:
@@ -915,6 +928,7 @@ def bomb_beetle_death(beetle):
         ui.selected_monster = None
         ui.auto_target_monster()
 
+
 def scum_glob_death(glob):
     global changed_tiles
     ui.message('%s divides!' % syntax.name(glob).capitalize(), libtcod.red)
@@ -932,6 +946,7 @@ def scum_glob_death(glob):
         changed_tiles.append(pos)
         ui.selected_monster = None
         ui.auto_target_monster()
+
 
 def blastcap_explode(blastcap):
     global changed_tiles
@@ -953,6 +968,7 @@ def blastcap_explode(blastcap):
 
     blastcap.destroy()
     return
+
 
 def monster_death(monster):
     global changed_tiles
@@ -1028,6 +1044,7 @@ def object_at_coords(x, y):
     else:
         return ops[0]
 
+
 def beam(sourcex, sourcey, destx, desty):
     libtcod.line_init(sourcex, sourcey, destx, desty)
     line_x, line_y = libtcod.line_step()
@@ -1053,6 +1070,7 @@ def beam_interrupt(sourcex, sourcey, destx, desty):
 def distance(x1, y1, x2, y2):
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
+
 def cone(sourcex,sourcey,destx,desty,max_range):
     affected_tiles = []
     selected_angle = math.atan2(-(desty - sourcey), destx - sourcex)
@@ -1074,6 +1092,7 @@ def cone(sourcex,sourcey,destx,desty,max_range):
             if phi <= math.pi / 4 and round(distance(sourcex,sourcey,draw_x, draw_y)) <= max_range:
                 affected_tiles.append((draw_x, draw_y))
     return affected_tiles
+
 
 def closest_monster(max_range):
     closest_enemy = None
@@ -1139,9 +1158,10 @@ def is_blocked(x, y, from_coord=None, movement_type=None):
 def get_room_spawns(room):
     return [[k, libtcod.random_get_int(0, v[0], v[1])] for (k, v) in room['spawns'].items()]
 
+
 def apply_attribute(attribute,monster):
-    
     return attribute
+
 
 def spawn_monster(name, x, y, team='enemy'):
     if consts.DEBUG_NO_MONSTERS:
@@ -1220,7 +1240,7 @@ def spawn_monster(name, x, y, team='enemy'):
     return None
 
 
-def spawn_monster_inventory(proto,loot_level=-10):
+def spawn_monster_inventory(proto,loot_level=-1):
     result = []
     if proto:
         for slot in proto:
@@ -1236,6 +1256,7 @@ def spawn_monster_inventory(proto,loot_level=-10):
                     result.append(create_item(equip))
     return result
 
+
 def spawn_npc(name,x,y):
     import npc
     p = npc.data[name]
@@ -1247,6 +1268,7 @@ def spawn_npc(name,x,y):
     result.elevation = current_map.tiles[x][y].elevation
     current_map.add_object(result)
     return result
+
 
 def create_ability(name):
     if name in abilities.data:
@@ -1265,6 +1287,7 @@ def spawn_essence(x,y,type):
     current_map.add_object(essence_pickup)
     return essence_pickup
 
+
 def opposite_essence(essence):
     if essence == 'water':
         return 'fire'
@@ -1280,6 +1303,7 @@ def opposite_essence(essence):
         return 'life'
     else:
         return essence
+
 
 def create_item(name, material=None, quality=''):
     p = items.table()[name]
@@ -1407,6 +1431,7 @@ def check_breakage(equipment):
     else:
         return False
 
+
 def melt_ice(x, y):
     if x < 0 or y < 0 or x >= consts.MAP_WIDTH or y >= consts.MAP_WIDTH:
         return
@@ -1417,6 +1442,7 @@ def melt_ice(x, y):
     elif current_map.tiles[x][y].tile_type == 'deep_ice':
         current_map.tiles[x][y].tile_type = 'deep water'
     changed_tiles.append((x, y))
+
 
 def create_fire(x,y,temp):
     global changed_tiles
@@ -1448,6 +1474,7 @@ def create_fire(x,y,temp):
         obj.destroy()
     changed_tiles.append((x, y))
 
+
 def chest_interact(chest, actor):
     if actor is player.instance:
         if lock_interact(actor, 'chest'):
@@ -1459,6 +1486,7 @@ def chest_interact(chest, actor):
                 current_map.add_object(loot_drop)
                 loot_drop.send_to_back()
             chest.destroy()
+
 
 def lock_interact(actor=None, object_name='object'):
     if actor is not None and actor is not player.instance:
@@ -1473,6 +1501,7 @@ def lock_interact(actor=None, object_name='object'):
     else:
         ui.menu('This %s is locked.' % object_name, ['Back'])
     return False
+
 
 def door_interact(door, actor):
     if not is_blocked(door.x, door.y):
@@ -1542,6 +1571,7 @@ def dice_range(dice, normalize_size=None):
 
     return dice_count + remainder_min + flat_bonus, dice_count * dice_size + remainder + flat_bonus
 
+
 def find_closest_open_tile(x, y, exclude=[]):
     if in_bounds(x, y) and not is_blocked(x, y) and len(exclude) == 0:
         return x, y
@@ -1560,6 +1590,7 @@ def find_closest_open_tile(x, y, exclude=[]):
                 neighbors.append(n)
     return None  # failure
 
+
 def find_random_open_tile():
     open = []
     for y in range(consts.MAP_HEIGHT):
@@ -1567,6 +1598,7 @@ def find_random_open_tile():
             if not is_blocked(x, y):
                 open.append((x, y))
     return open[libtcod.random_get_int(0, 0, len(open) - 1)]
+
 
 def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
     if len(tiles) == 0:
@@ -1594,7 +1626,6 @@ def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
                     tiles.remove(loc)
                     if len(tiles) == 0:
                         return
-
 
     for i in range(loot_count):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
@@ -1624,22 +1655,6 @@ def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
                 return
 
 
-def check_boss(level):
-    global spawned_bosses
-
-    #for (k, v) in dungeon.bosses.items():
-    #    chance = v.get(level)
-    #    if chance is not None and spawned_bosses.get(k) is None:
-    #        if chance >= libtcod.random_get_int(0, 0, 100):
-    #            spawned_bosses[k] = True
-    #            return k
-    return None
-
-
-def get_dungeon_level():
-    global dungeon_level
-    return "dungeon_{}".format(dungeon_level)
-
 def get_loot(monster):
     loot_table = monster.loot_table
     drop = loot_table[libtcod.random_get_int(0,0,len(loot_table) - 1)]
@@ -1659,14 +1674,17 @@ def get_objects(x, y, condition=None, distance=0):
                 found.append(obj)
     return found
 
+
 def get_description(obj):
     if obj and hasattr(obj, 'description') and obj.description is not None:
         return obj.description.capitalize()
     else:
         return ""
 
+
 def get_visible_units():
     return [f for f in current_map.fighters if f.player_can_see()]
+
 
 def get_visible_units_ex(predicate):
     return [f for f in current_map.fighters if f.player_can_see() and predicate(f)]
@@ -1681,6 +1699,7 @@ def land_next_to_target(target_x, target_y, source_x, source_y):
     if not is_blocked(land_x, land_y):
         return land_x, land_y
     return None
+
 
 def clear_map():
     libtcod.console_set_default_background(map_con, libtcod.black)

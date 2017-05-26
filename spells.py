@@ -29,7 +29,7 @@ class Spell:
     def max_spell_charges(self,level):
         import game
         base = self.levels[level-1]['charges']
-        return int(base + base * game.skill_value('sorcery'))
+        return int(base + round(float(base) * game.skill_value('sorcery')))
 
 def is_max_level(spell,level):
     return len(library[spell].levels) == level

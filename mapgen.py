@@ -1343,9 +1343,6 @@ def make_rooms_and_corridors():
     #level_shrine = main.GameObject(x, y, '=', 'shrine of power', libtcod.white, always_visible=True, interact=None)
     #map.add_object(level_shrine)
     #level_shrine.send_to_back()
-    boss = main.check_boss(main.get_dungeon_level())
-    if boss is not None:
-        main.spawn_monster(boss, sample[1].center()[0], sample[1].center()[1])
 
 def make_garden_rooms_legacy(leaf):
     if leaf.left is None or leaf.right is None:
@@ -1586,10 +1583,6 @@ def make_map_marsh():
     #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white, always_visible=True)
     #map.objects.append(main.stairs)
     #main.stairs.send_to_back()
-    boss = main.check_boss(main.get_dungeon_level())
-    if boss is not None:
-        boss_tile = choose_random_tile(open_tiles)
-        main.spawn_monster(boss, boss_tile[0], boss_tile[1])
 
     make_basic_map_links()
 
