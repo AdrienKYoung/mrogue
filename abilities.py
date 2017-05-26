@@ -390,6 +390,40 @@ data = {
         'range':2,
     },
 
+    'ability_bless': {
+        'name': 'bless',
+        'function': actions.bless,
+        'cooldown': 30,
+        'element':'radiance'
+    },
+
+    'ability_castigate': {
+        'name': 'castigate',
+        'function': actions.castigate,
+        'cooldown': 10,
+        'element':'radiance'
+    },
+
+    'ability_holy_lance': {
+        'name': 'bless',
+        'function': actions.bless,
+        'cooldown': 30,
+        'element':'radiance',
+        'dice' : 2,
+        'base_damage' : '2d8',
+        'radius':2,
+        'range':8
+    },
+
+    'ability_holy_lance_tick': {
+        'name': 'bless',
+        'function': actions.bless,
+        'cooldown': 1,
+        'dice' : 1,
+        'base_damage' : '1d8',
+        'element':'radiance'
+    },
+
     'ability_off_hand_shoot': {
         'name': 'Off Hand Shot',
         'function': actions.offhand_shot,

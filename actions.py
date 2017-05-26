@@ -514,22 +514,6 @@ def _continuation_great_dive(actor,x,y,ui_particles):
                 actor.set_position(t[0],t[1])
                 break
 
-def smite(actor=None, target=None):
-    spell = abilities.data['ability_smite']
-    x, y = 0, 0
-    if actor is None or actor is player.instance:  # player is casting
-        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        default_target = None
-        if ui.selected_monster is not None:
-            default_target = ui.selected_monster.x, ui.selected_monster.y
-        target = main.get_monster_at_tile(*ui.target_tile(spell['range'],'pick', default_target=default_target))
-        actor = player.instance
-
-    if target is None: return 'cancelled'
-
-    combat.spell_attack(actor.fighter, target,'ability_smite')
-    return 'success'
-
 def heat_ray(actor=None, target=None):
     spell = abilities.data['a' \
                            'bility_heat_ray']
@@ -763,7 +747,9 @@ def snowstorm(actor=None, target=None):
         zone = main.Zone(spell['radius'],_snowstorm_tick,_snowstorm_tick)
         storm = main.GameObject(x,y,'@','Snowstorm',libtcod.light_azure,zones=[zone],summon_time=10)
         storm.creator = actor
-    return 'failure'
+        return 'success'
+    else:
+        return 'failure'
 
 def _snowstorm_tick(actor,target):
     if main.roll_dice('1d10' > 7):
@@ -870,6 +856,82 @@ def corpse_dance(actor=None,target=None):
             obj.fighter.apply_status_effect(effects.swiftness(spell['buff_duration']))
             obj.fighter.apply_status_effect(effects.berserk(spell['buff_duration']))
     return 'success'
+
+def bless(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+    actor.fighter.apply_status_effect(effects.blessed())
+    return 'success'
+
+def smite(actor=None, target=None):
+    spell = abilities.data['ability_smite']
+    x, y = 0, 0
+    if actor is None or actor is player.instance:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        target = main.get_monster_at_tile(*ui.target_tile(spell['range'],'pick', default_target=default_target))
+        actor = player.instance
+
+    if target is None:
+        return 'cancelled'
+
+    combat.spell_attack(actor.fighter, target,'ability_smite')
+    if target.fighter is not None:
+        target.fighter.apply_status_effect(effects.judgement(main.roll_dice('2d8')))
+        if(target.fighter.has_flag('EVIL')):
+            target.fighter.apply_status_effect(effects.stunned())
+    return 'success'
+
+def castigate(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+
+    ui.render_explosion(actor.x, actor.y, 1, libtcod.violet, libtcod.light_yellow)
+    for (_x,_y) in main.adjacent_tiles_diagonal(actor.x,actor.y):
+        obj = main.get_monster_at_tile(_x,_y)
+        if obj is not None and obj.fighter.team == 'enemy':
+            obj.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('3d8')))
+
+#player only
+def blessed_aegis(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+
+    summon_equipment('shield_blessed_aegis')
+
+def holy_lance(actor=None, target=None):
+    x, y = 0, 0
+    spell = abilities.data['ability_holy_lance']
+    if actor is None:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=spell['range'])
+        if x is None:
+            return 'cancelled'
+        actor = player.instance
+    else:
+        x = target.x
+        y = target.y
+    if x is not None:
+        ui.render_explosion(x, y, spell['radius'], libtcod.violet, libtcod.light_yellow)
+
+        lance = main.GameObject(x, y, chr(23), 'Holy Lance', libtcod.light_azure, on_tick=_holy_lance_tick, summon_time=10)
+        lance.creator = actor
+        main.current_map.add_object(lance)
+
+        for obj in main.get_fighters_in_burst(x,y,spell['radius'],lance,actor.fighter.team):
+                combat.spell_attack(actor.fighter, obj, 'ability_holy_lance')
+        return 'success'
+    else:
+        return 'failure'
+
+
+def _holy_lance_tick(actor):
+    spell = abilities.data['ability_holy_lance']
+    ui.render_explosion(actor.x, actor.y, spell['radius'], libtcod.violet, libtcod.light_yellow)
+    for obj in main.get_fighters_in_burst(actor.x, actor.y, spell['radius'], actor, actor.creator.fighter.team):
+        combat.spell_attack(actor.fighter, obj, 'ability_holy_lance_tick')
 
 def green_touch(actor=None, target=None):
     spell = abilities.data['ability_green_touch']
@@ -1116,6 +1178,13 @@ def holy_water(actor=None, target=None):
     return 'success'
 
 def knock_back(actor,target):
+    # check for resistance
+    if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
+        if fov.player_can_see(target.x, target.y):
+            ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
+                target is player.instance, ('resist', 'resists'))), libtcod.gray)
+        return 'resisted'
+
     # knock the target back one space. Stun it if it cannot move.
     direction = target.x - actor.x, target.y - actor.y  # assumes the instance is adjacent
     stun = False
@@ -1301,6 +1370,11 @@ def frog_tongue(actor, target):
             ui.message("The frog's tongue lashes out at %s!" % syntax.name(target), libtcod.dark_green)
             result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=1.5, verb=('pull', 'pulls'))
             if result == 'hit':
+                if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
+                    if fov.player_can_see(target.x, target.y):
+                        ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
+                            target is player.instance, ('resist', 'resists'))), libtcod.gray)
+                    return 'success'
                 beam = main.beam(actor.x, actor.y, target.x, target.y)
                 pull_to = beam[max(len(beam) - 3, 0)]
                 target.set_position(pull_to[0], pull_to[1])
@@ -1313,6 +1387,11 @@ def dragonweed_pull(actor, target):
             ui.message("The dragonweed's stem lashes out at %s!" % syntax.name(target), libtcod.dark_green)
             result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=0.75, verb=('pull', 'pulls'))
             if result == 'hit':
+                if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
+                    if fov.player_can_see(target.x, target.y):
+                        ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
+                            target is player.instance, ('resist', 'resists'))), libtcod.gray)
+                    return 'success'
                 beam = main.beam(actor.x, actor.y, target.x, target.y)
                 pull_to = beam[max(len(beam) - 3, 0)]
                 target.set_position(pull_to[0], pull_to[1])
@@ -1515,9 +1594,16 @@ def toxic_attack(actor, target, damage):
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.toxic())
 
-
 def potion_essence(essence):
-    return lambda : player.pick_up_essence(essence,player.instance)
+    return lambda : use_gem(essence)
+
+def use_gem(essence):
+    if player.instance.fighter.item_equipped_count('equipment_ring_of_alchemy') > 0:
+        old_essence = essence
+        essence = main.opposite_essence(essence)
+        if old_essence != essence:
+            ui.message('Your ring of alchemy glows!', spells.essence_colors[essence])
+    player.pick_up_essence(essence, player.instance)
 
 def teleport(actor, x, y):
     if actor is None:
@@ -1588,49 +1674,60 @@ def summon_ally(name, duration, x=None, y=None):
     else:
         return 'didnt-take-turn'
 
-def summon_weapon(weapon):
+def summon_equipment(item):
     if len(player.instance.fighter.inventory) >= 26:
         ui.message('You are carrying too many items to summon another.')
         return 'didnt-take-turn'
 
-    summoned_weapon = main.create_item(weapon, material='', quality='')
-    if summoned_weapon is None:
+    summoned_equipment = main.create_item(item, material='', quality='')
+    if summoned_equipment is None:
         return
-    expire_ticker = main.Ticker(15,summon_weapon_on_tick)
-    equipped_weapon = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
-    expire_ticker.old_weapon = equipped_weapon
-    if summoned_weapon.equipment.slot == 'both hands':
+
+    expire_ticker = main.Ticker(15,summon_equipment_on_tick)
+    equipped_item = None
+    expire_ticker.old_left = None
+    if summoned_equipment.equipment.slot == 'both hands':
+        equipped_item = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
         expire_ticker.old_left = main.get_equipped_in_slot(player.instance.fighter.inventory, 'left hand')
+    elif summoned_equipment.equipment.slot == 'floating shield':
+        #can't stack two shields
+        equipped_item = player.instance.fighter.get_equipped_shield()
     else:
-        expire_ticker.old_left = None
-    if equipped_weapon is not None:
-        equipped_weapon.dequip()
-    summoned_weapon.item.pick_up(player.instance)
-    expire_ticker.weapon = summoned_weapon
-    effect = effects.StatusEffect('summoned weapon', expire_ticker.max_ticks + 1, summoned_weapon.color)
+        equipped_item = main.get_equipped_in_slot(player.instance.fighter.inventory, summoned_equipment.equipment.slot)
+    expire_ticker.old_equipment = equipped_item
+
+    if equipped_item is not None:
+        equipped_item.dequip()
+    summoned_equipment.item.pick_up(player.instance,True)
+    expire_ticker.equipment = summoned_equipment
+    effect = effects.StatusEffect('summoned equipment', expire_ticker.max_ticks + 1, summoned_equipment.color)
     player.instance.fighter.apply_status_effect(effect)
     expire_ticker.effect = effect
     main.current_map.tickers.append(expire_ticker)
+
+    ui.message("A {} appears!".format(summoned_equipment.name),libtcod.white)
+
     return 'success'
 
-def summon_weapon_on_tick(ticker):
+def summon_equipment_on_tick(ticker):
     dead_flag = False
     dropped = False
-    if not ticker.weapon.equipment.is_equipped:
-        ui.message('The %s fades away as you release it from your grasp.' % ticker.weapon.name.title(), libtcod.light_blue)
+    if not ticker.equipment.equipment.is_equipped:
+        ui.message('The %s fades away as you release it from your grasp.' % ticker.equipment.name.title(), libtcod.light_blue)
         dead_flag = True
         dropped = True
     elif ticker.ticks > ticker.max_ticks:
         dead_flag = True
-        ui.message("The %s fades away as it's essence depletes." % ticker.weapon.name.title(), libtcod.light_blue)
+        ui.message("The %s fades away as it's essence depletes." % ticker.equipment.name.title(), libtcod.light_blue)
     if dead_flag:
         ticker.dead = True
-        ticker.weapon.item.drop(no_message=True)
-        ticker.weapon.destroy()
-        player.instance.fighter.remove_status('summoned weapon')
+        if ticker.equipment is not None:
+            ticker.equipment.item.drop(no_message=True)
+            ticker.equipment.destroy()
+        player.instance.fighter.remove_status('summoned equipment')
         if not dropped:
-            if ticker.old_weapon is not None:
-                ticker.old_weapon.equip()
+            if ticker.old_equipment is not None:
+                ticker.old_equipment.equip()
             if ticker.old_left is not None:
                 ticker.old_left.equip()
 

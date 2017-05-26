@@ -16,12 +16,6 @@
 
 import libtcodpy
 import game as main
-import player
-import combat
-import dungeon
-import spells
-import actions
-import charms
 
 table = {
     'weapons_0': [
@@ -135,8 +129,7 @@ table = {
         'essence_cold',
         'essence_arcane',
         'essence_death',
-        'essence_radiant',
-        'scroll_forge',
+        'essence_radiance',
     ],
 
     'tomes_1': [
@@ -191,7 +184,41 @@ table = {
         'equipment_ring_of_stamina',
         'equipment_ring_of_evasion',
         'equipment_ring_of_accuracy',
-    ]
+        'equipment_ring_of_vengeance',
+        'equipment_ring_of_rage',
+        'equipment_ring_of_fortitude',
+        'equipment_ring_of_tenacity',
+        'equipment_ring_of_vampirism',
+        'equipment_ring_of_mending',
+        'equipment_ring_of_waterbreathing',
+        'equipment_ring_of_burdens',
+        'equipment_ring_of_alchemy',
+        'equipment_ring_of_poison_immunity',
+        'equipment_ring_of_freedom',
+        'equipment_ring_of_salvation',
+        'equipment_ring_of_blessings',
+    ],
+
+    'elixirs_0': [
+        'elixir_con',
+        'elixir_str',
+        'elixir_agi',
+        'elixir_int',
+        'elixir_wis',
+    ],
+
+    'chest_0': [
+        'elixirs_0',
+        'elixir_life',
+        'rings_1',
+        'charms_1',
+        'keys_1',
+        'tomes_1',
+        'armor_2',
+        'weapons_2',
+        'scroll_forge',
+    ],
+
 }
 
 def item_from_table(branch,loot_table=None):
@@ -226,6 +253,9 @@ def item_from_table(branch,loot_table=None):
     loot_table = category+'_'+str(loot_level)
 
     item_id = table[loot_table][libtcodpy.random_get_int(0,0,len(table[loot_table]))-1]
+    if item_id in table.keys():
+        return item_from_table(branch, loot_table=item_id)
+
     material = None
     quality = ''
     if category == 'weapon':
@@ -238,6 +268,7 @@ def item_from_table(branch,loot_table=None):
     return main.create_item(item_id, material, quality)
 
 def choose_loot_table(branch):
+    import dungeon
     b = dungeon.branches[branch]
     if b.get('loot') is None:
         return None
@@ -245,9 +276,9 @@ def choose_loot_table(branch):
         return main.random_choice(b['loot'])
 
 def choose_weapon_material(loot_level=0):
-    roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 150))
+    roll = libtcodpy.random_get_int(0, 0, min(100 + 30 * loot_level, 150))
     if roll < 5:
-        return choose_weapon_material(loot_level + 5)
+        return choose_weapon_material(loot_level + 1)
     elif roll < 15:
         return 'wooden'
     elif roll < 30:
@@ -266,7 +297,7 @@ def choose_weapon_material(loot_level=0):
         return 'blightstone'
 
 def choose_armor_material(loot_level=0):
-    roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 150))
+    roll = libtcodpy.random_get_int(0, 0, min(100 + 30 * loot_level, 150))
     if roll > 100:
         ops = armor_materials.keys()
         return ops[libtcodpy.random_get_int(0,0,len(ops)-1)]
@@ -277,7 +308,7 @@ def choose_armor_material(loot_level=0):
 def choose_quality(loot_level=0):
     roll = libtcodpy.random_get_int(0, 0, min(100 + 20 * loot_level, 130))
     if roll < 5:
-        return choose_quality(loot_level + 5)
+        return choose_quality(loot_level + 1)
     elif roll < 10:
         return 'broken'
     elif roll < 20:
@@ -292,6 +323,27 @@ def choose_quality(loot_level=0):
         return 'masterwork'
     else:
         return 'artifact'
+
+elixir_life_ticker = 0
+elixir_stat_ticker = 0
+scroll_forge_ticker = 0
+
+def check_special_drop():
+    global elixir_life_ticker, elixir_stat_ticker, scroll_forge_ticker
+    elixir_stat_ticker += 1
+    scroll_forge_ticker += 1
+    elixir_life_ticker += 1
+    if main.roll_dice('1d500') <= elixir_life_ticker:
+        elixir_life_ticker = 0
+        return 'elixir_life'
+    elif main.roll_dice('1d350') <= elixir_stat_ticker:
+        elixir_stat_ticker = 0
+        return table['elixirs_0'][libtcodpy.random_get_int(0,0,len(table['elixirs_0']))-1]
+    elif main.roll_dice('1d200') <= scroll_forge_ticker:
+        scroll_forge_ticker = 0
+        return 'scroll_forge'
+    else:
+        return None
 
 item_categories = {
     'weapon' : { 'plural' : 'weapons' },
@@ -424,7 +476,7 @@ qualities = {
         'armor':{
             'evasion_bonus' : 2,
             'armor_bonus' : 1,
-            'weight' : -5,
+            'weight_bonus' : -5,
             'sh_max_bonus' : 10,
             'sh_recovery_bonus' : -3,
             'sh_raise_cost_bonus' : -5,

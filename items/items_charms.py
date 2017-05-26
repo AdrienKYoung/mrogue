@@ -9,7 +9,8 @@ table = {
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
         'on_use'        : charms.charm_resist,
-        'description'   : 'When infused with essence, this charm grants resistance to that type of essence.'
+        'description'   : 'When infused with essence, this charm grants resistance to that type of essence.',
+        'charges'       : 15,
     },
     'charm_raw' : {
         'name'          : 'Essence Crystal',
@@ -27,7 +28,8 @@ table = {
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
         'on_use'        : charms.shard_of_creation,
-        'description'   : 'A tiny mote of magical creation. Can be used to temporarily modify terrain.'
+        'description'   : 'A tiny mote of magical creation. Can be used to temporarily modify terrain.',
+        'charges'       : 5,
     },
     'charm_holy_symbol' : {
         'name'          : 'Holy Symbol',
@@ -36,7 +38,8 @@ table = {
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
         'on_use'        : charms.holy_symbol,
-        'description'   : 'A sacred symbol. While the knowledge of the devotion is lost, its magic is still potent.'
+        'description'   : 'A sacred symbol. While the knowledge of the devotion is lost, its magic is still potent.',
+        'charges'       : 10,
     },
     'charm_farmers_talisman' : {
         'name'          : "Farmer's Talisman",
@@ -45,7 +48,8 @@ table = {
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
         'on_use'        : charms.farmers_talisman,
-        'description'   : 'A simple good luck charm given by wife to husband.'
+        'description'   : 'A simple good luck charm given by wife to husband.',
+        'charges'       : 10,
     },
     'charm_primal_totem' : {
         'name'          : 'Primal Totem',
@@ -54,7 +58,8 @@ table = {
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
         'on_use'        : charms.primal_totem,
-        'description'   : 'A charm made from charred bone. It is said these battle charms were soaked in sacrificial blood.'
+        'description'   : 'A charm made from charred bone. It is said these battle charms were soaked in sacrificial blood.',
+        'charges'       : 5,
     },
     'charm_volatile_orb' : {
         'name'          : 'Volatile Orb',
@@ -63,7 +68,8 @@ table = {
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
         'on_use'        : charms.volatile_orb,
-        'description'   : 'A faintly vibrating sphere of polished marble. Streaks of color dance just beneath its milky surface.'
+        'description'   : 'A faintly vibrating sphere of polished marble. Streaks of color dance just beneath its milky surface.',
+        'charges'       : 5,
     },
     'charm_elementalists_lens' : {
         'name'          : "Elementalist's Lens",
@@ -72,7 +78,8 @@ table = {
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
         'on_use'        : charms.elementalists_lens,
-        'description'   : 'An intricate device of polished brass by which elementalists give life to essence itself.'
+        'description'   : 'An intricate device of polished brass by which elementalists give life to essence itself.',
+        'charges'       : 5,
     },
     'charm_prayer_beads' : {
         'name'          : "Prayer Beads",
@@ -81,6 +88,7 @@ table = {
         'char'          : chr(235),
         'color'         : libtcodpy.yellow,
         'on_use'        : charms.prayer_beads,
-        'description'   : 'A simple string of wooden beads, as carried by the monks of the Arang Mountains.'
+        'description'   : 'A simple string of wooden beads, as carried by the monks of the Arang Mountains.',
+        'charges'       : 10,
     },
 }

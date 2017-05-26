@@ -78,7 +78,7 @@ loadouts = {
             'weapon_dagger',
             'equipment_leather_armor',
             'glass_key',
-            'weapon_crossbow'
+            'weapon_crossbow',
         ],
         'description' : "Nimble melee fighter. Starts with excellent agility."
     },
@@ -90,19 +90,21 @@ loadouts = {
         'con':12,
         'inventory':[
             'charm_raw',
+            'equipment_cloth_robes',
         ],
         'description' : "Generalist class with great stats, especially spirit. Starts with no gear."
     },
     'fanatic' : {
         'str':13,
         'agi':9,
-        'int':10,
+        'int':20,
         'spr':10,
         'con':9,
         'inventory':[
-            ['book_lesser_death'],
+            ['book_lesser_death','book_lesser_radiance'],
             'charm_raw',
-            'weapon_coal_mace'
+            'weapon_coal_mace',
+            'equipment_cloth_robes',
         ],
         'description' : "Melee magic caster. Starts with a tome, no armor and a mace."
     },
@@ -167,7 +169,7 @@ def create(loadout):
         i = None
         prototype = item
         if not isinstance(item,basestring):
-            idx = ui.menu("Choose a starting item",[string.capwords(items.table()[a]['name']) for a in item],30,x_center=consts.SCREEN_WIDTH / 2)
+            idx = ui.menu("Choose a starting item",[string.capwords(items.table()[a]['name']) for a in item],30,x_center=main.SCREEN_WIDTH() / 2)
             if idx is None:
                 return 'cancelled'
             prototype = item[idx]
@@ -202,7 +204,7 @@ def handle_keys():
     else:
         key_char = None
 
-    if key.vk == libtcod.KEY_ENTER and key.lalt:
+    if key.vk == libtcod.KEY_ENTER and (key.lalt or key.shift):
         # Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
@@ -272,9 +274,7 @@ def handle_keys():
                     else:
                         return 'dropped-item'
             if key_char == 'c':
-                ui.msgbox('Character Information\n\nLevel: ' + str(instance.level) + '\n\nMaximum HP: ' +
-                       str(instance.fighter.max_hp),
-                       consts.CHARACTER_SCREEN_WIDTH)
+                ui.menu('Character Information', ['back'], render_func=ui.character_info_screen, width=50, x_center=main.SCREEN_WIDTH() / 2)
             if key_char == 'z':
                 return cast_spell()
             if key_char == 'v':
@@ -475,13 +475,16 @@ def pick_up_xp(xp, obj):
         check_level_up()
 
         instance.skill_point_progress += instance.player_stats.wiz
-        if instance.skill_point_progress >= 100:
-            ui.message('Your skills have increased.', libtcod.green)
-            instance.skill_points += 10
-            instance.skill_point_progress -= 100
-            purchase_skill()
+        check_skill_up()
 
         xp.destroy()
+
+def check_skill_up():
+    if instance.skill_point_progress >= 100:
+        ui.message('Your skills have increased.', libtcod.green)
+        instance.skill_points += 10
+        instance.skill_point_progress -= 100
+        purchase_skill()
 
 def check_level_up():
     next = consts.LEVEL_UP_BASE + instance.level * consts.LEVEL_UP_FACTOR
@@ -492,27 +495,31 @@ def check_level_up():
 def level_up():
 
     instance.level += 1
-    ui.message('You grow stronger! You have reached level ' + str(instance.level) + '!', libtcod.green)
+    ui.message('You have reached level ' + str(instance.level) + '!', libtcod.green)
     choice = None
-    while choice is None:
-        choice = ui.menu('Level up! Choose a stat to raise:\n', [
-            'Constitution',
-            'Strength',
-            'Agility',
-            'Intelligence',
-            'Wisdom'
-         ], consts.LEVEL_SCREEN_WIDTH)
+    opts = collections.OrderedDict()
+    opts['c'] = {'option' : { 'text' : 'Constitution' }, 'description' :
+        'Raising your Constitution increases the amount of max hp you earn each time you level up.'}
+    opts['s'] = {'option' : { 'text' : 'Strength' }, 'description' :
+        'Strength is required to wield heavy weapons and armor. Increased Strength will also cause your physical '
+        'attacks to deal more damage.'}
+    opts['a'] = {'option' : { 'text' : 'Agility' }, 'description' :
+        'Agility increases your evasion and your attack speed, which gives you a chance to attack multiple times in a '
+        'single turn.'}
+    opts['i'] = {'option' : { 'text' : 'Intelligence' }, 'description' :
+        'Intelligence is required to cast spells and increases the potency of your magic.'}
+    opts['w'] = {'option' : { 'text' : 'Wisdom' }, 'description' :
+        'Wisdom increases the rate at which you acquire Skill Points, as well as increasing the amount of essence you '
+        'can hold.'}
 
-    if choice == 0:
-        instance.player_stats.con += 1
-    elif choice == 1:
-        instance.player_stats.str += 1
-    elif choice == 2:
-        instance.player_stats.agi += 1
-    elif choice == 3:
-        instance.player_stats.int += 1
-    elif choice == 4:
-        instance.player_stats.wiz += 1
+    while choice is None:
+        choice = ui.menu_ex('Level up! Choose a stat to raise:', opts, ui.LEVEL_SCREEN_WIDTH, return_as_char=True)
+
+    if choice == 'c': gain_con()
+    elif choice == 's': gain_str()
+    elif choice == 'a': gain_agi()
+    elif choice == 'i': gain_int()
+    elif choice == 'w': gain_wis()
 
     hp_growth = instance.player_stats.con / 2
     if instance.player_stats.con % 2 == 1:
@@ -522,6 +529,33 @@ def level_up():
     instance.fighter.hp += hp_growth
 
     instance.fighter.heal(int(instance.fighter.max_hp * consts.LEVEL_UP_HEAL))
+
+def gain_con():
+    instance.player_stats.con += 1
+    instance.fighter.max_hp += int(instance.level / 2)
+    ui.message('You grow more resilient.', libtcod.green)
+
+def gain_str():
+    instance.player_stats.str += 1
+    ui.message('You grow stronger.', libtcod.green)
+
+def gain_agi():
+    instance.player_stats.agi += 1
+    ui.message('You grow more agile.', libtcod.green)
+
+def gain_int():
+    instance.player_stats.int += 1
+    ui.message('You grow more intelligent.', libtcod.green)
+
+def gain_wis():
+    instance.player_stats.wiz += 1
+    instance.skill_point_progress += instance.level
+    ui.message('You grow wiser.', libtcod.green)
+    check_skill_up()
+
+def full_heal():
+    if instance.fighter is not None:
+        actions.heal(100, True)
 
 def purchase_skill():
     learned_skills = main.learned_skills
@@ -547,12 +581,23 @@ def purchase_skill():
             ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
 def on_death(instance):
-    if instance.fighter.has_status('auto-res'):
+    if instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
+        rings = main.get_equipped_in_slot(instance.fighter.inventory, 'ring')
+        broken = None
+        for r in rings:
+            if r.equipment.base_id == 'equipment_ring_of_salvation':
+                broken = r.equipment
+                break
+        broken.dequip(no_message=True)
+        instance.fighter.inventory.remove(broken.owner)
+        ui.message('Your ring of salvation flashes with a blinding white light, then shatters. Your wounds are healed.', spells.essence_colors['radiance'])
+        instance.fighter.heal(instance.fighter.max_hp)
+    elif instance.fighter.has_status('auto-res'):
         instance.fighter.remove_status('auto-res')
         instance.fighter.heal(instance.fighter.max_hp)
         ui.message("Not today, death.", libtcod.green)
     else:
-        ui.message("You're dead, sucka.", libtcod.dark_red)
+        ui.message("You died.", libtcod.dark_red)
         main.game_state = 'dead'
         instance.char = '%'
         instance.color = libtcod.darker_red
@@ -861,6 +906,9 @@ def on_tick(this):
     for ability in abilities.default_abilities.values():
         ability.on_tick()
 
+    if instance.fighter.hp < 25:
+        instance.fighter.heal(instance.fighter.item_equipped_count('equipment_ring_of_tenacity'))
+
 def on_get_hit(this,other,damage):
     if main.has_skill('heir_to_the_heavens'):
         if not hasattr(instance,'heir_to_the_heavens_cd'):
@@ -869,6 +917,7 @@ def on_get_hit(this,other,damage):
             if actions.summon_guardian_angel() != 'failed':
                 instance.heir_to_the_heavens_cd = 70
                 instance.fighter.apply_status_effect(effects.invulnerable(1),True)
+
     if main.has_skill('adrenaline'):
         health_percentage = float(instance.fighter.hp) / float(instance.fighter.max_hp)
         adrenaline_chance = (1.0 - health_percentage) * 0.75
@@ -876,9 +925,16 @@ def on_get_hit(this,other,damage):
             instance.fighter.adjust_stamina(10)
             ui.message('You feel a surge of adrenaline!', libtcod.light_yellow)
 
+    if instance.fighter is not None:
+        rage_count = instance.fighter.item_equipped_count('equipment_ring_of_rage')
+        if main.roll_dice('1d20') <= rage_count:
+            instance.fighter.apply_status_effect(effects.berserk())
+        if other is not None and other.fighter is not None:
+            if main.roll_dice('1d20') <= instance.fighter.item_equipped_count('equipment_ring_of_vengeance'):
+                other.fighter.apply_status_effect(effects.cursed())
+
 def on_get_kill(this,other,damage):
-    return
-    this.fighter.has_item_equipped()
+    this.fighter.heal(this.fighter.item_equipped_count('equipment_ring_of_vampirism') * 2)
 
 def get_abilities():
     import abilities

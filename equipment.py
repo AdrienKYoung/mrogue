@@ -30,7 +30,7 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
-                 resistances=[], modifiers = {}, base_id=None, _range=1,
+                 resistances=[], immunities=[], modifiers = {}, base_id=None, _range=1,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
                  sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0):
         self.is_equipped = False
@@ -53,6 +53,7 @@ class Equipment:
         self._armor_bonus = armor_bonus
         self._evasion_bonus = evasion_bonus
         self._resistances = list(resistances)
+        self._immunities = list(immunities)
 
         self._sh_max = sh_max
         self._sh_recovery = sh_recovery
@@ -114,6 +115,7 @@ class Equipment:
 
     @property
     def weight(self):
+        if self._weight < 0: return self._weight
         return max(self._weight + self.get_bonus('weight_bonus'),0)
 
     @property
@@ -143,6 +145,10 @@ class Equipment:
     @property
     def resistances(self):
         return self._resistances + [mod.get('resistance') for mod in self.modifiers.values() if mod.get('resistance') is not None]
+
+    @property
+    def immunities(self):
+        return self._immunities + [mod.get('resistance') for mod in self.modifiers.values() if mod.get('immunities') is not None]
 
     @property
     def strength_dice_bonus(self):
@@ -248,7 +254,7 @@ class Equipment:
 
         self.is_equipped = True
         if self.holder is player.instance and not no_message:
-            ui.message('Equipped ' + self.owner.name + ' on ' + self.slot + '.', libtcod.orange)
+            ui.message('Equipped ' + self.owner.name + '.', libtcod.orange)
         return 'success'
 
     def dequip(self, no_message=False):
@@ -257,6 +263,11 @@ class Equipment:
             if self.holder is player.instance:
                 ui.message('You cannot remove your shield until it is raised.', libtcod.gray)
             return 'cancelled'
+        if self.holder is player.instance:
+            weight_after = self.holder.fighter.equip_weight - self.weight
+            if weight_after > self.holder.fighter.max_equip_weight:
+                ui.message('Removing that would cause your equipment to overburden you.', libtcod.gray)
+                return 'cancelled'
         self.is_equipped = False
         if not no_message and self.holder is player.instance:
             ui.message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
@@ -332,7 +343,7 @@ class Equipment:
         if self.sh_raise_cost > 0:
             libtcod.console_print(console, x, y + print_height, 'Raise Cost: ' + str(self.sh_raise_cost))
             print_height += 1
-        if self.weight > 0:
+        if self.weight != 0:
             libtcod.console_print(console, x, y + print_height, 'Weight: ' + str(self.weight))
             print_height += 1
         if self.break_chance > 0:
@@ -345,7 +356,7 @@ class Equipment:
         if self.ctrl_attack_desc:
             libtcod.console_set_default_foreground(console, libtcod.azure)
             text = 'Ctrl+attack: ' + self.ctrl_attack_desc
-            h = libtcod.console_get_height_rect(console, x, y + print_height, width, consts.SCREEN_HEIGHT, text)
+            h = libtcod.console_get_height_rect(console, x, y + print_height, width, main.SCREEN_HEIGHT, text)
             libtcod.console_print_rect(console, x, y + print_height + 1, width, h, text)
             print_height += h + 1
             libtcod.console_set_default_foreground(console, libtcod.white)

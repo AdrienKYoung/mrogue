@@ -1,9 +1,10 @@
 import libtcodpy
 import actions
 import spells
+import player
 
 table = {
-    #Scrolls
+    # Scrolls
     'scroll_forge': {
         'name' : 'Scroll of Forging',
         'category' : 'scroll',
@@ -24,16 +25,7 @@ table = {
                           ' but breaks in the process.'
     },
 
-    'treasure_bejeweled_chalice': {
-        'name'          : 'bejeweled chalice',
-        'category'      : 'treasure',
-        'char'          : '$',
-        'color'         : libtcodpy.yellow,
-        'type'          : 'item',
-        'description'   : 'A golden chalice, encrusted with precious jewels. Mundane, but valuable.'
-    },
-
-# GEMS
+    # Gems
     'gem_lesser_fire': {
         'name'          : 'Rough Ruby',
         'type'          : 'item',
@@ -116,7 +108,7 @@ table = {
         'description'   : 'The essence of dark envelops this gemstone. Absorbing it will bestow a single dark essence.'
     },
 
-#Essence
+    # Essence
     'essence_fire' : {
         'category' : 'essence',
         'essence_type' : 'fire'
@@ -158,23 +150,70 @@ table = {
         'essence_type' : 'void'
     },
 
-'scroll_fireball': {
-        'name'          : 'Scroll of Fireball',
-        'category'      : 'scroll',
-        'char'          : '#',
-        'on_use'        : actions.fireball,
-        'color'         : libtcodpy.yellow,
+    # Elixirs
+    'elixir_con' : {
+        'name'          : 'Elixir of Constitution',
         'type'          : 'item',
-        'description'   : 'Fires a flaming projectile at a target that explodes on impact'
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : player.gain_con,
+        'description'   : 'A small vial of swirling orange liquid. Drinking this elixir will permanently increase your Constitution.'
+    },
+    'elixir_str' : {
+        'name'          : 'Elixir of Strength',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : player.gain_str,
+        'description'   : 'A small vial of swirling red liquid. Drinking this elixir will permanently increase your Strength.'
+    },
+    'elixir_agi' : {
+        'name'          : 'Elixir of Agility',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : player.gain_agi,
+        'description'   : 'A small vial of swirling green liquid. Drinking this elixir will permanently increase your Agility.'
+    },
+    'elixir_int' : {
+        'name'          : 'Elixir of Intelligence',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : player.gain_int,
+        'description'   : 'A small vial of swirling blue liquid. Drinking this elixir will permanently increase your Intelligence.'
+    },
+    'elixir_wis' : {
+        'name'          : 'Elixir of Wisdom',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : player.gain_wis,
+        'description'   : 'A small vial of swirling white liquid. Drinking this elixir will permanently increase your Wisdom.'
+    },
+    'elixir_life' : {
+        'name'          : 'Elixir of Life',
+        'type'          : 'item',
+        'category'      : 'potion',
+        'char'          : '!',
+        'color'         : libtcodpy.yellow,
+        'on_use'        : player.full_heal,
+        'description'   : 'A small vial of swirling golden liquid. Drinking this elixir will heal you to full health.'
     },
 
-    'scroll_confusion': {
-        'name'          : 'Scroll of Confusion',
-        'category'      : 'scroll',
-        'char'          : '#',
-        'color'         : libtcodpy.yellow,
-        'on_use'        : actions.confuse,
-        'type'          : 'item',
-        'description'   : 'Inflicts confusion on an enemy, causing them to move about erratically.'
+    # Treasure
+
+    'treasure_bejeweled_chalice': {
+        'name': 'bejeweled chalice',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'A golden chalice, encrusted with precious jewels. Mundane, but valuable.'
     },
 }

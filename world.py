@@ -119,7 +119,6 @@ def initialize_world():
     new_map.add_link(world_maps['gtunnels_2_0'], 'west')
     world_maps[new_map.name] = new_map
     world_maps['gtunnels_2_2'].add_link(world_maps['gtunnels_2_1'], 'north')
-    world_maps['gtunnels_2_1'].add_link(world_maps['gtunnels_1_1'], 'west')
     world_maps['gtunnels_1_2'].add_link(world_maps['marsh_2_0'], 'up')
     world_maps['gtunnels_3_2'].add_link(world_maps['badlands_0_1'], 'up')
 

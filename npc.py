@@ -71,7 +71,9 @@ data = {
             'shop_1':{
                 'text':"I'll give you one of these for something nice.",
                 'options': {
-                    'holy symbol':lambda: ui.buy('charm_holy_symbol','treasure','success_1','greeting_1'),
+                    'Holy Symbol':lambda: ui.buy('charm_holy_symbol','treasure','success_1','greeting_1'),
+                    'Prayer Beads':lambda: ui.buy('charm_prayer_beads','treasure','success_1','greeting_1'),
+                    'Elixir of Life':lambda: ui.buy('elixir_life','treasure','success_1','greeting_1'),
                     'Back':'greeting_1'
                 }
             },

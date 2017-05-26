@@ -15,7 +15,6 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import libtcodpy as libtcod
-import effects
 import actions
 
 class Spell:
@@ -30,7 +29,7 @@ class Spell:
     def max_spell_charges(self,level):
         import game
         base = self.levels[level-1]['charges']
-        return int(base + base * game.skill_value('sorcery'))
+        return int(base + round(float(base) * game.skill_value('sorcery')))
 
 def is_max_level(spell,level):
     return len(library[spell].levels) == level
@@ -364,7 +363,7 @@ library = {
     'spell_shackles_of_the_dead' : Spell(
         'shackles of the dead',
         actions.shackles_of_the_dead,
-        'Curse a target, decreasing its armor, spell resist and evasion',
+        'Create a zone of ghostly chains that immobilize targets.',
         [
             {'stamina_cost':40,'charges':1},
             {'stamina_cost':30,'charges':2},
@@ -393,6 +392,64 @@ library = {
             {'stamina_cost':40,'charges':2}
         ],
         19
+    ),
+
+    'spell_bless' : Spell(
+        'bless',
+        actions.bless,
+        'Consecrate yourself, increasing your armor, spell power, and spell resist',
+        [
+            {'stamina_cost':25,'charges':1},
+            {'stamina_cost':20,'charges':2},
+            {'stamina_cost':15,'charges':3}
+        ],
+        10
+    ),
+
+    'spell_smite' : Spell(
+        'smite',
+        actions.smite,
+        'Call down righteous fury on a target. Inflicts judgement on the target, and stuns undead and feindish foes.',
+        [
+            {'stamina_cost':40,'charges':2},
+            {'stamina_cost':35,'charges':3},
+            {'stamina_cost':30,'charges':4}
+        ],
+        12
+    ),
+
+    'spell_castigate' : Spell(
+        'castigate',
+        actions.castigate,
+        'Utter a prayer of righteous anger, branding nearby foes with judgement.',
+        [
+            {'stamina_cost':30,'charges':1},
+            {'stamina_cost':30,'charges':2},
+        ],
+        14
+    ),
+
+    'spell_blessed_aegis' : Spell(
+        'blessed aegis',
+        actions.blessed_aegis,
+        "Summon a a radiant shield to deflect attacks",
+        [
+            {'stamina_cost':40,'charges':1},
+            {'stamina_cost':30,'charges':2},
+        ],
+        16
+    ),
+
+    'spell_holy_lance' : Spell(
+        'holy lance',
+        actions.holy_lance,
+        'Call down an angelic lance on a target area to deal massive damage.',
+        [
+            {'stamina_cost':70,'charges':1},
+            {'stamina_cost':65,'charges':1},
+            {'stamina_cost':60,'charges':2}
+        ],
+        20
     ),
 
     'spell_green_touch' : Spell(

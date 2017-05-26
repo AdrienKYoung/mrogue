@@ -24,7 +24,7 @@ import spells
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
                  attack_power_mod=1.0,armor_mod=1.0,shred_mod=1.0,pierce_mod=1.0,attack_speed_mod=1.0,evasion_mod=1.0,spell_power_mod=1.0, spell_resist_mod=1.0,
-                 accuracy_mod=1.0, resistance_mod=[],weakness_mod=[], stacks=1, description='', cleanseable=True):
+                 accuracy_mod=1.0, resistance_mod=[], weakness_mod=[], immunity_mod=[], stacks=1, description='', cleanseable=True):
         self.name = name
         self.time_limit = time_limit
         self.color = color
@@ -41,6 +41,7 @@ class StatusEffect:
         self.spell_power_mod = spell_power_mod
         self.spell_resist_mod = spell_resist_mod
         self.resistance_mod = resistance_mod
+        self.immunity_mod = immunity_mod
         self.weakness_mod = weakness_mod
         self.accuracy_mod = accuracy_mod
         self.stacking_behavior = stacking_behavior
@@ -65,7 +66,7 @@ def cursed(duration = 10):
 
 def stunned(duration = 1):
     return StatusEffect('stunned',duration,libtcod.red, message="You have been stunned!",
-                        description='This unit cannot act.')
+                        description='This unit cannot act.', stacking_behavior='ignore')
 
 def frozen(duration = 1):
     return StatusEffect('frozen',duration,spells.essence_colors['cold'], message="You have been frozen solid!",
@@ -81,7 +82,7 @@ def immobilized(duration = 5):
                         description='This unit cannot move.', cleanseable=True)
 
 def berserk(duration = 20):
-    return StatusEffect('berserk',duration,libtcod.red, on_end=berserk_end, attack_power_mod=1.5,
+    return StatusEffect('berserk',duration,libtcod.red, on_end=berserk_end, attack_power_mod=1.5, stacking_behavior='refresh',
                         message="You are overcome by rage!",
                         description='This unit attacks harder and faster.')
 
@@ -138,6 +139,10 @@ def serenity(duration=30):
     return StatusEffect('serenity', duration, libtcod.light_blue, evasion_mod=1.5, accuracy_mod=1.5,
                         message='Your mind becomes calm.',
                         description='This unit has increased evasion and accuracy.', cleanseable=False)
+
+def blessed(duration=20):
+    return StatusEffect('blessed', duration, libtcod.light_blue, armor_mod=1.5, spell_power_mod=1.25, spell_resist_mod=1.5,
+                        message="You are blessed by radiance!", description="This unit has increased armor, spell resist, and spell power")
 
 def blinded(duration=10):
     return StatusEffect('serenity', duration, libtcod.light_blue, accuracy_mod=0.35,

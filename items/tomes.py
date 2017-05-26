@@ -2,7 +2,7 @@ import libtcodpy
 import spells
 
 table = {
-'book_lesser_fire' : {
+    'book_lesser_fire' : {
         'name'          : 'Lesser Book of Fire',
         'category'      : 'book',
         'char'          : '#',
@@ -77,6 +77,33 @@ table = {
             'spell_hex', 'spell_defile', 'spell_hex', 'spell_shackles_of_the_dead', 'spell_defile', 'spell_sacrifice',
             'spell_corpse_dance', 'spell_hex','spell_defile', 'spell_shackles_of_the_dead',
             'spell_corpse_dance', 'spell_sacrifice', 'spell_corpse_dance'
+        ],
+        'level_costs': [
+            1,1,1,2,2,2,3,3,3,3,4,4,4
+        ]
+    },
+
+    'book_lesser_radiance' : {
+        'name'          : 'The Way of the Righteous',
+        'category'      : 'book',
+        'char'          : '#',
+        'color'         : spells.essence_colors['radiance'],
+        'type'          : 'item',
+        'slot'          : 'left hand',
+        'description'   : 'A book of blessed radiance magic. It is adorned with an icon of The Martyr.',
+        'essence': 'radiance',
+        'level' : 1,
+        'spells': [
+            'spell_bless',
+            'spell_smite',
+            'spell_castigate',
+            'spell_blessed_aegis',
+            'spell_holy_lance'
+        ],
+        'levels': [
+            'spell_bless', 'spell_smite', 'spell_bless', 'spell_castigate', 'spell_smite', 'spell_blessed_aegis',
+            'spell_holy_lance', 'spell_bless','spell_smite', 'spell_castigate',
+            'spell_holy_lance', 'spell_blessed_aegis', 'spell_holy_lance'
         ],
         'level_costs': [
             1,1,1,2,2,2,3,3,3,3,4,4,4
