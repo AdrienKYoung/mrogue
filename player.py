@@ -204,7 +204,7 @@ def handle_keys():
     else:
         key_char = None
 
-    if key.vk == libtcod.KEY_ENTER and key.lalt:
+    if key.vk == libtcod.KEY_ENTER and (key.lalt or key.shift):
         # Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
