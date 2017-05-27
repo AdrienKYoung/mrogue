@@ -313,6 +313,28 @@ def web_bomb(actor=None, target=None):
         return 'success'
     return 'cancelled'
 
+def on_death_summon_meta(name,ttl=None,message=None):
+    return lambda obj: _on_death_summon_meta(obj,name,ttl,message)
+
+def _on_death_summon_meta(obj,name,ttl,message):
+    ui.message('%s is dead!' % syntax.name(obj).capitalize(), libtcod.red)
+    main.current_map.fighters.remove(obj)
+    obj.fighter = None
+    obj.destroy()
+
+    if message is not None:
+        ui.message(message)
+
+    monster = main.spawn_monster(name, obj.x, obj.y)
+    monster.fighter.apply_status_effect(effects.stunned(1)) #summoning sickness
+    if ttl is not None:
+        monster.summon_time = ttl
+
+    if ui.selected_monster is obj:
+        main.changed_tiles.append((obj.x, obj.y))
+        ui.selected_monster = None
+        ui.auto_target_monster()
+
 def raise_zombie(actor=None, target=None):
     if actor is None:
         actor = player.instance
@@ -1450,6 +1472,10 @@ def ignite():
 def on_hit_judgement(attacker, target, damage):
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('2d6')))
+
+def on_hit_rot(attacker, target, damage):
+    if target.fighter is not None:
+        target.fighter.apply_status_effect(effects.rot())
 
 def pickaxe_dig(dx, dy):
     result = dig(player.instance.x + dx, player.instance.y + dy)

@@ -122,7 +122,7 @@ class Fighter:
             self.stamina = self.max_stamina
 
     def take_damage(self, damage, attacker=None, affect_shred=True, blockable=False):
-        if self.has_status('invulnerable'):
+        if self.has_status('invulnerable') or self.has_attribute('attribute_invulnerable'):
             if self.owner is player.instance or fov.player_can_see(self.owner.x, self.owner.y):
                 ui.message('%s %s protected by a radiant shield!' %
                            (syntax.name(self.owner).capitalize(),
@@ -292,7 +292,7 @@ class Fighter:
                     removed_effects.append(effect)
         for effect in removed_effects:
             if effect.on_end is not None:
-                effect.on_end(self.owner)
+                effect.on_end(effect,self.owner)
             if effect in self.status_effects:  # It can sometimes be removed in the on-tick function
                 self.status_effects.remove(effect)
 
@@ -345,7 +345,7 @@ class Fighter:
         if add_effect:
             self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
-            new_effect.on_apply(self.owner)
+            new_effect.on_apply(new_effect,self.owner)
         if new_effect.message is not None and self.owner is player.instance and not supress_message:
             ui.message(new_effect.message, new_effect.color)
 

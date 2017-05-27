@@ -64,6 +64,7 @@ branches = {
             {'encounter':['monster_goblin','monster_goblin_warrior'],'party':'2d3'},
             {'encounter':['monster_snow_kite']},
             {'encounter':['monster_necroling']},
+            {'encounter':['monster_plague_wight']},
             {'encounter':['monster_witch']},
             {'encounter':['monster_necroling', 'monster_goblin'], 'party':'1d3+3'},
             {'encounter':['monster_infested_treant']},
