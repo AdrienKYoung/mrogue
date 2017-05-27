@@ -867,19 +867,19 @@ def corpse_dance(actor=None,target=None):
         if x is None: return 'cancelled'
         actor = player.instance
     else:
-        x = target.x
-        y = target.y
+        x = actor.x
+        y = actor.y
 
-    for (_x, _y) in main.adjacent_tiles_diagonal(x, y):
-        objects = main.get_objects(_x,_y,None,spell['radius'])
-        for o in objects:
-            if o is not None and o.is_corpse:
-                main.raise_dead(actor,o)
+    ui.render_explosion(x, y, spell['radius'], libtcod.violet, libtcod.light_yellow)
+    ui.message("{} calls the dead to dance!".format(syntax.conjugate(actor is player.instance,["You",actor.name.capitalize()])))
 
-        obj = main.get_monster_at_tile(_x, _y)
-        if obj is not None and obj.fighter.team == 'ally' and obj.fighter.subtype == 'undead':
-            obj.fighter.apply_status_effect(effects.swiftness(spell['buff_duration']))
-            obj.fighter.apply_status_effect(effects.berserk(spell['buff_duration']))
+    for o in main.get_objects(x,y,None,spell['radius']):
+        if o is not None and o.is_corpse:
+            main.raise_dead(actor,o)
+
+        if o.fighter is not None and o.fighter.team == actor.fighter.team and o.fighter.subtype == 'undead':
+            o.fighter.apply_status_effect(effects.swiftness(spell['buff_duration']))
+            o.fighter.apply_status_effect(effects.berserk(spell['buff_duration']))
     return 'success'
 
 def bless(actor=None, target=None):

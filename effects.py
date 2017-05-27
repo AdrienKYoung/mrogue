@@ -119,9 +119,9 @@ def confusion(duration = 10):
     return StatusEffect('confusion', duration, libtcod.red, message="Madness takes hold of your mind!",
                         description='This unit spends its turn moving erratically.')
 
-def silence(duration=3):
+def silence(duration=7):
     return StatusEffect('silence', duration, libtcod.red, message="You have been silenced!",
-                        description='This unit cannot cast spells.')
+                        description='This unit cannot cast spells.', stacking_behavior='ignore')
 
 def rot(duration = -1):
     return StatusEffect('rot', duration, libtcod.red, message="Your flesh rots away!", on_apply=rot_apply,

@@ -425,6 +425,16 @@ class Fighter:
                     a.append(item.owner.item.ability)
             return a
 
+    def add_ability(self,ability):
+        if self.owner is player.instance:
+            raise Exception("Not implemented for player")
+        else:
+            if hasattr(ability,'__iter__'):
+                for a in ability:
+                    self._abilities.append(a)
+            else:
+                self._abilities.append(ability)
+
     @property
     def shield(self):
         sh = self.get_equipped_shield()
@@ -684,7 +694,7 @@ damage_description_tables = {
         ('disintegrate', 'disintegrates'),
     ],
     'death': [
-        ('curse','curse'),
+        ('curse','curses'),
         ('defile', 'defiles'),
         ('torment', 'torments')
     ]

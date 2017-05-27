@@ -210,7 +210,7 @@ data = {
     'ability_heat_ray': {
         'name': 'heat ray',
         'function': actions.heat_ray,
-        'cooldown': 5,
+        'cooldown': 2,
         'element':'fire',
         'dice' : 1,
         'base_damage' : '3d4',
@@ -242,7 +242,7 @@ data = {
     'ability_arcane_arrow': {
         'name': 'arcane arrow',
         'function': actions.arcane_arrow,
-        'cooldown': 0,
+        'cooldown': 2,
         'element':'lightning',
         'dice' : 1,
         'base_damage' : '3d6',
@@ -265,7 +265,7 @@ data = {
     'ability_frozen_orb': {
         'name': 'frozen orb',
         'function': actions.frozen_orb,
-        'cooldown': 10,
+        'cooldown': 3,
         'element':'cold',
         'dice' : 2,
         'base_damage' : '3d4',
@@ -285,8 +285,8 @@ data = {
 
     'ability_ice_shards': {
         'name': 'ice shards',
-        'function': actions.magma_bolt,
-        'cooldown': 10,
+        'function': actions.ice_shards,
+        'cooldown': 4,
         'element':'cold',
         'dice' : 1,
         'base_damage' : '1d8',
@@ -296,7 +296,7 @@ data = {
 
     'ability_snowstorm': {
         'name': 'snowstorm',
-        'function': actions.magma_bolt,
+        'function': actions.snowstorm,
         'cooldown': 10,
         'element':'cold',
         'dice' : 1,
@@ -329,7 +329,7 @@ data = {
     'ability_defile': {
         'name': 'defile',
         'function': actions.defile,
-        'cooldown': 10,
+        'cooldown': 5,
         'element':'death',
         'dice' : 1,
         'base_damage' : '2d8',

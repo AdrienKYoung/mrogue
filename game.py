@@ -202,6 +202,11 @@ class GameObject:
         self.zombie_type = zombie_type
         self.npc = npc
 
+    def change_behavior(self,behavior):
+        self.behavior.behavior = behavior
+        self.behavior.owner = self
+        self.behavior.behavior.owner = self
+
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, SCREEN_HEIGHT(), self.description)
         draw_height = y
@@ -354,7 +359,7 @@ class GameObject:
 
     def player_can_see(self):
         if self.fighter is not None and self.fighter.stealth is not None and player.instance.distance_to(
-                self) > self.fighter.stealth:
+                self) >= self.fighter.stealth:
             return False
         else:
             return fov.player_can_see(self.x, self.y)
@@ -1205,9 +1210,11 @@ def spawn_monster(name, x, y, team='enemy'):
                     team=p.get('team', team),
                     stealth=p.get('stealth'),
                     _range=p.get('range',1))
-        if p.get('attributes'):
-            fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
-            fighter_component.attributes = [a for a in p['attributes'] if a.startswith('attribute_')]
+
+        attributes = roll_monster_abilities(p.get('attributes'))
+        if len(attributes) > 0:
+            fighter_component._abilities = ([create_ability(a) for a in attributes if a.startswith('ability_')])
+            fighter_component.attributes = [a for a in attributes if a.startswith('attribute_')]
 
         behavior = None
         if p.get('ai'):
@@ -1236,7 +1243,12 @@ def spawn_monster(name, x, y, team='enemy'):
         if p.get('essence'):
             monster.essence = p.get('essence')
         monster.elevation = current_map.tiles[x][y].elevation
-        current_map.add_object(monster)
+        if not 'attribute_ambush' in fighter_component.attributes:
+            current_map.add_object(monster)
+        else:
+            monster.blocks = False
+            monster.blocks_sight = False
+            current_map.objects.append(monster)
         return monster
     return None
 
@@ -1257,6 +1269,16 @@ def spawn_monster_inventory(proto,loot_level=-1):
                     result.append(create_item(equip))
     return result
 
+def roll_monster_abilities(proto):
+    result = []
+    if proto:
+        for slot in proto:
+            if isinstance(slot,dict):
+                result.append(random_choice(slot))
+            else:
+                result.append(slot)
+
+    return result
 
 def spawn_npc(name,x,y):
     import npc
@@ -1609,6 +1631,22 @@ def find_random_open_tile():
     return open[libtcod.random_get_int(0, 0, len(open) - 1)]
 
 
+def spawn_encounter(tiles,encounter,position,count=None):
+    if count is not None:
+        for i in range(count):
+            loc = find_closest_open_tile(position[0], position[1])
+            if loc is not None and loc in tiles:
+                spawn_monster(encounter['encounter'][libtcod.random_get_int(0, 0, len(encounter['encounter']) - 1)], loc[0],
+                              loc[1])
+                tiles.remove(loc)
+                if len(tiles) == 0:
+                    return
+    else:
+        for m in encounter['encounter']:
+            loc = find_closest_open_tile(position[0], position[1])
+            if loc is not None:
+                spawn_monster(m, loc[0], loc[1])
+
 def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
     if len(tiles) == 0:
         return
@@ -1628,13 +1666,7 @@ def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
             if encounter.get('party') is not None:
                 size = roll_dice(encounter['party'])
 
-            for i in range(size):
-                loc = find_closest_open_tile(random_pos[0],random_pos[1])
-                if loc is not None and loc in tiles:
-                    spawn_monster(encounter['encounter'][libtcod.random_get_int(0,0,len(encounter['encounter'])-1)], loc[0], loc[1])
-                    tiles.remove(loc)
-                    if len(tiles) == 0:
-                        return
+            spawn_encounter(tiles,encounter,random_pos,size)
 
     for i in range(loot_count):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]

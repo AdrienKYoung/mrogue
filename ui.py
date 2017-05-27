@@ -592,7 +592,7 @@ def render_side_panel(acc_mod=1.0):
     # Objects here
     libtcod.console_print(side_panel, 2, drawHeight, 'Objects here:')
     drawHeight += 1
-    objects_here = main.get_objects(player.instance.x, player.instance.y, lambda o: o is not player.instance)
+    objects_here = main.get_objects(player.instance.x, player.instance.y, lambda o: o is not player.instance and o.player_can_see())
     if len(objects_here) > 0:
         end = min(len(objects_here), 7)
         if len(objects_here) == 8:

@@ -61,6 +61,26 @@ def aggro_on_hit(monster, attacker):
         monster.behavior.behavior.wander_destination = attacker.x, attacker.y
         monster.behavior.ai_state = 'wandering'
 
+class AI_Ambush:
+    def __init__(self, radius, timer):
+        self.active = False
+        self.radius = radius
+        self.timer = timer
+
+    def act(self, ai_state):
+        monster = self.owner
+        if self.active:
+            self.timer -= 1
+            if self.timer <= 0:
+                monster.change_behavior(AI_Default())
+                monster.behavior.ai_state = 'pursuing'
+                monster.fighter.stealth = None
+                monster.blocks = True
+                monster.blocks_sight = True
+                game.current_map.fighters.append(monster)
+        elif game.distance(monster.x,monster.y,player.instance.x,player.instance.y) <= self.radius:
+                self.active = True
+        return 1
 
 class AI_Default:
 
