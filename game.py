@@ -955,11 +955,9 @@ def scum_glob_death(glob):
 
 
 def blastcap_explode(blastcap):
-    global changed_tiles
-
     blastcap.fighter = None
     current_map.fighters.remove(blastcap)
-    ui.render_explosion(blastcap.x, blastcap.y, 1, libtcod.gold, libtcod.white)
+    ui.render_explosion(blastcap.x, blastcap.y, 1, libtcod.gold, libtcod.white, distance_h='manhattan')
     ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
     for obj in current_map.fighters:
         if is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
@@ -1261,14 +1259,18 @@ def spawn_monster_inventory(proto,loot_level=-1):
         for slot in proto:
             equip = random_choice(slot)
             if equip != 'none':
-                if 'weapon' in equip:
-                    result.append(
-                        create_item(equip, material=loot.choose_weapon_material(loot_level), quality=loot.choose_quality(loot_level)))
+                p = items.table()[equip]
+                if p.get('allowed_materials') is not None:
+                    material = p.get('allowed_materials')[libtcod.random_get_int(0, 0, len(p.get('allowed_materials')) - 1)]
+                elif 'weapon' in equip:
+                    material = loot.choose_weapon_material(loot_level)
                 elif 'equipment' in equip:
-                    result.append(
-                        create_item(equip, material=loot.choose_armor_material(loot_level), quality=loot.choose_quality(loot_level)))
+                    material = loot.choose_armor_material(loot_level)
                 else:
                     result.append(create_item(equip))
+                    continue
+                result.append(create_item(equip, material=material, quality=loot.choose_quality(loot_level)))
+
     return result
 
 def roll_monster_abilities(proto):
@@ -1832,10 +1834,10 @@ def render_all():
 
 
 def render_main_menu_splash():
-    img = libtcod.image_load('menu_background.png')
+    #img = libtcod.image_load('menu_background.png')
     libtcod.console_set_default_background(0, libtcod.black)
     libtcod.console_clear(0)
-    libtcod.image_blit_2x(img, 0, 0, 0)
+    #libtcod.image_blit_2x(img, 0, 0, 0)
     libtcod.console_set_default_foreground(0, libtcod.light_yellow)
     libtcod.console_print_ex(0, SCREEN_WIDTH() / 2, SCREEN_HEIGHT() / 2 - 8, libtcod.BKGND_NONE,
                              libtcod.CENTER,
@@ -1857,8 +1859,8 @@ def enter_map(world_map, direction=None):
 
     if current_map is not None:
         clear_map()
-        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y)
-        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, SCREEN_WIDTH() - consts.MAP_WIDTH, ui.MAP_VIEWPORT_Y)
+        libtcod.console_clear(ui.overlay)
+        libtcod.console_blit(ui.overlay, 0, 0, ui.MAP_VIEWPORT_WIDTH(), ui.MAP_VIEWPORT_HEIGHT(), 0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y)
         libtcod.console_set_default_foreground(map_con, libtcod.white)
         if world_map.tiles is None:
             load_string = 'Generating...'
@@ -1902,26 +1904,26 @@ def generate_level(world_map):
 #############################################
 
 def main_menu():
-    global windowx,windowy, tilex, tiley
+    global windowx, windowy, tilex, tiley
 
     mapgen.initialize_features()
 
     while not libtcod.console_is_window_closed():
         render_main_menu_splash()
 
-        choice = ui.menu('', ['NEW GAME', 'CONTINUE', 'QUIT'], 24, x_center=SCREEN_WIDTH() / 2)
+        choice = ui.menu('', ['NEW GAME', 'QUIT'], 24, x_center=SCREEN_WIDTH() / 2)
         
         if choice == 0: #new game
             if new_game() != 'cancelled':
                 play_game()
+        #elif choice == 1:
+        #    try:
+        #        load_game()
+        #    except:
+        #        ui.msgbox('\n No saved game to load.\n', 24)
+        #        continue
+        #    play_game()
         elif choice == 1:
-            try:
-                load_game()
-            except:
-                ui.msgbox('\n No saved game to load.\n', 24)
-                continue
-            play_game()
-        elif choice == 2:
             print('Quitting game...')
             return
 

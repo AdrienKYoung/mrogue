@@ -30,7 +30,7 @@ table = {
         'slot'          : 'ring',
         'description'   : "A thin band of silver set with an engraving of a cat."
                           "Enhances its wearer's dodging ability.",
-        "evasion_bonus" : 10,
+        "evasion_bonus" : 4,
     },
     'equipment_ring_of_accuracy': {
         'name'          : 'Ring of Accuracy',
