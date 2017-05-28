@@ -563,9 +563,9 @@ def _continuation_great_dive(actor,x,y,ui_particles):
                 break
 
 def heat_ray(actor=None, target=None):
-    spell = abilities.data['a' \
-                           'bility_heat_ray']
+    spell = abilities.data['ability_heat_ray']
     line = None
+    tiles = None
     if actor is None:  # player is casting
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         default_target = None
@@ -576,7 +576,9 @@ def heat_ray(actor=None, target=None):
     else:
         x = target.x
         y = target.y
-        tiles = main.beam(actor.x, actor.y, x, y)
+        if(main.distance(actor.x, actor.y, x, y) <= spell['range']):
+            tiles = main.beam(actor.x, actor.y, x, y)
+
     if tiles is None or len(tiles) < 1 or tiles[0] is None or tiles[0][0] is None: return 'cancelled'
     end = (tiles[len(tiles) - 1][0], tiles[len(tiles) - 1][1])
     ui.render_projectile((actor.x, actor.y), end, libtcod.flame, libtcod.CHAR_BLOCK3)
