@@ -259,7 +259,7 @@ def rot_end(effect,object=None):
     if object is not None and object.fighter is not None:
         object.fighter.max_hp += 10 * effect.stacks
 
-def berserk_end(object=None):
+def berserk_end(effect, object=None):
     if object is not None and object.fighter is not None:
         object.fighter.apply_status_effect(exhausted())
 
