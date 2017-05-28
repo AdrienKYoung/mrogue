@@ -762,9 +762,12 @@ def ice_shards(actor=None, target=None):
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         tiles = ui.target_tile(max_range=spell['range'], targeting_type='cone')
     else:
-        tiles = [(target.x, target.y)]
         x = target.x
         y = target.y
+        tiles = main.cone(actor.x, actor.y, x, y, max_range=spell['range'])
+
+    ui.message('Razor shards of ice blast out!',libtcod.white)
+
     if tiles is None or len(tiles) == 0 or tiles[0] is None or tiles[1] is None: return 'cancelled'
     for tile in tiles:
         reed = main.object_at_tile(tile[0], tile[1], 'reeds')
