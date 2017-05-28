@@ -1388,6 +1388,10 @@ def create_item(name, material=None, quality=''):
 
         if material is None:
             material = 'iron' if equipment_component.category == 'weapon' else ''
+            allowed = p.get('allowed_materials')
+            if allowed is not None and material not in allowed:
+                # choose random allowed material
+                material = allowed[libtcod.random_get_int(0, 0, len(allowed) - 1)]
 
         if equipment_component.category == 'weapon':
             equipment_component.modifiers[quality] = loot.qualities[quality]['weapon']

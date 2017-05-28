@@ -265,10 +265,11 @@ table = {
         'str_requirement'    : 6,
         'shred'              : 1,
         'accuracy'           : 2,
-        'weapon_dice'        : '1d3',
+        'weapon_dice'        : '1d4',
         'str_dice'           : 1,
         'attack_delay'       : 20,
-        'crit_bonus'         : 1.5
+        'crit_bonus'         : 1.5,
+        'allowed_materials'  : ['wooden']
     },
     'weapon_warhammer': {
         'name'               : 'warhammer',
