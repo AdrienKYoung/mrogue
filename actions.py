@@ -840,7 +840,7 @@ def defile(actor=None,target=None):
         if x is None: return 'cancelled'
         actor = player.instance
         target = main.object_at_coords(x, y)
-    if target is not None:
+    if target is not None and not isinstance(target, main.Tile):
         if target.is_corpse:
             main.raise_dead(actor,target, duration=100)
         elif target.fighter is not None and (target.fighter.subtype == 'undead' or target.fighter.subtype == 'fiend'):
