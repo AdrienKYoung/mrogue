@@ -454,7 +454,7 @@ proto = {
     'monster_wolf': {
         'name': 'tundra wolf',
         'char': 'w',
-        'color': libtcod.gray,
+        'color': libtcod.light_orange,
         'hp': 35,
         'strength_dice' : '3d6',
         'attack_bonus' : 2,
@@ -473,7 +473,7 @@ proto = {
     'monster_corvid_silencer': {
         'name': 'corvid silencer',
         'char': 'c',
-        'color': libtcod.darkest_grey,
+        'color': libtcod.dark_blue,
         'hp': 40,
         'strength_dice' : '3d6',
         'attack_bonus' : 0,
@@ -514,8 +514,8 @@ proto = {
         'resistances': [],
         'loot_level':1,
         'equipment': [{'weapon_dagger':20},{'equipment_cloth_robes':20}],
-        'attributes': [{'ability_defile': 20, 'ability_frozen_orb': 20, 'ability_ice_shards': 20,'ability_arcane_arrow': 20, 'ability_heat_ray': 20},
-                       {'ability_defile': 20, 'ability_frozen_orb': 20, 'ability_ice_shards': 20,'ability_arcane_arrow': 20, 'ability_heat_ray': 20}],
+        'attributes': [{'ability_defile': 20, 'ability_frozen_orb': 20, 'ability_ice_shards': 0,'ability_arcane_arrow': 20, 'ability_heat_ray': 20},
+                       {'ability_defile': 20, 'ability_frozen_orb': 20, 'ability_ice_shards': 0,'ability_arcane_arrow': 20, 'ability_heat_ray': 20}],
         'shred': 1,
         'stealth':8,
         'modifier_category':None,

@@ -63,6 +63,8 @@
 //             spawned in this feature
 //  NOELEV   : The feature will flatten the
 //             elevation where it is placed
+//   SPECIAL : Only one SPECIAL feature is
+//             allowed to spawn per map.
 // Define:
 // $ : Set properties for loot placed with '$'
 //     LOOT_LEVEL : set loot_level when rolling

@@ -866,7 +866,7 @@ def render_ui_overlay():
             overlay_text = None
 
 
-def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_target=None):
+def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_target=None, ignore_fighters=False):
     global selected_monster
     mouse = main.mouse
     key = main.key
@@ -1011,7 +1011,8 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
         beam_values = []
 
         if targeting_type == 'beam_interrupt':
-            selected_x, selected_y = main.beam_interrupt(player.instance.x, player.instance.y, cursor_x, cursor_y)
+            selected_x, selected_y = main.beam_interrupt(player.instance.x, player.instance.y, cursor_x, cursor_y,
+                                                         ignore_fighters=ignore_fighters)
         elif targeting_type == 'beam':
             beam_values = main.beam(player.instance.x, player.instance.y, cursor_x, cursor_y)
             if len(beam_values) > 0:

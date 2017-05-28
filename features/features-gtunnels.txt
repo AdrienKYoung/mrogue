@@ -21,6 +21,7 @@
 FEATURE cells
 CATEGORY gtunnels
 DEFINE # stone brick wall
+FLAGS SPECIAL
     #####X#####
     #___#.#___#
     #___+.+___#

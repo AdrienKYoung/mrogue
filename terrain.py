@@ -134,6 +134,8 @@ data = {
                              'a pine tree, its needles ever green', flammable=2, isWall=True, blocks_sight_all_elevs=False),
     'ice': TileData(False, False, 'ice', '=', libtcod.lightest_blue, libtcod.light_blue,
                              'ground made of a thick sheet of ice', isFloor=True, isIce=True),
+    'ice wall': TileData(True, False, 'ice wall', '#', libtcod.lightest_blue, libtcod.lighter_blue,
+                             'ground made of a thick sheet of ice', isWall=True, isIce=True),
     'deep_ice': TileData(False, False, 'ice', '=', libtcod.white, libtcod.light_blue,
                              'ground made of a thick sheet of ice', isFloor=True, isIce=True),
 

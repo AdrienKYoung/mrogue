@@ -498,6 +498,7 @@ def flame_breath(actor=None, target=None):
         return 'cancelled'
 
     for tile in tiles:
+        main.melt_ice(tile[0], tile[1])
         t = main.current_map.tiles[tile[0]][tile[1]]
         if t.flammable or main.roll_dice('1d2') == 1:
             main.create_fire(tile[0],tile[1],12)

@@ -345,7 +345,7 @@ class Fighter:
         if add_effect:
             self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
-            new_effect.on_apply(new_effect,self.owner)
+            new_effect.on_apply(new_effect, self.owner)
         if new_effect.message is not None and self.owner is player.instance and not supress_message:
             ui.message(new_effect.message, new_effect.color)
 
@@ -989,7 +989,7 @@ def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_
             reduction_factor += 0.5 * consts.ARMOR_REDUCTION_STEP * (
                 effective_defense - consts.ARMOR_REDUCTION_DROPOFF)
         # Apply damage reduction
-        damage = math.ceil(damage * 1-reduction_factor)
+        damage = math.ceil(damage * (1 - reduction_factor))
         # After reduction, apply a flat reduction that is a random amount from 0 to the target's armor value
         damage = max(0, damage - libtcod.random_get_int(0, 0, effective_defense))
     else:

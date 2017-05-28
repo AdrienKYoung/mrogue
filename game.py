@@ -906,6 +906,7 @@ def bomb_beetle_corpse_tick(object=None):
         for tile in adjacent_tiles_diagonal(object.x, object.y):
             if libtcod.random_get_int(0, 0, 3) != 0:
                 create_fire(tile[0], tile[1], 10)
+            melt_ice(tile[0], tile[1])
             monster = get_monster_at_tile(tile[0], tile[1])
             if monster is not None:
                 monster.fighter.take_damage(consts.BOMB_BEETLE_DAMAGE)
@@ -1063,11 +1064,11 @@ def beam(sourcex, sourcey, destx, desty):
     return beam_values
 
 
-def beam_interrupt(sourcex, sourcey, destx, desty):
+def beam_interrupt(sourcex, sourcey, destx, desty, ignore_fighters=False):
     libtcod.line_init(sourcex, sourcey, destx, desty)
     line_x, line_y = libtcod.line_step()
     while line_x is not None:
-        if is_blocked(line_x, line_y):  # beam interrupt scans until it hits something
+        if is_blocked(line_x, line_y, ignore_fighters=ignore_fighters):  # beam interrupt scans until it hits something
             return line_x, line_y
         line_x, line_y = libtcod.line_step()
     return destx, desty
@@ -1117,7 +1118,7 @@ def in_bounds(x, y):
     return 0 <= x < consts.MAP_WIDTH and 0 <= y < consts.MAP_HEIGHT
 
 
-def is_blocked(x, y, from_coord=None, movement_type=None):
+def is_blocked(x, y, from_coord=None, movement_type=None, ignore_fighters=False):
 
     tile = current_map.tiles[x][y]
 
@@ -1153,9 +1154,10 @@ def is_blocked(x, y, from_coord=None, movement_type=None):
                 return True
 
     # If we did not find a blockage in terrain, check for blocking objects
-    for object in current_map.objects:
-        if object.blocks and object.x == x and object.y == y:
-            return True
+    if not ignore_fighters:
+        for object in current_map.objects:
+            if object.blocks and object.x == x and object.y == y:
+                return True
 
     # No obstructions were found
     return False
@@ -1464,7 +1466,7 @@ def melt_ice(x, y):
         return
     if not current_map.tiles[x][y].is_ice:
         return
-    if current_map.tiles[x][y].tile_type == 'ice':
+    if current_map.tiles[x][y].tile_type == 'ice' or current_map.tiles[x][y].tile_type == 'ice wall':
         current_map.tiles[x][y].tile_type = 'shallow water'
     elif current_map.tiles[x][y].tile_type == 'deep_ice':
         current_map.tiles[x][y].tile_type = 'deep water'

@@ -207,11 +207,11 @@ def focused(duration=1):
     return StatusEffect('focused', duration, libtcod.white, message='You focus on your target...',
                         description='This unit has increased accuracy', cleanseable=False)
 
-def burn_apply(object=None):
+def burn_apply(effect, object=None):
     if object is not None and object.fighter is not None and object.fighter.has_status('frozen'):
         object.fighter.remove_status('frozen')
 
-def freeze_apply(object=None):
+def freeze_apply(effect, object=None):
     if object is not None and object.fighter is not None and object.fighter.has_status('burning'):
         object.fighter.remove_status('burning')
 
