@@ -592,7 +592,7 @@ def render_side_panel(acc_mod=1.0):
     # Objects here
     libtcod.console_print(side_panel, 2, drawHeight, 'Objects here:')
     drawHeight += 1
-    objects_here = main.get_objects(player.instance.x, player.instance.y, lambda o: o is not player.instance)
+    objects_here = main.get_objects(player.instance.x, player.instance.y, lambda o: o is not player.instance and o.player_can_see())
     if len(objects_here) > 0:
         end = min(len(objects_here), 7)
         if len(objects_here) == 8:
@@ -866,7 +866,7 @@ def render_ui_overlay():
             overlay_text = None
 
 
-def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_target=None):
+def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_target=None, ignore_fighters=False):
     global selected_monster
     mouse = main.mouse
     key = main.key
@@ -1011,7 +1011,8 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
         beam_values = []
 
         if targeting_type == 'beam_interrupt':
-            selected_x, selected_y = main.beam_interrupt(player.instance.x, player.instance.y, cursor_x, cursor_y)
+            selected_x, selected_y = main.beam_interrupt(player.instance.x, player.instance.y, cursor_x, cursor_y,
+                                                         ignore_fighters=ignore_fighters)
         elif targeting_type == 'beam':
             beam_values = main.beam(player.instance.x, player.instance.y, cursor_x, cursor_y)
             if len(beam_values) > 0:
@@ -1519,7 +1520,7 @@ def render_projectile(start, end, color, character=None):
         prev = bolt.x, bolt.y
     bolt.destroy()
 
-def render_explosion(x, y, radius, start_color, end_color, character=None):
+def render_explosion(x, y, radius, start_color, end_color, character=None, distance_h='cartesian'):
     if character is None:
         character = libtcod.CHAR_BLOCK2
     blast = main.GameObject(x, y, character, 'explosion', color=start_color)
@@ -1530,8 +1531,8 @@ def render_explosion(x, y, radius, start_color, end_color, character=None):
     r = 0
     while len(blasts) > 0:
         if r < radius: r += 1
-        for i_y in range(y - radius, y + radius + 1):
-            for i_x in range(x - radius, x + radius + 1):
+        for i_y in range(y - int(round(radius)), y + int(round(radius)) + 1):
+            for i_x in range(x - int(round(radius)), x + int(round(radius)) + 1):
                 if (i_x, i_y) in blasts.keys():
                     blast = blasts[ (i_x, i_y) ]
                     blast.t -= 1
@@ -1540,11 +1541,16 @@ def render_explosion(x, y, radius, start_color, end_color, character=None):
                         blast.destroy()
                         dead.append((i_x, i_y))
                         del blasts[ (i_x, i_y) ]
-                elif round(main.distance(i_x, i_y, x, y)) <= r and (i_x, i_y) not in dead:
-                    blast = main.GameObject(i_x, i_y, character, 'explosion', color=start_color)
-                    blast.t = 4
-                    main.current_map.add_object(blast)
-                    blasts[i_x, i_y] = blast
+                else:
+                    if distance_h == 'manhattan':
+                        dist = abs(i_x - x) + abs(i_y - y)
+                    else:
+                        dist = round(main.distance(i_x, i_y, x, y))
+                    if dist <= r and (i_x, i_y) not in dead:
+                        blast = main.GameObject(i_x, i_y, character, 'explosion', color=start_color)
+                        blast.t = 4
+                        main.current_map.add_object(blast)
+                        blasts[i_x, i_y] = blast
         main.render_map()
         libtcod.console_flush()
 
@@ -1623,7 +1629,7 @@ def character_info_screen(console, x, y, width):
 
 
 show_action_panel = True
-overlay = libtcod.console_new(consts.MAP_WIDTH, consts.MAP_HEIGHT)
+overlay = libtcod.console_new(MAP_VIEWPORT_WIDTH(), MAP_VIEWPORT_HEIGHT())
 panel = libtcod.console_new(PANEL_WIDTH(), PANEL_HEIGHT)
 side_panel = libtcod.console_new(SIDE_PANEL_WIDTH, SIDE_PANEL_HEIGHT())
 action_panel = libtcod.console_new(ACTION_MENU_WIDTH, ACTION_MENU_HEIGHT())

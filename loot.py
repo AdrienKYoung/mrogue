@@ -118,7 +118,7 @@ table = {
         'essence_arcane',
     ],
 
-     'consumables_2': [
+    'consumables_2': [
         'essence_life',
         'essence_life',
         'essence_life',
@@ -217,6 +217,10 @@ table = {
         'armor_2',
         'weapons_2',
         'scroll_forge',
+    ],
+
+    'treasure_0': [
+      'treasure_bejeweled_chalice'
     ],
 
 }

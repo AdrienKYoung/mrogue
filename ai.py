@@ -61,6 +61,26 @@ def aggro_on_hit(monster, attacker):
         monster.behavior.behavior.wander_destination = attacker.x, attacker.y
         monster.behavior.ai_state = 'wandering'
 
+class AI_Ambush:
+    def __init__(self, radius, timer):
+        self.active = False
+        self.radius = radius
+        self.timer = timer
+
+    def act(self, ai_state):
+        monster = self.owner
+        if self.active:
+            self.timer -= 1
+            if self.timer <= 0:
+                monster.change_behavior(AI_Default())
+                monster.behavior.ai_state = 'pursuing'
+                monster.fighter.stealth = None
+                monster.blocks = True
+                monster.blocks_sight = True
+                game.current_map.fighters.append(monster)
+        elif game.distance(monster.x,monster.y,player.instance.x,player.instance.y) <= self.radius:
+                self.active = True
+        return 1
 
 class AI_Default:
 
@@ -216,12 +236,7 @@ class AI_Reeker:
                     position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
                     puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
                                 clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
-                    if not game.current_map.tiles[puff_pos[0]][puff_pos[1]].blocks and len(get_objects(puff_pos[0], puff_pos[1],
-                                                        lambda o: o.name == 'reeker gas' or o.name == 'reeker')) == 0:
-                        puff = GameObject(puff_pos[0], puff_pos[1], libtcod.CHAR_BLOCK3,
-                                          'reeker gas', libtcod.dark_fuchsia, description='a puff of reeker gas',
-                                          misc=ReekerGasBehavior())
-                        game.current_map.add_object(puff)
+                    game.create_reeker_gas(puff_pos[0], puff_pos[1])
         return monster.behavior.attack_speed
 
 
@@ -408,8 +423,9 @@ class AI_General:
         return speed
 
 class ReekerGasBehavior:
-    def __init__(self):
-        self.ticks = consts.REEKER_PUFF_DURATION
+    def __init__(self, duration=consts.REEKER_PUFF_DURATION):
+        self.ticks = duration
+        self.new = True
 
     def on_tick(self, object=None):
         self.ticks -= 1
@@ -422,8 +438,8 @@ class ReekerGasBehavior:
             return
         #self.owner.char = str(self.ticks)
         for obj in game.get_objects(self.owner.x, self.owner.y,
-                                    lambda o: o.fighter is not None and o.name != 'reeker' and o.name != 'blastcap'):
-            if self.ticks >= consts.REEKER_PUFF_DURATION - 1:
+                                    lambda o: o.fighter is not None and not o.fighter.has_flag(8)):
+            if self.new:
                 if fov.player_can_see(obj.x, obj.y):
                     ui.message('A foul-smelling cloud of gas begins to form around %s.' % syntax.name(obj), libtcod.fuchsia)
             else:
@@ -432,6 +448,7 @@ class ReekerGasBehavior:
                         syntax.name(obj).capitalize(),
                         syntax.conjugate(obj is player.instance, ('choke', 'chokes'))), libtcod.fuchsia)
                 obj.fighter.take_damage(consts.REEKER_PUFF_DAMAGE)
+        self.new = False
 
 
 class FireBehavior:

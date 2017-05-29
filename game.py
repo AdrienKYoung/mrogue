@@ -202,6 +202,11 @@ class GameObject:
         self.zombie_type = zombie_type
         self.npc = npc
 
+    def change_behavior(self,behavior):
+        self.behavior.behavior = behavior
+        self.behavior.owner = self
+        self.behavior.behavior.owner = self
+
     def print_description(self, console, x, y, width):
         height = libtcod.console_get_height_rect(console, x, y, width, SCREEN_HEIGHT(), self.description)
         draw_height = y
@@ -354,7 +359,7 @@ class GameObject:
 
     def player_can_see(self):
         if self.fighter is not None and self.fighter.stealth is not None and player.instance.distance_to(
-                self) > self.fighter.stealth:
+                self) >= self.fighter.stealth:
             return False
         else:
             return fov.player_can_see(self.x, self.y)
@@ -901,6 +906,7 @@ def bomb_beetle_corpse_tick(object=None):
         for tile in adjacent_tiles_diagonal(object.x, object.y):
             if libtcod.random_get_int(0, 0, 3) != 0:
                 create_fire(tile[0], tile[1], 10)
+            melt_ice(tile[0], tile[1])
             monster = get_monster_at_tile(tile[0], tile[1])
             if monster is not None:
                 monster.fighter.take_damage(consts.BOMB_BEETLE_DAMAGE)
@@ -949,11 +955,9 @@ def scum_glob_death(glob):
 
 
 def blastcap_explode(blastcap):
-    global changed_tiles
-
     blastcap.fighter = None
     current_map.fighters.remove(blastcap)
-    ui.render_explosion(blastcap.x, blastcap.y, 1, libtcod.gold, libtcod.white)
+    ui.render_explosion(blastcap.x, blastcap.y, 1, libtcod.gold, libtcod.white, distance_h='manhattan')
     ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
     for obj in current_map.fighters:
         if is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
@@ -1058,11 +1062,11 @@ def beam(sourcex, sourcey, destx, desty):
     return beam_values
 
 
-def beam_interrupt(sourcex, sourcey, destx, desty):
+def beam_interrupt(sourcex, sourcey, destx, desty, ignore_fighters=False):
     libtcod.line_init(sourcex, sourcey, destx, desty)
     line_x, line_y = libtcod.line_step()
     while line_x is not None:
-        if is_blocked(line_x, line_y):  # beam interrupt scans until it hits something
+        if is_blocked(line_x, line_y, ignore_fighters=ignore_fighters):  # beam interrupt scans until it hits something
             return line_x, line_y
         line_x, line_y = libtcod.line_step()
     return destx, desty
@@ -1112,7 +1116,7 @@ def in_bounds(x, y):
     return 0 <= x < consts.MAP_WIDTH and 0 <= y < consts.MAP_HEIGHT
 
 
-def is_blocked(x, y, from_coord=None, movement_type=None):
+def is_blocked(x, y, from_coord=None, movement_type=None, ignore_fighters=False):
 
     tile = current_map.tiles[x][y]
 
@@ -1148,9 +1152,10 @@ def is_blocked(x, y, from_coord=None, movement_type=None):
                 return True
 
     # If we did not find a blockage in terrain, check for blocking objects
-    for object in current_map.objects:
-        if object.blocks and object.x == x and object.y == y:
-            return True
+    if not ignore_fighters:
+        for object in current_map.objects:
+            if object.blocks and object.x == x and object.y == y:
+                return True
 
     # No obstructions were found
     return False
@@ -1205,9 +1210,11 @@ def spawn_monster(name, x, y, team='enemy'):
                     team=p.get('team', team),
                     stealth=p.get('stealth'),
                     _range=p.get('range',1))
-        if p.get('attributes'):
-            fighter_component.abilities = [create_ability(a) for a in p['attributes'] if a.startswith('ability_')]
-            fighter_component.attributes = [a for a in p['attributes'] if a.startswith('attribute_')]
+
+        attributes = roll_monster_abilities(p.get('attributes'))
+        if len(attributes) > 0:
+            fighter_component._abilities = ([create_ability(a) for a in attributes if a.startswith('ability_')])
+            fighter_component.attributes = [a for a in attributes if a.startswith('attribute_')]
 
         behavior = None
         if p.get('ai'):
@@ -1236,7 +1243,12 @@ def spawn_monster(name, x, y, team='enemy'):
         if p.get('essence'):
             monster.essence = p.get('essence')
         monster.elevation = current_map.tiles[x][y].elevation
-        current_map.add_object(monster)
+        if not 'attribute_ambush' in fighter_component.attributes:
+            current_map.add_object(monster)
+        else:
+            monster.blocks = False
+            monster.blocks_sight = False
+            current_map.objects.append(monster)
         return monster
     return None
 
@@ -1247,16 +1259,30 @@ def spawn_monster_inventory(proto,loot_level=-1):
         for slot in proto:
             equip = random_choice(slot)
             if equip != 'none':
-                if 'weapon' in equip:
-                    result.append(
-                        create_item(equip, material=loot.choose_weapon_material(loot_level), quality=loot.choose_quality(loot_level)))
+                p = items.table()[equip]
+                if p.get('allowed_materials') is not None:
+                    material = p.get('allowed_materials')[libtcod.random_get_int(0, 0, len(p.get('allowed_materials')) - 1)]
+                elif 'weapon' in equip:
+                    material = loot.choose_weapon_material(loot_level)
                 elif 'equipment' in equip:
-                    result.append(
-                        create_item(equip, material=loot.choose_armor_material(loot_level), quality=loot.choose_quality(loot_level)))
+                    material = loot.choose_armor_material(loot_level)
                 else:
                     result.append(create_item(equip))
+                    continue
+                result.append(create_item(equip, material=material, quality=loot.choose_quality(loot_level)))
+
     return result
 
+def roll_monster_abilities(proto):
+    result = []
+    if proto:
+        for slot in proto:
+            if isinstance(slot,dict):
+                result.append(random_choice(slot))
+            else:
+                result.append(slot)
+
+    return result
 
 def spawn_npc(name,x,y):
     import npc
@@ -1366,6 +1392,10 @@ def create_item(name, material=None, quality=''):
 
         if material is None:
             material = 'iron' if equipment_component.category == 'weapon' else ''
+            allowed = p.get('allowed_materials')
+            if allowed is not None and material not in allowed:
+                # choose random allowed material
+                material = allowed[libtcod.random_get_int(0, 0, len(allowed) - 1)]
 
         if equipment_component.category == 'weapon':
             equipment_component.modifiers[quality] = loot.qualities[quality]['weapon']
@@ -1438,7 +1468,7 @@ def melt_ice(x, y):
         return
     if not current_map.tiles[x][y].is_ice:
         return
-    if current_map.tiles[x][y].tile_type == 'ice':
+    if current_map.tiles[x][y].tile_type == 'ice' or current_map.tiles[x][y].tile_type == 'ice wall':
         current_map.tiles[x][y].tile_type = 'shallow water'
     elif current_map.tiles[x][y].tile_type == 'deep_ice':
         current_map.tiles[x][y].tile_type = 'deep water'
@@ -1474,6 +1504,14 @@ def create_fire(x,y,temp):
     for obj in get_objects(x, y, condition=lambda o: o.burns):
         obj.destroy()
     changed_tiles.append((x, y))
+
+
+def create_reeker_gas(x, y, duration=consts.REEKER_PUFF_DURATION):
+    if not current_map.tiles[x][y].blocks and \
+                    len(get_objects(x, y, lambda o: o.name == 'reeker gas' or o.name == 'reeker')) == 0:
+        puff = GameObject(x, y, libtcod.CHAR_BLOCK3, 'reeker gas', libtcod.dark_fuchsia,
+                          description='a puff of reeker gas', misc=ai.ReekerGasBehavior(duration=duration))
+        current_map.add_object(puff)
 
 
 def chest_interact(chest, actor):
@@ -1601,6 +1639,22 @@ def find_random_open_tile():
     return open[libtcod.random_get_int(0, 0, len(open) - 1)]
 
 
+def spawn_encounter(tiles,encounter,position,count=None):
+    if count is not None:
+        for i in range(count):
+            loc = find_closest_open_tile(position[0], position[1])
+            if loc is not None and loc in tiles:
+                spawn_monster(encounter['encounter'][libtcod.random_get_int(0, 0, len(encounter['encounter']) - 1)], loc[0],
+                              loc[1])
+                tiles.remove(loc)
+                if len(tiles) == 0:
+                    return
+    else:
+        for m in encounter['encounter']:
+            loc = find_closest_open_tile(position[0], position[1])
+            if loc is not None:
+                spawn_monster(m, loc[0], loc[1])
+
 def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
     if len(tiles) == 0:
         return
@@ -1620,13 +1674,7 @@ def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
             if encounter.get('party') is not None:
                 size = roll_dice(encounter['party'])
 
-            for i in range(size):
-                loc = find_closest_open_tile(random_pos[0],random_pos[1])
-                if loc is not None and loc in tiles:
-                    spawn_monster(encounter['encounter'][libtcod.random_get_int(0,0,len(encounter['encounter'])-1)], loc[0], loc[1])
-                    tiles.remove(loc)
-                    if len(tiles) == 0:
-                        return
+            spawn_encounter(tiles,encounter,random_pos,size)
 
     for i in range(loot_count):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
@@ -1786,10 +1834,10 @@ def render_all():
 
 
 def render_main_menu_splash():
-    img = libtcod.image_load('menu_background.png')
+    #img = libtcod.image_load('menu_background.png')
     libtcod.console_set_default_background(0, libtcod.black)
     libtcod.console_clear(0)
-    libtcod.image_blit_2x(img, 0, 0, 0)
+    #libtcod.image_blit_2x(img, 0, 0, 0)
     libtcod.console_set_default_foreground(0, libtcod.light_yellow)
     libtcod.console_print_ex(0, SCREEN_WIDTH() / 2, SCREEN_HEIGHT() / 2 - 8, libtcod.BKGND_NONE,
                              libtcod.CENTER,
@@ -1811,8 +1859,8 @@ def enter_map(world_map, direction=None):
 
     if current_map is not None:
         clear_map()
-        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y)
-        libtcod.console_blit(map_con, 0, 0, consts.MAP_WIDTH, consts.MAP_HEIGHT, 0, SCREEN_WIDTH() - consts.MAP_WIDTH, ui.MAP_VIEWPORT_Y)
+        libtcod.console_clear(ui.overlay)
+        libtcod.console_blit(ui.overlay, 0, 0, ui.MAP_VIEWPORT_WIDTH(), ui.MAP_VIEWPORT_HEIGHT(), 0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y)
         libtcod.console_set_default_foreground(map_con, libtcod.white)
         if world_map.tiles is None:
             load_string = 'Generating...'
@@ -1856,26 +1904,26 @@ def generate_level(world_map):
 #############################################
 
 def main_menu():
-    global windowx,windowy, tilex, tiley
+    global windowx, windowy, tilex, tiley
 
     mapgen.initialize_features()
 
     while not libtcod.console_is_window_closed():
         render_main_menu_splash()
 
-        choice = ui.menu('', ['NEW GAME', 'CONTINUE', 'QUIT'], 24, x_center=SCREEN_WIDTH() / 2)
+        choice = ui.menu('', ['NEW GAME', 'QUIT'], 24, x_center=SCREEN_WIDTH() / 2)
         
         if choice == 0: #new game
             if new_game() != 'cancelled':
                 play_game()
+        #elif choice == 1:
+        #    try:
+        #        load_game()
+        #    except:
+        #        ui.msgbox('\n No saved game to load.\n', 24)
+        #        continue
+        #    play_game()
         elif choice == 1:
-            try:
-                load_game()
-            except:
-                ui.msgbox('\n No saved game to load.\n', 24)
-                continue
-            play_game()
-        elif choice == 2:
             print('Quitting game...')
             return
 

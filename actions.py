@@ -313,6 +313,28 @@ def web_bomb(actor=None, target=None):
         return 'success'
     return 'cancelled'
 
+def on_death_summon_meta(name,ttl=None,message=None):
+    return lambda obj: _on_death_summon_meta(obj,name,ttl,message)
+
+def _on_death_summon_meta(obj,name,ttl,message):
+    ui.message('%s is dead!' % syntax.name(obj).capitalize(), libtcod.red)
+    main.current_map.fighters.remove(obj)
+    obj.fighter = None
+    obj.destroy()
+
+    if message is not None:
+        ui.message(message)
+
+    monster = main.spawn_monster(name, obj.x, obj.y)
+    monster.fighter.apply_status_effect(effects.stunned(1)) #summoning sickness
+    if ttl is not None:
+        monster.summon_time = ttl
+
+    if ui.selected_monster is obj:
+        main.changed_tiles.append((obj.x, obj.y))
+        ui.selected_monster = None
+        ui.auto_target_monster()
+
 def raise_zombie(actor=None, target=None):
     if actor is None:
         actor = player.instance
@@ -434,6 +456,31 @@ def healing_trance(actor=None, target=None):
         return 'success'
     return 'cancelled'
 
+def reeker_breath(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+    spell = abilities.data['ability_reeker_breath']
+    if actor is player.instance:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        tiles = ui.target_tile(max_range=spell['range'], targeting_type='cone')
+    else:
+        x = target.x
+        y = target.y
+        tiles = main.cone(actor.x,actor.y,x,y,max_range=spell['range'])
+
+    if tiles is None or len(tiles) == 0 or tiles[0] is None:
+        return 'cancelled'
+
+    if fov.player_can_see(target.x, target.y) or actor is player.instance:
+        ui.message('%s %s a cloud of acrid fumes!' %
+                   (syntax.name(actor).capitalize(),
+                    syntax.conjugate(actor is player.instance, ('breathe', 'breathes'))), libtcod.fuchsia)
+    for tile in tiles:
+        main.create_reeker_gas(tile[0], tile[1], duration=main.roll_dice('1d6')+3)
+        for obj in main.current_map.fighters:
+            if obj.x == tile[0] and obj.y == tile[1]:
+                combat.spell_attack(actor.fighter, obj, 'ability_reeker_breath')
+1
 def flame_breath(actor=None, target=None):
     x, y = 0, 0
     if actor is None:
@@ -451,6 +498,7 @@ def flame_breath(actor=None, target=None):
         return 'cancelled'
 
     for tile in tiles:
+        main.melt_ice(tile[0], tile[1])
         t = main.current_map.tiles[tile[0]][tile[1]]
         if t.flammable or main.roll_dice('1d2') == 1:
             main.create_fire(tile[0],tile[1],12)
@@ -515,9 +563,9 @@ def _continuation_great_dive(actor,x,y,ui_particles):
                 break
 
 def heat_ray(actor=None, target=None):
-    spell = abilities.data['a' \
-                           'bility_heat_ray']
+    spell = abilities.data['ability_heat_ray']
     line = None
+    tiles = None
     if actor is None:  # player is casting
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         default_target = None
@@ -528,7 +576,9 @@ def heat_ray(actor=None, target=None):
     else:
         x = target.x
         y = target.y
-        tiles = main.beam(actor.x, actor.y, x, y)
+        if(main.distance(actor.x, actor.y, x, y) <= spell['range']):
+            tiles = main.beam(actor.x, actor.y, x, y)
+
     if tiles is None or len(tiles) < 1 or tiles[0] is None or tiles[0][0] is None: return 'cancelled'
     end = (tiles[len(tiles) - 1][0], tiles[len(tiles) - 1][1])
     ui.render_projectile((actor.x, actor.y), end, libtcod.flame, libtcod.CHAR_BLOCK3)
@@ -715,9 +765,12 @@ def ice_shards(actor=None, target=None):
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         tiles = ui.target_tile(max_range=spell['range'], targeting_type='cone')
     else:
-        tiles = [(target.x, target.y)]
         x = target.x
         y = target.y
+        tiles = main.cone(actor.x, actor.y, x, y, max_range=spell['range'])
+
+    ui.message('Razor shards of ice blast out!',libtcod.white)
+
     if tiles is None or len(tiles) == 0 or tiles[0] is None or tiles[1] is None: return 'cancelled'
     for tile in tiles:
         reed = main.object_at_tile(tile[0], tile[1], 'reeds')
@@ -787,7 +840,7 @@ def defile(actor=None,target=None):
         if x is None: return 'cancelled'
         actor = player.instance
         target = main.object_at_coords(x, y)
-    if target is not None:
+    if target is not None and not isinstance(target, main.Tile):
         if target.is_corpse:
             main.raise_dead(actor,target, duration=100)
         elif target.fighter is not None and (target.fighter.subtype == 'undead' or target.fighter.subtype == 'fiend'):
@@ -842,19 +895,19 @@ def corpse_dance(actor=None,target=None):
         if x is None: return 'cancelled'
         actor = player.instance
     else:
-        x = target.x
-        y = target.y
+        x = actor.x
+        y = actor.y
 
-    for (_x, _y) in main.adjacent_tiles_diagonal(x, y):
-        objects = main.get_objects(_x,_y,None,spell['radius'])
-        for o in objects:
-            if o is not None and o.is_corpse:
-                main.raise_dead(actor,o)
+    ui.render_explosion(x, y, spell['radius'], libtcod.violet, libtcod.light_yellow)
+    ui.message("{} calls the dead to dance!".format(syntax.conjugate(actor is player.instance,["You",actor.name.capitalize()])))
 
-        obj = main.get_monster_at_tile(_x, _y)
-        if obj is not None and obj.fighter.team == 'ally' and obj.fighter.subtype == 'undead':
-            obj.fighter.apply_status_effect(effects.swiftness(spell['buff_duration']))
-            obj.fighter.apply_status_effect(effects.berserk(spell['buff_duration']))
+    for o in main.get_objects(x,y,None,spell['radius']):
+        if o is not None and o.is_corpse:
+            main.raise_dead(actor,o)
+
+        if o.fighter is not None and o.fighter.team == actor.fighter.team and o.fighter.subtype == 'undead':
+            o.fighter.apply_status_effect(effects.swiftness(spell['buff_duration']))
+            o.fighter.apply_status_effect(effects.berserk(spell['buff_duration']))
     return 'success'
 
 def bless(actor=None, target=None):
@@ -1425,6 +1478,10 @@ def ignite():
 def on_hit_judgement(attacker, target, damage):
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('2d6')))
+
+def on_hit_rot(attacker, target, damage):
+    if target.fighter is not None:
+        target.fighter.apply_status_effect(effects.rot())
 
 def pickaxe_dig(dx, dy):
     result = dig(player.instance.x + dx, player.instance.y + dy)

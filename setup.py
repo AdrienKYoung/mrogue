@@ -19,8 +19,7 @@ import py2exe
 import zipfile, os
 
 project_name = "mrogue-prealpha"
-version = "0.1.3"
-
+version = "0.1.4"
 dependencies = ['SDL2.dll','libtcod.dll',
                 'terminal16x16_gs_ro.png','menu_background.png','features.txt',
                 'legal/COPYING','legal/LIBTCOD-LICENSE.txt','legal/MROGUE-LICENSE.txt']

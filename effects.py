@@ -119,13 +119,13 @@ def confusion(duration = 10):
     return StatusEffect('confusion', duration, libtcod.red, message="Madness takes hold of your mind!",
                         description='This unit spends its turn moving erratically.')
 
-def silence(duration=3):
+def silence(duration=7):
     return StatusEffect('silence', duration, libtcod.red, message="You have been silenced!",
-                        description='This unit cannot cast spells.')
+                        description='This unit cannot cast spells.', stacking_behavior='ignore')
 
-def rot(duration = -1):
+def rot(duration = None):
     return StatusEffect('rot', duration, libtcod.red, message="Your flesh rots away!", on_apply=rot_apply,
-                        on_end=rot_end, description='This unit has reduced maximum HP.')
+                        on_end=rot_end, description='This unit has reduced maximum HP.', stacks=1,stacking_behavior='stack-refresh')
 
 def stoneskin(duration=30):
     return StatusEffect('stoneskin', duration, spells.essence_colors['earth'], armor_mod=1.5,
@@ -207,11 +207,11 @@ def focused(duration=1):
     return StatusEffect('focused', duration, libtcod.white, message='You focus on your target...',
                         description='This unit has increased accuracy', cleanseable=False)
 
-def burn_apply(object=None):
+def burn_apply(effect, object=None):
     if object is not None and object.fighter is not None and object.fighter.has_status('frozen'):
         object.fighter.remove_status('frozen')
 
-def freeze_apply(object=None):
+def freeze_apply(effect, object=None):
     if object is not None and object.fighter is not None and object.fighter.has_status('burning'):
         object.fighter.remove_status('burning')
 
@@ -250,16 +250,16 @@ def bleed_tick(effect, object=None):
             ui.message("You bleed out for {} damage...".format(damage), libtcod.dark_red)
         object.fighter.take_damage(damage, affect_shred=False)
 
-def rot_apply(object=None):
+def rot_apply(effect,object=None):
     if object is not None and object.fighter is not None:
-        object.fighter.max_hp -= 20
-        object.fighter.take_damage(20)
+        object.fighter.max_hp -= 10 * effect.stacks
+        object.fighter.take_damage(10 * effect.stacks)
 
-def rot_end(object=None):
+def rot_end(effect,object=None):
     if object is not None and object.fighter is not None:
-        object.fighter.max_hp += 20
+        object.fighter.max_hp += 10 * effect.stacks
 
-def berserk_end(object=None):
+def berserk_end(effect, object=None):
     if object is not None and object.fighter is not None:
         object.fighter.apply_status_effect(exhausted())
 

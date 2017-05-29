@@ -809,7 +809,7 @@ def jump(actor=None, range=None, stamina_cost=None):
 
     ui.render_message_panel()
     libtcod.console_flush()
-    (x, y) = ui.target_tile(range, 'pick', consts.JUMP_ATTACK_ACC_MOD)
+    (x, y) = ui.target_tile(range, 'beam_interrupt', consts.JUMP_ATTACK_ACC_MOD, ignore_fighters=True)
     if x is not None and y is not None:
         if main.current_map.tiles[x][y].blocks:
             ui.message('There is something in the way.', libtcod.light_yellow)

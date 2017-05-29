@@ -33,7 +33,7 @@ ENDFEATURE
 //*******************
 //   Frozen Pond 2
 //*******************
-FEATURE frozen_pond_1
+FEATURE frozen_pond_2
 CATEGORY forest
 DEFINE - ice
  -----
@@ -69,7 +69,7 @@ CATEGORY forest
 DEFINE - snow drift
 DEFINE # stone brick wall
 DEFINE $ LOOT_LEVEL 2
-DEFINE 1 MONSTER_ID monster_silencer
+DEFINE 1 MONSTER_ID monster_corvid_silencer
 _____________
 _1###-#####-_
 #__---#--$#-_
@@ -130,4 +130,183 @@ ___#._..#----#_ _
    __.####-__##_
   _  ___  _  __
    _  ____  _
+ENDFEATURE
+//*******************
+// Tower Base
+//*******************
+FEATURE tower_base
+CATEGORY forest
+DEFINE # stone brick wall
+    _ __ _
+  _ ___ _
+ _ _###___
+ __#...#_ _
+__#.....#__
+__+.....+__
+__#.....#__
+ __#...#_
+ _ _###_ _
+ __ ___ _
+  _   _  _
+ENDFEATURE
+
+//*******************
+// Dragon Pit
+//*******************
+FEATURE dragon_pit
+CATEGORY forest
+FLAGS NOSPAWNS SPECIAL
+DEFINE # stone brick wall
+DEFINE $ CATEGORY treasure
+DEFINE 1 MONSTER_ID monster_dragon
+    #..#..#
+ #...........#
+ .............
+ ...##..####..
+#..........#..#
+...#.#/###.#...
+...#.#   #.#...
+#..#.#   /.#..#
+.....#   /.#...
+...#.#//##.#...
+#.............#
+ ...#...#.##..
+ .............
+ #...........#
+    #..#..#
+HEIGHT -1
+
+
+
+
+
+
+      ...
+      $1$
+      ...
+ENDHEIGHT
+ENDFEATURE
+
+//*******************
+// Corvid Monastary
+//*******************
+FEATURE tower_base
+CATEGORY forest
+FLAGS NOSPAWNS SPECIAL
+DEFAULT :
+DEFINE : shale
+DEFINE # stone brick wall
+DEFINE 1 MONSTER_ID monster_corvid_silencer
+DEFINE 2 MONSTER_ID monster_corvid_acolyte
+DEFINE $ LOOT_LEVEL 2 CATEGORY consumables
+  _  _ __  _  _  _
+ _ _____________ __
+_ _#############_  _
+_ _#:::::1:::::#___ _
+ _##::#::#::#::###__
+ _#$:2:::::::::::#...
+__#$:::::::::::::+...
+ _#$:2:::::::::::#...
+__##::#::#::#::###__
+ __#:::::1:::::#___ _
+_ _#############_ _
+__ _____________
+  _   _ __  _  _
+ENDFEATURE
+
+//*******************
+// Icy Ruins 1
+//*******************
+FEATURE icy_ruins_1
+CATEGORY forest
+DEFINE # stone brick wall
+DEFINE - ice
+   __
+ ##--#
+_#----
+_----#
+ #---#
+  ---#
+   --_
+ENDFEATURE
+//*******************
+// Icy Ruins 2
+//*******************
+FEATURE icy_ruins_2
+CATEGORY forest
+DEFINE # stone brick wall
+DEFINE - ice
+ __ _ _
+_##.#.#_
+_#------
+_#----#_
+ .---__
+ #-_--
+ _
+ENDFEATURE
+//*******************
+//      Henge
+//*******************
+FEATURE henge
+CATEGORY forest
+DEFINE # dark shale wall
+   #_#
+ _#___#_
+ ___.___
+#__...__#
+__.....__
+#__...__#
+ ___.___
+ _#___#_
+   #_#
+ENDFEATURE
+//*******************
+//  Frozen Weapon
+//*******************
+FEATURE frozen_weapon
+CATEGORY forest
+DEFINE : ice wall
+DEFINE $ LOOT_LEVEL 4 CATEGORY weapons
+  _   _ _
+ ________
+ __#####__
+ _##:::##__
+__#.:$:.#_
+ _#.:::.#__
+ _#.....#_ _
+__##...##_
+  __...__
+ENDFEATURE
+
+//*******************
+//    Ice Maze 1
+//*******************
+FEATURE ice_maze_1
+CATEGORY forest
+DEFINE # ice wall
+.###########.
+.#.........#.
+...###.#.###.
+.#.#...#.....
+.###########.
+ENDFEATURE
+//*******************
+//    Ice Maze 2
+//*******************
+FEATURE ice_maze_2
+CATEGORY forest
+DEFINE # ice wall
+    .....
+  ..##.##..
+ .###...###.
+ .#...#...#.
+.##...#.#.##.
+.#...####..#.
+....##$.##...
+.#..#...#..#.
+.##.#.######.
+ .#...#...#.
+ .###...###.
+  ..##.##..
+    .....
 ENDFEATURE

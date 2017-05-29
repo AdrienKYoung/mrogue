@@ -134,6 +134,7 @@ def initialize_world():
     world_maps['forest_2_1'].add_link(world_maps['badlands_1_0'], 'south')
     world_maps['forest_1_1'].add_link(world_maps['gtunnels_3_0'], 'down')
 
+    return
     # Add Garden maps and link back to marsh/goblin tunnels
     for y in range(3):
         for x in range(2):

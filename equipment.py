@@ -358,7 +358,7 @@ class Equipment:
         if self.ctrl_attack_desc:
             libtcod.console_set_default_foreground(console, libtcod.azure)
             text = 'Ctrl+attack: ' + self.ctrl_attack_desc
-            h = libtcod.console_get_height_rect(console, x, y + print_height, width, main.SCREEN_HEIGHT, text)
+            h = libtcod.console_get_height_rect(console, x, y + print_height, width, main.SCREEN_HEIGHT(), text)
             libtcod.console_print_rect(console, x, y + print_height + 1, width, h, text)
             print_height += h + 1
             libtcod.console_set_default_foreground(console, libtcod.white)

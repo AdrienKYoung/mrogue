@@ -122,7 +122,7 @@ class Fighter:
             self.stamina = self.max_stamina
 
     def take_damage(self, damage, attacker=None, affect_shred=True, blockable=False):
-        if self.has_status('invulnerable'):
+        if self.has_status('invulnerable') or self.has_attribute('attribute_invulnerable'):
             if self.owner is player.instance or fov.player_can_see(self.owner.x, self.owner.y):
                 ui.message('%s %s protected by a radiant shield!' %
                            (syntax.name(self.owner).capitalize(),
@@ -292,7 +292,7 @@ class Fighter:
                     removed_effects.append(effect)
         for effect in removed_effects:
             if effect.on_end is not None:
-                effect.on_end(self.owner)
+                effect.on_end(effect,self.owner)
             if effect in self.status_effects:  # It can sometimes be removed in the on-tick function
                 self.status_effects.remove(effect)
 
@@ -345,7 +345,7 @@ class Fighter:
         if add_effect:
             self.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
-            new_effect.on_apply(self.owner)
+            new_effect.on_apply(new_effect, self.owner)
         if new_effect.message is not None and self.owner is player.instance and not supress_message:
             ui.message(new_effect.message, new_effect.color)
 
@@ -424,6 +424,16 @@ class Fighter:
                 if item.owner.item.ability:
                     a.append(item.owner.item.ability)
             return a
+
+    def add_ability(self,ability):
+        if self.owner is player.instance:
+            raise Exception("Not implemented for player")
+        else:
+            if hasattr(ability,'__iter__'):
+                for a in ability:
+                    self._abilities.append(a)
+            else:
+                self._abilities.append(ability)
 
     @property
     def shield(self):
@@ -684,7 +694,7 @@ damage_description_tables = {
         ('disintegrate', 'disintegrates'),
     ],
     'death': [
-        ('curse','curse'),
+        ('curse','curses'),
         ('defile', 'defiles'),
         ('torment', 'torments')
     ]
@@ -979,7 +989,7 @@ def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_
             reduction_factor += 0.5 * consts.ARMOR_REDUCTION_STEP * (
                 effective_defense - consts.ARMOR_REDUCTION_DROPOFF)
         # Apply damage reduction
-        damage = math.ceil(damage * 1-reduction_factor)
+        damage = math.ceil(damage * (1 - reduction_factor))
         # After reduction, apply a flat reduction that is a random amount from 0 to the target's armor value
         damage = max(0, damage - libtcod.random_get_int(0, 0, effective_defense))
     else:

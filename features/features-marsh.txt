@@ -106,9 +106,9 @@ DEFINE $ LOOT_LEVEL 1 CATEGORY consumables
 DEFINE 1 MONSTER_ID monster_verman
 _______
 _#####_
-_#$..#_
+_#...#_
 _#$1.+_
-_#$..#_
+_#...#_
 _#####_
 _______
 ENDFEATURE
@@ -226,7 +226,7 @@ DEFINE 1 MONSTER_ID monster_goblin_warrior
 DEFINE 2 MONSTER_ID monster_goblin_chief
 DEFINE 3 MONSTER_ID monster_goblin
 DEFINE $ LOOT_LEVEL 2 CATEGORY weapons
-FLAGS NOSPAWNS
+FLAGS NOSPAWNS SPECIAL
 _____________________
 _~~~~~~~~~.~~~~~~~~~_
 _~#######~.~#######~_

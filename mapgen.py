@@ -36,6 +36,7 @@ NOROTATE = 1
 NOREFLECT = 2
 NOSPAWNS = 4
 NOELEV = 8
+SPECIAL = 16
 map = None
 default_wall = 'stone wall'
 default_floor = 'stone floor'
@@ -730,6 +731,11 @@ def create_random_loot(category=None, loot_level=None):
                 if t.startswith(category):
                     table = t
                     break
+            if table is None:
+                for t in loot.table.keys():
+                    if t.startswith(category):
+                        table = t
+                        break
         elif category is None and loot_level is not None:
             # choose a random table. Set its loot level to match.
             table = tables.keys()[libtcod.random_get_int(0, 0, len(tables.keys()) - 1)]
@@ -1070,6 +1076,8 @@ def load_feature(lines=[]):
                         new_feature.set_flag(NOSPAWNS)
                     elif flag == 'NOELEV':
                         new_feature.set_flag(NOELEV)
+                    elif flag == 'SPECIAL':
+                        new_feature.set_flag(SPECIAL)
             elif lines[i_y].startswith('DEFAULT'):
                 default_ground = lines[i_y].split(' ')[1]
             elif lines[i_y].startswith('DEFINE'):
@@ -1141,6 +1149,12 @@ def create_feature(x, y, feature_name, open_tiles=None, hard_override=False, rot
     else:
         feature = features[feature_name]
         template = copy.copy(feature.room)
+
+        if feature.has_flag(SPECIAL):
+            if map.has_special:
+                return 'failed'
+            else:
+                map.has_special = True
 
         if not feature.has_flag(NOREFLECT):
             template.reflect(reflect_x=libtcod.random_get_int(0, 0, 1) == 1, reflect_y=libtcod.random_get_int(0, 0, 1) == 1)
@@ -1535,6 +1549,12 @@ def make_map_forest():
         feature_name = feature_categories['forest'][feature_index].name
         create_feature(tile[0], tile[1], feature_name, open_tiles)
 
+    active_branch = dungeon.branches[map.branch]
+    main.place_objects(open_tiles,
+                       main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
+                       main.roll_dice(active_branch['loot_dice']),
+                       active_branch['xp_amount'])
+
     make_basic_map_links()
 
 def make_map_marsh():
@@ -1827,7 +1847,10 @@ def make_test_space():
     player.instance.y = player_tile[1]
 
     if consts.DEBUG_TEST_MONSTER is not None:
-        main.spawn_monster(consts.DEBUG_TEST_MONSTER, player_tile[0], player_tile[1] - 20)
+        if isinstance(consts.DEBUG_TEST_MONSTER, dict):
+            main.spawn_encounter(map.tiles, consts.DEBUG_TEST_MONSTER,(player_tile[0], player_tile[1] - 20))
+        else:
+            main.spawn_monster(consts.DEBUG_TEST_MONSTER, player_tile[0], player_tile[1] - 20)
 
     #stair_tile = (player_tile[0], player_tile[1] + 3)
     #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,
@@ -1909,6 +1932,7 @@ def make_map(_map):
 
     feature_rects = []
     map = _map
+    map.has_special = False
 
     map.objects = [player.instance]
     map.fighters = [player.instance]
