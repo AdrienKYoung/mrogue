@@ -134,7 +134,9 @@ def primal_totem():
     if essence == 'fire':
         result = actions.berserk_self(player.instance)
     elif essence == 'air':
-        result = actions.battle_cry(player.instance)
+        player.instance.fighter.adjust_stamina(100)
+        ui.message('Fresh air fills your lungs!', spells.essence_colors['air'])
+        result = 'success'
     elif essence == 'death':
         result = actions.summon_equipment('weapon_soul_reaper')
 
@@ -152,7 +154,7 @@ def holy_symbol():
     if essence == 'life':
         result = actions.mass_heal(player.instance)
     elif essence == 'water':
-        result = actions.mass_cleanse(player.instance)
+        result = actions.holy_water(player.instance)
     elif essence == 'radiance':
         result = actions.mass_reflect(player.instance)
 
@@ -191,7 +193,7 @@ def charm_raw():
         if result != 'didnt-take-turn':
             ui.message('A gust of air lifts you to your destination', spells.essence_colors['air'])
     elif essence == 'arcane':
-        result = actions.create_teleportal(player.instance.x, player.instance.y)
+        result = actions.create_teleportal()
     elif essence == 'death':
         result = actions.raise_zombie()
     elif essence == 'radiance':
@@ -260,11 +262,8 @@ def prayer_beads():
     if essence == 'life':
         result = actions.healing_trance()
     elif essence == 'air':
-        player.instance.fighter.adjust_stamina(100)
-        ui.message('Fresh air fills your lungs!', spells.essence_colors['air'])
+        player.instance.fighter.apply_status_effect(effects.levitating())
         result = 'success'
-    elif essence == 'water':
-        result = actions.holy_water()
 
     if result != 'didnt-take-turn' and result != 'cancelled':
         player.instance.essence.remove(essence)

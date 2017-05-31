@@ -22,49 +22,47 @@ import ui
 import effects
 import player
 import syntax
+import abilities
 
-def acquire_target(monster, priority=None):
+def acquire_target(monster, priority=None, target_team=None, target_self=False, check_los=True):
+
+    if target_team is None:
+        if monster.fighter.team == 'ally':
+            target_team = 'enemy'
+        elif monster.fighter.team == 'enemy':
+            target_team = 'ally'
+
     if not monster.fighter:
         return None
 
     if priority is not None:
-        if monster.fighter.team != priority.fighter.team and fov.monster_can_see_object(monster, priority):
+        if priority.fighter.team == target_team and (fov.monster_can_see_object(monster, priority) or not check_los):
             return priority
 
     closest = None
     closest_dist = 10000
-    if monster.fighter.team == 'ally':
-        target_team = 'enemy'
-    elif monster.fighter.team == 'enemy':
-        target_team = 'ally'
-    else:  # Neutral fighters acquire no targets
-        return None
     for o in game.current_map.fighters:
-        if o.fighter.team == target_team and o.fighter.hp > 0 and fov.monster_can_see_object(monster, o):
+        if o.fighter.team == target_team and o.fighter.hp > 0 and (fov.monster_can_see_object(monster, o) or not check_los):
+            if o is monster and not target_self:
+                continue
             dist = monster.distance_to(o)
             if closest is None or dist < closest_dist:
                 closest = o
                 closest_dist = dist
     return closest
 
-
-def acquire_friendly_target(monster, priority=None):
-    if not monster.fighter:
+def target_damaged_ally(actor):
+    if actor is None or actor.fighter is None:
         return None
-
-    if priority is not None:
-        if monster.fighter.team == priority.fighter.team and fov.monster_can_see_object(monster, priority):
-            return priority
-
-    closest = None
-    closest_dist = 10000
-    for o in game.current_map.fighters:
-        if o.fighter.team == o.fighter.team and o.fighter.hp > 0 and fov.monster_can_see_object(monster, o) and o is not monster:
-            dist = monster.distance_to(o)
-            if closest is None or dist < closest_dist:
-                closest = o
-                closest_dist = dist
-    return closest
+    target = None
+    most_damage = 1.0
+    for ally in game.get_fighters_in_burst(actor.x, actor.y, consts.TORCH_RADIUS, actor, team=game.opposite_team(actor.fighter.team)):
+        if ally.fighter is not None:
+            damage = float(ally.fighter.hp) / float(ally.fighter.max_hp)
+            if damage < most_damage:
+                most_damage = damage
+                target = ally
+    return target
 
 def aggro_on_hit(monster, attacker):
     if attacker is None:
@@ -176,17 +174,67 @@ def channel(behavior):
     behavior.delay_turns -= 1
     return 'channelled'
 
+def avoid(behavior):
+    monster = behavior.owner
+    behavior.target = acquire_target(monster) # ensure that target is closest enemy
+    if behavior.target is None or behavior.target.fighter is None or behavior.target.fighter.hp <= 0:
+        return 'no-enemies-in-sight'
+
+    # Use abilities
+    if use_abilities(behavior) == 'ability-used':
+        if monster.behavior is None:
+            return 'dead'
+        else:
+            return 'ability-used'
+
+    if fov.monster_can_see_object(monster, behavior.target):
+        # Avoid enemies
+        dist = monster.distance_to(behavior.target)
+        if dist <= consts.AVOID_DISTANCE:
+            exclude = []
+            for enemy in game.get_fighters_in_burst(monster.x, monster.y, consts.TORCH_RADIUS, monster,
+                                                    team=monster.fighter.team):
+                for y in range(enemy.y - consts.AVOID_DISTANCE, enemy.y + consts.AVOID_DISTANCE + 1):
+                    for x in range(enemy.x - consts.AVOID_DISTANCE, enemy.x + consts.AVOID_DISTANCE + 1):
+                        if game.distance(monster.x, monster.y, x, y) <= consts.AVOID_DISTANCE:
+                            exclude.append((x, y))
+            flee_point = game.find_closest_open_tile(monster.x, monster.y, exclude)
+            monster.move_astar(flee_point[0], flee_point[1])
+            return 'fled'
+
+        # Ranged attack
+        if attack_target_ranged(behavior) == 'attacked':
+            if monster.behavior is None:
+                return 'dead'
+            else:
+                return 'attacked'
+
+        # Move towards follow target
+        if monster.behavior.follow_target is None:
+            monster.behavior.follow_target = acquire_target(monster, target_team=monster.fighter.team)
+        if monster.behavior.follow_target is not None:
+            monster.move_astar(monster.behavior.follow_target.x, monster.behavior.follow_target.y)
+            return 'followed'
+        else:
+            return 'no-allies-in-sight'
+    else:
+        return 'no-enemies-in-sight'
+
 def use_abilities(behavior):
     monster = behavior.owner
     if not monster.fighter.has_status('silence'):
         for a in monster.fighter.abilities:
             if a.current_cd <= 0 and game.roll_dice('1d10') > 5:
                 # Use abilities when they're up
-                ability_target = behavior.target
-                if a.intent == 'aggressive':
+                fnc = abilities.data[a.ability_id].get('target_function')
+                if fnc is None:
                     ability_target = behavior.target
-                elif a.intent == 'support':
-                    ability_target = acquire_friendly_target(monster)
+                    if a.intent == 'aggressive':
+                        ability_target = behavior.target
+                    elif a.intent == 'support':
+                        ability_target = acquire_target(monster, target_team=monster.fighter.team, target_self=False)
+                else:
+                    ability_target = fnc(monster)
                 if ability_target is not None and a.use(monster, ability_target) != 'didnt-take-turn':
                     return 'ability-used'
     return 'no-ability'
@@ -200,6 +248,80 @@ def attack_target_ranged(behavior):
         if monster.behavior is not None:
             return 'attacked'
     return 'no-attack'
+
+
+class AI_Support:
+
+    def __init__(self):
+        self.last_seen_position = None
+        self.wander_destination = None
+        self.target = None
+        self.queued_action = None
+        self.delay_turns = 0
+
+    def act(self, ai_state):
+        monster = self.owner
+
+        if ai_state == 'resting':
+
+            result = rest(self)
+            if result == 'acquired-target':
+                monster.behavior.ai_state = 'avoiding'
+                return 0.0
+            elif result == 'has-follow-target':
+                monster.behavior.ai_state = 'following'
+                return 0.0
+            elif result == 'rested':
+                return 1.0
+
+        elif ai_state == 'avoiding':
+
+            result = avoid(self)
+            if result == 'no-enemies-in-sight':
+                friendly = acquire_target(monster, target_team=monster.fighter.team, check_los=False)
+                if friendly is not None:
+                    monster.behavior.follow_target = friendly
+                    monster.behavior.ai_state = 'following'
+                else:
+                    monster.behavior.ai_state = 'resting'
+                return 0.0
+            elif result == 'attacked' or result == 'ability-used':
+                return monster.behavior.attack_speed
+            elif result == 'fled' or result == 'followed':
+                return monster.behavior.move_speed
+            elif result == 'no-allies-in-sight':
+                ally = acquire_target(monster, target_team=monster.fighter.team, check_los=False)
+                if ally is not None:
+                    monster.behavior.follow_target = ally
+                    monster.behavior.ai_state = 'following'
+                    return 0.0
+                return 1.0
+            elif result == 'dead':
+                return 1.0
+
+        elif ai_state == 'following':
+
+            result = follow(self)
+            if result == 'acquired-target':
+                monster.behavior.ai_state = 'avoiding'
+                return 0.0
+            elif result == 'no-follow-target':
+                monster.behavior.ai_state = 'resting'
+                return 0.0
+            elif result == 'followed':
+                return monster.behavior.move_speed
+            elif result == 'ability-used':
+                return monster.behavior.attack_speed
+            elif result == 'dead':
+                return 1.0
+
+        return 1.0
+
+    def queue_action(self,action,delay):
+        self.queued_action = action
+        self.delay_turns = delay
+        self.owner.behavior.ai_state = 'channeling'
+
 
 class AI_Ambush:
     def __init__(self, radius, timer):
@@ -314,6 +436,7 @@ class AI_Default:
         self.queued_action = action
         self.delay_turns = delay
         self.owner.behavior.ai_state = 'channeling'
+
 
 class AI_Reeker:
 

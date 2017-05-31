@@ -886,7 +886,7 @@ def _learn_ability(name):
         if a.name == abilities.data[name]['name']:
             return
     ability = abilities.data[name]
-    instance.perk_abilities.append(abilities.Ability(ability['name'],ability['description'],
+    instance.perk_abilities.append(abilities.Ability(name, ability['name'],ability['description'],
                                   ability['function'],ability['cooldown'], intent=ability.get('intent', 'aggressive')))
 
 def on_tick(this):

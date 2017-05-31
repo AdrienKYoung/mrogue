@@ -20,6 +20,7 @@ import ui
 import player
 import actions
 import spells
+import syntax
 
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
@@ -119,13 +120,14 @@ def confusion(duration = 10):
     return StatusEffect('confusion', duration, libtcod.red, message="Madness takes hold of your mind!",
                         description='This unit spends its turn moving erratically.')
 
-def silence(duration=7):
+def silence(duration=10):
     return StatusEffect('silence', duration, libtcod.red, message="You have been silenced!",
-                        description='This unit cannot cast spells.', stacking_behavior='ignore')
+                        description='This unit cannot cast spells.', stacking_behavior='ignore', cleanseable=True)
 
 def rot(duration = None):
     return StatusEffect('rot', duration, libtcod.red, message="Your flesh rots away!", on_apply=rot_apply,
-                        on_end=rot_end, description='This unit has reduced maximum HP.', stacks=1,stacking_behavior='stack-refresh')
+                        on_end=rot_end, description='This unit has reduced maximum HP.', stacks=1,
+                        stacking_behavior='stack-refresh', cleanseable=True)
 
 def stoneskin(duration=30):
     return StatusEffect('stoneskin', duration, spells.essence_colors['earth'], armor_mod=1.5,
@@ -147,7 +149,7 @@ def blessed(duration=20):
 def blinded(duration=10):
     return StatusEffect('serenity', duration, libtcod.light_blue, accuracy_mod=0.35,
                         message="Your can't see anything!",
-                        description='This unit has sharply decreased accuracy.')
+                        description='This unit has sharply decreased accuracy.', cleanseable=True)
 
 def sluggish(duration=5):
     return StatusEffect('sluggish', duration, libtcod.sepia, message='Your reaction time slows...',
@@ -271,7 +273,8 @@ def berserk_end(effect, object=None):
 def check_judgement(effect, obj=None):
     fx = [f for f in obj.fighter.status_effects if f.name == 'judgement']
     if len(fx) > 0 and fx[0].stacks >= 100:
-        ui.message("{} was judged!".format(obj.name), libtcod.light_yellow)
+        ui.render_explosion(obj.x, obj.y, 2, libtcod.white, spells.essence_colors['radiance'])
+        ui.message("%s %s judged!" % (syntax.name(obj).capitalize(), syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.light_yellow)
         obj.fighter.take_damage(int(obj.fighter.max_hp / 3))
         obj.fighter.remove_status('judgement')
 

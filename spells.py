@@ -104,8 +104,8 @@ charm_holy_symbol = {
         'description' : 'Heal yourself and all nearby allies, and give all targets a regeneration buff'
     },
     'water': {
-        'name': 'Mass Cleanse',
-        'description' : 'Remove all negative effects from yourself and nearby allies'
+        'name': 'Holy Water',
+        'description': 'Damages and stuns an evil creature'
     },
     'radiance': {
         'name': 'Mass Reflect',
@@ -119,8 +119,8 @@ charm_primal_totem = {
         'description': 'You gain attack power for a time but will be exhausted when it ends'
     },
     'air': {
-        'name': 'Battle Cry',
-        'description': 'Alert all enemies in a wide area, but reduce their defense'
+        'name': 'Breath of Life',
+        'description': 'Gain 100 stamina'
     },
     'death': {
         'name': 'Soul Reaper',
@@ -134,12 +134,8 @@ charm_prayer_beads = {
         'description': 'Stun yourself and regenerate health'
     },
     'air': {
-        'name': 'Breath of Life',
-        'description': 'Gain 100 stamina'
-    },
-    'water': {
-        'name': 'Holy Water',
-        'description': 'Damages and stuns an evil creature'
+        'name': 'Levitate',
+        'description': 'Levitate over obstacles for a brief time'
     },
 }
 

@@ -21,8 +21,13 @@ def conjugate(is_player, conjugations):
         return conjugations[0]
     return conjugations[1]
 
-def name(object, possesive=False, proper=False):
+def name(object, possesive=False, proper=False, reflexive=None):
     _name = object.name
+    if reflexive == object:
+        if _name == 'player':
+            return 'yourself'
+        else:
+            return 'itself' #TODO: add genders
     if object.fighter and object.fighter.team == 'ally':
         article = 'your '
     else:

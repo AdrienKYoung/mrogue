@@ -398,7 +398,7 @@ class Fighter:
         if self.owner.player_stats and weapon is not None:
             flat_bonus -= 5 * max(weapon.str_requirement - self.owner.player_stats.str, 0)
 
-        return max((self.base_accuracy + flat_bonus) * mod, 1)
+        return max(int((self.base_accuracy + flat_bonus) * mod), 1)
 
     def damage_bonus(self):
         return self.base_damage_bonus
@@ -498,31 +498,31 @@ class Fighter:
     @property
     def evasion(self):
         bonus = sum(equipment.evasion_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus * mul(effect.evasion_mod for effect in self.status_effects))
+        mul_bonus = 1.0 * mul(effect.evasion_mod for effect in self.status_effects)
         if self.has_status('sluggish') or self.has_status('cursed'):
             bonus -= 5
         if self.owner.player_stats:
-            return max(self.base_evasion + (self.owner.player_stats.agi / 3) + bonus, 0)
+            return max(int((self.base_evasion + (self.owner.player_stats.agi / 3) + bonus) * mul_bonus), 0)
         else:
-            return max(self.base_evasion + bonus, 0)
+            return max(int((self.base_evasion + bonus) * mul_bonus), 0)
 
     @property
     def spell_power(self):
         bonus = sum(equipment.spell_power_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus * mul(effect.spell_power_mod for effect in self.status_effects))
+        mul_bonus = 1.0 * mul(effect.spell_power_mod for effect in self.status_effects)
         if self.owner.player_stats:
-            return self.base_spell_power + self.owner.player_stats.int + bonus
+            return int((self.base_spell_power + self.owner.player_stats.int + bonus) * mul_bonus)
         else:
-            return self.base_spell_power + bonus
+            return int((self.base_spell_power + bonus) * mul_bonus)
 
     @property
     def spell_resist(self):
         bonus = sum(equipment.spell_resist_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus * mul(effect.spell_resist_mod for effect in self.status_effects))
+        mul_bonus = 1.0 * mul(effect.spell_resist_mod for effect in self.status_effects)
         if self.owner.player_stats:
-            return self.base_spell_resist + int(self.owner.player_stats.wiz/4) + bonus
+            return int((self.base_spell_resist + int(self.owner.player_stats.wiz/4) + bonus) * mul_bonus)
         else:
-            return self.base_spell_resist + bonus
+            return int((self.base_spell_resist + bonus) * mul_bonus)
 
     @property
     def max_hp(self):

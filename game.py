@@ -1041,8 +1041,14 @@ def get_monster_at_tile(x, y):
 
 def get_fighters_in_burst(x,y,radius,fov_source=None,team='ally'):
     return [obj for obj in current_map.fighters if distance(x,y,obj.x,obj.y) <= radius and \
-            obj.fighter.team != team and fov.monster_can_see_object(fov_source,obj)]
+            obj.fighter.team!=team and fov.monster_can_see_object(fov_source,obj)]
 
+def opposite_team(team):
+    if team == 'ally':
+        return 'enemy'
+    elif team == 'enemy':
+        return 'ally'
+    return 'neutral'
 
 def object_at_coords(x, y):
 
@@ -1319,7 +1325,7 @@ def spawn_npc(name,x,y):
 def create_ability(name):
     if name in abilities.data:
         a = abilities.data[name]
-        return abilities.Ability(a.get('name'), a.get('description'), a['function'], a.get('cooldown'),
+        return abilities.Ability(name, a.get('name'), a.get('description'), a['function'], a.get('cooldown'),
                                  intent=a.get('intent', 'aggressive'))
     else:
         return None
@@ -1631,7 +1637,7 @@ def dice_range(dice, normalize_size=None):
 
     return dice_count + remainder_min + flat_bonus, dice_count * dice_size + remainder + flat_bonus
 
-
+#TODO: add movement_type parameter
 def find_closest_open_tile(x, y, exclude=[]):
     if in_bounds(x, y) and not is_blocked(x, y) and len(exclude) == 0:
         return x, y

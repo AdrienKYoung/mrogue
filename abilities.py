@@ -18,9 +18,11 @@ import game as main
 import libtcodpy as libtcod
 import ui
 import player
+import ai
 
 class Ability:
-    def __init__(self, name, description, function, cooldown, stamina_cost=0, intent='aggressive'):
+    def __init__(self, ability_id, name, description, function, cooldown, stamina_cost=0, intent='aggressive'):
+        self.ability_id = ability_id
         self.name = name
         self.function = function
         self.description = description
@@ -510,6 +512,14 @@ data = {
         'cooldown': 6,
         'intent': 'aggressive',
     },
+
+    'ability_heal_other': {
+        'name': 'Heal Other',
+        'function': actions.heal_other,
+        'cooldown': 1,
+        'intent': 'support',
+        'target_function': ai.target_damaged_ally,
+    },
 }
 
 vermin_summons = [
@@ -522,8 +532,8 @@ vermin_summons = [
 ]
 
 default_abilities = {
-    'attack' : Ability('Attack','Attack an enemy',actions.attack,0),
-    'bash' : Ability('Bash','Knock an enemy back',actions.bash_attack,0, stamina_cost=20),
-    'jump' : Ability('Jump','Jump to a tile',player.jump,0, stamina_cost=50),
-    'raise shield' : Ability('Raise Shield', 'Spend stamina to recover your shield after it has been knocked aside.', actions.recover_shield, 0)
+    'attack' : Ability('ability_attack', 'Attack','Attack an enemy',actions.attack,0),
+    'bash' : Ability('ability_bash', 'Bash','Knock an enemy back',actions.bash_attack,0, stamina_cost=20),
+    'jump' : Ability('ability_jump', 'Jump','Jump to a tile',player.jump,0, stamina_cost=50),
+    'raise shield' : Ability('ability_raise_shield', 'Raise Shield', 'Spend stamina to recover your shield after it has been knocked aside.', actions.recover_shield, 0)
 }

@@ -313,6 +313,22 @@ def web_bomb(actor=None, target=None):
         return 'success'
     return 'cancelled'
 
+def heal_other(actor=None, target=None):
+    if actor is None:
+        ui.message('Yo implement this', libtcod.red)
+        return 'failure'
+    if target is not None and target.fighter is not None:
+        ui.render_explosion(target.x, target.y, 0, libtcod.lightest_green, libtcod.green)
+        amount = main.roll_dice('3d4')
+        target.fighter.heal(amount)
+        ui.message('%s %s %s for %d damage.' % (
+            syntax.name(actor).capitalize(),
+            syntax.conjugate(actor is player.instance, ('heal', 'heals')),
+            syntax.name(target, reflexive=actor),
+            amount), libtcod.green)
+        return 'success'
+    return 'failure'
+
 def on_death_summon_meta(name,ttl=None,message=None):
     return lambda obj: _on_death_summon_meta(obj,name,ttl,message)
 
@@ -483,7 +499,7 @@ def reeker_breath(actor=None, target=None):
         for obj in main.current_map.fighters:
             if obj.x == tile[0] and obj.y == tile[1]:
                 combat.spell_attack(actor.fighter, obj, 'ability_reeker_breath')
-1
+
 def flame_breath(actor=None, target=None):
     x, y = 0, 0
     if actor is None:
@@ -1209,6 +1225,7 @@ def holy_water(actor=None, target=None):
     import monsters
     if actor is None:
         actor = player.instance
+    if actor == player.instance:
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         default_target = None
         if ui.selected_monster is not None:
@@ -1695,7 +1712,15 @@ def teleportal_on_tick(teleportal):
                 teleport(obj, destination[0], destination[1])
         teleportal.destroy()
 
-def create_teleportal(x, y):
+def create_teleportal(actor=None, target=None):
+    if actor is None:
+        actor = player.instance
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        x, y = ui.target_tile(max_range=3)
+    else:
+        x, y = actor.x, actor.y
+    if x is None or y is None:
+        return 'cancelled'
     portal = main.GameObject(x, y, 9, 'teleportal', spells.essence_colors['arcane'], on_tick=teleportal_on_tick)
     portal.timer = 4
     main.current_map.add_object(portal)
