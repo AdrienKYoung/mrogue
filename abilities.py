@@ -20,19 +20,22 @@ import ui
 import player
 
 class Ability:
-    def __init__(self, name, description, function, cooldown, stamina_cost=0):
+    def __init__(self, name, description, function, cooldown, stamina_cost=0, intent='aggressive'):
         self.name = name
         self.function = function
         self.description = description
         self.cooldown = cooldown
         self.current_cd = 0
         self.stamina_cost = stamina_cost
+        self.intent = intent
 
     def use(self, actor=None, target=None):
         if self.current_cd < 1:
             result = self.function(actor, target)
-            if result != 'didnt-take-turn' or result != 'cancelled':
+            if result != 'didnt-take-turn' and result != 'cancelled':
                 self.current_cd = self.cooldown
+            else:
+                result = 'didnt-take-turn'
         else:
             if actor is player.instance:
                 ui.message('{} is on cooldown'.format(self.name), libtcod.red)
@@ -52,14 +55,16 @@ data = {
         'name': 'Thrust',
         'description': 'Thrust at an enemy up to 2 spaces away',
         'function': actions.attack_reach,
-        'cooldown': 0
+        'cooldown': 0,
+        'intent': 'aggressive',
     },
 
     'ability_cleave': {
         'name': 'Cleave',
         'description': 'Make an attack against all adjacent enemies',
         'function': actions.cleave_attack,
-        'cooldown': 0
+        'cooldown': 0,
+        'intent': 'aggressive',
     },
 
     'ability_pommel_strike': {
@@ -74,7 +79,8 @@ data = {
         'guaranteed_shred_bonus': 2,
         'exhaustion_duration': 3,
         'verb': ('smash','smashes'),
-        'on_hit': actions.on_hit_tx(actions.exhaust_self,'ability_pommel_strike')
+        'on_hit': actions.on_hit_tx(actions.exhaust_self,'ability_pommel_strike'),
+        'intent': 'aggressive',
     },
 
     'ability_blade_dance': {
@@ -85,7 +91,8 @@ data = {
         'cooldown': 2,
         'stamina_multiplier': 1.2,
         'damage_multiplier': 1,
-        'on_hit':actions.swap
+        'on_hit':actions.swap,
+        'intent': 'aggressive',
     },
 
     'ability_skullsplitter': {
@@ -96,7 +103,8 @@ data = {
         'function': weapon_attack('ability_skullsplitter'),
         'cooldown': 10,
         'stamina_multiplier': 1.5,
-        'damage_multiplier': actions.skullsplitter_calc_damage_bonus
+        'damage_multiplier': actions.skullsplitter_calc_damage_bonus,
+        'intent': 'aggressive',
     },
 
     'ability_crush': {
@@ -108,7 +116,8 @@ data = {
         'cooldown': 5,
         'stamina_multiplier': 1.5,
         'damage_multiplier': actions.crush_calc_damage_bonus,
-        'shred_bonus': actions.crush_calc_shred_bonus
+        'shred_bonus': actions.crush_calc_shred_bonus,
+        'intent': 'aggressive',
     },
 
     'ability_essence_fist': {
@@ -119,6 +128,7 @@ data = {
         'stamina_cost': 50,
         'cooldown':0,
         'damage_multiplier': 4,
+        'intent': 'aggressive',
     },
 
     'ability_sweep': {
@@ -128,44 +138,51 @@ data = {
         'function': actions.sweep_attack,
         'cooldown': 5,
         'stamina_multiplier': 3,
-        'damage_multiplier': 1.5
+        'damage_multiplier': 1.5,
+        'intent': 'aggressive',
     },
 
     'ability_berserk': {
         'name': 'Berserk',
         'function': actions.berserk_self,
-        'cooldown': 30
+        'cooldown': 30,
+        'intent': 'supportive',
     },
 
     'ability_summon_vermin': {
         'name': 'Summon Vermin',
         'function': actions.spawn_vermin,
-        'cooldown': 9
+        'cooldown': 9,
+        'intent': 'aggressive',
     },
 
     'ability_grapel': {
         'name': 'Grapel',
         'function': actions.frog_tongue,
-        'cooldown': 3
+        'cooldown': 3,
+        'intent': 'aggressive',
     },
 
     'ability_dragonweed_pull': {
         'name': 'Dragonweed Pull',
         'function': actions.dragonweed_pull,
-        'cooldown': 1
+        'cooldown': 1,
+        'intent': 'aggressive',
     },
 
     'ability_silence': {
         'name': 'Silence',
         'function': actions.silence,
         'range':5,
-        'cooldown': 15
+        'cooldown': 15,
+        'intent': 'aggressive',
     },
 
     'ability_raise_zombie': {
         'name': 'Raise Zombie',
         'function' : actions.raise_zombie,
-        'cooldown' : 3
+        'cooldown' : 3,
+        'intent': 'neutral',
     },
 
     'ability_flame_breath': {
@@ -175,6 +192,7 @@ data = {
         'cooldown' : 6,
         'range': 4,
         'damage': '2d8',
+        'intent': 'aggressive',
     },
 
     'ability_reeker_breath': {
@@ -184,6 +202,7 @@ data = {
         'cooldown' : 5,
         'range': 4,
         'damage': '1d8',
+        'intent': 'aggressive',
     },
 
     'ability_great_dive': {
@@ -192,6 +211,7 @@ data = {
         'cooldown' : 10,
         'range': 10,
         'cast_time': 1,
+        'intent': 'aggressive',
     },
 
     'ability_fireball': {
@@ -204,7 +224,8 @@ data = {
         'pierce': 1,
         'cast_time':2,
         'range':8,
-        'radius':2
+        'radius':2,
+        'intent': 'aggressive',
     },
 
     'ability_heat_ray': {
@@ -215,7 +236,8 @@ data = {
         'dice' : 1,
         'base_damage' : '3d4',
         'pierce': 0,
-        'range':3
+        'range':3,
+        'intent': 'aggressive',
     },
 
     'ability_flame_wall': {
@@ -225,7 +247,8 @@ data = {
         'element':'fire',
         'dice' : 0,
         'base_damage' : '0d0',
-        'range':10
+        'range':10,
+        'intent': 'aggressive',
     },
 
     'ability_magma_bolt': {
@@ -236,7 +259,8 @@ data = {
         'dice' : 3,
         'base_damage' : '3d6',
         'pierce': 1,
-        'range':10
+        'range':10,
+        'intent': 'aggressive',
     },
 
     'ability_arcane_arrow': {
@@ -247,7 +271,8 @@ data = {
         'dice' : 1,
         'base_damage' : '3d6',
         'pierce': 0,
-        'range':5
+        'range':5,
+        'intent': 'aggressive',
     },
 
     'ability_smite': {
@@ -259,7 +284,8 @@ data = {
         'base_damage' : '3d6',
         'pierce': 3,
         'shred' : 2,
-        'range':10
+        'range':10,
+        'intent': 'aggressive',
     },
 
     'ability_frozen_orb': {
@@ -269,7 +295,8 @@ data = {
         'element':'cold',
         'dice' : 2,
         'base_damage' : '3d4',
-        'range':4
+        'range':4,
+        'intent': 'aggressive',
     },
 
     'ability_flash_frost': {
@@ -280,7 +307,8 @@ data = {
         'dice' : 0,
         'base_damage' : '0d0',
         'pierce': 0,
-        'range':6
+        'range':6,
+        'intent': 'aggressive',
     },
 
     'ability_ice_shards': {
@@ -291,7 +319,8 @@ data = {
         'dice' : 1,
         'base_damage' : '1d8',
         'range': 5,
-        'radius': 1
+        'radius': 1,
+        'intent': 'aggressive',
     },
 
     'ability_snowstorm': {
@@ -302,7 +331,8 @@ data = {
         'dice' : 1,
         'base_damage' : '1d4',
         'range':10,
-        'radius':4
+        'radius':4,
+        'intent': 'aggressive',
     },
 
     'ability_avalanche': {
@@ -312,7 +342,8 @@ data = {
         'element':'cold',
         'dice' : 2,
         'base_damage' : '3d8',
-        'range':10
+        'range':10,
+        'intent': 'aggressive',
     },
 
     'ability_hex': {
@@ -323,7 +354,8 @@ data = {
         'dice' : 0,
         'base_damage' : '0d0',
         'pierce': 0,
-        'range':6
+        'range':6,
+        'intent': 'aggressive',
     },
 
     'ability_defile': {
@@ -334,7 +366,8 @@ data = {
         'dice' : 1,
         'base_damage' : '2d8',
         'pierce': 0,
-        'range':6
+        'range':6,
+        'intent': 'neutral',
     },
 
     'ability_shackles_of_the_dead': {
@@ -346,7 +379,8 @@ data = {
         'base_damage' : '0d0',
         'pierce': 0,
         'range':6,
-        'radius':1
+        'radius':1,
+        'intent': 'aggressive',
     },
 
     'ability_sacrifice': {
@@ -357,7 +391,8 @@ data = {
         'dice' : 2,
         'base_damage' : '3d8',
         'pierce': 2,
-        'radius':2
+        'radius':2,
+        'intent': 'aggressive',
     },
 
     'ability_corpse_dance': {
@@ -371,7 +406,8 @@ data = {
         'range':6,
         'radius':3,
         'cast_time':3,
-        'buff_duration':50
+        'buff_duration':50,
+        'intent': 'supportive',
     },
 
     'ability_green_touch': {
@@ -381,6 +417,7 @@ data = {
         'element':'life',
         'range':8,
         'radius':3,
+        'intent': 'neutral',
     },
 
     'ability_fungal_growth': {
@@ -389,6 +426,7 @@ data = {
         'cooldown': 10,
         'element':'life',
         'range':4,
+        'intent': 'neutral',
     },
 
     'ability_summon_dragonweed': {
@@ -397,20 +435,23 @@ data = {
         'cooldown': 5,
         'element':'life',
         'range':2,
+        'intent': 'aggressive',
     },
 
     'ability_bless': {
         'name': 'bless',
         'function': actions.bless,
         'cooldown': 30,
-        'element':'radiance'
+        'element':'radiance',
+        'intent': 'supportive',
     },
 
     'ability_castigate': {
         'name': 'castigate',
         'function': actions.castigate,
         'cooldown': 10,
-        'element':'radiance'
+        'element':'radiance',
+        'intent': 'aggressive',
     },
 
     'ability_holy_lance': {
@@ -421,7 +462,8 @@ data = {
         'dice' : 2,
         'base_damage' : '2d8',
         'radius':2,
-        'range':8
+        'range':8,
+        'intent': 'aggressive',
     },
 
     'ability_holy_lance_tick': {
@@ -430,7 +472,8 @@ data = {
         'cooldown': 1,
         'dice' : 1,
         'base_damage' : '1d8',
-        'element':'radiance'
+        'element':'radiance',
+        'intent': 'aggressive',
     },
 
     'ability_off_hand_shoot': {
@@ -438,7 +481,8 @@ data = {
         'function': actions.offhand_shot,
         'cooldown': 5,
         'range': 10,
-        'description': 'Fire your weapon at an enemy you can see.'
+        'description': 'Fire your weapon at an enemy you can see.',
+        'intent': 'aggressive',
     },
 
     'ability_focus': {
@@ -447,7 +491,8 @@ data = {
         'cooldown': 0,
         'range': 10,
         'stamina_cost' : 5,
-        'description' : 'Focus on hitting your target, increasing your accuracy for a turn.'
+        'description' : 'Focus on hitting your target, increasing your accuracy for a turn.',
+        'intent': 'aggressive',
     },
 
     'ability_summon_spiders': {
@@ -456,12 +501,14 @@ data = {
         'cooldown': 8,
         'max_summons': 4,
         'summons_per_cast': '1d2',
+        'intent': 'aggressive',
     },
 
     'ability_web_bomb': {
         'name': 'Web Bomb',
         'function': actions.web_bomb,
         'cooldown': 6,
+        'intent': 'aggressive',
     },
 }
 

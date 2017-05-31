@@ -299,8 +299,8 @@ def handle_keys():
                 purchase_skill()
                 return 'didnt-take-turn'
             if mouse.rbutton_pressed:
-                offsetx, offsety = instance.x - consts.MAP_VIEWPORT_WIDTH / 2, instance.y - consts.MAP_VIEWPORT_HEIGHT / 2
-                mouse_pos = mouse.cx + offsetx - consts.MAP_VIEWPORT_X, mouse.cy + offsety - consts.MAP_VIEWPORT_Y
+                offsetx, offsety = instance.x - ui.MAP_VIEWPORT_WIDTH() / 2, instance.y - ui.MAP_VIEWPORT_HEIGHT() / 2
+                mouse_pos = mouse.cx + offsetx - ui.MAP_VIEWPORT_X, mouse.cy + offsety - ui.MAP_VIEWPORT_Y
                 if main.in_bounds(mouse_pos[0], mouse_pos[1]):
                     ui.examine(mouse_pos[0], mouse_pos[1])
             return 'didnt-take-turn'
@@ -796,7 +796,7 @@ def jump(actor=None, range=None, stamina_cost=None):
         return 'didnt-take-turn'
 
     web = main.object_at_tile(instance.x, instance.y, 'spiderweb')
-    if web is not None:
+    if web is not None and stamina_cost > 0:
         ui.message('You struggle against the web.')
         web.destroy()
         return 'webbed'
@@ -814,8 +814,12 @@ def jump(actor=None, range=None, stamina_cost=None):
         if main.current_map.tiles[x][y].blocks:
             ui.message('There is something in the way.', libtcod.light_yellow)
             return 'didnt-take-turn'
-        elif main.current_map.tiles[x][y].is_pit:
-            ui.message("You really don't want to jump into this bottomless pit.", libtcod.light_yellow)
+        elif main.current_map.tiles[x][y].is_pit and instance.movement_type & pathfinding.FLYING != pathfinding.FLYING:
+            if ui.menu_y_n('Really jump into that pit?'):
+                instance.set_position(x, y)
+                instance.fighter.adjust_stamina(-stamina_cost)
+                return 'jumped'
+                #ui.message("You really don't want to jump into this bottomless pit.", libtcod.light_yellow)
             return 'didnt-take-turn'
         elif main.is_blocked(x, y, from_coord=(instance.x, instance.y), movement_type=instance.movement_type) and main.current_map.tiles[x][y].elevation > instance.elevation:
             ui.message("You can't jump that high!", libtcod.light_yellow)
@@ -883,7 +887,7 @@ def _learn_ability(name):
             return
     ability = abilities.data[name]
     instance.perk_abilities.append(abilities.Ability(ability['name'],ability['description'],
-                                                                  ability['function'],ability['cooldown']))
+                                  ability['function'],ability['cooldown'], intent=ability.get('intent', 'aggressive')))
 
 def on_tick(this):
     if main.has_skill('pyromaniac'):

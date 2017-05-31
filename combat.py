@@ -213,6 +213,10 @@ class Fighter:
     def attack(self, target):
         result = 'failed'
         attacks = self.calculate_attack_count()
+        if target.fighter is None:
+            return 'failed'
+        if target.fighter.stealth is not None and target.fighter.stealth < self.owner.distance_to(target):
+            return 'failed' # cannot attack targets that cannot be seen
         for i in range(attacks):
             result = attack_ex(self, target, self.calculate_attack_stamina_cost(), on_hit=self.on_hit)
             if result == 'failed':
@@ -291,10 +295,10 @@ class Fighter:
                 if effect.time_limit == 0:
                     removed_effects.append(effect)
         for effect in removed_effects:
-            if effect.on_end is not None:
-                effect.on_end(effect,self.owner)
             if effect in self.status_effects:  # It can sometimes be removed in the on-tick function
                 self.status_effects.remove(effect)
+            if effect.on_end is not None:
+                effect.on_end(effect,self.owner)
 
         # Manage ability cooldowns
         for ability in self.abilities:
@@ -361,6 +365,8 @@ class Fighter:
         for effect in self.status_effects:
             if effect.name == name:
                 self.status_effects.remove(effect)
+                if effect.on_end is not None:
+                    effect.on_end(effect, self.owner)
                 return
 
     def has_attribute(self, name):
@@ -1040,9 +1046,8 @@ def roll_location_effect(inventory, location):
 def roll_to_hit(target,  accuracy):
     return libtcod.random_get_float(0, 0, 1) < get_chance_to_hit(target, accuracy)
 
-
 def get_chance_to_hit(target, accuracy):
-    if target.fighter.has_status('stunned'):
+    if target.fighter.has_status('stunned') or target.fighter.has_status('frozen'):
         return 1.0
     if target.behavior and (target.behavior.ai_state == 'resting' or target.behavior.ai_state == 'wandering'):
         return 1.0

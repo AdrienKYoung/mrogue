@@ -1,4 +1,5 @@
 import libtcodpy
+import effects
 
 table = {
     'equipment_ring_of_stamina': {
@@ -164,5 +165,15 @@ table = {
         'description'   : 'A simple silver band set with a holy symbol. '
                           'Protects its wearer from curses, judgement, and doom.',
         'immunities'    : ['cursed', 'doom', 'judgement']
+    },
+    'equipment_ring_of_levitation': {
+        'name'          : 'Ring of Levitation',
+        'category'      : 'accessory',
+        'char'          : chr(147),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'slot'          : 'ring',
+        'description'   : 'A glass ring that feels almost weightless. Allows its wearer to levitate.',
+        'status_effect' : effects.levitating,
     },
 }

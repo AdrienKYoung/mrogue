@@ -27,6 +27,7 @@ IMMOBILE = 2
 EVIL = 4
 WEB_IMMUNE = 4
 NO_BREATH = 8
+LOW_PRIORITY = 16  # used for targeting
 
 proto = {
     'monster_target': {
@@ -323,7 +324,7 @@ proto = {
         'weaknesses' : ['fire'],
         'resistances': ['confusion', 'stunned'],
         'essence': [(25, 'life')],
-        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH,
+        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH | LOW_PRIORITY,
         'subtype':'plant',
     },
     'monster_blastcap': {
@@ -341,7 +342,7 @@ proto = {
                        'deafening crack, stunning anything adjacent (but not diagonally) for several turns.',
         'resistances': ['confusion', 'stunned'],
         'death_function': main.blastcap_explode,
-        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH,
+        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH | LOW_PRIORITY,
         'subtype':'plant',
         'team' : 'neutral'
     },
@@ -805,7 +806,7 @@ proto = {
                        'It glows with a soft warmth - those close enough to touch'
                        ' it can feel that warmth flow through them, healing their wounds.',
         'resistances': [],
-        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH,
+        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH | LOW_PRIORITY,
         'shred': 3,
         'subtype':'plant',
     },

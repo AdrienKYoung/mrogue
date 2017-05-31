@@ -363,6 +363,9 @@ def raise_zombie(actor=None, target=None):
 def fireball(actor=None, target=None):
     if actor is None:
         actor = player.instance
+    else:
+        if not fov.monster_can_see_object(actor, target):
+            return 'cancelled'
     channel(actor, get_cast_time(actor,'ability_fireball'), 'fireball', lambda: _continuation_fireball(actor, target))
     return 'success'
 
@@ -1060,7 +1063,6 @@ def summon_dragonweed(actor=None, target=None):
     return 'success'
 
 def _dragonseed_ticker(ticker):
-    dead_flag = False
     if ticker.ticks >= ticker.max_ticks:
         ticker.dead = True
         ui.message("The dragonweed sapling matures.", libtcod.dark_chartreuse)
@@ -1243,7 +1245,7 @@ def knock_back(actor,target):
     stun = False
     against = ''
     against_tile = main.current_map.tiles[target.x + direction[0]][target.y + direction[1]]
-    if against_tile.blocks:
+    if against_tile.blocks and not against_tile.is_pit:
         stun = True
         against = main.current_map.tiles[target.x + direction[0]][target.y + direction[1]].name
     elif against_tile.elevation != target.elevation and against_tile.tile_type != 'ramp' and \
@@ -1306,7 +1308,7 @@ def silence(actor=None,target=None):
             syntax.name(target).capitalize(),
             syntax.conjugate(target is player.instance, ('are', 'is'))), libtcod.light_blue)
 
-def check_doom(obj=None):
+def check_doom(effect, obj=None):
     fx = [f for f in obj.fighter.status_effects if f.name == 'doom']
     if len(fx) > 0 and fx[0].stacks >= 13:
         ui.message("Death comes for {}".format(obj.name),libtcod.dark_crimson)

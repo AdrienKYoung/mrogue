@@ -32,7 +32,7 @@ class Equipment:
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
                  resistances=[], immunities=[], modifiers = {}, base_id=None, _range=1,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
-                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0):
+                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None):
         self.is_equipped = False
         self.slot = slot
         self.base_id = base_id
@@ -81,6 +81,8 @@ class Equipment:
 
         self._spell_power_bonus = spell_power_bonus
         self._spell_resist_bonus = spell_resist_bonus
+
+        self.status_effect = status_effect
 
         self.essence = essence
         self.level = 0
@@ -204,6 +206,8 @@ class Equipment:
 
     @property
     def sh_max(self):
+        if self._sh_max <= 0:
+            return 0
         return self._sh_max + self.get_bonus('sh_max_bonus')
 
     @property
@@ -221,6 +225,9 @@ class Equipment:
             return self.equip()
 
     def equip(self, no_message=False):
+        if self.is_equipped:
+            return  # already equipped
+
         old_equipment = None
         if self.slot == 'ring':
             rings = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
@@ -255,6 +262,8 @@ class Equipment:
         self.is_equipped = True
         if self.holder is player.instance and not no_message:
             ui.message('Equipped ' + self.owner.name + '.', libtcod.orange)
+        if self.status_effect is not None and self.holder.fighter is not None:
+            self.holder.fighter.apply_status_effect(self.status_effect(None))
         return 'success'
 
     def dequip(self, no_message=False):
@@ -273,6 +282,10 @@ class Equipment:
         self.is_equipped = False
         if not no_message and self.holder is player.instance:
             ui.message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
+        if self.status_effect is not None:
+            dummy_effect = self.status_effect()
+            if self.holder.fighter is not None:
+                self.holder.fighter.remove_status(dummy_effect.name)
         return 'success'
 
     def print_description(self, console, x, y, width):
@@ -286,7 +299,10 @@ class Equipment:
             print_height += 1
             libtcod.console_set_default_foreground(console, libtcod.white)
         libtcod.console_print(console, x, y + print_height, 'Slot: ' + self.slot)
-        print_height += 2
+        print_height += 1
+        if self.subtype is not None:
+            libtcod.console_print(console, x, y + print_height, 'Category: ' + self.subtype)
+            print_height += 2
         if self.level_progression is not None and self.level_progression != 0:
             libtcod.console_print(console, x, y + print_height, 'Level: ' + str(self.level) + '/' + str(self.max_level))
             print_height += 1

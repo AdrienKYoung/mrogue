@@ -197,6 +197,7 @@ table = {
         'equipment_ring_of_freedom',
         'equipment_ring_of_salvation',
         'equipment_ring_of_blessings',
+        'equipment_ring_of_levitation',
     ],
 
     'elixirs_0': [

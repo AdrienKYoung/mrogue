@@ -304,9 +304,10 @@ def inventory_menu(header):
 
 
 def auto_target_monster():
+    import monsters
     global selected_monster
 
-    if selected_monster is None:
+    if selected_monster is None or selected_monster.fighter.has_flag(monsters.LOW_PRIORITY):
         monster = main.closest_monster(consts.TORCH_RADIUS)
         if monster is not None:
             select_monster(monster)
@@ -1496,7 +1497,7 @@ def render_projectile(start, end, color, character=None):
 
     if character is None: bolt_char = chr(7)
     else: bolt_char = character
-    bolt = main.GameObject(start[0], start[1], bolt_char, 'bolt', color=color)
+    bolt = main.GameObject(start[0], start[1], bolt_char, 'bolt', color=color, movement_type=2)
 
     line = main.beam(start[0], start[1], end[0], end[1])
     main.current_map.add_object(bolt)

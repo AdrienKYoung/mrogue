@@ -193,7 +193,7 @@ class GameObject:
         else:
             self.elevation = elevation
         self.background_color = background_color
-        self.movement_type = movement_type
+        self._movement_type = movement_type
         self.summon_time = summon_time
         self.zones = []
         for z in zones:
@@ -201,6 +201,12 @@ class GameObject:
         self.is_corpse = is_corpse
         self.zombie_type = zombie_type
         self.npc = npc
+
+    @property
+    def movement_type(self):
+        if self.fighter is not None and self.fighter.has_status('levitating'):
+            return pathfinding.FLYING
+        return self._movement_type
 
     def change_behavior(self,behavior):
         self.behavior.behavior = behavior
@@ -234,8 +240,8 @@ class GameObject:
         old_y = self.y
 
         # If the object is not moving, skip this function.
-        if old_x == x and old_y == y:
-            return
+        #if old_x == x and old_y == y:
+        #    return
 
         # Update the object's position/elevation
         self.x = x
@@ -278,6 +284,10 @@ class GameObject:
                 self.fighter.apply_status_effect(effects.agile(None),False)
             elif not current_map.tiles[self.x][self.y].is_water and self.fighter.has_status('agile'):
                 self.fighter.remove_status('agile')
+
+        if self.movement_type & pathfinding.FLYING != pathfinding.FLYING:
+            if current_map.tiles[self.x][self.y].is_pit:
+                fall_in_pit(self)
 
         # If the player moved, recalculate field of view, checking for elevation changes
         if self is player.instance:
@@ -358,8 +368,7 @@ class GameObject:
             return False
 
     def player_can_see(self):
-        if self.fighter is not None and self.fighter.stealth is not None and player.instance.distance_to(
-                self) >= self.fighter.stealth:
+        if self.fighter is not None and self.fighter.stealth is not None and player.instance.distance_to(self) >= self.fighter.stealth:
             return False
         else:
             return fov.player_can_see(self.x, self.y)
@@ -747,7 +756,7 @@ def water_elemental_tick(elemental):
 
 def scum_glob_tick(glob):
     tile = current_map.tiles[glob.x][glob.y]
-    if not tile.is_water and not tile.tile_type == 'oil' and not tile.is_ramp:
+    if not tile.is_water and not tile.tile_type == 'oil' and not tile.is_ramp and not tile.is_pit:
         tile.tile_type = 'oil'
         changed_tiles.append((glob.x, glob.y))
 
@@ -1062,11 +1071,11 @@ def beam(sourcex, sourcey, destx, desty):
     return beam_values
 
 
-def beam_interrupt(sourcex, sourcey, destx, desty, ignore_fighters=False):
+def beam_interrupt(sourcex, sourcey, destx, desty, ignore_fighters=False, movement_type=2): #movement_type = flying
     libtcod.line_init(sourcex, sourcey, destx, desty)
     line_x, line_y = libtcod.line_step()
     while line_x is not None:
-        if is_blocked(line_x, line_y, ignore_fighters=ignore_fighters):  # beam interrupt scans until it hits something
+        if is_blocked(line_x, line_y, movement_type=movement_type, ignore_fighters=ignore_fighters):  # beam interrupt scans until it hits something
             return line_x, line_y
         line_x, line_y = libtcod.line_step()
     return destx, desty
@@ -1101,15 +1110,25 @@ def cone(sourcex,sourcey,destx,desty,max_range):
 
 def closest_monster(max_range):
     closest_enemy = None
+    low_priority_enemy = None
+    low_priority_dist = max_range + 1
     closest_dist = max_range + 1
 
     for object in current_map.fighters:
         if object is not player.instance and object.player_can_see():
             dist = player.instance.distance_to(object)
-            if dist < closest_dist:
-                closest_dist = dist
-                closest_enemy = object
-    return closest_enemy
+            if object.fighter.has_flag(monsters.LOW_PRIORITY):
+                if dist < low_priority_dist:
+                    low_priority_dist = dist
+                    low_priority_enemy = object
+            else:
+                if dist < closest_dist:
+                    closest_dist = dist
+                    closest_enemy = object
+    if closest_enemy is not None:
+        return closest_enemy
+    else:
+        return low_priority_enemy
 
 
 def in_bounds(x, y):
@@ -1300,7 +1319,8 @@ def spawn_npc(name,x,y):
 def create_ability(name):
     if name in abilities.data:
         a = abilities.data[name]
-        return abilities.Ability(a.get('name'), a.get('description'), a['function'], a.get('cooldown'))
+        return abilities.Ability(a.get('name'), a.get('description'), a['function'], a.get('cooldown'),
+                                 intent=a.get('intent', 'aggressive'))
     else:
         return None
 
@@ -1388,6 +1408,7 @@ def create_item(name, material=None, quality=''):
             sh_raise_cost=p.get('sh_raise_cost', 0),
             sh_recovery=p.get('sh_recovery', 0),
             stamina_regen=p.get('stamina_regen', 0),
+            status_effect=p.get('status_effect'),
         )
 
         if material is None:
@@ -1479,7 +1500,7 @@ def create_fire(x,y,temp):
     global changed_tiles
 
     tile = current_map.tiles[x][y]
-    if tile.is_water or (tile.blocks and tile.flammable == 0):
+    if tile.is_water or (tile.blocks and tile.flammable == 0) or tile.is_pit:
         return
     elif tile.is_ice:
         melt_ice(x, y)
@@ -1749,6 +1770,36 @@ def land_next_to_target(target_x, target_y, source_x, source_y):
         return land_x, land_y
     return None
 
+def fall_in_pit(object):
+    ui.message('%s %s into the pit!' % (syntax.name(object).capitalize(), syntax.conjugate(object is player.instance, ('fall', 'falls'))), libtcod.white)
+    if not hasattr(object, 'fighter') or object.fighter is None:
+        object.destroy()
+        return
+
+    object.fighter.take_damage(roll_dice('2d10', normalize_size=4))
+    if object.fighter is None: # Died in fall
+        object.destroy()
+        return
+    pit_ticker = Ticker(5, _pit_ticker)
+    pit_ticker.obj = object
+    pit_ticker.old_stealth = object.fighter.stealth
+    object.fighter.stealth = -1
+    object.fighter.apply_status_effect(effects.stunned(duration=5))
+    current_map.tickers.append(pit_ticker)
+
+def _pit_ticker(ticker):
+    if ticker.ticks >= ticker.max_ticks:
+        ticker.dead = True
+        if ticker.obj is player.instance:
+            tile = None
+            ui.message('Climb out where?')
+            while tile is None or tile[0] is None:
+                tile = ui.target_tile(max_range=1)
+            destination = find_closest_open_tile(tile[0], tile[1])
+        else:
+            destination = find_closest_open_tile(ticker.obj.x, ticker.obj.y)
+        ticker.obj.fighter.stealth = ticker.old_stealth
+        ticker.obj.set_position(destination[0], destination[1])
 
 def clear_map():
     libtcod.console_set_default_background(map_con, libtcod.black)

@@ -32,7 +32,7 @@ class Map:
         self.tickers = []
         self.difficulty = difficulty
         self.pathfinding = None
-        self.visited = consts.DEBUG_REVEAL_MAP
+        self.visited = consts.DEBUG_ALL_EXPLORED
 
     def add_link(self, cell, direction):
         self.links.append((direction, cell))

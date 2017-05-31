@@ -79,7 +79,7 @@ def judgement(duration = 30, stacks=10):
 
 def immobilized(duration = 5):
     return StatusEffect('immobilized', duration, libtcod.yellow, message="Your feet are held fast!",
-                        description='This unit cannot move.', cleanseable=True)
+                        description='This unit cannot move.', cleanseable=True, evasion_mod=0.5)
 
 def berserk(duration = 20):
     return StatusEffect('berserk',duration,libtcod.red, on_end=berserk_end, attack_power_mod=1.5, stacking_behavior='refresh',
@@ -207,6 +207,11 @@ def focused(duration=1):
     return StatusEffect('focused', duration, libtcod.white, message='You focus on your target...',
                         description='This unit has increased accuracy', cleanseable=False)
 
+def levitating(duration=100):
+    return StatusEffect('levitating', duration, spells.essence_colors['air'],
+                        message='You rise into the air...', description='This unit is levitating magically.',
+                        cleanseable=False, on_end=levitation_end)
+
 def burn_apply(effect, object=None):
     if object is not None and object.fighter is not None and object.fighter.has_status('frozen'):
         object.fighter.remove_status('frozen')
@@ -263,9 +268,13 @@ def berserk_end(effect, object=None):
     if object is not None and object.fighter is not None:
         object.fighter.apply_status_effect(exhausted())
 
-def check_judgement(obj=None):
+def check_judgement(effect, obj=None):
     fx = [f for f in obj.fighter.status_effects if f.name == 'judgement']
     if len(fx) > 0 and fx[0].stacks >= 100:
         ui.message("{} was judged!".format(obj.name), libtcod.light_yellow)
         obj.fighter.take_damage(int(obj.fighter.max_hp / 3))
         obj.fighter.remove_status('judgement')
+
+def levitation_end(effect, obj=None):
+    if obj is not None:
+        obj.set_position(obj.x, obj.y)
