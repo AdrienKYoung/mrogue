@@ -248,7 +248,7 @@ def inventory_menu(header):
     libtcod.console_set_default_foreground(window, libtcod.white)
     libtcod.console_print(window, 1, 1, header)
     y = 3
-    letter_index = ord('a')
+    #letter_index = ord('a')
     menu_items = []
     item_categories = []
 
@@ -280,7 +280,7 @@ def inventory_menu(header):
                     menu_items.append(item)
 
                     libtcod.console_set_default_foreground(window, libtcod.white)
-                    libtcod.console_print(window, 1, y, '(' + chr(letter_index) + ') ')
+                    libtcod.console_print(window, 1, y, '(' + item.item.inventory_index + ') ')
                     libtcod.console_put_char_ex(window, 5, y, item.char, item.color, libtcod.black)
                     libtcod.console_print(window, 7, y, string.capwords(item.name))
 
@@ -289,7 +289,7 @@ def inventory_menu(header):
                         libtcod.console_print_ex(window, INVENTORY_WIDTH - 2, y, libtcod.BKGND_DEFAULT,
                                                  libtcod.RIGHT, '[E]')
                     y += 1
-                    letter_index += 1
+                    #letter_index += 1
 
     x = MAP_VIEWPORT_X + 1
     y = MAP_VIEWPORT_Y + 1
@@ -297,9 +297,12 @@ def inventory_menu(header):
     libtcod.console_flush()
 
     key = libtcod.console_wait_for_keypress(True)
-    index = key.c - ord('a')
-    if 0 <= index < len(player.instance.fighter.inventory):
-        return menu_items[index].item
+    index = key.c
+    for item in player.instance.fighter.inventory:
+        if item.item.inventory_index == chr(index):
+            return item.item
+    #if 0 <= index < len(player.instance.fighter.inventory):
+    #    return menu_items[index].item
     return None
 
 
@@ -523,17 +526,19 @@ def render_side_panel(acc_mod=1.0):
 
     # Base stats
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
-    libtcod.console_print(side_panel, 2, drawHeight, 'INT: ' + str(player.instance.player_stats.int))
+    libtcod.console_print(side_panel, 2, drawHeight,     'INT: ' + str(player.instance.player_stats.int))
     libtcod.console_print(side_panel, 2, drawHeight + 1, 'WIS: ' + str(player.instance.player_stats.wiz))
     libtcod.console_print(side_panel, 2, drawHeight + 2, 'STR: ' + str(player.instance.player_stats.str))
     libtcod.console_print(side_panel, 2, drawHeight + 3, 'AGI: ' + str(player.instance.player_stats.agi))
     libtcod.console_print(side_panel, 2, drawHeight + 4, 'CON: ' + str(player.instance.player_stats.con))
 
-    # Level/XP
-    libtcod.console_print(side_panel, 11, drawHeight, 'Lvl: ' + str(player.instance.level))
-    libtcod.console_print(side_panel, 11, drawHeight + 1, 'XP:  ' + str(player.instance.fighter.xp))
-    libtcod.console_print(side_panel, 11, drawHeight + 2, 'SP:  ' + str(player.instance.skill_points))
+    if player.instance.skill_points >= 10:
+        libtcod.console_set_default_foreground(side_panel, libtcod.dark_green)
+        libtcod.console_print(side_panel, 10, drawHeight, '(p) Skill')
+        libtcod.console_print(side_panel, 10, drawHeight + 1, 'Available')
+
     drawHeight += 6
+    libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
     # Mana
     libtcod.console_print(side_panel, 2, drawHeight, 'Essence:')
@@ -1606,8 +1611,12 @@ def character_info_screen(console, x, y, width):
     print_height = 0
 
     # XP Progress
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    libtcod.console_print(console, 2, y + print_height, 'Level %d' % player.instance.level)
+    print_height += 2
+
     next_lvl = consts.LEVEL_UP_BASE + player.instance.level * consts.LEVEL_UP_FACTOR
-    render_bar(x + 2, y, BAR_WIDTH, 'XP', player.instance.fighter.xp, next_lvl, libtcod.light_sky, libtcod.dark_sky, console=console)
+    render_bar(x + 2, y + print_height, BAR_WIDTH, 'XP', player.instance.fighter.xp, next_lvl, libtcod.light_sky, libtcod.dark_sky, console=console)
     print_height += 2
 
     # Skill Progress
@@ -1625,7 +1634,7 @@ def character_info_screen(console, x, y, width):
     libtcod.console_set_default_foreground(console, libtcod.yellow)
     libtcod.console_print(console, 11, y + print_height, str(player.instance.fighter.evasion))
 
-    # Resistances
+    # Resistances / Immunities / Weaknesses
     alt_height = 0
     libtcod.console_set_default_foreground(console, libtcod.orange)
     libtcod.console_print(console, 26, y, 'Resistances:')
@@ -1642,6 +1651,20 @@ def character_info_screen(console, x, y, width):
         alt_height += 1
     if alt_height == 2:
         libtcod.console_print(console, 26, y + alt_height, 'None')
+        alt_height += 1
+    alt_height += 1
+    libtcod.console_set_default_foreground(console, libtcod.red)
+    libtcod.console_print(console, 26, y + alt_height, 'Weaknesses:')
+    alt_height += 2
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    if len(player.instance.fighter.getWeaknesses()) == 0:
+        libtcod.console_print(console, 26, y + alt_height, 'None')
+        alt_height += 1
+    else:
+        for w in player.instance.fighter.getWeaknesses():
+            libtcod.console_print(console, 26, y + alt_height, w.capitalize())
+            alt_height += 1
+    alt_height += 1
 
     print_height = max(print_height, alt_height)
     print_height += 2

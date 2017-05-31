@@ -551,6 +551,8 @@ class AI_TunnelSpider:
                 return 0.0
             if is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y) and self.target.fighter.hp > 0:
                 monster.fighter.attack(self.target)
+                if monster.fighter is None:
+                    return 1.0
                 return monster.behavior.attack_speed
             self.closest_web = self.find_closest_web()
             if self.closest_web is not None and monster.distance_to(self.closest_web) > consts.TUNNEL_SPIDER_MAX_WEB_DIST:
@@ -559,6 +561,8 @@ class AI_TunnelSpider:
             elif fov.monster_can_see_object(monster, self.target):
                 monster.move_astar(self.target.x, self.target.y)
                 self.last_seen_position = self.target.x, self.target.y
+                if monster.fighter is None:
+                    return 1.0
                 return monster.behavior.move_speed
             elif self.last_seen_position is not None and not \
                     (self.last_seen_position[0] == monster.x and self.last_seen_position[1] == monster.y):

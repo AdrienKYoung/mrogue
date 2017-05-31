@@ -23,6 +23,7 @@ import ui
 import collections
 import fov
 import syntax
+import effects
 
 class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, strength_dice_bonus=0,
@@ -264,6 +265,11 @@ class Equipment:
             ui.message('Equipped ' + self.owner.name + '.', libtcod.orange)
         if self.status_effect is not None and self.holder.fighter is not None:
             self.holder.fighter.apply_status_effect(self.status_effect(None))
+        if self.category == 'book' and self.holder == player.instance:
+            for spell, level in self.get_active_spells().items():
+                if self.spell_charges[spell] < spells.library[spell].max_spell_charges(level):
+                    player.instance.fighter.apply_status_effect(effects.meditate())
+                    break
         return 'success'
 
     def dequip(self, no_message=False):
@@ -282,6 +288,8 @@ class Equipment:
         self.is_equipped = False
         if not no_message and self.holder is player.instance:
             ui.message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
+        if self.category == 'book' and self.holder is player.instance:
+            player.instance.fighter.remove_status('meditate')
         if self.status_effect is not None:
             dummy_effect = self.status_effect()
             if self.holder.fighter is not None:

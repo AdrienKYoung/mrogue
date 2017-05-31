@@ -1137,6 +1137,70 @@ def _dragonseed_ticker(ticker):
             obj.set_position(t[0], t[1])
         summon_ally('monster_dragonweed', 10 + libtcod.random_get_int(0, 0, 20), x, y)
 
+def bramble(actor=None, target=None):
+    x, y = 0, 0
+    if actor is None:
+        actor = player.instance
+    spell = abilities.data['ability_bramble']
+    if actor is player.instance:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        tiles = ui.target_tile(max_range=spell['range'], targeting_type='cone')
+    else:
+        x = target.x
+        y = target.y
+        tiles = main.cone(actor.x, actor.y, x, y, max_range=spell['range'])
+
+    if tiles is None or len(tiles) == 0 or tiles[0] is None or tiles[1] is None:
+        return 'cancelled'
+
+    ui.message('Thorny brambles spring from %s fingertips!' % syntax.name(actor, possesive=True), spells.essence_colors['life'])
+    for tile in tiles:
+        _bramble = main.GameObject(tile[0], tile[1], 'x', 'bramble', libtcod.dark_lime, on_step=bramble_on_step,
+                                   summon_time=spell['duration_base'] + main.roll_dice(spell['duration_variance']))
+        _bramble.summoner = actor
+        main.current_map.add_object(_bramble)
+    return 'success'
+
+def bramble_on_step(_bramble, obj):
+    if obj is _bramble.summoner:
+        return
+    elif obj.fighter is not None:
+        spell = abilities.data['ability_bramble']
+        obj.fighter.take_damage(main.roll_dice(spell['damage'], normalize_size=4), attacker=_bramble.summoner)
+        if obj.fighter is not None:
+            obj.fighter.apply_status_effect(effects.bleeding(duration=spell['bleed_duration']))
+        _bramble.destroy()
+
+def strangleweeds(actor=None, target=None):
+    spell = abilities.data['ability_strangleweeds']
+    if actor is None:
+        actor = player.instance
+    if actor.fighter is None:
+        return 'failure'
+    hit = False
+    for f in main.get_fighters_in_burst(actor.x, actor.y, consts.TORCH_RADIUS, actor, actor.fighter.team):
+        tile = main.current_map.tiles[f.x][f.y]
+        if tile.tile_type == 'grass floor':
+            if actor is player.instance or fov.player_can_see(f.x, f.y):
+                ui.message('Writhing vines grip %s and hold %s in place!' % (syntax.name(f), syntax.pronoun(f.name)),
+                           spells.essence_colors['life'])
+            f.fighter.apply_status_effect(effects.immobilized(duration=spell['duration']))
+            f.fighter.apply_status_effect(effects.StatusEffect('strangleweeds', time_limit=spell['duration'],
+                           color=libtcod.lime, on_tick=strangleweed_on_tick, message='The strangleweeds crush you!',
+                           description='This unit will take damage every turn', cleanseable=True))
+            hit = True
+    if hit:
+        return 'success'
+    else:
+        if actor is player.instance:
+            ui.message("You can't see any susceptible targets.", libtcod.gray)
+        return 'cancelled'
+
+def strangleweed_on_tick(effect, object=None):
+    if object is not None and object.fighter is not None:
+        spell = abilities.data['ability_strangleweeds']
+        object.fighter.take_damage(main.roll_dice(spell['tick_damage'], normalize_size=4))
+
 def battle_cry(actor=None,target=None):
     if actor is None:
         actor = player.instance

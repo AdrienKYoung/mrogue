@@ -136,6 +136,8 @@ table = {
         'book_lesser_fire',
         'book_lesser_death',
         'book_lesser_cold',
+        'book_lesser_life',
+        'book_lesser_radiance',
     ],
 
     'gems_1': [

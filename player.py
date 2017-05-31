@@ -111,11 +111,11 @@ loadouts = {
     'wizard' : {
         'str':6,
         'agi':8,
-        'int':12,
+        'int':120,
         'spr':10,
         'con':8,
         'inventory':[
-            ['book_lesser_cold', 'book_lesser_fire', 'book_lesser_life'],
+            ['book_lesser_cold', 'book_lesser_fire'],
             'charm_raw',
             #'charm_farmers_talisman',
             #'charm_holy_symbol',
@@ -165,6 +165,7 @@ def create(loadout):
     if consts.DEBUG_INVINCIBLE:
         instance.fighter.apply_status_effect(effects.invulnerable(duration=None))
 
+    index = ord('a')
     for item in loadout['inventory']:
         i = None
         prototype = item
@@ -181,7 +182,10 @@ def create(loadout):
         else:
             i = main.create_item(prototype)
 
+
         instance.fighter.inventory.append(i)
+        i.item.inventory_index = chr(index)
+        index += 1
         i.item.holder = instance
         if i.equipment is not None:
             i.equipment.equip(no_message=True)
@@ -410,8 +414,7 @@ def _cast_spell():
                             instance.fighter.stamina = 0
                         else:
                             instance.fighter.adjust_stamina(-cost)
-                        instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
-                                          color=libtcod.yellow, description='Meditating will renew your missing spells.'))
+                        instance.fighter.apply_status_effect(effects.meditate())
                         return 'cast-spell'
                     else:
                         return 'didnt-take-turn'

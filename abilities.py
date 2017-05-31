@@ -444,6 +444,29 @@ data = {
         'intent': 'aggressive',
     },
 
+    'ability_bramble': {
+        'name': 'bramble',
+        'function': actions.bramble,
+        'cooldown': 5,
+        'element':'life',
+        'range':4,
+        'intent': 'aggressive',
+        'damage': '3d6',
+        'duration_base': 20,
+        'duration_variance': '1d10',
+        'bleed_duration': 5
+    },
+
+    'ability_strangleweeds': {
+        'name': 'strangleweeds',
+        'function': actions.bramble,
+        'cooldown': 5,
+        'element':'life',
+        'intent': 'aggressive',
+        'tick_damage': '3d10',
+        'duration': 10,
+    },
+
     'ability_bless': {
         'name': 'bless',
         'function': actions.bless,

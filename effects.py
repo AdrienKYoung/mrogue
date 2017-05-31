@@ -218,6 +218,10 @@ def hasted(duration=10):
     return StatusEffect('hasted', duration, spells.essence_colors['arcane'], message='Your movements become a blur.',
                         description='This unit moves twice as fast')
 
+def meditate(duration=None):
+    return StatusEffect('meditate', time_limit=duration,
+                                      color=libtcod.yellow, description='Meditating will renew your missing spells.')
+
 def burn_apply(effect, object=None):
     if object is not None and object.fighter is not None and object.fighter.has_status('frozen'):
         object.fighter.remove_status('frozen')

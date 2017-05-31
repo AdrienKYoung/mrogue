@@ -110,10 +110,12 @@ class Fighter:
             libtcod.console_print(console, x, y + print_height, s)
             print_height += 1
 
-        for effect in self.status_effects:
-            libtcod.console_set_default_foreground(console, effect.color)
-            libtcod.console_print(console, x, y + print_height, effect.description)
-            print_height += 1
+        for e in self.status_effects:
+            libtcod.console_set_default_foreground(console, e.color)
+            h = libtcod.console_get_height_rect(console, x, y + print_height, width - 4, 10, e.description)
+            libtcod.console_print_rect(console, x, y + print_height, width - 4, h, e.description)
+            print_height += h
+
         libtcod.console_set_default_foreground(console, libtcod.white)
 
         return print_height

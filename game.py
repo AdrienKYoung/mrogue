@@ -35,6 +35,7 @@ class Item:
         self.ability = ability
         self.holder = holder
         self.charges = charges
+        self.inventory_index = None
 
     def pick_up(self, actor, no_message=False):
         if self.type == 'item':
@@ -42,6 +43,10 @@ class Item:
                 if actor is player.instance:
                     ui.message('Your inventory is too full to pick up ' + self.owner.name)
             else:
+                index = ord('a')
+                while chr(index) in [i.item.inventory_index for i in actor.fighter.inventory]:
+                    index += 1
+                self.inventory_index = chr(index)
                 self.holder = actor
                 actor.fighter.inventory.append(self.owner)
                 self.owner.destroy()
@@ -82,6 +87,7 @@ class Item:
         self.holder.fighter.inventory.remove(self.owner)
         self.owner.x = self.holder.x
         self.owner.y = self.holder.y
+        self.inventory_index = None
         if not no_message and self.holder is player.instance:
             ui.message('You dropped a ' + string.capwords(self.owner.name) + '.', libtcod.white)
         self.holder = None

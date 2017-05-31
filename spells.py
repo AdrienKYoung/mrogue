@@ -483,6 +483,28 @@ library = {
         ],
         18
     ),
+
+    'spell_bramble' : Spell(
+        'bramble',
+        actions.bramble,
+        'Create a field of brambles that damage and bleed anyone who walks through them, other than the caster.',
+        [
+            {'stamina_cost':35,'charges':2},
+            {'stamina_cost':25,'charges':3},
+        ],
+        20
+    ),
+
+    'spell_strangleweeds' : Spell(
+        'strangleweeds',
+        actions.strangleweeds,
+        'Summon grasping vines from the earth, immobilizing and damaging every enemy on a grass space that you can see.',
+        [
+            {'stamina_cost':40,'charges':1},
+            {'stamina_cost':35,'charges':2},
+        ],
+        23
+    ),
 }
 
 essence_colors = {
