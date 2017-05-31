@@ -302,7 +302,8 @@ class Equipment:
         print_height += 1
         if self.subtype is not None:
             libtcod.console_print(console, x, y + print_height, 'Category: ' + self.subtype)
-            print_height += 2
+            print_height += 1
+        print_height += 1
         if self.level_progression is not None and self.level_progression != 0:
             libtcod.console_print(console, x, y + print_height, 'Level: ' + str(self.level) + '/' + str(self.max_level))
             print_height += 1
