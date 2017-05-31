@@ -214,6 +214,10 @@ def levitating(duration=100):
                         message='You rise into the air...', description='This unit is levitating magically.',
                         cleanseable=False, on_end=levitation_end)
 
+def hasted(duration=10):
+    return StatusEffect('hasted', duration, spells.essence_colors['arcane'], message='Your movements become a blur.',
+                        description='This unit moves twice as fast')
+
 def burn_apply(effect, object=None):
     if object is not None and object.fighter is not None and object.fighter.has_status('frozen'):
         object.fighter.remove_status('frozen')

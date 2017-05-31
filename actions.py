@@ -329,6 +329,53 @@ def heal_other(actor=None, target=None):
         return 'success'
     return 'failure'
 
+def haste(actor=None, target=None):
+    a = abilities.data['ability_haste']
+    if actor is None:
+        actor = player.instance
+    if actor is player.instance:
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile(max_range=a['range'], targeting_type='pick')
+        if x is None: return 'cancelled'
+        target = main.get_monster_at_tile(x, y)
+        if target is None:
+            ui.message('No susceptible targets here.', libtcod.gray)
+            return 'cancelled'
+    else:
+        if target is None:
+            return 'cancelled'
+        if actor.distance_to(target) > a['range']:
+            return 'cancelled'
+    if target is not None and target.fighter is not None:
+        target.fighter.apply_status_effect(effects.hasted(duration=a['duration']))
+        ui.render_explosion(target.x, target.y, 0, libtcod.lightest_fuchsia, libtcod.fuchsia)
+        ui.message('%s %s hasted.' % (
+            syntax.name(target).capitalize(),
+            syntax.conjugate(target is player.instance, ('are', 'is'))), spells.essence_colors['arcane'])
+        return 'success'
+    return 'failure'
+
+def throw_net(actor=None, target=None):
+    a = abilities.data['ability_throw_net']
+    if actor is None:
+        ui.message('Yo implement this', libtcod.red)
+        return 'failure'
+    if target is not None and target.fighter is not None:
+        dist = actor.distance_to(target)
+        if dist > a['range']:
+            return 'cancelled'
+        ui.message('%s %s a net at %s.' % (
+            syntax.name(actor).capitalize(),
+            syntax.conjugate(actor is player.instance, ('throw', 'throws')),
+            syntax.name(target)), libtcod.gold)
+        ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.gold, character='#')
+        if combat.roll_to_hit(target, a['accuracy']):
+            target.fighter.apply_status_effect(effects.immobilized(duration=a['duration']))
+        else:
+            ui.message('The net misses %s.' % syntax.name(target), libtcod.gray)
+        return 'success'
+    return 'failure'
+
 def on_death_summon_meta(name,ttl=None,message=None):
     return lambda obj: _on_death_summon_meta(obj,name,ttl,message)
 
@@ -1187,15 +1234,19 @@ def icebomb(actor=None, target=None):
                     f.fighter.apply_status_effect(effects.frozen(duration=6))
 
 def timebomb(actor=None, target=None):
+    a = abilities.data['ability_time_bomb']
     if actor is None:
         actor = player.instance
+    if actor is player.instance:
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
         default_target = None
         if ui.selected_monster is not None:
             default_target = ui.selected_monster.x, ui.selected_monster.y
-        (x, y) = ui.target_tile(max_range=6, default_target=default_target)
+        (x, y) = ui.target_tile(max_range=a['range'], default_target=default_target)
         if x is None: return 'cancelled'
     else:
+        if actor.distance_to(target) > a['range']:
+            return 'cancelled'
         (x, y) = main.find_closest_open_tile(target.x, target.y)
     rune = main.GameObject(x, y, chr(21), 'time bomb', spells.essence_colors['arcane'],
                            description='"I prepared explosive runes this morning"')
@@ -1654,6 +1705,32 @@ def summon_roaches(actor, attacker, damage):
         if not main.is_blocked(adj[0], adj[1]) and libtcod.random_get_int(0, 1, 10) <= 5:
             actor.summons.append(main.spawn_monster('monster_cockroach', adj[0], adj[1]))
 
+def disarm(target):
+    if target is None or target.fighter is None:
+        return 'failure'
+    weapon = main.get_equipped_in_slot(target.fighter.inventory, 'right hand')
+    if weapon is None:
+        return 'failure'
+    weapon.dequip(no_message=True)
+    possible_tiles = []
+    for x in range(target.x - 1, target.x + 2):
+        for y in range(target.y - 1, target.y + 2):
+            if not main.is_blocked(x, y, from_coord=(target.x, target.y), movement_type=1):
+                possible_tiles.append((x, y))
+    if len(possible_tiles) == 0:
+        selected_tile = main.find_closest_open_tile(target.x, target.y)
+    else:
+        selected_tile = possible_tiles[libtcod.random_get_int(0, 0, len(possible_tiles) - 1)]
+    weapon.owner.item.drop(no_message=True)
+    weapon.owner.x = selected_tile[0]
+    weapon.owner.y = selected_tile[1]
+    ui.message('%s %s disarmed!' % (syntax.name(target).capitalize(), syntax.conjugate(target is player.instance, ('are', 'is'))), libtcod.red)
+    return 'success'
+
+def disarm_attack(actor,target,damage):
+    if main.roll_dice('1d10') == 10:
+        disarm(target)
+
 def poison_attack_1(actor,target,damage):
     if main.roll_dice('1d10') > target.fighter.armor:
         target.fighter.apply_status_effect(effects.poison())
@@ -1713,12 +1790,15 @@ def teleportal_on_tick(teleportal):
         teleportal.destroy()
 
 def create_teleportal(actor=None, target=None):
+    a = abilities.data['ability_teleportal']
     if actor is None:
         actor = player.instance
         ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        x, y = ui.target_tile(max_range=3)
+        x, y = ui.target_tile(max_range=a['range'])
     else:
-        x, y = actor.x, actor.y
+        if actor.distance_to(target) > a['range']:
+            return 'cancelled'
+        x, y = target.x, target.y
     if x is None or y is None:
         return 'cancelled'
     portal = main.GameObject(x, y, 9, 'teleportal', spells.essence_colors['arcane'], on_tick=teleportal_on_tick)

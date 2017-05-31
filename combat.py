@@ -923,14 +923,17 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
         if target.fighter.has_status('stung'):
             damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
 
-        if fighter.owner is player.instance and main.has_skill('searing_mind'):
+        if fighter is not None and fighter.owner is player.instance and main.has_skill('searing_mind'):
             damage_mod *= 1.1
 
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
 
-        spell_power = fighter.spell_power
-        if fighter.owner is player.instance:
+        if fighter is None:
+            spell_power = 0
+        else:
+            spell_power = fighter.spell_power
+        if fighter is not None and fighter.owner is player.instance:
             spell_power += main.skill_value("{}_affinity".format(spell_element))
 
         damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice, spell_power),
@@ -939,11 +942,14 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
 
         if damage > 0:
             attack_text_ex(fighter,target,None,None,damage,spell_element,float(damage) / float(target.fighter.max_hp))
-            target.fighter.take_damage(damage, attacker=fighter.owner)
+            attacker = None
+            if fighter is not None:
+                attacker = fighter.owner
+            target.fighter.take_damage(damage, attacker=attacker)
 
             if target.fighter is not None:
                 # Shred armor
-                if fighter.owner is player.instance and main.has_skill('spellshards'):
+                if fighter is not None and fighter.owner is player.instance and main.has_skill('spellshards'):
                     spell_shred += 2
 
                 for i in range(spell_shred):
@@ -951,22 +957,29 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
                         target.fighter.shred += 1
             return 'hit'
         else:
+            if fighter is None:
+                name = "something's"
+            else:
+                name = syntax.name(fighter.owner, possesive=True)
             verbs = damage_description_tables['deflected']
             verb = verbs[libtcod.random_get_int(0, 0, len(verbs) - 1)]
             ui.message('%s attack %s %s' % (
-                            syntax.name(fighter.owner, possesive=True).capitalize(),
+                            name.capitalize(),
                             verb[0],
                             syntax.name(target)), libtcod.grey)
-            weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
-            if weapon:
-                main.check_breakage(weapon)
             return 'blocked'
     else:
+        if fighter is None:
+            name = 'something'
+            is_player = False
+        else:
+            name = syntax.name(fighter.owner)
+            is_player = fighter.owner is player.instance
         ui.message('%s %s %s, but %s!' % (
-                            syntax.name(fighter.owner).capitalize(),
-                            syntax.conjugate(fighter.owner is player.instance, ('attack', 'attacks')),
+                            name.capitalize(),
+                            syntax.conjugate(is_player, ('attack', 'attacks')),
                             syntax.name(target),
-                            syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
+                            syntax.conjugate(is_player, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
 def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_modifier_ex, resists, weaknesses, flat_bonus=0, immunities=[]):
@@ -1009,18 +1022,25 @@ def attack_text_ex(fighter,target,verb,location,damage,damage_type,severity):
 
     target_name = syntax.name(target)
 
+    if fighter is None:
+        name = 'something'
+        is_player = False
+    else:
+        name = syntax.name(fighter.owner)
+        is_player = fighter.owner is player.instance
+
     if damage is not None:
         if location is not None:
             ui.message('%s %s %s in the %s for %s%d damage!' % (
-                syntax.name(fighter.owner).capitalize(),
-                syntax.conjugate(fighter.owner is player.instance, verb),
+                name.capitalize(),
+                syntax.conjugate(is_player, verb),
                 target_name, location,
                 syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
                 damage), libtcod.grey)
         else:
             ui.message('%s %s %s for %s%d damage!' % (
-                syntax.name(fighter.owner).capitalize(),
-                syntax.conjugate(fighter.owner is player.instance, verb),
+                name.capitalize(),
+                syntax.conjugate(is_player, verb),
                 target_name,
                 syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
                 damage), libtcod.grey)

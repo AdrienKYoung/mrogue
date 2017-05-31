@@ -153,6 +153,7 @@ table = {
         'description'        : 'A superior two-handed polearm with a spike, axe and hook on its head.',
         'stamina_cost'       : 12,
         'str_requirement'    : 16,
+        'ability'            : 'ability_thrust',
         'pierce'             : 1,
         'shred'              : 0,
         'accuracy'           : 2,
@@ -171,7 +172,7 @@ table = {
         'char'               : 'T',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'slot'               :'right hand',
+        'slot'               : 'both hands',
         'description'        : 'A heavy digging implement used by miners. Can be used to dig through the walls '
                                'of the dungeon',
         'stamina_cost'       : 18,

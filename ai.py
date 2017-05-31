@@ -64,6 +64,19 @@ def target_damaged_ally(actor):
                 target = ally
     return target
 
+def target_clear_line_of_fire(actor):
+    if actor is None or \
+            actor.behavior is None or \
+            actor.behavior.behavior is None or \
+            actor.behavior.behavior.target is None or \
+            actor.fighter is None:
+        return None
+
+    target = actor.behavior.behavior.target
+    if game.beam_interrupt(actor.x, actor.y, target.x, target.y) == (target.x, target.y):
+        return target
+    return None
+
 def aggro_on_hit(monster, attacker):
     if attacker is None:
         return
@@ -232,7 +245,7 @@ def use_abilities(behavior):
                     if a.intent == 'aggressive':
                         ability_target = behavior.target
                     elif a.intent == 'support':
-                        ability_target = acquire_target(monster, target_team=monster.fighter.team, target_self=False)
+                        ability_target = acquire_target(monster, target_team=monster.fighter.team, target_self=True)
                 else:
                     ability_target = fnc(monster)
                 if ability_target is not None and a.use(monster, ability_target) != 'didnt-take-turn':
@@ -624,19 +637,25 @@ class AI_General:
     def move_speed(self):
         monster = self.owner
         speed = self.base_move_speed
-        if monster.fighter and monster.fighter.has_status('slowed'):
-            speed *= 2.0
-        if monster.fighter is not None and monster.fighter.has_attribute('attribute_fast_swimmer'):
-            if game.current_map.tiles[monster.x][monster.y].is_water:
+        if monster.fighter is not None:
+            if monster.fighter.has_status('slowed'):
+                speed *= 2.0
+            if monster.fighter.has_status('hasted'):
                 speed *= 0.5
+            if monster.fighter.has_attribute('attribute_fast_swimmer'):
+                if game.current_map.tiles[monster.x][monster.y].is_water:
+                    speed *= 0.5
         return speed
 
     @property
     def attack_speed(self):
         monster = self.owner
         speed = self.base_move_speed
-        if monster.fighter and monster.fighter.has_status('exhausted'):
-            speed *= 2.0
+        if monster.fighter is not None:
+            if monster.fighter.has_status('hasted'):
+                speed *= 0.5
+            if monster.fighter.has_status('exhausted'):
+                speed *= 2.0
         return speed
 
 class ReekerGasBehavior:

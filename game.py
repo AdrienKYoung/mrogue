@@ -47,9 +47,10 @@ class Item:
                 self.owner.destroy()
                 if actor is player.instance and not no_message:
                     ui.message('You picked up a ' + string.capwords(self.owner.name) + '.', libtcod.light_grey)
-                equipment = self.owner.equipment
-                if equipment and get_equipped_in_slot(actor.fighter.inventory,equipment.slot) is None:
-                    equipment.equip(no_message)
+                eq = self.owner.equipment
+                if eq and (get_equipped_in_slot(actor.fighter.inventory,eq.slot) is None or
+                          eq.slot == 'ring' and len(get_equipped_in_slot(actor.fighter.inventory, 'ring')) < 2):
+                    eq.equip(no_message)
 
     def use(self):
         if self.owner.equipment:
@@ -319,7 +320,11 @@ class GameObject:
         if not blocked:
             if self.fighter is not None:
                 if self.fighter.has_status('immobilized'):
-                    return True
+                    if self is player.instance:
+                        ui.message('You cannot move!', libtcod.yellow)
+                        return False
+                    else:
+                        return True
                 web = object_at_tile(self.x, self.y, 'spiderweb')
                 if web is not None and not (self.fighter and (self.fighter.has_flag(monsters.WEB_IMMUNE) or
                                                   self.fighter.item_equipped_count('equipment_ring_of_freedom') > 0)):
@@ -852,6 +857,9 @@ def get_all_equipped(equipped_list):
 
 
 def get_equipped_in_slot(equipped_list,slot):
+    if slot == 'both hands':
+        slot = 'right hand'
+
     if slot == 'ring':
         return [r for r in equipped_list if r.equipment is not None and r.equipment.is_equipped and r.equipment.slot == 'ring']
 
@@ -1205,7 +1213,8 @@ def spawn_monster(name, x, y, team='enemy'):
         if(p.get('modifier_category',None) is not None):
             mod_tag = random_choice(monsters.modifier_categories[p['modifier_category']])
             modifier = monsters.modifiers[mod_tag]
-            mod_tag = mod_tag + " " #for monster description
+            if mod_tag != '':
+                mod_tag = mod_tag + " " #for monster description
 
         death = monster_death
         if p.get('death_function'):
@@ -1221,7 +1230,7 @@ def spawn_monster(name, x, y, team='enemy'):
                     resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
                     weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
                     inventory=spawn_monster_inventory(p.get('equipment'),
-                    loot_level=p.get('loot_level',-10)),
+                    loot_level=p.get('loot_level',-1)),
                     on_hit=p.get('on_hit'),
                     base_shred=p.get('shred', 0) + modifier.get('shred_bonus',1),
                     base_guaranteed_shred=p.get('guaranteed_shred', 0),
@@ -1285,6 +1294,14 @@ def spawn_monster_inventory(proto,loot_level=-1):
             equip = random_choice(slot)
             if equip != 'none':
                 p = items.table()[equip]
+                if p.get('slot') == 'left hand':
+                    allowed = True
+                    for item in result:
+                        if item.equipment.slot == 'both hands':
+                            allowed = False
+                            break
+                    if not allowed:
+                        continue
                 if p.get('allowed_materials') is not None:
                     material = p.get('allowed_materials')[libtcod.random_get_int(0, 0, len(p.get('allowed_materials')) - 1)]
                 elif 'weapon' in equip:

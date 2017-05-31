@@ -204,6 +204,61 @@ proto = {
         'modifier_category':'goblin',
         'subtype':'goblin',
         'attributes':['ability_heal_other'],
+        'essence': [(25, 'life')],
+    },
+    'monster_goblin_wizard': {
+        'name': 'goblin wizard',
+        'char': 'g',
+        'color': libtcod.blue,
+        'hp': 30,
+        'strength_dice' : '1d6',
+        'attack_bonus' : 0,
+        'armor': 0,
+        'evasion': 11,
+        'accuracy': 18,
+        'move_speed': 1.0,
+        'attack_speed': 1.0,
+        'ai': ai.AI_Default,
+        'description': 'A small, vicious humanoid with a penchant for magical spells.',
+        'loot_level': 0,
+        'equipment': [{'equipment_cloth_robes':100}],
+        'attributes': [{'ability_teleportal': 25, 'ability_time_bomb': 25, 'ability_haste': 25, 'ability_flame_wall': 25},
+                       {'ability_teleportal': 25, 'ability_time_bomb': 25, 'ability_haste': 25, 'ability_flame_wall': 25},
+                       {'ability_arcane_arrow': 100}],
+        'resistances': [],
+        'shred': 1,
+        'modifier_category':'goblin',
+        'subtype':'goblin',
+        'essence': [(25, 'arcane')],
+    },
+    'monster_goblin_champion': {
+        'name': 'goblin champion',
+        'char': 'g',
+        'color': libtcod.flame,
+        'hp': 75,
+        'strength_dice' : '4d8',
+        'attack_bonus' : 0,
+        'armor': 3,
+        'evasion': 11,
+        'accuracy': 32,
+        'move_speed': 0.8,
+        'attack_speed': 1.0,
+        'ai': ai.AI_Default,
+        'description': 'A large vicious humanoid, covered in scars from its years in the goblin fighting pits. '
+                       'It is armed with heavy gear and a throwing net, and has learned how to disarm opponents in '
+                       'melee combat.',
+        'resistances': [],
+        'loot_level':0,
+        'equipment': [
+            {'weapon_longsword':20, 'weapon_spear':20, 'weapon_mace':20, 'weapon_greatsword':8, 'weapon_dane_axe':8,'weapon_messer':8, 'weapon_halberd':8, 'weapon_warhammer':8},
+            {'shield_iron_buckler':10,'shield_heater_shield':25, 'shield_escutcheon':25, 'shield_round_shield':20, 'shield_kite_shield':15, 'shield_tower_shield':5},
+            {'equipment_mail_armor':40, 'equipment_brigandine' : 50, 'equipment_plate_armor' : 10},
+            {'none' : 60, 'equipment_iron_helm': 20, 'equipment_great_helm' : 20}],
+        'shred': 1,
+        'modifier_category':'goblin',
+        'subtype':'goblin',
+        'attributes':['ability_throw_net'],
+        'on_hit': [actions.disarm_attack],
     },
     'monster_snow_kite': {
         'name': 'snow kite',
@@ -293,13 +348,13 @@ proto = {
         'name': 'verman',
         'char': 'v',
         'color': libtcod.amber,
-        'hp': 35,
+        'hp': 45,
         'strength_dice' : '1d8',
         'attack_bonus' : 4,
         'armor': 2,
         'evasion': 13,
         'accuracy': 21,
-        'move_speed': 0.5,
+        'move_speed': 0.75,
         'attack_speed': 1.8,
         'ai': ai.AI_Default,
         'description': "A filthy rat-faced humanoid clad with ragged scraps of leather. "
@@ -327,7 +382,6 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'Lurking hunter, armed with a bow with poisoned arrows',
         'resistances': [],
-        'attributes':[''],
         'shred': 0,
         'subtype':'human',
     },
@@ -544,6 +598,7 @@ proto = {
         'stealth':8,
         'modifier_category':None,
         'subtype':'humanoid',
+        'essence': [(30, 'arcane')],
     },
     'monster_frost_wraith': {
         'name': 'frost wraith',
@@ -1063,39 +1118,41 @@ proto = {
 }
 
 modifiers = {
+    '' : {},
     'brawny' : {
-        'hp_bonus' : 1.5
+        'hp_bonus' : 1.25
     },
     'wimpy' : {
-        'hp_bonus' : 0.5
+        'hp_bonus' : 0.75
     },
     'crazed' : {
-        'damage_bonus' : 1.5
+        'damage_bonus' : 1.25
     },
     'mild' : {
-        'damage_bonus' : 0.5
+        'damage_bonus' : 0.75
     },
     'nimble' : {
-        'evasion_bonus' : 1.5,
-        'speed_bonus' : 1.2
+        'evasion_bonus' : 1.25,
+        'speed_bonus' : 1.1
     },
     'lethargic' : {
-        'evasion_bonus' : 1.5,
+        'evasion_bonus' : 0.75,
         'speed_bonus' : 0.8
     },
     'cursed' : {
-        'hp_bonus' : 0.75,
-        'evasion_bonus' : 0.75,
+        'hp_bonus' : 0.85,
+        'evasion_bonus' : 0.85,
         'speed_bonus' : 1.25,
-        'damage_bonus' : 1.5
+        'damage_bonus' : 1.25
     },
     'chosen of splug' : {
-        'damage_bonus' : 1.5,
-        'hp_bonus' : 1.75,
+        'damage_bonus' : 1.25,
+        'hp_bonus' : 1.5,
         'speed_bonus' : 1.1
     },
     'greased up' : {
-        'speed_bonus' : 1.66
+        'speed_bonus' : 1.66,
+        'evasion_bonus' : 1.33,
     },
     'adventurous' : {
         'hp_bonus': 1.25,
@@ -1107,26 +1164,29 @@ modifiers = {
     },
     'starved' : {
         'hp_bonus':0.8,
-        'evasion_bonus':0.5
+        'evasion_bonus':0.75
     },
     'lithe' : {
         'speed_bonus':1.25,
-        'evasion_bonus':0.5
+        'evasion_bonus':1.33
     },
     'scarred' : {
-        'hp_bonus':1.5
+        'hp_bonus':1.33
     },
     'dire' : {
         'hp_bonus':1.5,
         'damage_bonus':1.5,
         'shred_bonus':1
+    },
+    'savage' : {
+        'damage_bonus':1.5
     }
 }
 
 modifier_categories = {
-    'default'   : {'brawny':1,'wimpy':1,'crazed':1,'mild':1,'nimble':1,'lethargic':1,'cursed':1},
-    'goblin'    : {'brawny':2,'wimpy':3,'crazed':2,'nimble':2,'lethargic':3,'cursed':2,'chosen of splug':1,'greased up':1,'adventurous':2},
-    'beast'     : {'brawny':1,'wimpy':1,'alpha':1,'starved':1,'lithe':1,'scarred':1,'dire':1},
+    'default'   : {'':3,'brawny':1,'wimpy':1,'crazed':1,'mild':1,'nimble':1,'lethargic':1,'cursed':1},
+    'goblin'    : {'':4,'brawny':2,'wimpy':3,'crazed':2,'nimble':2,'lethargic':3,'cursed':2,'chosen of splug':1,'greased up':1,'adventurous':2},
+    'beast'     : {'':3,'brawny':1,'wimpy':1,'alpha':1,'starved':1,'lithe':1,'scarred':1,'dire':1,'savage':1},
 }
 
 import monsters_zombies

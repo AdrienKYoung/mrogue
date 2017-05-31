@@ -170,6 +170,7 @@ data = {
         'function': actions.dragonweed_pull,
         'cooldown': 1,
         'intent': 'aggressive',
+        'target_function' : ai.target_clear_line_of_fire,
     },
 
     'ability_silence': {
@@ -240,6 +241,7 @@ data = {
         'pierce': 0,
         'range':3,
         'intent': 'aggressive',
+        'target_function' : ai.target_clear_line_of_fire,
     },
 
     'ability_flame_wall': {
@@ -263,6 +265,7 @@ data = {
         'pierce': 1,
         'range':10,
         'intent': 'aggressive',
+        'target_function' : ai.target_clear_line_of_fire,
     },
 
     'ability_arcane_arrow': {
@@ -275,6 +278,7 @@ data = {
         'pierce': 0,
         'range':5,
         'intent': 'aggressive',
+        'target_function' : ai.target_clear_line_of_fire,
     },
 
     'ability_smite': {
@@ -519,6 +523,42 @@ data = {
         'cooldown': 1,
         'intent': 'support',
         'target_function': ai.target_damaged_ally,
+    },
+
+    'ability_throw_net': {
+        'name': 'Throw Net',
+        'function': actions.throw_net,
+        'range' : 4,
+        'accuracy' : 25,
+        'cooldown': 30,
+        'duration': 5,
+        'intent': 'aggressive',
+        'target_function' : ai.target_clear_line_of_fire,
+    },
+
+    'ability_haste': {
+        'name': 'Haste',
+        'function': actions.haste,
+        'cooldown': 15,
+        'intent': 'support',
+        'range': 8,
+        'duration': 10,
+    },
+
+    'ability_teleportal': {
+        'name': 'Teleportal',
+        'function': actions.create_teleportal,
+        'cooldown': 8,
+        'intent': 'aggressive',
+        'range': 3,
+    },
+
+    'ability_time_bomb': {
+        'name': 'Time Bomb',
+        'function': actions.timebomb,
+        'cooldown': 6,
+        'intent': 'aggressive',
+        'range': 6,
     },
 }
 
