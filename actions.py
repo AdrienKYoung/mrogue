@@ -983,6 +983,7 @@ def bless(actor=None, target=None):
     return 'success'
 
 def smite(actor=None, target=None):
+    import monsters
     spell = abilities.data['ability_smite']
     x, y = 0, 0
     if actor is None or actor is player.instance:  # player is casting
@@ -999,7 +1000,7 @@ def smite(actor=None, target=None):
     combat.spell_attack(actor.fighter, target,'ability_smite')
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.judgement(main.roll_dice('2d8')))
-        if(target.fighter.has_flag('EVIL')):
+        if target.fighter.has_flag(monsters.EVIL):
             target.fighter.apply_status_effect(effects.stunned())
     return 'success'
 
@@ -1012,6 +1013,7 @@ def castigate(actor=None, target=None):
         obj = main.get_monster_at_tile(_x,_y)
         if obj is not None and obj.fighter.team == 'enemy':
             obj.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('3d8')))
+    return 'success'
 
 #player only
 def blessed_aegis(actor=None, target=None):

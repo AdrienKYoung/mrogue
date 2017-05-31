@@ -236,7 +236,8 @@ class Equipment:
                 options_ex = collections.OrderedDict()
                 options_ex['a'] = {'option': {'text': rings[0].name}}
                 options_ex['b'] = {'option': {'text': rings[1].name}}
-                old_equipment = rings[ord(ui.menu_ex("Unequip which ring?", options_ex, 40)) - ord('a')]
+                index = ui.menu_ex("Unequip which ring?", options_ex, 40, return_as_char=True)
+                old_equipment = rings[ord(index) - ord('a')].equipment
         else:
             old_equipment = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
 

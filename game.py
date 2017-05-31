@@ -101,8 +101,8 @@ class Item:
                 options.append('Unequip')
             else:
                 options.append('Equip')
-            if self.owner.equipment.level_progression:
-                cost = self.owner.equipment.level_costs[self.owner.equipment.level-1]
+            if self.owner.equipment.level_progression and self.owner.equipment.level < len(self.owner.equipment.level_costs):
+                cost = self.owner.equipment.level_costs[self.owner.equipment.level]
                 options.append('Imbue ' + ('*') * cost)
         options.append('Drop')
         return options
