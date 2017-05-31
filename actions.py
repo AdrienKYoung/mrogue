@@ -1575,7 +1575,7 @@ def dragonweed_pull(actor, target):
         if target.fighter.hp > 0 and main.beam_interrupt(actor.x, actor.y, target.x, target.y) == (target.x, target.y):
             ui.message("The dragonweed's stem lashes out at %s!" % syntax.name(target), libtcod.dark_green)
             result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=0.75, verb=('pull', 'pulls'))
-            if result == 'hit':
+            if result == 'hit' and target.fighter is not None:
                 if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
                     if fov.player_can_see(target.x, target.y):
                         ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
@@ -1584,7 +1584,7 @@ def dragonweed_pull(actor, target):
                 beam = main.beam(actor.x, actor.y, target.x, target.y)
                 pull_to = beam[max(len(beam) - 3, 0)]
                 target.set_position(pull_to[0], pull_to[1])
-                if target.fighter is not None and main.roll_dice('1d10') <= 5:
+                if main.roll_dice('1d10') <= 5:
                     target.fighter.apply_status_effect(effects.immobilized(duration=2))
             return 'success'
     return 'didnt-take-turn'
