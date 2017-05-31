@@ -74,6 +74,10 @@ class Fighter:
         self.monster_str_dice = monster_str_dice
 
     def print_description(self, console, x, y, width):
+        if self.owner is player.instance:
+            y += 1
+            return ui.character_info_screen(console, x, y, width)
+
         print_height = 1
         # Print ally status
         if self.team == 'ally':

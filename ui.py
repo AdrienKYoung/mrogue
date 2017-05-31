@@ -1625,6 +1625,43 @@ def character_info_screen(console, x, y, width):
     libtcod.console_set_default_foreground(console, libtcod.yellow)
     libtcod.console_print(console, 11, y + print_height, str(player.instance.fighter.evasion))
 
+    # Resistances
+    alt_height = 0
+    libtcod.console_set_default_foreground(console, libtcod.orange)
+    libtcod.console_print(console, 26, y, 'Resistances:')
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    alt_height += 2
+    for r in player.instance.fighter.getImmunities() + player.instance.fighter.getResists():
+        if r in player.instance.fighter.getResists():
+            r_string = 'Resistant'
+        elif r in player.instance.fighter.getImmunities():
+            r_string = 'Immune'
+        else:
+            continue
+        libtcod.console_print(console, 26, y + alt_height, r.capitalize() + ': ' + r_string)
+        alt_height += 1
+    if alt_height == 2:
+        libtcod.console_print(console, 26, y + alt_height, 'None')
+
+    print_height = max(print_height, alt_height)
+    print_height += 2
+
+    # Status effects
+    libtcod.console_set_default_foreground(console, libtcod.purple)
+    libtcod.console_print(console, 2, y + print_height, 'Status Effects:')
+    print_height += 1
+    if len(player.instance.fighter.status_effects) == 0:
+        libtcod.console_set_default_foreground(console, libtcod.white)
+        libtcod.console_print(console, 2, y + print_height, 'None')
+        print_height += 1
+    else:
+        print_height += 1
+        for e in player.instance.fighter.status_effects:
+            libtcod.console_set_default_foreground(console, e.color)
+            h = libtcod.console_get_height_rect(console, 2, y + print_height, width - 4, 10, e.description)
+            libtcod.console_print_rect(console, 2, y + print_height, width - 4, h, e.description)
+            print_height += h
+
     print_height += 1
     return print_height
 
