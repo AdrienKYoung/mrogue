@@ -1892,14 +1892,13 @@ def make_map_catacombs():
     #make_basic_map_links()
 
     connection_threshhold = 20
-    #prev_x, prev_y = None,None
-    for room in rooms:
-        (new_x, new_y) = room.center()
-        rooms.sort(key=lambda r: room.distance_to(r))
-        connections = [f for f in rooms if f is not room and room.distance_to(f) < connection_threshhold]
+
+    for _room in rooms:
+        options = sorted(rooms, key=lambda r: _room.distance_to(r))
+        connections = [f for f in options if f is not _room and _room.distance_to(f) < connection_threshhold]
         if len(connections) == 0:
-            connections = [rooms[1]]
-        room.connections = list(connections)
+            connections = [options[1]]
+        _room.connections = list(connections)
 
     for room2 in rooms:
         for con in room2.connections:
@@ -1926,8 +1925,6 @@ def make_map_catacombs():
             center_old = connection.center()
             center_new = room3.center()
             create_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1])
-
-        #(prev_x, prev_y) = new_x,new_y
 
 def make_test_space():
     for y in range(2, consts.MAP_HEIGHT - 2):
