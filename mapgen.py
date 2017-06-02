@@ -1900,6 +1900,7 @@ def make_map_catacombs():
             connections = [options[1]]
         _room.connections = list(connections)
 
+
     for room2 in rooms:
         for con in room2.connections:
             if(room2 not in con.connections):
@@ -2048,6 +2049,10 @@ def make_map(_map):
     if consts.DEBUG_TEST_MAP:
         make_test_space()
     else: dungeon.branches[map.branch]['generate']()
+
+    open_tile = main.find_closest_open_tile(25, 23)
+    player.instance.x = open_tile[0]
+    player.instance.y = open_tile[1]
 
     # make sure the edges are undiggable walls
     for i in range(consts.MAP_WIDTH):
