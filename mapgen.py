@@ -1901,10 +1901,10 @@ def make_map_catacombs():
             connections = [rooms[1]]
         room.connections = list(connections)
 
-    for room in rooms:
-        for con in room.connections:
-            if(room not in con.connections):
-                con.connections.append(room)
+    for room2 in rooms:
+        for con in room2.connections:
+            if(room2 not in con.connections):
+                con.connections.append(room2)
 
     open = [entrance]
     closed = []
@@ -1921,10 +1921,11 @@ def make_map_catacombs():
                 open.append(con)
                 curr.children.append(con)
 
-    for room in rooms:
-        for connection in room.children:
-            c = connection.center()
-            create_hv_tunnel(c[0], c[1], new_x, new_y)
+    for room3 in rooms:
+        for connection in room3.children:
+            center_old = connection.center()
+            center_new = room3.center()
+            create_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1])
 
         #(prev_x, prev_y) = new_x,new_y
 
