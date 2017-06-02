@@ -112,8 +112,6 @@ class Room:
         self.pos = 0, 0
         self.no_overwrite = False
         self.link_points = []
-        self.children = []
-        self.connections = []
 
     @property
     def bounds(self):
@@ -294,7 +292,9 @@ class Room:
     def distance_to(self,other):
         c = self.center()
         co = other.center()
-        return abs(c[0] - co[0]) + abs(c[1] - co[1])
+        size = (self.bounds[0] + self.bounds[1]) / 2
+        other_size = size = (other.bounds[0] + other.bounds[1]) / 2
+        return abs(c[0] - co[0]) + abs(c[1] - co[1]) - size - other_size
 
 class Rect:
     def __init__(self, x, y, w, h):
@@ -1866,6 +1866,17 @@ def make_map_catacombs():
     rects.append(room_bounds)
     num_rooms += 1
 
+    exit = create_room_rectangle(['snowy ground'])
+    dimensions = exit.bounds
+    x = libtcod.random_get_int(0, 1 + dimensions[0] / 2, consts.MAP_WIDTH - dimensions[0] / 2 - 1)
+    y = 1 + dimensions[1] / 2
+    room_bounds = Rect(x, y, dimensions[0], dimensions[1])
+    exit.set_pos(room_bounds.x1, room_bounds.y1)
+    apply_room(exit)
+    rooms.append(exit)
+    rects.append(room_bounds)
+    num_rooms += 1
+
     #Create other rooms
     for r in range(consts.MG_MAX_ROOMS):
 
@@ -1874,9 +1885,7 @@ def make_map_catacombs():
 
         x = libtcod.random_get_int(0, 1 + dimensions[0] / 2, consts.MAP_WIDTH - dimensions[0] / 2 - 1)
         y = libtcod.random_get_int(0, 1 + dimensions[1] / 2, consts.MAP_HEIGHT - dimensions[1] / 2 - 1)
-
-        #bounds include a seperator
-        room_bounds = Rect(x-1, y-1, dimensions[0]+1, dimensions[1]+1)
+        room_bounds = Rect(x-1, y-1, dimensions[0]+2, dimensions[1]+2)
 
         failed = False
         for other_room in rects:
@@ -1892,41 +1901,91 @@ def make_map_catacombs():
 
     #make_basic_map_links()
 
-    connection_threshhold = 20
-
-    for _room in rooms:
-        options = sorted(rooms, key=lambda r: _room.distance_to(r))
-        connections = [f for f in options if f is not _room and _room.distance_to(f) < connection_threshhold]
-        if len(connections) == 0:
-            connections = [options[1]]
-        _room.connections = list(connections)
-
-
-    for room2 in rooms:
-        for con in room2.connections:
-            if(room2 not in con.connections):
-                con.connections.append(room2)
-
+    connection_threshold_step = 8
     open = [entrance]
     closed = []
+    i = 0
+    tcount = 0
+
+    nodes = []
+    nodes.append({'nr':0, 'room':entrance,'parent':None,'connections':[]})
 
     while len(open) > 0:
         curr = open.pop()
         closed.append(curr)
-        if not hasattr(curr,'connections'):
-            print("Found no connections for room {}".format(curr))
-            continue
-        for con in curr.connections:
-            if con not in open and con not in closed:
-                print("Found room {} (parent: {})".format(con,curr))
-                open.append(con)
-                curr.children.append(con)
+        connections = []
+        node = [n for n in nodes if n['room'] is curr][0]
+        threshold = connection_threshold_step
+        while len(connections) == 0 and threshold < consts.MAP_WIDTH * 2:
+            connections = [r for r in rooms if (r is not curr) and (curr.distance_to(r) < threshold) \
+                           and (r not in open) and (r not in closed)]
+            threshold += connection_threshold_step
 
-    for room3 in rooms:
-        for connection in room3.children:
-            center_old = connection.center()
-            center_new = room3.center()
-            create_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1])
+        for con in connections:
+            if con not in open and con not in closed:
+                open.append(con)
+                center_old = con.center()
+                center_new = curr.center()
+                tunnel = catacombs_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1])
+                i += 1
+                node['connections'].append({'room':con, 'tunnel': tunnel})
+                nodes.append({'nr':i,'parent':curr, 'room': con, 'connections': []})
+                for tn in tunnel:
+                    main.current_map.add_object(main.GameObject(tn[0],tn[1],chr(ord('0') + tcount % 10),'blah',libtcod.white))
+                tcount += 1
+
+    print(nodes[0])
+
+    player_x = consts.MAP_WIDTH / 2
+    player_y = consts.MAP_HEIGHT / 2
+    for y in range(consts.MAP_HEIGHT - 1, 1, -1):
+        if not map.tiles[player_x][y].is_wall:
+            player_y = y
+            break
+    player.instance.x = player_x
+    player.instance.y = player_y
+
+def catacombs_h_tunnel(x1, x2, y, tile_type=default_floor):
+    changed = []
+    exclusive = True
+    started = False
+    for x in range(min(x1, x2), max(x1, x2) + 1):
+        if map.tiles[x][y].is_wall:
+            started = True
+            change_map_tile(x, y, tile_type)
+            if exclusive:
+                changed.append((x,y))
+        elif started:
+            break
+            #exclusive = False
+    return changed
+
+
+def catacombs_v_tunnel(y1, y2, x, tile_type=default_floor):
+    changed = []
+    exclusive = True
+    started = False
+    for y in range(min(y1, y2), max(y1, y2) + 1):
+        if map.tiles[x][y].is_wall:
+            started = True
+            change_map_tile(x, y, tile_type)
+            if exclusive:
+                changed.append((x,y))
+        elif started:
+            break
+            #exclusive = False
+    return changed
+
+
+def catacombs_hv_tunnel(x1, y1, x2, y2, tile_type=default_floor):
+    tunnel = None
+    if libtcod.random_get_float(0,0,1) < 0.5:
+        tunnel = catacombs_v_tunnel(y1, y2, x1, tile_type)
+        tunnel += catacombs_h_tunnel(x1, x2, y2, tile_type)
+    else:
+        tunnel = catacombs_h_tunnel(x1, x2, y1, tile_type)
+        tunnel += catacombs_v_tunnel(y1, y2, x2, tile_type)
+    return tunnel
 
 def make_test_space():
     for y in range(2, consts.MAP_HEIGHT - 2):
