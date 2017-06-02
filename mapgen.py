@@ -86,40 +86,6 @@ class BSP_Leaf:
             self.left.split_recursive()
             self.right.split_recursive()
 
-class NSP_Node:
-    def __init__(self,rect,type):
-        self.rect = rect
-        self.type = type
-        self.children = []
-
-    def split(self,max_size,min_size,partition_options,partition_strat=None):
-        wf = float(self.rect.w - min_size) / float(max_size - min_size)
-        hf = float(self.rect.h - min_size) / float(max_size - min_size)
-        f = min(wf,hf)
-
-        if self.rect.w <= min_size or self.rect.h <= min_size or libtcod.random_get_double(0, 0, 1) > f:
-            self.type = "leaf"
-            return
-
-        if partition_strat is None:
-            partition_strat = main.random_choice(partition_options)
-
-        symetrical = None
-        if libtcod.random_get_double(0, 0, 1) < 0.35:
-            symetrical = main.random_choice(partition_options)
-
-        for part in partition_strat(self.rect,min_size):
-            child = NSP_Node(part[0],part[1])
-            self.children.append(child)
-            if child.type == "branch":
-                child.split(max_size, min_size, partition_options,symetrical)
-
-    def dump_log(self, level=0):
-        log.info("mapgen","{}{}",["  " * level,str(self.rect)])
-        for c in self.children:
-            c.dump_log(level + 1)
-
-
 
 # It's not a bug, it's a
 class Feature:
@@ -336,9 +302,6 @@ class Rect:
         self.y1 = y
         self.x2 = x + w
         self.y2 = y + h
-
-    def __str__(self):
-        return "(({},{}),({},{}))".format(self.x1,self.y1,self.x2,self.y2)
 
     def center(self):
         center_x = (self.x1 + self.x2) / 2
@@ -1373,7 +1336,12 @@ def make_rooms_and_corridors():
     #map.add_object(level_shrine)
     #level_shrine.send_to_back()
 
-def make_garden_rooms_legacy(leaf):
+def mirror_map():
+    for x in range(consts.MAP_WIDTH / 2):
+        for y in range(consts.MAP_HEIGHT):
+            change_map_tile(consts.MAP_WIDTH - 1 - x, y, map.tiles[x][y].tile_type)
+
+def make_garden_rooms(leaf):
     if leaf.left is None or leaf.right is None:
         room = Room()
         for x in range(leaf.w):
@@ -1388,110 +1356,143 @@ def make_garden_rooms_legacy(leaf):
         make_garden_rooms(leaf.left)
         make_garden_rooms(leaf.right)
 
-def make_map_garden_legacy():
+def decorate_garden_room(room):
+    garden_set_default_ground(room)
+    w = room.width
+    h = room.height
+    shortest = min(w, h)
+    # Border
+    border_decorations = [garden_corners, garden_passable_border]
+    if shortest >= 7:
+        border_decorations.append(garden_border)
+        border_decorations.append(garden_large_corners)
+    if h >= 7:
+        border_decorations.append(garden_border_h)
+    if w >= 7:
+        border_decorations.append(garden_border_v)
+    if w % 2 == 1 and h % 2 == 1:
+        border_decorations.append(garden_border_staggered_1)
+    if w % 3 == 1 and h % 3 == 1:
+        border_decorations.append(garden_border_staggered_2)
+    border_decorations.append(None)
+    choice = border_decorations[libtcod.random_get_int(0, 0, len(border_decorations) - 1)]
+    if choice is not None:
+        choice(room)
 
-    for x in range(consts.MAP_WIDTH):
-        for y in range(consts.MAP_HEIGHT):
-            change_map_tile(x, y, default_floor)
-    root = BSP_Leaf(0, 0, consts.MAP_WIDTH - 1, consts.MAP_HEIGHT - 1)
-    root.split_recursive()
-    make_garden_rooms(root)
+def garden_set_default_ground(room):
+    types=['grass floor', 'marble path']
+    type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    room.default_floor = type
+    for y in range(room.min_y, room.max_y + 1):
+        for x in range(room.min_x, room.max_x + 1):
+            change_map_tile(x, y, type)
 
-def make_garden_rooms(node):
-    if 'leaf' in node.type:
-        room = Room()
-        for x in range(node.rect.w):
-            room.set_tile(x, 0, default_wall)
-            room.set_tile(x, node.rect.h, default_wall)
-        for y in range(node.rect.h):
-            room.set_tile(0, y, default_wall)
-            room.set_tile(node.rect.w, y, default_wall)
-        room.set_pos(node.rect.x1 + room.width / 2, node.rect.y1 + room.height / 2)
-        apply_room(room)
-    elif 'path' in node.type:
-        room = Room()
-        for x in range(node.rect.w):
-            for y in range(node.rect.h):
-                room.set_tile(x, y,'grass floor')
-        room.set_pos(node.rect.x1 + room.width / 2, node.rect.y1 + room.height / 2)
-        apply_room(room)
-    else:
-        for c in node.children:
-            make_garden_rooms(c)
+def garden_passable_border(room):
+    w = room.width
+    h = room.height
+    types=['grass floor', 'shallow water']
+    fncs = [garden_border, garden_border_h, garden_border_v, garden_corners, garden_large_corners]
+    if w % 2 == 1 and h % 2 == 1:
+        fncs.append(garden_border_staggered_1)
+    if w % 3 == 1 and h % 3 == 1:
+        fncs.append(garden_border_staggered_2)
+    fncs[libtcod.random_get_int(0, 0, len(fncs) - 1)](room, types[libtcod.random_get_int(0, 0, len(types) - 1)])
+
+def garden_border(room, terrain_type='hedge'):
+    for y in range(room.min_y, room.max_y + 1):
+        for x in range(room.min_x, room.max_x + 1):
+            if x == room.min_x or x == room.max_x or y == room.min_y or y == room.max_y:
+                change_map_tile(x, y, terrain_type)
+
+def garden_border_h(room, terrain_type='hedge'):
+    for x in range(room.min_x, room.max_x + 1):
+        change_map_tile(x, room.min_y, terrain_type)
+        change_map_tile(x, room.max_y, terrain_type)
+
+def garden_border_v(room, terrain_type='hedge'):
+    for y in range(room.min_y, room.max_y + 1):
+        change_map_tile(room.min_x, y, terrain_type)
+        change_map_tile(room.max_x, y, terrain_type)
+
+def garden_border_staggered_1(room, terrain_type='hedge'):
+    for y in range(room.min_y, room.max_y + 1):
+        for x in range(room.min_x, room.max_x + 1):
+            if x == room.min_x or x == room.max_x or y == room.min_y or y == room.max_y:
+                if (x - room.min_x) % 2 == 0 and (y - room.min_y) % 2 == 0:
+                    change_map_tile(x, y, terrain_type)
+
+def garden_border_staggered_2(room, terrain_type='hedge'):
+    for y in range(room.min_y, room.max_y + 1):
+        for x in range(room.min_x, room.max_x + 1):
+            if x == room.min_x or x == room.max_x or y == room.min_y or y == room.max_y:
+                if (x - room.min_x) % 3 != 0 and (y - room.min_y) % 3 != 0:
+                    change_map_tile(x, y, terrain_type)
+
+def garden_corners(room, tile_type='hedge'):
+    hedges = [
+        (room.min_x, room.min_y),
+        (room.min_x + 1, room.min_y),
+        (room.min_x, room.min_y + 1),
+        (room.max_x, room.min_y),
+        (room.max_x - 1, room.min_y),
+        (room.max_x, room.min_y + 1),
+        (room.min_x, room.max_y),
+        (room.min_x + 1, room.max_y),
+        (room.min_x, room.max_y - 1),
+        (room.max_x, room.max_y),
+        (room.max_x - 1, room.max_y),
+        (room.max_x, room.max_y - 1),
+    ]
+    for hedge in hedges:
+        change_map_tile(hedge[0], hedge[1], tile_type)
+
+def garden_large_corners(room, tile_type='marble wall'):
+    for y in range(room.min_y, room.max_y + 1):
+        for x in range(room.min_x, room.max_x + 1):
+            if (abs(x - room.min_x) <= 1 and abs(y - room.min_y) <= 1) or \
+                    (abs(x - room.max_x) <= 1 and abs(y - room.min_y) <= 1) or \
+                    (abs(x - room.min_x) <= 1 and abs(y - room.max_y) <= 1) or \
+                    (abs(x - room.max_x) <= 1 and abs(y - room.max_y) <= 1):
+                change_map_tile(x, y, tile_type)
+
 
 def make_map_garden():
+
     for x in range(consts.MAP_WIDTH):
         for y in range(consts.MAP_HEIGHT):
             change_map_tile(x, y, default_floor)
-    root = NSP_Node(Rect(0, 0, consts.MAP_WIDTH - 1, consts.MAP_HEIGHT - 1),"branch")
-    root.split(15,4,{garden_wall_partition:10,garden_path_partition:10})
+    root = BSP_Leaf(0, 0, consts.MAP_WIDTH / 2 + 1, consts.MAP_HEIGHT - 1)
+    root.split_recursive()
     make_garden_rooms(root)
+    mirror_map()
 
-def garden_wall_partition(rect,min_size):
-    dir = rect.w / rect.h
-    result = None
+    # arrange the cells into new Room objects
+    garden_cells = []
+    filled_lists = []
+    tiles = {}
+    for x in range(consts.MAP_WIDTH):
+        for y in range(consts.MAP_HEIGHT):
+            tiles[(x, y)] = map.tiles[x][y].tile_type
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            if (x, y) in tiles.keys() and tiles[(x, y)] != default_wall:
+                if len(filled_lists) > 0:
+                    for filled in filled_lists:
+                        if (x, y) in filled:
+                            continue
+                new_list = flood_fill(tiles, filled_lists, x, y)
+                if len(new_list) > 0:
+                    filled_lists.append(new_list)
 
-    if(dir < libtcod.random_get_float(0,0,2)):
-        if(rect.h < min_size):
-            return []
+    for filled in filled_lists:
+        new_cell = Room()
+        for tile in filled:
+            new_cell.set_tile(tile[0], tile[1], map.tiles[tile[0]][tile[1]].tile_type)
+        garden_cells.append(new_cell)
 
-        split_value = libtcod.random_get_int(0, min_size, rect.h - min_size)
+    for cell in garden_cells:
+        decorate_garden_room(cell)
 
-        result = [
-            (Rect(rect.x1, rect.y1, rect.w, split_value), "branch"),
-            (Rect(rect.x1, rect.y1 + split_value, rect.w, rect.h - split_value), "branch")
-        ]
-        log.info("mapgen", "Horizontal split from {} at h={} into: {} and {}",
-                 [rect, split_value, result[0][0], result[1][0]])
-    else:
-        if (rect.w < min_size):
-            return []
-
-        split_value = libtcod.random_get_int(0, min_size, rect.w - min_size) + min_size
-
-        result = [
-            (Rect(rect.x1, rect.y1, split_value, rect.h), "branch"),
-            (Rect(rect.x1 + split_value, rect.y1, rect.w - split_value, rect.h), "branch")
-        ]
-        log.info("mapgen", "Vertical split from {} at w={} into: {} and {}",
-                 [rect, split_value, result[0][0], result[1][0]])
-    return result
-
-def garden_path_partition(rect,min_size):
-    dir = rect.w / rect.h
-    result = None
-
-    if (dir < libtcod.random_get_float(0, 0, 2)):
-        path_width = int(rect.h / 8)
-
-        if (rect.h < min_size or path_width < 1):
-            return []
-
-        split_value = libtcod.random_get_int(0, min_size, rect.h - min_size)
-
-        result = [
-            (Rect(rect.x1, rect.y1, rect.w, split_value - path_width), "branch"),
-            (Rect(rect.x1, rect.y1 + split_value - path_width, rect.w, path_width * 2), "path"),
-            (Rect(rect.x1, rect.y1 + split_value + path_width, rect.w, rect.h - split_value - path_width), "branch")
-        ]
-        log.info("mapgen", "Horizontal path split from {} at h={} into: {}, {} and {}",
-                 [rect, split_value, result[0][0], result[1][0], result[2][0]])
-    else:
-        path_width = min(int(rect.w / 8),2)
-
-        if (rect.h < min_size or path_width < 1):
-            return []
-
-        split_value = libtcod.random_get_int(0, min_size, rect.w - min_size)
-
-        result = [
-            (Rect(rect.x1, rect.y1, split_value - path_width, rect.h), "branch"),
-            (Rect(rect.x1 + split_value - path_width, rect.y1, path_width * 2, rect.h), "path"),
-            (Rect(rect.x1 + split_value + path_width, rect.y1, rect.w - split_value - path_width, rect.h), "branch")
-        ]
-        log.info("mapgen", "Vertical path split from {} at h={} into: {}, {} and {}",
-                 [rect, split_value, result[0][0], result[1][0], result[2][0]])
-    return result
 
 def make_map_forest():
 
@@ -2051,8 +2052,9 @@ def make_map(_map):
     else: dungeon.branches[map.branch]['generate']()
 
     open_tile = main.find_closest_open_tile(25, 23)
-    player.instance.x = open_tile[0]
-    player.instance.y = open_tile[1]
+    if open_tile is not None:
+        player.instance.x = open_tile[0]
+        player.instance.y = open_tile[1]
 
     # make sure the edges are undiggable walls
     for i in range(consts.MAP_WIDTH):

@@ -140,6 +140,23 @@ data = {
                              'ground made of a thick sheet of ice', isFloor=True, isIce=True),
 
     ###############################################
+    #                   GARDENS
+    ###############################################
+
+
+    'marble path': TileData(False, False, 'marble path', '.', libtcod.light_gray, libtcod.gray,
+                            'A path made of marble blocks. Tufts of grass push through the ancient cracks.', isFloor=True),
+
+    'marble wall': TileData(True, True, 'marble wall', '#', libtcod.lightest_gray, libtcod.light_gray,
+                            'A wall of polished marble, now overgrown with wild greenery', isWall=True, diggable=True),
+
+    'hedge': TileData(True, True, 'hedge', '#', (21, 51, 7), (17, 40, 6),
+                            'A thick hedge', isWall=True, diggable=False, flammable=5),
+
+    'cypress tree': TileData(True, True, 'cypress tree', libtcod.CHAR_ARROW2_N, (17, 40, 6), (29, 71, 10),
+                            'A tall, narrow tree.', isWall=True, diggable=False, flammable=5),
+
+    ###############################################
     #                     MISC
     ###############################################
 

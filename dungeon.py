@@ -200,8 +200,8 @@ branches = {
     },
     'garden': {
         'name'          :"the gardens",
-        'default_wall'  : 'stone wall',
-        'default_floor' : 'stone floor',
+        'default_wall'  : 'marble wall',
+        'default_floor' : 'marble path',
         'default_ramp'  : 'stone ramp',
         'scaling'       : 0,
         'loot':{},
