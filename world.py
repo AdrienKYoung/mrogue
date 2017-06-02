@@ -149,4 +149,8 @@ def initialize_world():
     # Link gardens and forest
     world_maps['garden_1_0'].add_link(world_maps['forest_0_0'], 'east')
 
+    #Add test catacombs map
+    new_map = Map('catacombs',coord=(0,0))
+    world_maps[new_map.name] = new_map
+
 world_maps = None

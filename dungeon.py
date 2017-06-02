@@ -216,6 +216,24 @@ branches = {
         'generate':mapgen.make_map_garden,
         'map_color'     : libtcod.darker_green,
     },
+    'catacombs': {
+        'name'          :"the catacombs",
+        'default_wall'  : 'stone wall',
+        'default_floor' : 'stone floor',
+        'default_ramp'  : 'stone ramp',
+        'scaling'       : 0,
+        'loot':{},
+        'loot_level':0,
+        'loot_dice':'2d4',
+        'encounter_dice':'1d4+5',
+        'xp_amount':4,
+        'encounter_range':6,
+        'monsters':[
+
+        ],
+        'generate':mapgen.make_map_catacombs,
+        'map_color'     : libtcod.darker_blue,
+    },
     'grotto': {
         'name'          :"pilgrim's grotto",
         'default_wall'  : 'sea cliff',

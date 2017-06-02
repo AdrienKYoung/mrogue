@@ -146,6 +146,8 @@ class Room:
         self.pos = 0, 0
         self.no_overwrite = False
         self.link_points = []
+        self.children = []
+        self.connections = []
 
     @property
     def bounds(self):
@@ -322,6 +324,11 @@ class Room:
             return center
         else:
             return None
+
+    def distance_to(self,other):
+        c = self.center()
+        co = other.center()
+        return abs(c[0] - co[0]) + abs(c[1] - co[1])
 
 class Rect:
     def __init__(self, x, y, w, h):
@@ -889,6 +896,14 @@ def create_v_tunnel(y1, y2, x, tile_type=default_floor):
         change_map_tile(x, y, tile_type)
 
 
+def create_hv_tunnel(x1, y1, x2, y2, tile_type=default_floor):
+    if libtcod.random_get_float(0,0,1) < 0.5:
+        create_v_tunnel(y1,y2,x1,tile_type)
+        create_h_tunnel(x1, x2, y2, tile_type)
+    else:
+        create_h_tunnel(x1, x2, y1, tile_type)
+        create_v_tunnel(y1, y2, x2, tile_type)
+
 def scatter_reeds(tiles, probability=20):
     for tile in tiles:
         if libtcod.random_get_int(0, 1, 100) < probability and not map.tiles[tile[0]][tile[1]].blocks:
@@ -1341,7 +1356,7 @@ def make_rooms_and_corridors():
                 # else:
                 #    create_v_tunnel(prev_y, new_y, prev_x)
                 #    create_h_tunnel(prev_x, new_x, new_y)
-            main.place_objects(room_array.get_open_tiles())
+            #main.place_objects(room_array.get_open_tiles())
             if libtcod.random_get_int(0, 0, 5) == 0:
                 scatter_reeds(room_array.get_open_tiles())
             rooms.append(room_bounds)
@@ -1831,6 +1846,87 @@ def make_map_gtunnels():
                        active_branch['xp_amount'])
 
     make_basic_map_links()
+
+def make_map_catacombs():
+    rooms = []
+    rects = []
+    num_rooms = 0
+
+
+    #First, create the entrance
+    entrance = create_room_rectangle(['snowy ground'])
+    dimensions = entrance.bounds
+    x = libtcod.random_get_int(0, 1 + dimensions[0] / 2, consts.MAP_WIDTH - dimensions[0] / 2 - 1)
+    y = consts.MAP_HEIGHT - dimensions[1] / 2 - 1
+    room_bounds = Rect(x, y, dimensions[0], dimensions[1])
+    entrance.set_pos(room_bounds.x1, room_bounds.y1)
+    apply_room(entrance)
+    rooms.append(entrance)
+    rects.append(room_bounds)
+    num_rooms += 1
+
+    #Create other rooms
+    for r in range(consts.MG_MAX_ROOMS):
+
+        room = create_room_rectangle(['stone floor'])
+        dimensions = room.bounds
+
+        x = libtcod.random_get_int(0, 1 + dimensions[0] / 2, consts.MAP_WIDTH - dimensions[0] / 2 - 1)
+        y = libtcod.random_get_int(0, 1 + dimensions[1] / 2, consts.MAP_HEIGHT - dimensions[1] / 2 - 1)
+
+        #bounds include a seperator
+        room_bounds = Rect(x-1, y-1, dimensions[0]+1, dimensions[1]+1)
+
+        failed = False
+        for other_room in rects:
+            if room_bounds.intersect(other_room):
+               failed = True
+
+        if not failed:
+            room.set_pos(room_bounds.x1, room_bounds.y1)
+            apply_room(room)
+            rooms.append(room)
+            rects.append(room_bounds)
+            num_rooms += 1
+
+    #make_basic_map_links()
+
+    connection_threshhold = 20
+    #prev_x, prev_y = None,None
+    for room in rooms:
+        (new_x, new_y) = room.center()
+        rooms.sort(key=lambda r: room.distance_to(r))
+        connections = [f for f in rooms if f is not room and room.distance_to(f) < connection_threshhold]
+        if len(connections) == 0:
+            connections = [rooms[1]]
+        room.connections = list(connections)
+
+    for room in rooms:
+        for con in room.connections:
+            if(room not in con.connections):
+                con.connections.append(room)
+
+    open = [entrance]
+    closed = []
+
+    while len(open) > 0:
+        curr = open.pop()
+        closed.append(curr)
+        if not hasattr(curr,'connections'):
+            print("Found no connections for room {}".format(curr))
+            continue
+        for con in curr.connections:
+            if con not in open and con not in closed:
+                print("Found room {} (parent: {})".format(con,curr))
+                open.append(con)
+                curr.children.append(con)
+
+    for room in rooms:
+        for connection in room.children:
+            c = connection.center()
+            create_hv_tunnel(c[0], c[1], new_x, new_y)
+
+        #(prev_x, prev_y) = new_x,new_y
 
 def make_test_space():
     for y in range(2, consts.MAP_HEIGHT - 2):
