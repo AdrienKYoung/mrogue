@@ -26,6 +26,7 @@ import player
 import dungeon
 import loot
 import log
+from collections import deque
 
 angles = [0,
           0.5 * math.pi,
@@ -993,6 +994,27 @@ def create_door(x, y, locked=False):
     door.locked = locked
     door.closed = True
     return door
+
+def create_gate_switch(gatex,gatey,switchx,switchy):
+    obj = main.get_objects(gatex, gatey)
+    if len(obj) > 0:
+        return None,None  # object in the way
+
+    type_here = map.tiles[gatex][gatey].tile_type
+    if terrain.data[type_here].isFloor:
+        change_map_tile(gatex, gatey, default_floor)
+    description = 'A heavy iron gate, locked by some unknown mechanism.'
+    door = main.GameObject(gatex, gatey, '=', 'iron gate', libtcod.brass, always_visible=True, description=description,
+                           blocks_sight=True, blocks=False, burns=False, background_color=libtcod.darkest_flame,
+                           interact=main.door_interact)
+    door.locked = True
+    door.closed = True
+
+    switch = main.GameObject(switchx, switchy, '!', 'hanging chain', libtcod.dark_gray, always_visible=True,
+                             description='A hanging chain. Enticingly pullable.', blocks_sight=False, blocks=False,
+                             burns=False, interact=lambda o,a: main.switch_interact(door), background_color=libtcod.darkest_flame)
+
+    return door, switch
 
 def initialize_features():
     global feature_categories, features
@@ -2059,12 +2081,12 @@ def make_map_catacombs():
     connection_threshold_step = 8
     open = [entrance]
     closed = []
-    i = 0
     tcount = 0
 
     nodes = []
     nodes.append({'nr':0, 'room':entrance,'parent':None,'connections':[]})
 
+    #Create room connections
     while len(open) > 0:
         curr = open.pop()
         closed.append(curr)
@@ -2078,57 +2100,100 @@ def make_map_catacombs():
 
         for con in connections:
             if con not in open and con not in closed:
+                tcount += 1
                 open.append(con)
                 center_old = con.center()
                 center_new = curr.center()
                 tunnel = catacombs_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1])
-                i += 1
-                node['connections'].append({'room':con, 'tunnel': tunnel})
-                nodes.append({'nr':i,'parent':curr, 'room': con, 'connections': []})
-                for tn in tunnel:
-                    main.current_map.add_object(main.GameObject(tn[0],tn[1],chr(ord('0') + tcount % 10),'blah',libtcod.white))
-                tcount += 1
+                tmp = {'nr':tcount,'parent':node, 'room': con, 'connections': []}
+                node['connections'].append({'tunnel':tunnel, 'connection':tmp})
+                nodes.append(tmp)
+                #for tn in tunnel:
+                #    main.current_map.add_object(main.GameObject(tn[0],tn[1],chr(ord('0') + tcount % 10),'blah',libtcod.white))
 
-    print(nodes[0])
+    #Create switch-door puzzles
+    segments = deque()
+    segments.append((nodes[0],[n for n in nodes if n['room'] is exit][0]))
+    blacklist = []
 
-    player_x = consts.MAP_WIDTH / 2
-    player_y = consts.MAP_HEIGHT / 2
-    for y in range(consts.MAP_HEIGHT - 1, 1, -1):
-        if not map.tiles[player_x][y].is_wall:
-            player_y = y
-            break
-    player.instance.x = player_x
-    player.instance.y = player_y
+    iterations = 0
+    while len(segments) > 0 and iterations < consts.MG_PUZZLE_MAX_COUNT:
+        start,end = segments.popleft()
+        print("Processing segment {}:{}".format(start['nr'],end['nr']))
+        length = get_back_path_length(start,end)
+        print("Path length: {}".format(length))
+        if length < 2:
+            continue
+
+        prev = None
+        pivot = end
+        for i in range(libtcod.random_get_int(0,1,length)):
+            prev = pivot
+            pivot = pivot['parent']
+        switch = get_connected_nodes(nodes, start, blacklist)[-1][0]
+        blacklist.append(pivot)
+        blacklist.append(switch)
+        tunnel = [p for p in pivot['connections'] if p['connection']][0]['tunnel']
+        door_location = None
+        for loc in tunnel:
+            adjacent_walls = [tile for tile in main.adjacent_tiles_orthogonal(*loc) \
+                              if main.current_map.tiles[tile[0]][tile[1]].is_wall]
+            if len(adjacent_walls) == 2:
+                door_location = loc
+                break
+        center = switch['room'].center()
+        d, s = create_gate_switch(door_location[0],door_location[1],center[0],center[1])
+        if d is not None:
+            main.current_map.add_object(d)
+            main.current_map.add_object(s)
+        segments.append((start,pivot))
+        segments.append((prev,end))
+        segments.append((start,switch))
+
+
+def get_back_path_length(a,b):
+    c = b
+    length = 0
+    while c is not a:
+        length += 1
+        c = c['parent']
+    return length
+
+def get_connected_nodes(nodes,n,blacklist):
+    open = [(n,0)]
+    closed = []
+    while len(open) > 0:
+        curr = open.pop()
+        closed.append(curr)
+        for c in curr[0]['connections']:
+            if c['connection'] not in blacklist:
+                open.append((c['connection'],curr[1]+1))
+    closed.sort(key=lambda o: o[1])
+    return closed
 
 def catacombs_h_tunnel(x1, x2, y, tile_type=default_floor):
     changed = []
-    exclusive = True
     started = False
     for x in range(min(x1, x2), max(x1, x2) + 1):
         if map.tiles[x][y].is_wall:
             started = True
             change_map_tile(x, y, tile_type)
-            if exclusive:
-                changed.append((x,y))
+            changed.append((x,y))
         elif started:
             break
-            #exclusive = False
     return changed
 
 
 def catacombs_v_tunnel(y1, y2, x, tile_type=default_floor):
     changed = []
-    exclusive = True
     started = False
     for y in range(min(y1, y2), max(y1, y2) + 1):
         if map.tiles[x][y].is_wall:
             started = True
             change_map_tile(x, y, tile_type)
-            if exclusive:
-                changed.append((x,y))
+            changed.append((x,y))
         elif started:
             break
-            #exclusive = False
     return changed
 
 

@@ -1631,6 +1631,11 @@ def door_interact(door, actor):
     ui.message('Something is blocking the door.')
     return 'didnt-take-turn'
 
+def switch_interact(door):
+    ui.message('You hear the rattling of iron chains as a gate opens somewhere.')
+    door.locked = False
+    door.closed = False
+    door.char = '.'
 
 def unpack_dice(dice, normalize_size=None):
     c = 0
