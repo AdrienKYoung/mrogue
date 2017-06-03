@@ -231,6 +231,27 @@ class Room:
             #else:
             #    self.data[(x, y)] += (' ' + ele_str)
 
+    def remove_tile(self, x, y):
+        if not (x, y) in self.tiles.keys():
+            return
+        del self.tiles[(x, y)]
+        if (x, y) in self.data.keys():
+            del self.data[(x, y)]
+        if x == self.min_x or x == self.max_x or y == self.min_y or y == self.max_y:
+            self.max_x = None
+            self.min_x = None
+            self.max_y = None
+            self.min_y = None
+            for t in self.tiles:
+                if self.min_x is None or self.min_x > t[0]:
+                    self.min_x = t[0]
+                if self.max_x is None or self.max_x < t[0]:
+                    self.max_x = t[0]
+                if self.min_y is None or self.min_y > t[1]:
+                    self.min_y = t[1]
+                if self.max_y is None or self.max_y < t[1]:
+                    self.max_y = t[1]
+
     def get_open_tiles(self):
         return_tiles = []
         for tile in self.tiles.keys():
@@ -1339,7 +1360,55 @@ def make_rooms_and_corridors():
 def mirror_map():
     for x in range(consts.MAP_WIDTH / 2):
         for y in range(consts.MAP_HEIGHT):
-            change_map_tile(consts.MAP_WIDTH - 1 - x, y, map.tiles[x][y].tile_type)
+            change_map_tile(consts.MAP_WIDTH - 1 - x, y, map.tiles[x - 1][y].tile_type)
+
+def make_garden_connections(room, direction):
+    other = room.connections[direction]
+    if other is None: return
+    if other.connections[main.opposite_direction(direction)] == room:
+        other.connections[main.opposite_direction(direction)] = None
+    if direction == 'right' or direction == 'left':
+        if direction == 'right':
+            x_r = (room.max_x, other.min_x)
+        else:
+            x_r = (other.max_x, room.min_x)
+        if other.height < room.height:
+            if other.height % 2 == 0:
+                y_r = (other.center()[1] - 1, other.center()[1])
+            else:
+                y_r = (other.center()[1], other.center()[1])
+        else:
+            if room.height % 2 == 0:
+                y_r = (room.center()[1] - 1, room.center()[1])
+            else:
+                y_r = (room.center()[1], room.center()[1])
+            if abs(y_r[0] - other.max_y) < 1 or abs(y_r[0] - other.min_y) < 2:
+                return
+    else:
+        if direction == 'bottom':
+            y_r = (room.max_y, other.min_y)
+        else:
+            y_r = (other.max_y, room.min_y)
+        if other.width < room.width:
+            if other.width % 2 == 0:
+                x_r = (other.center()[0] - 1, other.center()[0])
+            else:
+                x_r = (other.center()[0], other.center()[0])
+        else:
+            if room.width % 2 == 0:
+                x_r = (room.center()[0] - 1, room.center()[0])
+            else:
+                x_r = (room.center()[0], room.center()[0])
+            if abs(x_r[0] - other.max_x) < 1 or abs(x_r[0] - other.min_x) < 2:
+                return
+    for y in range(y_r[0], y_r[1] + 1):
+        for x in range(x_r[0], x_r[1] + 1):
+            if map.tiles[x][y].tile_type == default_wall:
+                change_map_tile(x, y, 'marble path', no_overwrite=True)
+            if (x, y) in room.tiles.keys():
+                room.remove_tile(x, y)
+            if (x, y) in other.tiles.keys():
+                other.remove_tile(x, y)
 
 def make_garden_rooms(leaf):
     if leaf.left is None or leaf.right is None:
@@ -1357,35 +1426,55 @@ def make_garden_rooms(leaf):
         make_garden_rooms(leaf.right)
 
 def decorate_garden_room(room):
-    garden_set_default_ground(room)
     w = room.width
     h = room.height
     shortest = min(w, h)
+    # Set default ground
+    garden_set_default_ground(room)
     # Border
-    border_decorations = [garden_corners, garden_passable_border]
+    border_decorations = [garden_corners, garden_small_corners, garden_passable_border]
     if shortest >= 7:
         border_decorations.append(garden_border)
         border_decorations.append(garden_large_corners)
+        if w % 2 == 1 and h % 2 == 1:
+            border_decorations.append(garden_border_staggered_1)
     if h >= 7:
         border_decorations.append(garden_border_h)
     if w >= 7:
         border_decorations.append(garden_border_v)
-    if w % 2 == 1 and h % 2 == 1:
-        border_decorations.append(garden_border_staggered_1)
-    if w % 3 == 1 and h % 3 == 1:
-        border_decorations.append(garden_border_staggered_2)
     border_decorations.append(None)
     choice = border_decorations[libtcod.random_get_int(0, 0, len(border_decorations) - 1)]
     if choice is not None:
         choice(room)
+    garden_fill_center(room)
 
-def garden_set_default_ground(room):
-    types=['grass floor', 'marble path']
-    type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+def garden_set_default_ground(room, type=None):
+    if type is None:
+        types=['grass floor', 'marble path']
+        type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    if room.min_x is None:
+        return
     room.default_floor = type
     for y in range(room.min_y, room.max_y + 1):
         for x in range(room.min_x, room.max_x + 1):
             change_map_tile(x, y, type)
+
+def garden_fill_center(room, type=None):
+    if type is None:
+        if room.default_floor == 'grass floor':
+            type = 'marble path'
+        else:
+            type = 'grass floor'
+    for tile in room.tiles:
+        if (tile[0], tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0], tile[1] - 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1]) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1]) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1] - 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1] - 1) in room.tiles.keys():
+            change_map_tile(tile[0], tile[1], type)
 
 def garden_passable_border(room):
     w = room.width
@@ -1394,42 +1483,70 @@ def garden_passable_border(room):
     fncs = [garden_border, garden_border_h, garden_border_v, garden_corners, garden_large_corners]
     if w % 2 == 1 and h % 2 == 1:
         fncs.append(garden_border_staggered_1)
-    if w % 3 == 1 and h % 3 == 1:
-        fncs.append(garden_border_staggered_2)
     fncs[libtcod.random_get_int(0, 0, len(fncs) - 1)](room, types[libtcod.random_get_int(0, 0, len(types) - 1)])
 
 def garden_border(room, terrain_type='hedge'):
-    for y in range(room.min_y, room.max_y + 1):
-        for x in range(room.min_x, room.max_x + 1):
-            if x == room.min_x or x == room.max_x or y == room.min_y or y == room.max_y:
-                change_map_tile(x, y, terrain_type)
+    min_x = room.min_x
+    max_x = room.max_x
+    min_y = room.min_y
+    max_y = room.max_y
+    for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x + 1):
+            if x == min_x or x == max_x or y == min_y or y == max_y:
+                if (x, y) in room.tiles.keys():
+                    change_map_tile(x, y, terrain_type)
+                    room.remove_tile(x, y)
 
-def garden_border_h(room, terrain_type='hedge'):
+def garden_border_h(room, terrain_type=None):
+    if terrain_type is None:
+        types=['hedge', 'cypress tree']
+        terrain_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+
     for x in range(room.min_x, room.max_x + 1):
-        change_map_tile(x, room.min_y, terrain_type)
-        change_map_tile(x, room.max_y, terrain_type)
+        if (x, room.min_y) in room.tiles.keys():
+            change_map_tile(x, room.min_y, terrain_type)
+            room.remove_tile(x, room.min_y)
+        if (x, room.max_y) in room.tiles.keys():
+            change_map_tile(x, room.max_y, terrain_type)
+            room.remove_tile(x, room.max_y)
 
-def garden_border_v(room, terrain_type='hedge'):
+def garden_border_v(room, terrain_type=None):
+    if terrain_type is None:
+        types=['hedge', 'cypress tree']
+        terrain_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
     for y in range(room.min_y, room.max_y + 1):
-        change_map_tile(room.min_x, y, terrain_type)
-        change_map_tile(room.max_x, y, terrain_type)
+        if (room.min_x, y) in room.tiles.keys():
+            change_map_tile(room.min_x, y, terrain_type)
+            room.remove_tile(room.min_x, y)
+        if (room.max_x, y) in room.tiles.keys():
+            change_map_tile(room.max_x, y, terrain_type)
+            room.remove_tile(room.max_x, y)
 
-def garden_border_staggered_1(room, terrain_type='hedge'):
-    for y in range(room.min_y, room.max_y + 1):
-        for x in range(room.min_x, room.max_x + 1):
-            if x == room.min_x or x == room.max_x or y == room.min_y or y == room.max_y:
-                if (x - room.min_x) % 2 == 0 and (y - room.min_y) % 2 == 0:
+def garden_border_staggered_1(room, terrain_type='cypress tree'):
+    min_x = room.min_x
+    max_x = room.max_x
+    min_y = room.min_y
+    max_y = room.max_y
+    for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x + 1):
+            if x == min_x or x == max_x or y == min_y or y == max_y:
+                room.remove_tile(x, y)
+                if (x - min_x) % 2 == 0 and (y - min_y) % 2 == 0 and (x, y) in room.tiles.keys():
                     change_map_tile(x, y, terrain_type)
 
-def garden_border_staggered_2(room, terrain_type='hedge'):
-    for y in range(room.min_y, room.max_y + 1):
-        for x in range(room.min_x, room.max_x + 1):
-            if x == room.min_x or x == room.max_x or y == room.min_y or y == room.max_y:
-                if (x - room.min_x) % 3 != 0 and (y - room.min_y) % 3 != 0:
-                    change_map_tile(x, y, terrain_type)
+def garden_small_corners(room, tile_type='cypress tree'):
+    corners = [
+        (room.min_x, room.min_y),
+        (room.max_x, room.min_y),
+        (room.min_x, room.max_y),
+        (room.max_x, room.max_y),
+    ]
+    for corner in corners:
+        change_map_tile(corner[0], corner[1], tile_type)
+        room.remove_tile(corner[0], corner[1])
 
 def garden_corners(room, tile_type='hedge'):
-    hedges = [
+    corners = [
         (room.min_x, room.min_y),
         (room.min_x + 1, room.min_y),
         (room.min_x, room.min_y + 1),
@@ -1443,20 +1560,28 @@ def garden_corners(room, tile_type='hedge'):
         (room.max_x - 1, room.max_y),
         (room.max_x, room.max_y - 1),
     ]
-    for hedge in hedges:
-        change_map_tile(hedge[0], hedge[1], tile_type)
+    for corner in corners:
+        change_map_tile(corner[0], corner[1], tile_type)
+        room.remove_tile(corner[0], corner[1])
 
-def garden_large_corners(room, tile_type='marble wall'):
-    for y in range(room.min_y, room.max_y + 1):
-        for x in range(room.min_x, room.max_x + 1):
-            if (abs(x - room.min_x) <= 1 and abs(y - room.min_y) <= 1) or \
-                    (abs(x - room.max_x) <= 1 and abs(y - room.min_y) <= 1) or \
-                    (abs(x - room.min_x) <= 1 and abs(y - room.max_y) <= 1) or \
-                    (abs(x - room.max_x) <= 1 and abs(y - room.max_y) <= 1):
+def garden_large_corners(room, tile_type='marble wall', size=2):
+    s = size - 1
+    min_x = room.min_x
+    max_x = room.max_x
+    min_y = room.min_y
+    max_y = room.max_y
+    for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x + 1):
+            if (abs(x - min_x) <= s and abs(y - min_y) <= 1) or \
+                    (abs(x - max_x) <= s and abs(y - min_y) <= s) or \
+                    (abs(x - min_x) <= s and abs(y - max_y) <= s) or \
+                    (abs(x - max_x) <= s and abs(y - max_y) <= s):
                 change_map_tile(x, y, tile_type)
+                room.remove_tile(x, y)
 
 
 def make_map_garden():
+    import random
 
     for x in range(consts.MAP_WIDTH):
         for y in range(consts.MAP_HEIGHT):
@@ -1490,6 +1615,36 @@ def make_map_garden():
             new_cell.set_tile(tile[0], tile[1], map.tiles[tile[0]][tile[1]].tile_type)
         garden_cells.append(new_cell)
 
+    # Make connections
+    for cell in garden_cells:
+        cell.connections = {
+            'left' : None,
+            'right' : None,
+            'top' : None,
+            'bottom' : None,
+        }
+        left = cell.min_x - 2
+        right = cell.max_x + 2
+        top = cell.min_y - 2
+        bottom = cell.max_y + 2
+        c = cell.center()
+        for other in garden_cells:
+            if left > 0 and (left, c[1]) in other.tiles.keys():
+                cell.connections['left'] = other
+            if right < consts.MAP_WIDTH - 2 and (right, c[1]) in other.tiles.keys():
+                cell.connections['right'] = other
+            if top > 0 and (c[0], top) in other.tiles.keys():
+                cell.connections['top'] = other
+            if bottom < consts.MAP_HEIGHT - 1 and (c[0], bottom) in other.tiles.keys():
+                cell.connections['bottom'] = other
+    for cell in garden_cells:
+        keys = [key for key in cell.connections.keys() if cell.connections[key] is not None]
+        random.shuffle(keys)
+        link_count = libtcod.random_get_int(0, 1, len(keys) - 1)
+        for i in range(link_count):
+            make_garden_connections(cell, keys[i])
+
+    # Decorate rooms
     for cell in garden_cells:
         decorate_garden_room(cell)
 

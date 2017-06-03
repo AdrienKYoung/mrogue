@@ -1064,6 +1064,17 @@ def opposite_team(team):
         return 'ally'
     return 'neutral'
 
+def opposite_direction(dir):
+    if dir == 'left':
+        return 'right'
+    elif dir == 'right':
+        return 'left'
+    elif dir == 'top':
+        return 'bottom'
+    elif dir == 'bottom':
+        return 'top'
+    return None
+
 def object_at_coords(x, y):
 
     ops = [t for t in current_map.objects if (t.x == x and t.y == y)]
