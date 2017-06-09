@@ -1723,7 +1723,7 @@ def skullsplitter_calc_damage_bonus(actor,target):
     return 1.5 * ( 2 - target.fighter.hp / target.fighter.max_hp)
 
 def crush_calc_damage_bonus(actor,target):
-    return 1.5 + (target.fighter.armor+1 / 20) * 2.5
+    return 1.5 + ((target.fighter.armor+1) / 20) * 2.5
 
 def crush_calc_shred_bonus(actor,target):
     return 1 + int(target.fighter.armor / 2)
