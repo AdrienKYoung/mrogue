@@ -583,6 +583,14 @@ data = {
         'intent': 'aggressive',
         'range': 6,
     },
+
+    'ability_summon_demon': {
+        'name' : 'Summon Demon',
+        'cooldown': 20,
+        'cast_time': 10,
+        'summons':{'monster_servant_of_oblivion':20},
+        'function': actions.summon_demon
+    }
 }
 
 vermin_summons = [

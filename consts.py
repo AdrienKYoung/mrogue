@@ -106,5 +106,5 @@ DEBUG_NO_MONSTERS    = False
 DEBUG_STARTING_ITEM  = None
 DEBUG_STARTING_MAP   = 'catacombs_2_1'
 DEBUG_TEST_FEATURE   = None
-DEBUG_TEST_MAP       = False
-DEBUG_TEST_MONSTER   = None
+DEBUG_TEST_MAP       = True
+DEBUG_TEST_MONSTER   = 'monster_cultist'

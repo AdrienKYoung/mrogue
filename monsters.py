@@ -1094,6 +1094,7 @@ proto = {
         'loot_level':1,
         'equipment': [{'weapon_dagger':40, 'weapon_messer':30, 'weapon_rapier':30}, {'none':25,'equipment_cloth_robes':75}],
     },
+
     'monster_mycosaur': {
         'name': 'mycosaur',
         'char': 'M',
@@ -1114,6 +1115,50 @@ proto = {
         'movement_type' : pathfinding.NORMAL | pathfinding.AQUATIC,
         'flags': NO_BREATH,
         'attributes' : ['ability_reeker_breath']
+    },
+
+    'monster_cultist': {
+        'name': 'cultist',
+        'char': 'c',
+        'color': libtcod.dark_purple,
+        'hp': 15,
+        'strength_dice': '4d6',
+        'attack_bonus': 0,
+        'armor': 1,
+        'evasion': 12,
+        'accuracy': 10,
+        'move_speed': 1.0,
+        'attack_speed': 1.0,
+        'ai': ai.AI_Default,
+        'description': 'A crazed exile in service to some dark cult.',
+        'shred': 0,
+        'subtype': 'humanoid',
+        'essence': [(10, 'death')],
+        'attributes' : ['ability_summon_demon'],
+        'loot_level':1,
+        'equipment': [{'weapon_dagger':40}, {'none':25,'equipment_cloth_robes':75}],
+    },
+    'monster_servant_of_oblivion': {
+        'name': "Servant of Oblivion",
+        'char': 'S',
+        'color': libtcod.dark_crimson,
+        'hp': 200,
+        'strength_dice': '8d12',
+        'attack_bonus': 0,
+        'armor': 5,
+        'evasion': 20,
+        'accuracy': 25,
+        'move_speed': 1.1,
+        'attack_speed': 1.0,
+        'ai': ai.AI_Default,
+        'description': 'A horrific mass of spindly legs topped by an abyssal maw',
+        'resistances': ['stunned','poisoned','cursed','doom'],
+        'shred': 2,
+        'subtype': 'demon',
+        'essence': [(100, 'chaos')],
+        'on_hit': [actions.on_hit_curse],
+        'flags': NO_CORPSE,
+        'range':2
     },
 }
 

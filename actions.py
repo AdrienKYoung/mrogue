@@ -628,6 +628,35 @@ def _continuation_great_dive(actor,x,y,ui_particles):
                 actor.set_position(t[0],t[1])
                 break
 
+def summon_demon(actor,target):
+    if actor is None:
+        #player can't cast this :3
+        return
+    data = abilities.data['ability_summon_demon']
+    return channel(actor,data['cast_time'],'a profane ritual!',lambda: _summon_demon_continuation(actor,data))
+
+def _summon_demon_continuation(actor,data):
+    choice = main.random_choice(data['summons'])
+    actor.fighter.take_damage(100000)
+    main.spawn_monster(choice,actor.x,actor.y)
+
+
+def smite(actor=None, target=None):
+    spell = abilities.data['ability_smite']
+    x, y = 0, 0
+    if actor is None or actor is player.instance:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        default_target = None
+        if ui.selected_monster is not None:
+            default_target = ui.selected_monster.x, ui.selected_monster.y
+        target = main.get_monster_at_tile(*ui.target_tile(spell['range'],'pick', default_target=default_target))
+        actor = player.instance
+
+    if target is None: return 'cancelled'
+
+    combat.spell_attack(actor.fighter, target,'ability_smite')
+    return 'success'
+
 def heat_ray(actor=None, target=None):
     spell = abilities.data['ability_heat_ray']
     line = None
@@ -1615,9 +1644,14 @@ def on_hit_judgement(attacker, target, damage):
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('2d6')))
 
+
 def on_hit_rot(attacker, target, damage):
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.rot())
+
+def on_hit_curse(attacker, target, damage):
+    if target.fighter is not None and libtcod.random_get_int(0,0,20) < damage:
+        target.fighter.apply_status_effect(effects.cursed())
 
 def pickaxe_dig(dx, dy):
     result = dig(player.instance.x + dx, player.instance.y + dy)

@@ -392,9 +392,21 @@ class AI_Default:
             result = wander(self)
             if result == 'acquired-target':
                 monster.behavior.ai_state = 'pursuing'
-                return 0.0
             elif result == 'wandered':
                 return monster.behavior.move_speed
+
+        if self._delay_turns < 1:
+            self._queued_action()
+            if monster.fighter is None or monster.behavior is None:
+                return
+            if monster.behavior.follow_target is not None:
+                monster.behavior.ai_state = 'following'
+            target = acquire_target(monster)
+            if target is not None:
+                self.last_seen_position = target.x, target.y
+                self.target = target
+                monster.behavior.ai_state = 'pursuing'
+                return 0.0
 
         elif ai_state == 'following':
 
@@ -627,10 +639,13 @@ class AI_General:
         #    self.turn_ticker -= 1.0
 
         while self.turn_ticker < 1.0:
-            if self.owner.fighter and (self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen')):
-                self.turn_ticker += 1.0
-            else:
-                self.turn_ticker += self.behavior.act(self.ai_state)
+            if self.owner.fighter is not None:
+                if self.owner.fighter.has_status('stunned') or self.owner.fighter.has_status('frozen'):
+                    self.turn_ticker += 1.0
+                else:
+                    cost = self.behavior.act(self.ai_state)
+                    if cost is not None:
+                        self.turn_ticker += cost
         self.turn_ticker -= 1.0
 
     def get_hit(self, attacker):
