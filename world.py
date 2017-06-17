@@ -150,7 +150,14 @@ def initialize_world():
     world_maps['garden_1_0'].add_link(world_maps['forest_0_0'], 'east')
 
     #Add test catacombs map
-    new_map = Map('catacombs',coord=(0,0))
-    world_maps[new_map.name] = new_map
+    for y in range(1, 4):
+        x = 2
+        new_map = Map('catacombs', coord=(x, y))
+        world_maps[new_map.name] = new_map
+        if y > 1:
+            new_map.add_link(world_maps['catacombs_' + str(x) + '_' + str(y-1)], 'west')
+    world_maps['catacombs_2_1'].add_link(world_maps['gtunnels_2_1'], 'up')
+
+    #new_map = Map('catacombs',coord=(0,0))
 
 world_maps = None

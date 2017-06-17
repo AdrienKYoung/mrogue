@@ -2030,6 +2030,11 @@ def make_map_catacombs():
     rects = []
     num_rooms = 0
 
+    #Create chasms
+    for i in range(libtcod.random_get_int(0,0,8)):
+        change_map_tile(libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 4),
+                           libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 4), 'chasm')
+    erode_map('chasm',libtcod.random_get_int(0,5,25))
 
     #First, create the entrance
     entrance = create_room_rectangle(['snowy ground'])
@@ -2043,14 +2048,15 @@ def make_map_catacombs():
     rects.append(room_bounds)
     num_rooms += 1
 
-    exit = create_room_rectangle(['snowy ground'])
+    exit = Room()
+    exit.add_rectangle(width=3,height=3,tile_type='snowy ground')
     dimensions = exit.bounds
     x = libtcod.random_get_int(0, 1 + dimensions[0] / 2, consts.MAP_WIDTH - dimensions[0] / 2 - 1)
     y = 1 + dimensions[1] / 2
     room_bounds = Rect(x, y, dimensions[0], dimensions[1])
     exit.set_pos(room_bounds.x1, room_bounds.y1)
-    apply_room(exit)
-    rooms.append(exit)
+    #apply_room(exit)
+    #rooms.append(exit)
     rects.append(room_bounds)
     num_rooms += 1
 
@@ -2111,45 +2117,66 @@ def make_map_catacombs():
                 #for tn in tunnel:
                 #    main.current_map.add_object(main.GameObject(tn[0],tn[1],chr(ord('0') + tcount % 10),'blah',libtcod.white))
 
+    #Connect the exit
+    apply_room(exit)
+    rooms.append(exit)
+    exit_connector = sorted(rooms,key= lambda r: exit.distance_to(r))[1]
+    node = [n for n in nodes if n['room'] is exit_connector][0]
+    center_old = exit.center()
+    center_new = exit_connector.center()
+    tunnel = catacombs_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1])
+    tmp = {'nr': tcount, 'parent': node, 'room': exit, 'connections': []}
+    node['connections'].append({'tunnel': tunnel, 'connection': tmp})
+    nodes.append(tmp)
+
     #Create switch-door puzzles
     segments = deque()
-    segments.append((nodes[0],[n for n in nodes if n['room'] is exit][0]))
-    blacklist = []
+    exit_node = [n for n in nodes if n['room'] is exit][0]
+    segments.append((nodes[0],exit_node))
+    blacklist = [nodes[0],exit_node]
 
     iterations = 0
     while len(segments) > 0 and iterations < consts.MG_PUZZLE_MAX_COUNT:
         start,end = segments.popleft()
-        print("Processing segment {}:{}".format(start['nr'],end['nr']))
         length = get_back_path_length(start,end)
-        print("Path length: {}".format(length))
         if length < 2:
             continue
+        print("Processing segment {}:{} (length {})".format(start['nr'],end['nr'],length))
 
         prev = None
         pivot = end
         for i in range(libtcod.random_get_int(0,1,length)):
             prev = pivot
             pivot = pivot['parent']
-        switch = get_connected_nodes(nodes, start, blacklist)[-1][0]
         blacklist.append(pivot)
-        blacklist.append(switch)
-        tunnel = [p for p in pivot['connections'] if p['connection']][0]['tunnel']
-        door_location = None
-        for loc in tunnel:
-            adjacent_walls = [tile for tile in main.adjacent_tiles_orthogonal(*loc) \
-                              if main.current_map.tiles[tile[0]][tile[1]].is_wall]
-            if len(adjacent_walls) == 2:
-                door_location = loc
-                break
-        center = switch['room'].center()
-        d, s = create_gate_switch(door_location[0],door_location[1],center[0],center[1])
-        if d is not None:
-            main.current_map.add_object(d)
-            main.current_map.add_object(s)
+        connected_nodes = get_connected_nodes(nodes, start, blacklist)
+        print("Connected nodes: {}",[(n[0]['nr'],n[1]) for n in connected_nodes])
+        switch = connected_nodes[-1][0]
+        print("Selected node {} at distance {} for switch (of {} options)".format(switch['nr'],connected_nodes[-1][1],len(connected_nodes)))
+        if switch not in blacklist:
+            blacklist.append(switch)
+            tunnel = [p for p in pivot['connections'] if p['connection']][0]['tunnel']
+            door_location = None
+            for loc in tunnel:
+                adjacent_walls = [tile for tile in main.adjacent_tiles_orthogonal(*loc) \
+                                  if is_wall_or_pit(main.current_map.tiles[tile[0]][tile[1]])]
+                if len(adjacent_walls) == 2:
+                    door_location = loc
+                    break
+            center = switch['room'].center()
+            if door_location is not None:
+                d, s = create_gate_switch(door_location[0],door_location[1],center[0],center[1])
+                if d is not None:
+                    print("Successfully created switch-gate pair")
+                    main.current_map.add_object(d)
+                    main.current_map.add_object(s)
+                    segments.append((start, switch))
         segments.append((start,pivot))
         segments.append((prev,end))
-        segments.append((start,switch))
 
+
+def is_wall_or_pit(tile):
+    return tile.is_wall or tile.is_pit
 
 def get_back_path_length(a,b):
     c = b
@@ -2175,7 +2202,7 @@ def catacombs_h_tunnel(x1, x2, y, tile_type=default_floor):
     changed = []
     started = False
     for x in range(min(x1, x2), max(x1, x2) + 1):
-        if map.tiles[x][y].is_wall:
+        if is_wall_or_pit(map.tiles[x][y]):
             started = True
             change_map_tile(x, y, tile_type)
             changed.append((x,y))
@@ -2188,7 +2215,7 @@ def catacombs_v_tunnel(y1, y2, x, tile_type=default_floor):
     changed = []
     started = False
     for y in range(min(y1, y2), max(y1, y2) + 1):
-        if map.tiles[x][y].is_wall:
+        if is_wall_or_pit(map.tiles[x][y]):
             started = True
             change_map_tile(x, y, tile_type)
             changed.append((x,y))
