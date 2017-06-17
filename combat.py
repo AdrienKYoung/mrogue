@@ -153,7 +153,9 @@ class Fighter:
                 self.get_hit(attacker,damage)
                 self.hp -= damage
                 if self.hp <= 0:
-                    self.drop_essence()
+                    is_summoned = self.owner.summon_time is not None
+                    if not is_summoned:
+                        self.drop_essence()
                     self.owner.is_corpse = True
                     function = self.death_function
                     if function is not None:
@@ -162,7 +164,7 @@ class Fighter:
                             sh.timer = 0
                             sh.raised = True
                         function(self.owner)
-                    if attacker is not None and attacker.fighter is not None and attacker.fighter.on_get_kill is not None:
+                    if attacker is not None and attacker.fighter is not None and attacker.fighter.on_get_kill is not None and not is_summoned:
                         attacker.fighter.on_get_kill(attacker,self,damage)
                 if affect_shred:
                     self.time_since_last_damaged = 0

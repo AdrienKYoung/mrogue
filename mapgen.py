@@ -1240,6 +1240,17 @@ def apply_scripts(feature, room=None):
         elif script == 'your script here':
             pass
 
+def clear_borders_from_open_set(open_tiles):
+    for x in range(consts.MAP_WIDTH):
+        if (x, 0) in open_tiles:
+            open_tiles.remove((x, 0))
+        if (x, consts.MAP_HEIGHT - 1) in open_tiles:
+            open_tiles.remove((x, consts.MAP_HEIGHT - 1))
+    for y in range(consts.MAP_WIDTH):
+        if (0, y) in open_tiles:
+            open_tiles.remove((0, y))
+        if (consts.MAP_WIDTH - 1, y) in open_tiles:
+            open_tiles.remove((consts.MAP_WIDTH - 1, y))
 
 def choose_random_tile(tile_list, exclusive=True):
     chosen_tile = tile_list[libtcod.random_get_int(0, 0, len(tile_list) - 1)]
@@ -1423,14 +1434,35 @@ def make_garden_connections(room, direction):
                 x_r = (room.center()[0], room.center()[0])
             if abs(x_r[0] - other.max_x) < 1 or abs(x_r[0] - other.min_x) < 2:
                 return
+    tiles = []
     for y in range(y_r[0], y_r[1] + 1):
         for x in range(x_r[0], x_r[1] + 1):
             if map.tiles[x][y].tile_type == default_wall:
                 change_map_tile(x, y, 'marble path', no_overwrite=True)
+                tiles.append((x, y))
             if (x, y) in room.tiles.keys():
-                room.remove_tile(x, y)
+                room.data[(x, y)] = 'nowall'
             if (x, y) in other.tiles.keys():
-                other.remove_tile(x, y)
+                other.data[(x, y)] = 'nowall'
+    if len(tiles) > 0:
+        decorate_garden_connection(tiles, direction == 'top' or direction == 'bottom')
+    else:
+        pass
+
+def decorate_garden_connection(tiles, horizontal, tile_type=None):
+    if tile_type is None:
+        options = ['cypress tree', 'hedge']
+        tile_type = options[libtcod.random_get_int(0, 0, len(options) - 1)]
+    if horizontal:
+        left = min(tiles[0][0], tiles[len(tiles) - 1][0])
+        right = max(tiles[0][0], tiles[len(tiles) - 1][0])
+        change_map_tile(left - 1, tiles[0][1], tile_type, no_overwrite=True)
+        change_map_tile(right + 1, tiles[0][1], tile_type, no_overwrite=True)
+    else:
+        top = min(tiles[0][1], tiles[len(tiles) - 1][1])
+        bottom = max(tiles[0][1], tiles[len(tiles) - 1][1])
+        change_map_tile(tiles[0][0], top - 1, tile_type, no_overwrite=True)
+        change_map_tile(tiles[0][0], bottom + 1, tile_type, no_overwrite=True)
 
 def make_garden_rooms(leaf):
     if leaf.left is None or leaf.right is None:
@@ -1469,6 +1501,8 @@ def decorate_garden_room(room):
     if choice is not None:
         choice(room)
     garden_fill_center(room)
+    if len(room.tiles) > 0:
+        garden_center_features(room)
 
 def garden_set_default_ground(room, type=None):
     if type is None:
@@ -1487,6 +1521,7 @@ def garden_fill_center(room, type=None):
             type = 'marble path'
         else:
             type = 'grass floor'
+    to_remove = []
     for tile in room.tiles:
         if (tile[0], tile[1] + 1) in room.tiles.keys() and \
                         (tile[0], tile[1] - 1) in room.tiles.keys() and \
@@ -1497,6 +1532,10 @@ def garden_fill_center(room, type=None):
                         (tile[0] + 1, tile[1] + 1) in room.tiles.keys() and \
                         (tile[0] + 1, tile[1] - 1) in room.tiles.keys():
             change_map_tile(tile[0], tile[1], type)
+        else:
+            to_remove.append(tile)
+    for tile in to_remove:
+        room.remove_tile(tile[0], tile[1])
 
 def garden_passable_border(room):
     w = room.width
@@ -1515,7 +1554,7 @@ def garden_border(room, terrain_type='hedge'):
     for y in range(min_y, max_y + 1):
         for x in range(min_x, max_x + 1):
             if x == min_x or x == max_x or y == min_y or y == max_y:
-                if (x, y) in room.tiles.keys():
+                if (x, y) not in room.data.keys():
                     change_map_tile(x, y, terrain_type)
                     room.remove_tile(x, y)
 
@@ -1525,10 +1564,10 @@ def garden_border_h(room, terrain_type=None):
         terrain_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
 
     for x in range(room.min_x, room.max_x + 1):
-        if (x, room.min_y) in room.tiles.keys():
+        if (x, room.min_y) not in room.data.keys():
             change_map_tile(x, room.min_y, terrain_type)
             room.remove_tile(x, room.min_y)
-        if (x, room.max_y) in room.tiles.keys():
+        if (x, room.max_y) not in room.data.keys():
             change_map_tile(x, room.max_y, terrain_type)
             room.remove_tile(x, room.max_y)
 
@@ -1537,10 +1576,10 @@ def garden_border_v(room, terrain_type=None):
         types=['hedge', 'cypress tree']
         terrain_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
     for y in range(room.min_y, room.max_y + 1):
-        if (room.min_x, y) in room.tiles.keys():
+        if (room.min_x, y) not in room.data.keys():
             change_map_tile(room.min_x, y, terrain_type)
             room.remove_tile(room.min_x, y)
-        if (room.max_x, y) in room.tiles.keys():
+        if (room.max_x, y) not in room.data.keys():
             change_map_tile(room.max_x, y, terrain_type)
             room.remove_tile(room.max_x, y)
 
@@ -1553,7 +1592,7 @@ def garden_border_staggered_1(room, terrain_type='cypress tree'):
         for x in range(min_x, max_x + 1):
             if x == min_x or x == max_x or y == min_y or y == max_y:
                 room.remove_tile(x, y)
-                if (x - min_x) % 2 == 0 and (y - min_y) % 2 == 0 and (x, y) in room.tiles.keys():
+                if (x - min_x) % 2 == 0 and (y - min_y) % 2 == 0 and (x, y) not in room.data.keys():
                     change_map_tile(x, y, terrain_type)
 
 def garden_small_corners(room, tile_type='cypress tree'):
@@ -1601,6 +1640,90 @@ def garden_large_corners(room, tile_type='marble wall', size=2):
                 change_map_tile(x, y, tile_type)
                 room.remove_tile(x, y)
 
+def garden_center_features(room):
+    w = room.width
+    h = room.height
+    choices = []
+    legal_features = [feature.name for feature in feature_categories['garden'] if
+                      ((feature.room.width <= w and feature.room.height <= h and feature.room.width % 2 == w % 2 and feature.room.height % 2 == h % 2) or
+                       (feature.room.height <= w and feature.room.width <= h and feature.room.height % 2 == w % 2 and feature.room.width % 2 == h % 2))]
+    if len(legal_features) > 0:
+        choices.append((garden_make_feature, legal_features[libtcod.random_get_int(0, 0, len(legal_features) - 1)]))
+    if w % 2 == 1 and h % 2 == 1:
+        choices.append((garden_cross_small, None))
+        if w > 5 and h > 5:
+            choices.append((garden_cross_large, None))
+    if w >= 5 and h >= 5:
+        choices.append((garden_inner_walls, None))
+    #choices.append(None)
+    if len(choices) > 0 and main.roll_dice('1d1') == 1:
+        choice = choices[libtcod.random_get_int(0, 0, len(choices) - 1)]
+        if choice is not None:
+            choice[0](room, choice[1])
+
+def garden_make_feature(room, feature):
+    c = room.center()
+    f = features[feature]
+    H = False
+    V = False
+    if room.width >= f.room.width and room.width % 2 == f.room.width % 2:
+        H = True
+    if room.height >= f.room.width and room.height % 2 == f.room.width % 2:
+        V = True
+    if H and not V:
+        rotation = angles[0]
+    elif V and not H:
+        rotation = angles[1]
+    elif V and H:
+        opts = [angles[0], angles[1], angles[2], angles[3]]
+        rotation = opts[libtcod.random_get_int(0, 0, 1)]
+    else:
+        return
+    create_feature(c[0], c[1], feature, rotation=rotation)
+
+def garden_cross_small(room, tile_type=None):
+    c = room.center()
+    if tile_type is None:
+        types = ['hedge', 'cypress tree', 'marble wall', 'chasm', 'shallow water', 'deep water']
+        tile_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    change_map_tile(c[0], c[1], tile_type)
+    change_map_tile(c[0] + 1, c[1], tile_type)
+    change_map_tile(c[0] - 1, c[1], tile_type)
+    change_map_tile(c[0], c[1] + 1, tile_type)
+    change_map_tile(c[0], c[1] - 1, tile_type)
+
+def garden_cross_large(room, tile_type=None):
+    c = room.center()
+    if tile_type is None:
+        types = ['hedge', 'cypress tree', 'marble wall', 'chasm', 'shallow water', 'deep water']
+        tile_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    for x in range(c[0] - 2, c[0] + 3):
+        change_map_tile(x, c[1], tile_type)
+    for y in range(c[1] - 2, c[1] + 3):
+        change_map_tile(c[0], y, tile_type)
+
+def garden_inner_walls(room, tile_type=None):
+    center_x = [room.center()[0]]
+    center_y = [room.center()[1]]
+    if room.width % 2 == 0:
+        center_x.append(room.center()[0] - 1)
+    if room.height % 2 == 0:
+        center_y.append(room.center()[1] - 1)
+    if tile_type is None:
+        types = ['hedge', 'marble wall']
+        tile_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    for tile in room.tiles.keys():
+        if (tile[0], tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0], tile[1] - 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1]) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1]) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1] - 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1] - 1) in room.tiles.keys():
+            continue
+        if tile[0] not in center_x and tile[1] not in center_y:
+            change_map_tile(tile[0], tile[1], tile_type)
 
 def make_map_garden():
     import random
@@ -1631,7 +1754,7 @@ def make_map_garden():
                 if len(new_list) > 0:
                     filled_lists.append(new_list)
 
-    for filled in filled_lists:
+    for filled in filled_lists[1:]:
         new_cell = Room()
         for tile in filled:
             new_cell.set_tile(tile[0], tile[1], map.tiles[tile[0]][tile[1]].tile_type)
@@ -1645,22 +1768,32 @@ def make_map_garden():
             'top' : None,
             'bottom' : None,
         }
+    for cell in garden_cells:
         left = cell.min_x - 2
         right = cell.max_x + 2
         top = cell.min_y - 2
         bottom = cell.max_y + 2
         c = cell.center()
         for other in garden_cells:
-            if left > 0 and (left, c[1]) in other.tiles.keys():
+            if cell.connections['left'] is None and left > 0 and (left, c[1]) in other.tiles.keys():
                 cell.connections['left'] = other
-            if right < consts.MAP_WIDTH - 2 and (right, c[1]) in other.tiles.keys():
+                other.connections['right'] = cell
+            if cell.connections['right'] is None and right < consts.MAP_WIDTH - 2 and (right, c[1]) in other.tiles.keys():
                 cell.connections['right'] = other
-            if top > 0 and (c[0], top) in other.tiles.keys():
+                other.connections['left'] = cell
+            if cell.connections['top'] is None and top > 0 and (c[0], top) in other.tiles.keys():
                 cell.connections['top'] = other
-            if bottom < consts.MAP_HEIGHT - 1 and (c[0], bottom) in other.tiles.keys():
+                other.connections['bottom'] = cell
+            if cell.connections['bottom'] is None and bottom < consts.MAP_HEIGHT - 1 and (c[0], bottom) in other.tiles.keys():
                 cell.connections['bottom'] = other
+                other.connections['top'] = cell
+
+    # TODO: Prim's algorithm to ensure connectivity of garden cells
+
     for cell in garden_cells:
         keys = [key for key in cell.connections.keys() if cell.connections[key] is not None]
+        if len(keys) == 0:
+            continue
         random.shuffle(keys)
         link_count = libtcod.random_get_int(0, 1, len(keys) - 1)
         for i in range(link_count):
@@ -1669,6 +1802,72 @@ def make_map_garden():
     # Decorate rooms
     for cell in garden_cells:
         decorate_garden_room(cell)
+    to_be_removed = []
+    for cell in garden_cells:
+        if len(cell.tiles) == 0:
+            to_be_removed.append(cell)
+    for cell in to_be_removed:
+        garden_cells.remove(cell)
+
+    # Map links
+    for link in map.links:
+        hlink = True
+        c = '>'
+        if link[0] == 'north':
+            x = consts.MAP_WIDTH / 2
+            y = 1
+            r = angles[0]
+            c = chr(24)
+        elif link[0] == 'south':
+            x = consts.MAP_WIDTH / 2
+            y = consts.MAP_HEIGHT - 2
+            r = angles[2]
+            c = chr(25)
+        elif link[0] == 'east':
+            x = consts.MAP_WIDTH - 3
+            y = consts.MAP_HEIGHT / 2
+            r = angles[1]
+            c = chr(26)
+        elif link[0] == 'west':
+            x = 1
+            y = consts.MAP_WIDTH / 2
+            r = angles[3]
+            c = chr(27)
+        else:
+            x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
+            y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
+            r = None
+            if link[0] == 'up':
+                c = '>'
+            elif link[0] == 'down':
+                c = '<'
+            hlink = False
+        if hlink:
+            link_feature_category = link[1].branch + '_hlink'
+        else:
+            link_feature_category = link[1].branch + '_vlink'
+        if link_feature_category in feature_categories and len(feature_categories[link_feature_category]) > 0:
+            link_feature = random_from_list(feature_categories[link_feature_category]).name
+        else:
+            link_feature = feature_categories['default_gate'][0].name
+        # find map cell closest to this location:
+        garden_cells.sort(key=lambda cell: main.distance(cell.center()[0], cell.center()[1], x, y))
+        if link[0] == 'east' or link[0] == 'west' or not hlink:
+            y = garden_cells[0].center()[1]
+        if link[0] =='north' or link[0] == 'south' or not hlink:
+            x = garden_cells[0].center()[0]
+        create_feature(x, y, link_feature, hard_override=True, rotation=r)
+        stairs = None
+        for i in range(len(map.objects) - 1, 0, -1):
+            if map.objects[i].name == 'stairs':
+                stairs = map.objects[i]
+                break
+        if stairs is not None:
+            stairs.name = 'Path to ' + dungeon.branches[link[1].branch]['name']
+            stairs.description = 'A winding path leading to ' + dungeon.branches[link[1].branch]['name']
+            stairs.link = link
+            stairs.interact = main.use_stairs
+            stairs.char = c
 
 
 def make_map_forest():
@@ -1743,6 +1942,9 @@ def make_map_forest():
         create_feature(tile[0], tile[1], feature_name, open_tiles)
 
     active_branch = dungeon.branches[map.branch]
+
+    clear_borders_from_open_set(open_tiles)
+
     main.place_objects(open_tiles,
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),
@@ -1788,6 +1990,7 @@ def make_map_marsh():
         create_feature(tile[0], tile[1], feature_name, open_tiles)
 
     active_branch = dungeon.branches[map.branch]
+    clear_borders_from_open_set(open_tiles)
     main.place_objects(open_tiles,
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d'+str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),
@@ -1934,6 +2137,7 @@ def make_map_badlands():
         scatter_blightweed(blight_tile)
 
     active_branch = dungeon.branches[map.branch]
+    clear_borders_from_open_set(open_tiles)
     main.place_objects(open_tiles,
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d'+str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),
@@ -2018,6 +2222,7 @@ def make_map_gtunnels():
         if t not in open_tiles:
             open_tiles.append(t)
 
+    clear_borders_from_open_set(open_tiles)
     main.place_objects(open_tiles,
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),

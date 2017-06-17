@@ -140,10 +140,13 @@ ENDFEATURE
 //*******************
 FEATURE garden_hgate
 CATEGORY garden_hlink
+DEFAULT ,
+DEFINE : cypress tree
+DEFINE # marble wall
 FLAGS NOREFLECT
-###
-.>.
-...
+#######
+:,:>:,:
+,,,,,,,
 ENDFEATURE
 //*******************
 // Garden Vertical Gate

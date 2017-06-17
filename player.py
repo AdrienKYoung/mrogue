@@ -794,7 +794,7 @@ def jump(actor=None, range=None, stamina_cost=None):
         range = consts.BASE_JUMP_RANGE
     if stamina_cost is None:
         stamina_cost = consts.JUMP_STAMINA_COST
-    if not main.current_map.tiles[instance.x][instance.y].jumpable:
+    if not main.current_map.tiles[instance.x][instance.y].jumpable and stamina_cost > 0:
         ui.message('You cannot jump from this terrain!', libtcod.light_yellow)
         return 'didnt-take-turn'
 

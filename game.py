@@ -1399,7 +1399,7 @@ def create_item(name, material=None, quality=''):
         essence_pickup = GameObject(0, 0, '*', 'mote of ' + p['essence_type'] + ' essence',
                                     spells.essence_colors[p['essence_type']],
                                     description='A colored orb that glows with elemental potential.',
-                                    on_step=player.pick_up_essence)
+                                    on_step=player.pick_up_essence, always_visible=True)
         essence_pickup.essence_type = p['essence_type']
         return essence_pickup
 
@@ -2061,6 +2061,7 @@ def new_game():
 
     player.instance.memory = equipment.Equipment(None,'tome',spell_list=[])
 
+    ui.game_msgs = []
     ui.message('Welcome to the dungeon...', libtcod.gold)
 
     for y in range(consts.MAP_HEIGHT):

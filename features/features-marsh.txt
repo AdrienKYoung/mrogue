@@ -298,7 +298,7 @@ ENDFEATURE
 //      Chest
 //*******************
 FEATURE chest
-CATEGORY marsh badlands gtunnels forest gardens
+CATEGORY marsh badlands gtunnels forest
 DEFINE $ CHEST
 _____
 _###_

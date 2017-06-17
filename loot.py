@@ -340,10 +340,10 @@ def check_special_drop():
     elixir_stat_ticker += 1
     scroll_forge_ticker += 1
     elixir_life_ticker += 1
-    if main.roll_dice('1d500') <= elixir_life_ticker:
+    if main.roll_dice('1d850') <= elixir_life_ticker:
         elixir_life_ticker = 0
         return 'elixir_life'
-    elif main.roll_dice('1d350') <= elixir_stat_ticker:
+    elif main.roll_dice('1d300') <= elixir_stat_ticker:
         elixir_stat_ticker = 0
         return table['elixirs_0'][libtcodpy.random_get_int(0,0,len(table['elixirs_0']))-1]
     elif main.roll_dice('1d200') <= scroll_forge_ticker:

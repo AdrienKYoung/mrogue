@@ -144,7 +144,7 @@ data = {
     ###############################################
 
 
-    'marble path': TileData(False, False, 'marble path', '.', libtcod.light_gray, libtcod.gray,
+    'marble path': TileData(False, False, 'marble path', '.', (113, 113, 130), (68, 68, 79),
                             'A path made of marble blocks. Tufts of grass push through the ancient cracks.', isFloor=True),
 
     'marble wall': TileData(True, True, 'marble wall', '#', libtcod.lightest_gray, libtcod.light_gray,
