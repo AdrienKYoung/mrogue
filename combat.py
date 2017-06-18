@@ -543,10 +543,12 @@ class Fighter:
             return max(int((self.base_fortitude + bonus) * mul_bonus), 0)
 
     @property
-    def spell_power(self):
+    def spell_power(self, elements=[]):
         bonus = sum(equipment.spell_power_bonus for equipment in main.get_all_equipped(self.inventory))
         mul_bonus = 1.0 * mul(effect.spell_power_mod for effect in self.status_effects)
         if self.owner.player_stats:
+            for s_e in elements:
+                bonus += main.skill_value("{}_affinity".format(s_e))
             return int((self.base_spell_power + self.owner.player_stats.int + bonus) * mul_bonus)
         else:
             return int((self.base_spell_power + bonus) * mul_bonus)
@@ -958,9 +960,6 @@ def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_el
             spell_power = 0
         else:
             spell_power = fighter.spell_power
-        if fighter is not None and fighter.owner is player.instance:
-            for s_e in spell_elements:
-                spell_power += main.skill_value("{}_affinity".format(s_e))
 
         damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice, spell_power),
                                 target.fighter.armor, pierce, spell_elements, damage_mod,
