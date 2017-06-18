@@ -752,7 +752,7 @@ def shatter_item(actor=None, target=None):
         item.destroy()
         for obj in main.current_map.fighters:
             if obj.distance(x, y) <= consts.FIREBALL_RADIUS:
-                combat.spell_attack_ex(actor.fighter, obj, None, '4d4', 1, 'slashing', 0)
+                combat.spell_attack_ex(actor.fighter, obj, None, '4d4', 1, ['slashing'], 0)
         return 'success'
     else:
         ui.message("Shatter failed to break the {}!".format(item.name), libtcod.yellow)
@@ -978,7 +978,7 @@ def sacrifice(actor=None,target=None):
     for (_x,_y) in main.adjacent_tiles_diagonal(actor.x,actor.y):
         obj = main.get_monster_at_tile(_x,_y)
         if obj is not None and obj.fighter.team == 'enemy':
-            combat.spell_attack_ex(actor.fighter,obj,None,spell['base_damage'],0,'death',spell['pierce'],0,1 + damage_mod)
+            combat.spell_attack_ex(actor.fighter,obj,None,spell['base_damage'],0,['death'],spell['pierce'],0,1 + damage_mod)
     return 'success'
 
 def corpse_dance(actor=None,target=None):
@@ -1303,7 +1303,7 @@ def firebomb(actor=None, target=None):
     for adj in main.adjacent_inclusive(x, y):
         for f in main.current_map.fighters:
             if f.x == adj[0] and f.y == adj[1]:
-                if combat.spell_attack_ex(actor.fighter, f, None, '4d10', 0, 'fire', 0) == 'hit' and f.fighter is not None:
+                if combat.spell_attack_ex(actor.fighter, f, None, '4d10', 0, ['fire'], 0) == 'hit' and f.fighter is not None:
                     f.fighter.apply_status_effect(effects.burning())
 
 def icebomb(actor=None, target=None):
@@ -1325,7 +1325,7 @@ def icebomb(actor=None, target=None):
     for adj in main.adjacent_inclusive(x, y):
         for f in main.current_map.fighters:
             if f.x == adj[0] and f.y == adj[1]:
-                if combat.spell_attack_ex(actor.fighter, f, None, '3d10', 0, 'cold', 0) == 'hit' and f.fighter is not None:
+                if combat.spell_attack_ex(actor.fighter, f, None, '3d10', 0, ['cold'], 0) == 'hit' and f.fighter is not None:
                     f.fighter.apply_status_effect(effects.frozen(duration=6))
 
 def timebomb(actor=None, target=None):
@@ -1365,7 +1365,7 @@ def _timebomb_ticker(ticker):
         for adj in main.adjacent_inclusive(x, y):
             for f in main.current_map.fighters:
                 if f.x == adj[0] and f.y == adj[1]:
-                    combat.spell_attack_ex(ticker.actor.fighter, f, None, '6d10', 0, 'lightning', 0)
+                    combat.spell_attack_ex(ticker.actor.fighter, f, None, '6d10', 0, ['lightning'], 0)
 
 def holy_water(actor=None, target=None):
     import monsters
@@ -1390,7 +1390,7 @@ def holy_water(actor=None, target=None):
             ui.message('That target is not vulnerable to holy water.', libtcod.gray)
         return 'cancelled'
     ui.render_projectile((actor.x, actor.y), (target.x, target.y), color=spells.essence_colors['water'], character=libtcod.CHAR_BLOCK2)
-    combat.spell_attack_ex(actor.fighter, target, None, '8d10', 0, 'radiance', 3)
+    combat.spell_attack_ex(actor.fighter, target, None, '8d10', 0, ['radiance'], 3)
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.stunned(duration=(3 + main.roll_dice('1d6'))))
     return 'success'

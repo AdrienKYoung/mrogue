@@ -313,7 +313,7 @@ class Fighter:
                 ability.on_tick()
 
 
-    def apply_status_effect(self, new_effect, dc=0, source_fighter=None, supress_message=False):
+    def apply_status_effect(self, new_effect, dc=20, source_fighter=None, supress_message=False):
         fighter = self
         if self.has_status('reflect-magic') and new_effect.target_defense is not None and source_fighter is not None:
             fighter = source_fighter
