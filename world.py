@@ -111,6 +111,7 @@ def initialize_world():
         if y > 0:
             new_map.add_link(world_maps['gtunnels_' + str(x) + '_' + str(y - 1)], 'north')
         world_maps[new_map.name] = new_map
+    world_maps['gtunnels_1_1'].add_link(world_maps['gtunnels_1_2'], 'south')
 
     new_map = Map('gtunnels', coord=(0, 1))
     new_map.add_link(world_maps['gtunnels_1_1'], 'east')
@@ -125,13 +126,16 @@ def initialize_world():
     world_maps[new_map.name] = new_map
 
     # Make river
-    for x in range(3):
-        new_map = Map('river', coord=(x, 0))
-        if x > 0:
-            new_map.add_link(world_maps['river_' + str(x - 1) + '_0'], 'west')
-        world_maps[new_map.name] = new_map
-    world_maps['river_0_0'].add_link(world_maps['marsh_1_0'], 'south')
-    world_maps['river_2_0'].add_link(world_maps['badlands_0_0'], 'south')
+    new_map = Map('river', depth=0)
+    new_map.add_link(world_maps['marsh_1_0'], 'south')
+    world_maps[new_map.name] = new_map
+    new_map = Map('river', depth=1)
+    new_map.add_link(world_maps['badlands_0_0'], 'south')
+    world_maps[new_map.name] = new_map
+    new_map = Map('crossing')
+    new_map.add_link(world_maps['river_0'], 'west')
+    new_map.add_link(world_maps['river_1'], 'east')
+    world_maps[new_map.name] = new_map
 
     # Add Frozen Forest maps and link back to river/goblin tunnels
     for y in range(2):
@@ -142,7 +146,7 @@ def initialize_world():
             if y > 0:
                 new_map.add_link(world_maps['forest_' + str(x) + '_' + str(y - 1)], 'north')
             world_maps[new_map.name] = new_map
-    world_maps['forest_1_1'].add_link(world_maps['river_2_0'], 'south')
+    world_maps['forest_1_1'].add_link(world_maps['river_1'], 'south')
     world_maps['forest_0_1'].add_link(world_maps['gtunnels_1_1'], 'down')
 
     # Add Garden maps and link back to river/goblin tunnels
@@ -155,7 +159,7 @@ def initialize_world():
     new_map = Map('garden', coord=(0, 1))
     new_map.add_link(world_maps['garden_1_1'], 'east')
     world_maps[new_map.name] = new_map
-    world_maps['garden_1_2'].add_link(world_maps['river_0_0'], 'south')
+    world_maps['garden_1_2'].add_link(world_maps['river_0'], 'south')
     world_maps['garden_1_2'].add_link(world_maps['gtunnels_0_1'], 'down')
 
     # Link gardens and forest

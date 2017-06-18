@@ -1292,6 +1292,8 @@ def erode_map(floor_type=default_floor, iterations=1):
         eroded = []
         for y in range(consts.MAP_HEIGHT):
             for x in range(consts.MAP_WIDTH):
+                if not map.tiles[x][y].is_wall:
+                    continue
                 open_count = 0
                 adjacent = main.adjacent_tiles_diagonal(x, y)
                 for tile in adjacent:
@@ -2063,6 +2065,43 @@ def make_map_grotto():
         stairs.char = chr(25)
 
 
+def make_map_river():
+    for y in range(2, consts.MAP_HEIGHT - 2):
+        for x in range(2, consts.MAP_WIDTH - 2):
+            map.tiles[x][y].tile_type = default_floor
+
+    bank_noise = libtcod.noise_new(1)
+    width_noise = libtcod.noise_new(1)
+    shallows_noise = libtcod.noise_new(1)
+    north_bank = 20
+    for x in range(consts.MAP_WIDTH):
+        shore = libtcod.noise_get_fbm(bank_noise, [float(x) / 10.0, float(x) / 10.0 + 1.0], libtcod.NOISE_PERLIN)
+        this_shore = north_bank + int(shore * 10)
+        width = libtcod.noise_get_fbm(width_noise, [float(x) / 10.0, float(x) / 10.0 + 1.0], libtcod.NOISE_PERLIN)
+        this_width = 15 + int(width * 10)
+        shallows = libtcod.noise_get_fbm(shallows_noise, [float(x) / 10.0, float(x) / 10.0 + 1.0], libtcod.NOISE_PERLIN)
+        this_shallows = 2 + abs(int(shallows * 10))
+        min_y = this_shore
+        max_y = this_shore + this_width
+        for y in range(min_y - this_shallows - 1):
+            change_map_tile(x, y, 'cypress tree')
+        for y in range(min_y - this_shallows, min_y):
+            change_map_tile(x, y, 'shallow water')
+        for y in range(min_y, max_y):
+            change_map_tile(x, y, 'deep water')
+        for y in range(max_y, max_y + this_shallows):
+            change_map_tile(x, y, 'shallow water')
+        for y in range(max_y + this_shallows + 1, consts.MAP_HEIGHT - 1):
+            change_map_tile(x, y, 'cypress tree')
+    erode_map('grass floor', iterations=4)
+
+    make_river_map_links()
+
+def make_map_crossing():
+    open_tiles = []
+    create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'stonewater_crossing', open_tiles=open_tiles)
+    make_river_map_links()
+
 def make_map_badlands():
 
     for y in range(consts.MAP_HEIGHT):
@@ -2467,6 +2506,50 @@ def make_test_space():
     #map.objects.append(main.stairs)
     #main.stairs.send_to_back()
 
+def make_river_map_links():
+    northwest = None
+    southwest = None
+    northeast = None
+    southeast = None
+    for y in range(0, consts.MAP_HEIGHT - 1):
+        if northwest is None and map.tiles[1][y].tile_type == 'shallow water':
+            northwest = (1, y - 2)
+        if northeast is None and map.tiles[consts.MAP_WIDTH - 2][y].tile_type == 'shallow water':
+            northeast = (consts.MAP_WIDTH - 2, y - 2)
+        if map.tiles[1][y].tile_type == 'shallow water':
+            if southwest is None or y > southwest[1] - 2:
+                southwest = (1, y + 2)
+        if map.tiles[consts.MAP_WIDTH - 2][y].tile_type == 'shallow water':
+            if southeast is None or y > southeast[1] - 2:
+                southeast = (consts.MAP_WIDTH - 2, y + 2)
+
+    for link in map.links:
+        if link[1].branch == 'river' or link[1].branch == 'crossing':
+            if link[0] == 'east':
+                link_pos = northeast, southeast
+                link_id = 'northeast', 'southeast'
+                link_destination_id = 'northwest', 'southwest'
+                link_char = chr(26)
+            elif link[0] == 'west':
+                link_pos = northwest, southwest
+                link_id = 'northwest', 'southwest'
+                link_destination_id = 'northeast', 'southeast'
+                link_char = chr(27)
+            else:
+                continue
+            for i in range(2):
+                stairs = main.GameObject(link_pos[i][0], link_pos[i][1], '>', 'stairs', libtcod.white,
+                                         always_visible=True)
+                stairs.name = "Gate to %s" % dungeon.branches[link[1].branch]['name']
+                stairs.description = 'A winding path leading to %s.' % dungeon.branches[link[1].branch]['name']
+                stairs.link = link
+                stairs.interact = main.use_stairs
+                stairs.char = link_char
+                stairs.link_id = link_id[i]
+                stairs.destination_id = link_destination_id[i]
+                map.add_object(stairs)
+        else:
+            make_basic_map_link(link)
 
 def make_basic_map_links():
     # make map links

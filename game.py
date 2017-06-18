@@ -1949,10 +1949,14 @@ def use_stairs(stairs, actor):
     import world
     next_map = stairs.link[1]
     current_map.pathfinding = None
-    enter_map(next_map, world.opposite(stairs.link[0]))
+    if hasattr(stairs, 'destination_id'):
+        destination_id = stairs.destination_id
+    else:
+        destination_id = None
+    enter_map(next_map, world.opposite(stairs.link[0]), destination_id=destination_id)
 
 
-def enter_map(world_map, direction=None):
+def enter_map(world_map, direction=None, destination_id=None):
     global current_map
     world_map.visited = True
 
@@ -1982,6 +1986,9 @@ def enter_map(world_map, direction=None):
     if direction is not None:
         for obj in current_map.objects:
             if hasattr(obj, 'link') and obj.link[0] == direction:
+                if destination_id is not None:
+                    if not hasattr(obj, 'link_id') or obj.link_id != destination_id:
+                        continue
                 player.instance.x = obj.x
                 player.instance.y = obj.y
                 player.instance.elevation = current_map.tiles[obj.x][obj.y].elevation
