@@ -529,7 +529,7 @@ class Fighter:
         bonus = sum(equipment.will_bonus for equipment in main.get_all_equipped(self.inventory))
         mul_bonus = 1.0 * mul(effect.will_mod for effect in self.status_effects)
         if self.owner.player_stats:
-            return max(int((self.base_will + (self.owner.player_stats.wis / 3) + bonus) * mul_bonus), 0)
+            return max(int((self.base_will + (self.owner.player_stats.wiz / 3) + bonus) * mul_bonus), 0)
         else:
             return max(int((self.base_will + bonus) * mul_bonus), 0)
 

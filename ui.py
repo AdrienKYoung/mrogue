@@ -1633,6 +1633,16 @@ def character_info_screen(console, x, y, width):
     libtcod.console_print(console, 2, y + print_height, 'Evasion: ')
     libtcod.console_set_default_foreground(console, libtcod.yellow)
     libtcod.console_print(console, 11, y + print_height, str(player.instance.fighter.evasion))
+    print_height += 1
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    libtcod.console_print(console, 2, y + print_height, 'Fortitude: ')
+    libtcod.console_set_default_foreground(console, libtcod.orange)
+    libtcod.console_print(console, 13, y + print_height, str(player.instance.fighter.fortitude))
+    print_height += 1
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    libtcod.console_print(console, 2, y + print_height, 'Will: ')
+    libtcod.console_set_default_foreground(console, libtcod.blue)
+    libtcod.console_print(console, 8, y + print_height, str(player.instance.fighter.will))
 
     # Resistances / Immunities / Weaknesses
     alt_height = 0
