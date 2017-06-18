@@ -606,5 +606,7 @@ default_abilities = {
     'attack' : Ability('ability_attack', 'Attack','Attack an enemy',actions.attack,0),
     'bash' : Ability('ability_bash', 'Bash','Knock an enemy back',actions.bash_attack,0, stamina_cost=20),
     'jump' : Ability('ability_jump', 'Jump','Jump to a tile',player.jump,0, stamina_cost=50),
-    'raise shield' : Ability('ability_raise_shield', 'Raise Shield', 'Spend stamina to recover your shield after it has been knocked aside.', actions.recover_shield, 0)
+    'raise shield' : Ability('ability_raise_shield', 'Raise Shield',
+                             'Spend stamina to recover your shield after it has been knocked aside.',
+                             actions.recover_shield, cooldown=10)
 }

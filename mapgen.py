@@ -2459,6 +2459,8 @@ def make_test_space():
         else:
             main.spawn_monster(consts.DEBUG_TEST_MONSTER, player_tile[0], player_tile[1] - 20)
 
+    make_basic_map_links()
+
     #stair_tile = (player_tile[0], player_tile[1] + 3)
     #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,
     #                              always_visible=True)
@@ -2558,9 +2560,7 @@ def make_map(_map):
     main.spawned_bosses = {}
 
     # choose generation type
-    if consts.DEBUG_TEST_MAP:
-        make_test_space()
-    else: dungeon.branches[map.branch]['generate']()
+    dungeon.branches[map.branch]['generate']()
 
     open_tile = main.find_closest_open_tile(25, 23)
     if open_tile is not None:

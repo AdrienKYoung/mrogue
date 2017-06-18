@@ -1640,31 +1640,16 @@ def character_info_screen(console, x, y, width):
     libtcod.console_print(console, 26, y, 'Resistances:')
     libtcod.console_set_default_foreground(console, libtcod.white)
     alt_height += 2
-    for r in player.instance.fighter.getImmunities() + player.instance.fighter.getResists():
-        if r in player.instance.fighter.getResists():
-            r_string = 'Resistant'
-        elif r in player.instance.fighter.getImmunities():
+    for r in player.instance.fighter.resistances.keys():
+        if player.instance.fighter.resistances[r] == 'immune':
             r_string = 'Immune'
         else:
-            continue
+            r_string = str(player.instance.fighter.resistances[r])
         libtcod.console_print(console, 26, y + alt_height, r.capitalize() + ': ' + r_string)
         alt_height += 1
     if alt_height == 2:
         libtcod.console_print(console, 26, y + alt_height, 'None')
         alt_height += 1
-    alt_height += 1
-    libtcod.console_set_default_foreground(console, libtcod.red)
-    libtcod.console_print(console, 26, y + alt_height, 'Weaknesses:')
-    alt_height += 2
-    libtcod.console_set_default_foreground(console, libtcod.white)
-    if len(player.instance.fighter.getWeaknesses()) == 0:
-        libtcod.console_print(console, 26, y + alt_height, 'None')
-        alt_height += 1
-    else:
-        for w in player.instance.fighter.getWeaknesses():
-            libtcod.console_print(console, 26, y + alt_height, w.capitalize())
-            alt_height += 1
-    alt_height += 1
 
     print_height = max(print_height, alt_height)
     print_height += 2

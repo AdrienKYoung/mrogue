@@ -132,7 +132,7 @@ table = {
         'slot'          : 'ring',
         'description'   : 'A silver ring in the shape of a serpent eating its own tail. '
                           'Protects is wearer from the effects of poison.',
-        'immunities'    : ['poisoned']
+        'resistances'    : {'poisoned' : 'immune'}
     },
     'equipment_ring_of_freedom': {
         'name'          : 'Ring of Freedom',
@@ -143,7 +143,7 @@ table = {
         'slot'          : 'ring',
         'description'   : 'An alabaster ring set with a silver image of a bird in flight. '
                           'Grants immunity to movement-impairing effects.',
-        'immunities'    : ['immobilized', 'displacement']
+        'resistances'    : {'immobilized' : 'immune', 'displacement' : 'immune'}
     },
     'equipment_ring_of_salvation': {
         'name'          : 'Ring of Salvation',
@@ -164,7 +164,7 @@ table = {
         'slot'          : 'ring',
         'description'   : 'A simple silver band set with a holy symbol. '
                           'Protects its wearer from curses, judgement, and doom.',
-        'immunities'    : ['cursed', 'doom', 'judgement']
+        'resistances'    : {'cursed' : 'immune', 'doom' : 'immune', 'judgement' : 'immune'}
     },
     'equipment_ring_of_levitation': {
         'name'          : 'Ring of Levitation',

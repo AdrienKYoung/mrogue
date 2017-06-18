@@ -1397,7 +1397,7 @@ def holy_water(actor=None, target=None):
 
 def knock_back(actor,target):
     # check for resistance
-    if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
+    if 'displacement' in target.fighter.immunities:
         if fov.player_can_see(target.x, target.y):
             ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
                 target is player.instance, ('resist', 'resists'))), libtcod.gray)
@@ -1588,7 +1588,7 @@ def frog_tongue(actor, target):
             ui.message("The frog's tongue lashes out at %s!" % syntax.name(target), libtcod.dark_green)
             result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=1.5, verb=('pull', 'pulls'))
             if result == 'hit':
-                if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
+                if 'displacement' in target.fighter.immunities:
                     if fov.player_can_see(target.x, target.y):
                         ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
                             target is player.instance, ('resist', 'resists'))), libtcod.gray)
@@ -1605,7 +1605,7 @@ def dragonweed_pull(actor, target):
             ui.message("The dragonweed's stem lashes out at %s!" % syntax.name(target), libtcod.dark_green)
             result = combat.attack_ex(actor.fighter, target, 0, accuracy_modifier=1.5, damage_multiplier=0.75, verb=('pull', 'pulls'))
             if result == 'hit' and target.fighter is not None:
-                if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
+                if 'displacement' in target.fighter.immunities:
                     if fov.player_can_see(target.x, target.y):
                         ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
                             target is player.instance, ('resist', 'resists'))), libtcod.gray)

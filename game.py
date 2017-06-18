@@ -1244,8 +1244,7 @@ def spawn_monster(name, x, y, team='enemy'):
                     death_function=death,
                     spell_power=p.get('spell_power', 0) * modifier.get('spell_power_bonus',1),
                     can_breath_underwater=True,
-                    resistances=p.get('resistances',[]) + modifier.get('resistances',[]),
-                    weaknesses=p.get('weaknesses',[]) + modifier.get('weaknesses', []),
+                    resistances=dict(p.get('resistances',{}).items() + modifier.get('resistances',{}).items()),
                     inventory=spawn_monster_inventory(p.get('equipment'),
                     loot_level=p.get('loot_level',-1)),
                     on_hit=p.get('on_hit'),
@@ -1260,7 +1259,10 @@ def spawn_monster(name, x, y, team='enemy'):
                     monster_str_dice=p.get('strength_dice'),
                     team=p.get('team', team),
                     stealth=p.get('stealth'),
-                    _range=p.get('range',1))
+                    _range=p.get('range',1),
+                    will=int(p.get('will', 5) * modifier.get('will_bonus',1)),
+                    fortitude=int(p.get('fortitude', 5) * modifier.get('fortitude_bonus',1))
+        )
 
         attributes = roll_monster_abilities(p.get('attributes'))
         if len(attributes) > 0:
@@ -1430,7 +1432,7 @@ def create_item(name, material=None, quality=''):
             weapon_dice=p.get('weapon_dice'),
             str_dice=p.get('str_dice', 0),
             on_hit=p.get('on_hit',[]),
-            damage_type=p.get('damage_type'),
+            damage_types=p.get('damage_types'),
             attack_speed_bonus=p.get('attack_speed_bonus', 0),
             attack_delay=p.get('attack_delay', 0),
             essence=p.get('essence'),
@@ -1438,8 +1440,7 @@ def create_item(name, material=None, quality=''):
             level_progression=p.get('levels'),
             level_costs=p.get('level_costs'),
             crit_bonus=p.get('crit_bonus',1.0),
-            resistances=p.get('resistances',[]),
-            immunities=p.get('immunities',[]),
+            resistances=p.get('resistances',{}),
             subtype=p.get('subtype'),
             starting_level=p.get('level',0),
             weight=p.get('weight',0),
@@ -1449,6 +1450,8 @@ def create_item(name, material=None, quality=''):
             sh_recovery=p.get('sh_recovery', 0),
             stamina_regen=p.get('stamina_regen', 0),
             status_effect=p.get('status_effect'),
+            will_bonus=p.get('will', 0),
+            fortitude_bonus=p.get('fortitude', 0),
         )
 
         if material is None:

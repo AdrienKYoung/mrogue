@@ -29,11 +29,11 @@ class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, strength_dice_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
-                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
+                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_types=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
-                 resistances=[], immunities=[], modifiers = {}, base_id=None, _range=1,
+                 resistances={}, modifiers = {}, base_id=None, _range=1,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
-                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None):
+                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None, will_bonus=0, fortitude_bonus=0):
         self.is_equipped = False
         self.slot = slot
         self.base_id = base_id
@@ -53,8 +53,9 @@ class Equipment:
         self._max_hp_bonus = max_hp_bonus
         self._armor_bonus = armor_bonus
         self._evasion_bonus = evasion_bonus
-        self._resistances = list(resistances)
-        self._immunities = list(immunities)
+        self._resistances = dict(resistances)
+        self._will_bonus = will_bonus
+        self._fortitude_bonus = fortitude_bonus
 
         self._sh_max = sh_max
         self._sh_recovery = sh_recovery
@@ -64,7 +65,7 @@ class Equipment:
             self.sh_timer = self.sh_recovery
             self.sh_points = self.sh_max
 
-        self.damage_type = damage_type
+        self.damage_types = damage_types
         self.weapon_dice = weapon_dice
         self._strength_dice_bonus = strength_dice_bonus
         self._on_hit = on_hit  # expects list
@@ -138,6 +139,14 @@ class Equipment:
         return self._evasion_bonus + self.get_bonus('evasion_bonus')
 
     @property
+    def will_bonus(self):
+        return self._will_bonus + self.get_bonus('will_bonus')
+
+    @property
+    def fortitude_bonus(self):
+        return self._fortitude_bonus + self.get_bonus('fortitude_bonus')
+
+    @property
     def accuracy_bonus(self):
         return self._accuracy_bonus + self.get_bonus('accuracy_bonus')
 
@@ -147,11 +156,14 @@ class Equipment:
 
     @property
     def resistances(self):
-        return self._resistances + [mod.get('resistance') for mod in self.modifiers.values() if mod.get('resistance') is not None]
-
-    @property
-    def immunities(self):
-        return self._immunities + [mod.get('resistance') for mod in self.modifiers.values() if mod.get('immunities') is not None]
+        resists = dict(self._resistances)
+        mod_resists = [mod.get('resistance') for mod in self.modifiers.values() if mod.get('resistance') is not None]
+        for r in mod_resists:
+            if r in resists.keys() and mod_resists[r] != 'immune':
+                resists[r] += mod_resists[r]
+            else:
+                resists[r] = mod_resists[r]
+        return resists
 
     @property
     def strength_dice_bonus(self):

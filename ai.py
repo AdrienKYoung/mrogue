@@ -395,7 +395,7 @@ class AI_Default:
             elif result == 'wandered':
                 return monster.behavior.move_speed
 
-        if self._delay_turns < 1:
+        if hasattr(self, "_delay_turns") and self._delay_turns < 1:
             self._queued_action()
             if monster.fighter is None or monster.behavior is None:
                 return

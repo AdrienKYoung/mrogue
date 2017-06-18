@@ -546,14 +546,11 @@ weapon_materials = {
 
 armor_materials = {
     ''              :   {},
-    'reinforced'    :   {'resistance':'slashing'},
-    'hardened'      :   {'resistance':'stabbing'},
-    'padded'        :   {'resistance':'bludgeoning'},
-    'fire-proof'    :   {'resistance':'fire'},
-    'insulated'     :   {'resistance':'lightning'},
-    'fur-lined'     :   {'resistance':'cold'},
-    'blessed'       :   {'resistance':'death'},
-    'infernal'      :   {'resistance':'radiance'},
-    'enchanted'     :   {'resistance':'spell'}
-    #TODO: heavy - increased weight and +1 armor
+    'heavy'         :   {'armor_bonus': 1, 'weight_bonus' : 3},
+    'fire-proof'    :   {'resistance': ('fire', 1)},
+    'insulated'     :   {'resistance': ('lightning', 1)},
+    'fur-lined'     :   {'resistance': ('cold', 1)},
+    'blessed'       :   {'resistance': ('death', 1)},
+    'infernal'      :   {'resistance': ('radiance', 1)},
+    'enchanted'     :   {'will_bonus': 1}
 }

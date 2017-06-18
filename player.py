@@ -124,6 +124,7 @@ loadouts = {
             #'charm_elementalists_lens',
             #'charm_primal_totem',
             #'charm_prayer_beads',
+            'equipment_ring_of_poison_immunity',
             'equipment_cloth_robes',
             'gem_lesser_fire',
             'gem_lesser_water',

@@ -25,7 +25,7 @@ import syntax
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
                  attack_power_mod=1.0,armor_mod=1.0,shred_mod=1.0,pierce_mod=1.0,attack_speed_mod=1.0,evasion_mod=1.0,spell_power_mod=1.0, spell_resist_mod=1.0,
-                 accuracy_mod=1.0, resistance_mod=[], weakness_mod=[], immunity_mod=[], stacks=1, description='', cleanseable=True):
+                 accuracy_mod=1.0, resistance_mod={}, stacks=1, description='', cleanseable=True, will_mod=1.0, fortitude_mod=1.0, target_defense=None):
         self.name = name
         self.time_limit = time_limit
         self.color = color
@@ -41,37 +41,39 @@ class StatusEffect:
         self.evasion_mod = evasion_mod
         self.spell_power_mod = spell_power_mod
         self.spell_resist_mod = spell_resist_mod
-        self.resistance_mod = resistance_mod
-        self.immunity_mod = immunity_mod
-        self.weakness_mod = weakness_mod
+        self.resistance_mod = dict(resistance_mod)
         self.accuracy_mod = accuracy_mod
         self.stacking_behavior = stacking_behavior
         self.stacks = stacks
         self.description = description
         self.cleanseable = cleanseable
-
+        self.will_mod = will_mod
+        self.fortitude_mod = fortitude_mod
+        self.target_defense = target_defense
 
 def burning(duration = 6, stacks = 1):
     return StatusEffect('burning', duration, spells.essence_colors['fire'], stacking_behavior='stack-refresh', stacks=stacks,
                         on_tick=fire_tick, message="You are on fire!", on_apply=burn_apply,
-                        description='This unit will take fire damage at the end of every turn.', cleanseable=True)
+                        description='This unit will take fire damage at the end of every turn.', cleanseable=True,
+                        target_defense='fortitude')
 
 def exhausted(duration = 10):
     return StatusEffect('exhausted',duration,libtcod.yellow, message="You feel exhausted!",
-                        description='This unit deals reduced damage.', attack_power_mod=0.55, cleanseable=True)
+                        description='This unit deals reduced damage.', attack_power_mod=0.55, cleanseable=True,
+                        target_defense='fortitude')
 
 def cursed(duration = 10):
     return StatusEffect('cursed',duration,spells.essence_colors['death'], message="You have been cursed!",
                         description='This unit has reduced defenses.', armor_mod=0.65, spell_resist_mod=0.65,
-                        evasion_mod=0.5, cleanseable=True)
+                        evasion_mod=0.5, cleanseable=True, target_defense='will')
 
 def stunned(duration = 1):
     return StatusEffect('stunned',duration,libtcod.red, message="You have been stunned!",
-                        description='This unit cannot act.', stacking_behavior='ignore')
+                        description='This unit cannot act.', stacking_behavior='ignore', target_defense='fortitude')
 
 def frozen(duration = 1):
     return StatusEffect('frozen',duration,spells.essence_colors['cold'], message="You have been frozen solid!",
-                        description='This unit cannot act.', on_apply=freeze_apply)
+                        description='This unit cannot act.', on_apply=freeze_apply, target_defense='fortitude')
 
 def judgement(duration = 30, stacks=10):
     return StatusEffect('judgement',duration,spells.essence_colors['radiance'], message="You are marked for judgement!", stacks=stacks,
@@ -80,7 +82,7 @@ def judgement(duration = 30, stacks=10):
 
 def immobilized(duration = 5):
     return StatusEffect('immobilized', duration, libtcod.yellow, message="Your feet are held fast!",
-                        description='This unit cannot move.', cleanseable=True, evasion_mod=0.5)
+                        description='This unit cannot move.', cleanseable=True, evasion_mod=0.5, target_defense='fortitude')
 
 def berserk(duration = 20):
     return StatusEffect('berserk',duration,libtcod.red, on_end=berserk_end, attack_power_mod=1.5, stacking_behavior='refresh',
@@ -99,18 +101,19 @@ def warp_weapon(duration = 20):
 def poison(duration = 30):
     fx = StatusEffect('poisoned', duration, libtcod.yellow, message="You have been poisoned!",
                         description="This unit takes poison damage slowly.", on_tick=poison_tick,
-                        stacking_behavior='extend', cleanseable=True)
+                        stacking_behavior='extend', cleanseable=True, target_defense='fortitude')
     fx.timer = 0
     return fx
 
 def toxic(duration = 30):
     return StatusEffect('toxic', duration, libtcod.chartreuse, message="You feel sick...", description=
-                        'This unit heals half as much and takes triple damage from poison', cleanseable=True)
+                        'This unit heals half as much and takes triple damage from poison', cleanseable=True,
+                        target_defense='fortitude')
 
 def bleeding(duration = 5):
     return StatusEffect('bleeding', duration, libtcod.red, message="You are bleeding badly!",
                         description="This unit takes damage at the end of every turn.", on_tick=bleed_tick,
-                        cleanseable=True)
+                        cleanseable=True, target_defense='fortitude')
 
 def invulnerable(duration = 5):
     return StatusEffect('invulnerable', duration, spells.essence_colors['radiance'], message="A golden shield protects you from harm!",
@@ -118,16 +121,17 @@ def invulnerable(duration = 5):
 
 def confusion(duration = 10):
     return StatusEffect('confusion', duration, libtcod.red, message="Madness takes hold of your mind!",
-                        description='This unit spends its turn moving erratically.')
+                        description='This unit spends its turn moving erratically.', target_defense='will')
 
 def silence(duration=10):
     return StatusEffect('silence', duration, libtcod.red, message="You have been silenced!",
-                        description='This unit cannot cast spells.', stacking_behavior='ignore', cleanseable=True)
+                        description='This unit cannot cast spells.', stacking_behavior='ignore', cleanseable=True,
+                        target_defense='will')
 
 def rot(duration = None):
     return StatusEffect('rot', duration, libtcod.red, message="Your flesh rots away!", on_apply=rot_apply,
                         on_end=rot_end, description='This unit has reduced maximum HP.', stacks=1,
-                        stacking_behavior='stack-refresh', cleanseable=True)
+                        stacking_behavior='stack-refresh', cleanseable=True, target_defense='fortitude')
 
 def stoneskin(duration=30):
     return StatusEffect('stoneskin', duration, spells.essence_colors['earth'], armor_mod=1.5,
@@ -149,15 +153,15 @@ def blessed(duration=20):
 def blinded(duration=10):
     return StatusEffect('serenity', duration, libtcod.light_blue, accuracy_mod=0.35,
                         message="Your can't see anything!",
-                        description='This unit has sharply decreased accuracy.', cleanseable=True)
+                        description='This unit has sharply decreased accuracy.', cleanseable=True, target_defense='will')
 
 def sluggish(duration=5):
     return StatusEffect('sluggish', duration, libtcod.sepia, message='Your reaction time slows...',
-                        description='This unit has decreased evasion')
+                        description='This unit has decreased evasion', target_defense='fortitude')
 
 def slowed(duration=10):
     return StatusEffect('slowed', duration, libtcod.yellow, message='Your pace slows...',
-                        description='This unit takes longer to take its turn.', cleanseable=True)
+                        description='This unit takes longer to take its turn.', cleanseable=True, target_defense='fortitude')
 
 def agile(duration=30):
     return StatusEffect('agile', duration, libtcod.light_blue, evasion_mod=1.5,message='You speed up.',
@@ -191,18 +195,20 @@ def oiled(duration=20):
 
 def lichform(duration=None):
     return StatusEffect('lichform',None,libtcod.darker_crimson,spell_resist_mod=1.5,resistance_mod=
-        ['fire','cold','lightning','poison','radiance','dark','void','doom','slugish','curse'
-         'stunned','slowed','burning','judgement','confusion','frozen','immobilized','exhausted','rot','frostbite'],
+    {'fire' : 3,'cold' : 3,'lightning' : 3,'poisoned' : 'immune','radiance' : 3,'death' : 'immune','void' : 3,'doom' :
+        'immune','slugish' : 'immune','cursed' : 'immune', 'stunned' : 'immune','slowed' : 'immune','burning' : 'immune'
+        ,'judgement' : 'immune','confusion' : 'immune','frozen' : 'immune','immobilized' : 'immune','exhausted' :
+         'immune','rot' : 'immune','frostbite' : 'immune'},
         message="Dark magic infuses your soul as you sacrifice your body to undeath!",
         description='This unit is a lich, gaining resistance to all damage and immunity to death magic.', cleanseable=False)
 
 def resistant(element=None,effect=None,color=None,duration=99):
     import spells
     if element is not None:
-        return StatusEffect('resist ' + element,duration,spells.essence_colors[element],resistance_mod=[element],
+        return StatusEffect('resist ' + element,duration,spells.essence_colors[element],resistance_mod={element: 1},
                             message='You feel more resistant!', description='This unit is resistant to %s.' % element, cleanseable=False)
     else:
-        return StatusEffect('resist ' + effect, duration, color, resistance_mod=[effect],
+        return StatusEffect('resist ' + effect, duration, color, resistance_mod={effect : 1},
                             message='You feel more resistant!', description='This unit is resistant to %s.' % effect, cleanseable=False)
 
 def focused(duration=1):
