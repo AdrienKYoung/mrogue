@@ -93,6 +93,7 @@ def menu_y_n(header, width=30, x_center=None):
 def menu_ex(header, options, width, x_center=None, render_func=None, return_as_char=False):
 
     menu_window = libtcod.console_new(main.SCREEN_WIDTH(), main.SCREEN_HEIGHT())
+    text_color = libtcod.lightest_gray
 
     # Prepare header spacing
     if header is None:
@@ -112,7 +113,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
     libtcod.console_flush()
 
     # Print header
-    libtcod.console_set_default_foreground(menu_window, libtcod.white)
+    libtcod.console_set_default_foreground(menu_window, text_color)
     libtcod.console_print_rect_ex(menu_window, 1, 1, width - 2, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
 
     draw_height = header_height + 1
@@ -148,7 +149,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
                         col_widths[category] = len(option[item]['text']) + 2
 
         # column widths have been established - print column headers
-        libtcod.console_set_default_foreground(menu_window, libtcod.white)
+        libtcod.console_set_default_foreground(menu_window, text_color)
         x = 0
         for category in categories:
             libtcod.console_print(menu_window, 5 + x, draw_height, string.capwords(category))
@@ -165,7 +166,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
         if options[index] is None or len(options[index]) == 0:
             continue
         # Print letter index
-        libtcod.console_set_default_foreground(menu_window, libtcod.white)
+        libtcod.console_set_default_foreground(menu_window, text_color)
         libtcod.console_print(menu_window, 1, draw_height, '(%s)' % index)
         # Print category items
         if len(options[index]) > 2 or (len(options[index]) > 1 and not has_descriptions):
@@ -179,7 +180,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
                         if 'color' in options[index][option].keys():
                             libtcod.console_set_default_foreground(menu_window, options[index][option]['color'])
                         else:
-                            libtcod.console_set_default_foreground(menu_window, libtcod.white)
+                            libtcod.console_set_default_foreground(menu_window, text_color)
                         libtcod.console_print(menu_window, 5 + x, draw_height, options[index][option]['text'])
                     x += col_widths[category]
 
@@ -188,7 +189,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
             if 'color' in d.keys():
                 libtcod.console_set_default_foreground(menu_window, d['color'])
             else:
-                libtcod.console_set_default_foreground(menu_window, libtcod.white)
+                libtcod.console_set_default_foreground(menu_window, text_color)
             libtcod.console_print(menu_window, 5, draw_height, d['text'])
 
         draw_height += 1
@@ -196,7 +197,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
     # Draw 'description' prompt
     if has_descriptions:
         draw_height += 1
-        libtcod.console_set_default_foreground(menu_window, libtcod.white)
+        libtcod.console_set_default_foreground(menu_window, text_color)
         libtcod.console_print(menu_window, 1, draw_height, '[Shift] + option for descriptions')
 
 
