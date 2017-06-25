@@ -193,7 +193,8 @@ def create(loadout):
 
     if consts.DEBUG_STARTING_ITEM is not None:
         test = main.create_item(consts.DEBUG_STARTING_ITEM)
-        instance.fighter.inventory.append(test)
+        test.item.pick_up(instance, no_message=True)
+
     return 'success'
 
 def handle_keys():
@@ -906,6 +907,9 @@ def on_tick(this):
     if main.has_skill('rising_storm'):
         if hasattr(instance,'rising_storm_last_attack'):
             instance.rising_storm_last_attack += 1
+            if instance.rising_storm_last_attack > 3:
+                instance.fighter.apply_status_effect(effects.StatusEffect('Rising Storm', time_limit=None,
+                              color=libtcod.dark_blue, description='Your weapon is ready to deliver a heavy attack.'))
         else:
             instance.rising_storm_last_attack = 0
     if instance.fighter.stamina_regen > 0:

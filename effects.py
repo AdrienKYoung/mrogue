@@ -71,6 +71,10 @@ def stunned(duration = 1):
     return StatusEffect('stunned',duration,libtcod.red, message="You have been stunned!",
                         description='This unit cannot act.', stacking_behavior='ignore', target_defense='fortitude')
 
+def stung(duration = 3):
+    return StatusEffect('stung', duration, libtcod.orange, message="The bite stings!",
+                        description='This unit takes increased damage.', target_defense='fortitude')
+
 def frozen(duration = 1):
     return StatusEffect('frozen',duration,spells.essence_colors['cold'], message="You have been frozen solid!",
                         description='This unit cannot act.', on_apply=freeze_apply, target_defense='fortitude')

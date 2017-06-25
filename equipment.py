@@ -159,10 +159,11 @@ class Equipment:
         resists = dict(self._resistances)
         mod_resists = [mod.get('resistance') for mod in self.modifiers.values() if mod.get('resistance') is not None]
         for r in mod_resists:
-            if r in resists.keys() and mod_resists[r] != 'immune':
-                resists[r] += mod_resists[r]
+            if r in resists.keys() and r[1] != 'immune':
+                if resists[r[0]] != 'immune':
+                    resists[r[0]] += r[1]
             else:
-                resists[r] = mod_resists[r]
+                resists[r[0]] = r[1]
         return resists
 
     @property

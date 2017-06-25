@@ -536,6 +536,8 @@ class GameObject:
 
     def destroy(self):
         global changed_tiles
+        if current_map is None:
+            return
         if self.blocks_sight:
             fov.set_fov_properties(self.x, self.y, current_map.tiles[self.x][self.y].blocks_sight, self.elevation)
         if self.blocks and current_map.pathfinding:
@@ -724,7 +726,7 @@ def is_adjacent_diagonal(a_x, a_y, b_x, b_y):
 def centipede_on_hit(attacker, target, damage):
     if target.fighter is None:
         return
-    target.fighter.apply_status_effect(effects.StatusEffect('stung', consts.CENTIPEDE_STING_DURATION, libtcod.flame))
+    target.fighter.apply_status_effect(effects.stung(), dc=8)
 
 
 def zombie_on_hit(attacker, target, damage):
@@ -1345,17 +1347,23 @@ def roll_monster_abilities(proto):
 
     return result
 
-def spawn_npc(name,x,y):
+def spawn_npc(name, x, y, map_name):
     import npc
-    p = npc.data[name]
-    npc_component = npc.NPC(p['dialog'],p['root'])
-    result = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, interact=npc.start_conversation,
-                         description=p['description'], on_create=p.get('on_create'), npc=npc_component,
-                         movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'))
+    if name in npc.npcs.keys():
+        result = npc.npcs[name]
+    else:
+        p = npc.data[name]
+        npc_component = npc.NPC(p['dialog'],p['root'], p['location'])
+        result = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, interact=npc.start_conversation,
+                             description=p['description'], on_create=p.get('on_create'), npc=npc_component,
+                             movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'))
+        npc.npcs[name] = result
 
-    result.elevation = current_map.tiles[x][y].elevation
-    current_map.add_object(result)
-    return result
+    if result.npc.location == map_name:
+        result.set_position(x, y)
+        current_map.add_object(result)
+        return result
+    return None
 
 
 def create_ability(name):
@@ -1708,7 +1716,15 @@ def find_random_open_tile():
     return open[libtcod.random_get_int(0, 0, len(open) - 1)]
 
 
-def spawn_encounter(tiles,encounter,position,count=None):
+def spawn_encounter(tiles,encounter,position,count=None, leader=None):
+    if leader is not None:
+        for l in leader:
+            loc = find_closest_open_tile(position[0], position[1])
+            if loc is not None and loc in tiles:
+                spawn_monster(l, loc[0], loc[1])
+                tiles.remove(loc)
+                if len(tiles) == 0:
+                    return
     if count is not None:
         for i in range(count):
             loc = find_closest_open_tile(position[0], position[1])
@@ -1723,6 +1739,9 @@ def spawn_encounter(tiles,encounter,position,count=None):
             loc = find_closest_open_tile(position[0], position[1])
             if loc is not None:
                 spawn_monster(m, loc[0], loc[1])
+                tiles.remove(loc)
+                if len(tiles) == 0:
+                    return
 
 def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
     if len(tiles) == 0:
@@ -1731,19 +1750,27 @@ def place_objects(tiles,encounter_count=1, loot_count=1, xp_count=1):
     branch = dungeon.branches[current_map.branch]
     monsters_set = branch.get('monsters')
     if monsters_set is not None:
-        for i in range(encounter_count):
-            encounter_roll = roll_dice('1d' + str(branch['encounter_range'] + current_map.difficulty))
-            if roll_dice('1d10') == 10:  # Crit the encounter table, roll to confirm
-                encounter_roll = libtcod.random_get_int(0, encounter_roll, len(monsters_set)) - 1
-            encounter_roll = min(encounter_roll, len(monsters_set) - 1)
-            encounter = monsters_set[encounter_roll]
-            size = 1
-            random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
+        current_set = []
+        for e in monsters_set:
+            min_depth = e.get('min_depth')
+            max_depth = e.get('max_depth')
+            if min_depth <= current_map.difficulty and (max_depth is None or max_depth >= current_map.difficulty):
+                current_set.append(e)
+        if len(current_set) > 0:
+            for i in range(encounter_count):
+                #encounter_roll = roll_dice('1d' + str(branch['encounter_range'] + current_map.difficulty))
+                #if roll_dice('1d10') == 10:  # Crit the encounter table, roll to confirm
+                #    encounter_roll = libtcod.random_get_int(0, encounter_roll, len(monsters_set)) - 1
+                #encounter_roll = min(encounter_roll, len(monsters_set) - 1)
+                #encounter = monsters_set[encounter_roll]
+                encounter = current_set[libtcod.random_get_int(0, 0, len(current_set) - 1)]
+                size = 1
+                random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
 
-            if encounter.get('party') is not None:
-                size = roll_dice(encounter['party'])
+                if encounter.get('party') is not None:
+                    size = roll_dice(encounter['party'])
 
-            spawn_encounter(tiles,encounter,random_pos,size)
+                spawn_encounter(tiles,encounter,random_pos,size,leader=encounter.get('leader'))
 
     for i in range(loot_count):
         random_pos = tiles[libtcod.random_get_int(0, 0, len(tiles) - 1)]
@@ -1947,6 +1974,11 @@ def render_main_menu_splash():
 
 def use_stairs(stairs, actor):
     import world
+
+    if hasattr(stairs, 'event') and callable(stairs.event):
+        if stairs.event() == 'one-off':
+            stairs.event = None
+
     next_map = stairs.link[1]
     current_map.pathfinding = None
     if hasattr(stairs, 'destination_id'):
@@ -1957,6 +1989,7 @@ def use_stairs(stairs, actor):
 
 
 def enter_map(world_map, direction=None, destination_id=None):
+    import npc
     global current_map
     world_map.visited = True
 
@@ -1976,6 +2009,13 @@ def enter_map(world_map, direction=None, destination_id=None):
         libtcod.console_flush()
 
     current_map = world_map
+
+    if current_map.objects is not None:
+        for obj in current_map.objects:
+            if obj in npc.npcs.values():
+                if obj.npc.location != current_map.name:
+                    # We found an NPC who's not supposed to be here any more.
+                    obj.destroy()
 
     if world_map.tiles is None:
         generate_level(world_map)

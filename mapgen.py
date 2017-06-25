@@ -122,6 +122,11 @@ class Room:
             return self.max_x - self.min_x + 1, self.max_y - self.min_y + 1
 
     @property
+    def rect(self):
+        bounds = self.bounds
+        return Rect(self.min_x, self.min_y, bounds[0] - 1, bounds[1] - 1)
+
+    @property
     def width(self):
         return self.max_x - self.min_x + 1
 
@@ -672,7 +677,7 @@ def apply_object(x, y, data):
     if monster_id is not None:
         main.spawn_monster(monster_id, x, y)
     elif npc_id is not None:
-        main.spawn_npc(npc_id, x, y)
+        main.spawn_npc(npc_id, x, y, map.name)
     elif go_name is not None:
         new_obj = main.GameObject(x, y, go_char, go_name, go_color, blocks=go_blocks, description=go_description)
         map.add_object(new_obj)
@@ -907,7 +912,7 @@ def fill_blightweed(tiles):
             create_blightweed(tile[0], tile[1])
 
 
-def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400, cross_elevation=False):
+def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400, cross_elevation=False, overwrite=False):
     patch_limit = min_patch + libtcod.random_get_int(0, 0, max_patch - min_patch)
     patch_count = 0
     Q = Queue.Queue()
@@ -922,8 +927,8 @@ def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400, cross
 
         for adj in main.adjacent_tiles_diagonal(tile[0], tile[1]):
             adj_tile = map.tiles[adj[0]][adj[1]]
-            if not adj_tile.blocks and not adj_tile.is_water and not adj_tile.is_ramp and \
-                    (cross_elevation or adj_tile.elevation == map.tiles[tile[0]][tile[1]].elevation):
+            if overwrite or (not adj_tile.blocks and not adj_tile.is_water and not adj_tile.is_ramp and \
+                    (cross_elevation or adj_tile.elevation == map.tiles[tile[0]][tile[1]].elevation)):
                 adjacent.append(adj)
 
         for i in range(3):
@@ -1791,15 +1796,34 @@ def make_map_garden():
                 other.connections['top'] = cell
 
     # TODO: Prim's algorithm to ensure connectivity of garden cells
-
-    for cell in garden_cells:
-        keys = [key for key in cell.connections.keys() if cell.connections[key] is not None]
+    root = garden_cells[libtcod.random_get_int(0, 0, len(garden_cells) - 1)]
+    open_set = [root]
+    closed_set = []
+    while len(open_set) > 0:
+        cell = open_set[libtcod.random_get_int(0, 0, len(open_set) - 1)]
+        open_set.remove(cell)
+        closed_set.append(cell)
+        keys = [key for key in cell.connections.keys() if cell.connections[key] is not None and not cell.connections[key] in closed_set]
         if len(keys) == 0:
             continue
+        link_count = libtcod.random_get_int(0, 1, len(keys))
         random.shuffle(keys)
-        link_count = libtcod.random_get_int(0, 1, len(keys) - 1)
         for i in range(link_count):
             make_garden_connections(cell, keys[i])
+            open_set.append(cell.connections[keys[i]])
+
+    if len(closed_set) < len(garden_cells):
+        # If we didn't make enough connections, try again
+        return make_map_garden()
+
+    #for cell in garden_cells:
+    #    keys = [key for key in cell.connections.keys() if cell.connections[key] is not None]
+    #    if len(keys) == 0:
+    #        continue
+    #    random.shuffle(keys)
+    #    link_count = libtcod.random_get_int(0, 1, len(keys) - 1)
+    #    for i in range(link_count):
+    #        make_garden_connections(cell, keys[i])
 
     # Decorate rooms
     for cell in garden_cells:
@@ -2050,6 +2074,7 @@ def make_map_beach():
 
 
 def make_map_grotto():
+    import npc
     open_tiles = []
     create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'grotto', open_tiles=open_tiles)
     stairs = None
@@ -2063,6 +2088,7 @@ def make_map_grotto():
         stairs.link = map.links[0]
         stairs.interact = main.use_stairs
         stairs.char = chr(25)
+        stairs.event = npc.event_leave_grotto
 
 
 def make_map_river():
@@ -2275,10 +2301,18 @@ def make_map_catacombs():
     num_rooms = 0
 
     #Create chasms
-    for i in range(libtcod.random_get_int(0,0,8)):
-        change_map_tile(libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 4),
-                           libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 4), 'chasm')
-    erode_map('chasm',libtcod.random_get_int(0,5,25))
+    chasm_count = main.roll_dice('1d8') + 6
+    for i in range(chasm_count):
+        create_terrain_patch((libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 4),
+                           libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 4)), 'chasm', overwrite=True, min_patch=200, max_patch=1200)
+
+
+    #for i in range(libtcod.random_get_int(0,2,18)):
+    #    change_map_tile(libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 4),
+    #                       libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 4), 'chasm')
+    #    if main.roll_dice('1d2') == 1:
+    #        erode_map('chasm',1)
+    #erode_map('chasm',libtcod.random_get_int(0,5,8))
 
     #First, create the entrance
     entrance = create_room_rectangle(['snowy ground'])
@@ -2329,7 +2363,8 @@ def make_map_catacombs():
     #make_basic_map_links()
 
     connection_threshold_step = 8
-    open = [entrance]
+    open = deque()
+    open.append(entrance)
     closed = []
     tcount = 0
 
@@ -2338,7 +2373,7 @@ def make_map_catacombs():
 
     #Create room connections
     while len(open) > 0:
-        curr = open.pop()
+        curr = open.popleft()
         closed.append(curr)
         connections = []
         node = [n for n in nodes if n['room'] is curr][0]
@@ -2354,26 +2389,26 @@ def make_map_catacombs():
                 open.append(con)
                 center_old = con.center()
                 center_new = curr.center()
-                tunnel = catacombs_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1])
+                tunnel = catacombs_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1], con.rect, curr.rect)
                 tmp = {'nr':tcount,'parent':node, 'room': con, 'connections': []}
                 node['connections'].append({'tunnel':tunnel, 'connection':tmp})
                 nodes.append(tmp)
                 #for tn in tunnel:
-                #    main.current_map.add_object(main.GameObject(tn[0],tn[1],chr(ord('0') + tcount % 10),'blah',libtcod.white))
+                #    main.current_map.add_object(main.GameObject(tn[0],tn[1],chr(ord('0') + tcount % 10),'blah',libtcod.white, always_visible=True))
 
     #Connect the exit
     apply_room(exit)
-    rooms.append(exit)
     exit_connector = sorted(rooms,key= lambda r: exit.distance_to(r))[1]
     node = [n for n in nodes if n['room'] is exit_connector][0]
+    rooms.append(exit)
     center_old = exit.center()
     center_new = exit_connector.center()
-    tunnel = catacombs_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1])
+    tunnel = catacombs_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1], exit.rect, exit_connector.rect)
     tmp = {'nr': tcount, 'parent': node, 'room': exit, 'connections': []}
     node['connections'].append({'tunnel': tunnel, 'connection': tmp})
     nodes.append(tmp)
 
-    #Create switch-door puzzles
+    # Create switch-door puzzles
     segments = deque()
     exit_node = [n for n in nodes if n['room'] is exit][0]
     segments.append((nodes[0],exit_node))
@@ -2418,6 +2453,16 @@ def make_map_catacombs():
         segments.append((start,pivot))
         segments.append((prev,end))
 
+def build_edge(corner1, corner2):
+    if corner1[0] == corner2[0]:
+        step = (corner2[1] - corner1[1]) / abs(corner2[1] - corner1[1])
+        for y in range(corner1[1], corner2[1] + step, step):
+            change_map_tile(corner1[0], y, default_wall)
+    elif corner1[1] == corner2[1]:
+        step = (corner2[0] - corner1[0]) / abs(corner2[0] - corner1[0])
+        for x in range(corner1[0], corner2[0] + step, step):
+            change_map_tile(x, corner1[1], default_wall)
+
 
 def is_wall_or_pit(tile):
     return tile.is_wall or tile.is_pit
@@ -2443,9 +2488,12 @@ def get_connected_nodes(nodes,n,blacklist):
     return closed
 
 def catacombs_h_tunnel(x1, x2, y, tile_type=default_floor):
+    if x1 == x2:
+        return []
     changed = []
     started = False
-    for x in range(min(x1, x2), max(x1, x2) + 1):
+    step = (x2 - x1) / abs(x2 - x1)
+    for x in range(x1, x2 + step, step):
         if is_wall_or_pit(map.tiles[x][y]):
             started = True
             change_map_tile(x, y, tile_type)
@@ -2456,9 +2504,12 @@ def catacombs_h_tunnel(x1, x2, y, tile_type=default_floor):
 
 
 def catacombs_v_tunnel(y1, y2, x, tile_type=default_floor):
+    if y1 == y2:
+        return []
     changed = []
     started = False
-    for y in range(min(y1, y2), max(y1, y2) + 1):
+    step = (y2 - y1) / abs(y2 - y1)
+    for y in range(y1, y2 + step, step):
         if is_wall_or_pit(map.tiles[x][y]):
             started = True
             change_map_tile(x, y, tile_type)
@@ -2468,14 +2519,32 @@ def catacombs_v_tunnel(y1, y2, x, tile_type=default_floor):
     return changed
 
 
-def catacombs_hv_tunnel(x1, y1, x2, y2, tile_type=default_floor):
-    tunnel = None
+def catacombs_hv_tunnel(x1, y1, x2, y2, rect1, rect2, tile_type=default_floor):
+
     if libtcod.random_get_float(0,0,1) < 0.5:
+        if x1 == rect2.x1 - 1:
+            build_edge((rect2.x1, rect2.y1), (rect2.x1, rect2.y2))
+        if x1 == rect2.x2 + 1:
+            build_edge((rect2.x2, rect2.y1), (rect2.x2, rect2.y2))
+        if y2 == rect1.y1 - 1:
+            build_edge((rect1.x1, rect1.y1), (rect1.x2, rect1.y1))
+        if y2 == rect1.y2 + 1:
+            build_edge((rect1.x1, rect1.y2), (rect1.x2, rect1.y2))
         tunnel = catacombs_v_tunnel(y1, y2, x1, tile_type)
-        tunnel += catacombs_h_tunnel(x1, x2, y2, tile_type)
+        if len(tunnel) == 0 or tunnel[len(tunnel) - 1] == (x1, y2):
+            tunnel += catacombs_h_tunnel(x1, x2, y2, tile_type)
     else:
+        if y1 == rect2.y1 - 1:
+            build_edge((rect2.x1, rect2.y1), (rect2.x2, rect2.y1))
+        if y1 == rect2.y2 + 1:
+            build_edge((rect2.x1, rect2.y2), (rect2.x2, rect2.y2))
+        if x2 == rect1.x1 - 1:
+            build_edge((rect1.x1, rect1.y1), (rect1.x1, rect1.y2))
+        if x2 == rect1.x2 + 1:
+            build_edge((rect1.x2, rect1.y1), (rect1.x2, rect1.y2))
         tunnel = catacombs_h_tunnel(x1, x2, y1, tile_type)
-        tunnel += catacombs_v_tunnel(y1, y2, x2, tile_type)
+        if len(tunnel) == 0 or tunnel[len(tunnel) - 1] == (x2, y1):
+            tunnel += catacombs_v_tunnel(y1, y2, x2, tile_type)
     return tunnel
 
 def make_test_space():

@@ -330,7 +330,12 @@ class Fighter:
 
         # roll to hit
         if new_effect.target_defense is not None:
-            if not roll_to_hit(fighter.owner, dc, new_effect.target_defense):
+            resist_bonus = 0
+            for resist in fighter.resistances.keys():
+                if resist == new_effect.name:
+                    resist_bonus = fighter.resistances[resist]
+                    break
+            if not roll_to_hit(fighter.owner, dc, new_effect.target_defense, defense_bonus=resist_bonus):
                 if fov.player_can_see(fighter.owner.x, fighter.owner.y):
                     ui.message('%s %s.' % (syntax.name(fighter.owner).capitalize(), syntax.conjugate(
                         fighter.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
@@ -427,7 +432,7 @@ class Fighter:
 
         bonus = 0
         if weapon is not None:
-            bonus = weapon._strength_dice_bonus
+            bonus = weapon.strength_dice_bonus
 
         bonus += sum(equipment.strength_dice_bonus for equipment in main.get_all_equipped(self.inventory) if equipment.category != "weapon")
         if self.owner.player_stats:
@@ -605,13 +610,15 @@ class Fighter:
         for e in main.get_all_equipped(self.inventory):
             for r in e.resistances.keys():
                 if r in resists.keys() and e.resistances[r] != 'immune':
-                    resists[r] += e.resistances[r]
+                    if resists[r] != 'immune':
+                        resists[r] += e.resistances[r]
                 else:
                     resists[r] = e.resistances[r]
         for e in self.status_effects:
             for r in e.resistance_mod.keys():
                 if r in resists.keys() and e.resistance_mod[r] != 'immune':
-                    resists[r] += e.resistance_mod[r]
+                    if resists[r] != 'immune':
+                        resists[r] += e.resistance_mod[r]
                 else:
                     resists[r] = e.resistance_mod[r]
 
@@ -770,13 +777,11 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         damage_mod = location_damage_tables[location]['damage']
 
         # Attacks against stunned targets are critical
-
-        if weapon and ((target.fighter.has_status('stunned') and verb != 'bashes')
-                       or target.fighter.has_status('off balance')):
-            damage_mod *= weapon.crit_bonus
-
-        if target.fighter.has_status('stung'):
-            damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
+        if (target.fighter.has_status('stunned') or target.fighter.has_status('off balance')) and verb != 'bashes':
+            if weapon:
+                damage_mod *= weapon.crit_bonus
+            else:
+                damage_mod *= 2.0 # unarmed crit bonus
 
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
@@ -785,7 +790,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             damage_mod *= 1.5
 
         if fighter.owner is player.instance:
-            #perks!
+            # perks!
             if main.has_skill('find_the_gap') and weapon.subtype == 'dagger':
                 pierce_modifier += 1
 
@@ -793,12 +798,13 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
                 damage_mod *= 1.0 + main.skill_value('ravager')
 
             if main.has_skill('lord_of_the_fray'):
-                damage_mod *= 1.1 * len(main.get_objects(fighter.owner.x,fighter.owner.y,distance=1,
+                damage_mod *= 1.15 * len(main.get_objects(fighter.owner.x,fighter.owner.y,distance=1,
                                             condition=lambda o: o.fighter is not None and o.fighter.team == 'enemy'))
 
             if main.has_skill('rising_storm'):
                 if hasattr(fighter.owner,'rising_storm_last_attack') and fighter.owner.rising_storm_last_attack > 2:
                     damage_mod *= 1.5
+                    fighter.remove_status('Rising Storm')
                     fighter.owner.rising_storm_last_attack = 0
 
         damage_mod *= mul(effect.attack_power_mod for effect in fighter.status_effects)
@@ -1102,20 +1108,20 @@ def roll_location_effect(inventory, location):
     else:
         return None
 
-def roll_to_hit(target,  accuracy, defense_type='evasion'):
-    return libtcod.random_get_float(0, 0, 1) < get_chance_to_hit(target, accuracy, defense_type=defense_type)
+def roll_to_hit(target,  accuracy, defense_type='evasion', defense_bonus=0):
+    return libtcod.random_get_float(0, 0, 1) < get_chance_to_hit(target, accuracy, defense_type=defense_type, defense_bonus=defense_bonus)
 
-def get_chance_to_hit(target, accuracy, defense_type='evasion'):
+def get_chance_to_hit(target, accuracy, defense_type='evasion', defense_bonus=0):
     if defense_type == 'will':
-        return 1.0 - float(target.fighter.will) / float(max(accuracy, target.fighter.will + 1))
+        return 1.0 - float(target.fighter.will + defense_bonus) / float(max(accuracy, target.fighter.will + 1))
     elif defense_type == 'fortitude':
-        return 1.0 - float(target.fighter.fortitude) / float(max(accuracy, target.fighter.fortitude + 1))
+        return 1.0 - float(target.fighter.fortitude + defense_bonus) / float(max(accuracy, target.fighter.fortitude + 1))
     elif defense_type == 'evasion':
         if target.fighter.has_status('stunned') or target.fighter.has_status('frozen'):
             return 1.0
         if target.behavior and (target.behavior.ai_state == 'resting' or target.behavior.ai_state == 'wandering'):
             return 1.0
-        return 1.0 - float(target.fighter.evasion) / float(max(accuracy, target.fighter.evasion + 1))
+        return 1.0 - float(target.fighter.evasion + defense_bonus) / float(max(accuracy, target.fighter.evasion + 1))
     else:
         return 1.0
 
