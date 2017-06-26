@@ -16,7 +16,6 @@
 
 import game as main
 import consts
-import dungeon
 
 class Map:
     def __init__(self, branch, coord=None, depth=None, difficulty=0):
@@ -64,6 +63,7 @@ def opposite(direction):
         return None
 
 def initialize_world():
+    import dungeon
     global world_maps
 
     for branch in dungeon.branches.values():
