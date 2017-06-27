@@ -3,12 +3,24 @@ import game as main
 import ui
 import collections
 import types
+import ai
 
 class NPC:
     def __init__(self, dialog, dialog_root, location):
         self.dialog = dialog
         self.dialog_root = dialog_root
         self.location = location
+        self.active = True
+
+    def deactivate(self):
+        if hasattr(self, 'owner') and self.owner and self.owner.interact:
+            self.owner.interact = None
+        self.active = False
+
+    def activate(self):
+        if hasattr(self, 'owner'):
+            self.owner.interact = start_conversation
+        self.active = True
 
 def start_conversation(target, actor):
     if target.npc is None:
@@ -56,6 +68,20 @@ def event_leave_grotto():
     change_location('npc_greta', 'crossing')
     return 'one-off'
 
+def event_recruit_npc(npc_id):
+    import player
+    if not npc_id in npcs.keys():
+        raise Exception('NPC was not found')
+    npc = npcs[npc_id]
+    if not npc.fighter:
+        raise Exception('NPC has no fighter component')
+    npc.fighter.team = 'ally'
+    npc.fighter.permanent_ally = True
+    npc.behavior.follow_target = player.instance
+    npc.npc.deactivate()
+    npc.npc.location = None
+    return 'success'
+
 npcs = {}
 
 data = {
@@ -66,6 +92,8 @@ data = {
         'root': 'meeting_1',
         'description': 'A sagely old man with a long gray beard. He wears the faded robes of a Yornish noble.',
         'location' : 'grotto',
+        'gender' : 'male',
+        'proper_noun' : True,
         'dialog': {
             'meeting_1':{
                 'event': lambda: change_root('npc_herman', 'greeting_1'),
@@ -99,7 +127,7 @@ data = {
                 'text':"\"Welcome back, my friend. I am glad to see you still alive.\"",
                 'options':{
                     "I've come to trade":'shop_1',
-                    "I should be going (leave)": 'leave_1',
+                    "I should be going": 'leave_1',
                     "I'd like to ask you something...": 'talk_hub_2'
                 }
             },
@@ -186,18 +214,20 @@ data = {
             'leave_1':{
                 'text':"\"Safe travels, friend. May we meet again.\"",
                 'options' : {
-                    'Continue':end_conversation
+                    '(leave)':end_conversation
                 }
             }
         }
     },
     'npc_greta': {
-        'name' : 'Greta',
+        'name' : 'Greta of Yorn',
         'char' : '@',
         'color' : libtcod.turquoise,
         'root' : 'meeting_1_1',
         'description' : 'A fierce young woman clad in chainmail with a rapier sheathed at her waist.',
         'location' : 'grotto',
+        'gender' : 'female',
+        'proper_noun' : True,
         'dialog' : {
             'meeting_1_1':{
                 'event': lambda: change_root('npc_greta', 'greeting_1'),
@@ -224,7 +254,27 @@ data = {
             },
             'meeting_2_1':{
                 'event': lambda: change_root('npc_greta', 'greeting_1'),
-                'text':"\"Hail, exile! I am glad to see your face again.\"",
+                'text':"\"Hail, exile! I hoped I would see your face again.\"",
+                'options':{
+                    'Continue':'meeting_2_2',
+                }
+            },
+            'meeting_2_2':{
+                'text':"\"I had hoped to cross the river here, but the bridge is out. Has been for about a thousand "
+                       "years by the looks of it.\"",
+                'options':{
+                    'Continue':'meeting_2_3',
+                }
+            },
+            'meeting_2_3':{
+                'text':"\"The Gardens lie beyond. Some magic has protected them from the decay of time. It is there I "
+                       "can find the herbs I require for my father, I am sure of it.\"",
+                'options':{
+                    'Continue':'meeting_2_4',
+                }
+            },
+            'meeting_2_4':{
+                'text':"\"I just need to find a way across...\"",
                 'options':{
                     'Continue':'greeting_1',
                 }
@@ -274,9 +324,181 @@ data = {
             'leave_1':{
                 'text': "\"And to you, exile! Our paths will cross again.\"",
                 'options' : {
-                    'Continue':end_conversation
+                    '(leave)':end_conversation
                 }
             },
         }
+    },
+    'npc_rigel':{
+        'name': 'Rigel of Astergard',
+        'char': '@',
+        'color': libtcod.amber,
+        'root' : 'meeting_1_1',
+        'description' : 'A grizzled mercenary in a worn suit of armor, leaning against a spear',
+        'location' : 'crossing',
+        'gender' : 'male',
+        'proper_noun' : True,
+        'dialog' : {
+            'meeting_1_1':{
+                'event': lambda: change_root('npc_rigel', 'greeting_1'),
+                'text':"\"Ho now, what have we here? Some poor wretch washed ashore by the tides of fate?\"",
+                'options' : {
+                    'Continue' :'meeting_1_2'
+                }
+            },
+            'meeting_1_2':{
+                'text':"\"And just look at this one! Why, I'm surprised this island hasn't eaten you up already!\"",
+                'options' : {
+                    'Continue' : 'meeting_1_3'
+                }
+            },
+            'meeting_1_3':{
+                'text':"\"Come, sit, rest awhile. A small one like you will need all your strength if you are to "
+                       "survive what is yet to come.\"",
+                'options' : {
+                    'Continue' : 'greeting_2'
+                }
+            },
+            'greeting_1':{
+                'text':"\"What else shall we discuss?\"",
+                'options':{
+                    'What is your story?' : 'talk_1_1',
+                    'I need advice.': 'talk_2_1',
+                    'Come fight with me!' : 'recruit_1',
+                    'I must be going' : 'leave_1'
+                }
+            },
+            'greeting_2':{
+                'text':"\"Let us talk.\"",
+                'options':{
+                    'What is your story?' : 'talk_1_1',
+                    'I need advice.': 'talk_2_1',
+                    'Come fight with me!' : 'recruit_1',
+                    'I must be going' : 'leave_1'
+                }
+            },
+            'talk_1_1':{
+                'text':"\"I am called Rigel. I am a mercenary by trade, and I have seen more battles than you have seen"
+                       " summers.\"",
+                'options' : {
+                    'Continue' : 'talk_1_2'
+                }
+            },
+            'talk_1_2':{
+                'text':"\"I traveled far and wide in my campaigns. I have seen the peaks of the Arangs and the great "
+                       "cities of Yorn. Yet in all my travels, only one place remained unconquered. \"",
+                'options' : {
+                    'Continue' : 'talk_1_3'
+                }
+            },
+            'talk_1_3':{
+                'text':"\"So here I came. Does that surprise you? Ha! How can I explain to one so young?\"",
+                'options' : {
+                    'Continue' : 'talk_1_4'
+                }
+            },
+            'talk_1_4':{
+                'text':"\"I have seen much in my years, not just nations and battlefields. I have seen men grow old and"
+                       " frail. I watched my own father wither and die like a grape on the vine.\"",
+                'options' : {
+                    'Continue' : 'talk_1_5'
+                }
+            },
+            'talk_1_5':{
+                'text':"\"That is not the end I seek. I have spilled seas of blood to keep the reaper at bay. I will "
+                       "not lay down my arms and surrender to him while time devours me.\"",
+                'options' : {
+                    'Continue' : 'talk_1_6'
+                }
+            },
+            'talk_1_6':{
+                'text':"\"My place is the battlefield. I was born for it. I will die on it. So lay on, Isle of Dread! "
+                       "Give this old soldier the death he has so deserved!\"",
+                'options' : {
+                    'Continue' : 'greeting_1'
+                }
+            },
+            'talk_2_1':{
+                'text':"\"My advice? Well that depends on what you seek.\"",
+                'options' : {
+                    'Continue' : 'talk_2_2'
+                }
+            },
+            'talk_2_2':{
+                'text':"\"If you want to survive for a while? Well that can be done. Bury yourself in a hole somewhere "
+                       "and wait to see if death comes first by hunger or by shame.\"",
+                'options' : {
+                    'Continue' : 'talk_2_3'
+                }
+            },
+            'talk_2_3':{
+                'text':"\"But you want more than that? Then the road ahead is not easy. Beneath this cursed ground "
+                       "there lies great power. To seek it, you must find your way to the Citadel of the Ancients, "
+                       "from whence all the world was once ruled.\"",
+                'options' : {
+                    'Continue' : 'talk_2_4'
+                }
+            },
+            'talk_2_4':{
+                'text':"\"But the citadel looms above the imperial city, beyond the gates. There the Blind Sentinel "
+                       "keeps his post. Passage to the city will not be possible unless you can restore to him his "
+                       "lost sight.\"",
+                'options' : {
+                    'Continue' : 'talk_2_5'
+                }
+            },
+            'talk_2_5':{
+                'text':"\"Or so I was told, many years ago. It is difficult to find knowledge about an island from "
+                       "whence no one returns. We have only myths and legends to serve as guides. Heed them well.\"",
+                'options' : {
+                    'Continue' : 'greeting_1'
+                }
+            },
+            'recruit_1':{
+                'text':"\"For you? Ha! Charity is no virtue of the mercenary, small one. What have you for me in "
+                       "exchange for my service?\"",
+                'options': {
+                    'Give treasure':lambda: ui.buy(lambda :event_recruit_npc('npc_rigel'),'treasure','success_1','greeting_1'),
+                    'Never mind':'greeting_1'
+                }
+            },
+            'success_1':{
+                'text':"\"Superb! Yes, this will do nicely. You have my spear at your service, young one. "
+                       "To battle!\"",
+                'options' : {
+                    'Leave' : end_conversation
+                }
+            },
+            'leave_1':{
+                'text':"\"Watch yourself out there, young one, or you won't last long! Ha!\"",
+                'options' : {
+                    'Leave' : end_conversation
+                }
+            }
+        }
     }
+}
+
+fighters = {
+    'npc_rigel': {
+        'hp': 250,
+        'strength_dice' : '2d24',
+        'armor': 0,
+        'evasion': 3,
+        'accuracy': 32,
+        'move_speed': 1.0,
+        'attack_speed': 0.95,
+        'ai': ai.AI_Default,
+        'description': 'A grizzled mercenary in a worn suit of armor, his spear held at the ready',
+        'loot_level':2,
+        'equipment': [
+            {'weapon_spear':100},
+            {'equipment_plate_armor':100},
+            {'equipment_armet_helm':100},
+            {'equipment_gauntlets': 100},
+            {'equipment_greaves': 100}],
+        'shred': 2,
+        'subtype':'homunculus',
+        'team' : 'neutral',
+    },
 }

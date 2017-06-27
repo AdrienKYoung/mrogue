@@ -328,7 +328,7 @@ def target_next_monster():
 
     nearby = []
     for obj in main.current_map.fighters:
-        if fov.player_can_see(obj.x, obj.y) and obj is not player.instance:
+        if fov.player_can_see(obj.x, obj.y) and obj is not player.instance and not (obj.npc and obj.npc.active):
             nearby.append((obj.distance_to(player.instance), obj))
     nearby.sort(key=lambda m: m[0])
 
@@ -373,7 +373,7 @@ def mouse_select_monster():
         monster = None
         for obj in main.current_map.fighters:
             if obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y) or (obj.always_visible and
-                                       main.current_map.tiles[obj.x][obj.y].explored)) and obj is not player.instance:
+                                       main.current_map.tiles[obj.x][obj.y].explored)) and obj is not player.instance and not (obj.npc and obj.npc.active):
                 monster = obj
                 break
         if monster is not None:
@@ -1605,7 +1605,10 @@ def buy(item,payment_type,success,cancelled):
     else:
         payment = next((n for n in inventory if n.name == selection))
         inventory.remove(payment)
-        main.create_item(item).item.pick_up(player.instance)
+        if callable(item):
+            item()
+        else:
+            main.create_item(item).item.pick_up(player.instance)
         return success
 
 def character_info_screen(console, x, y, width):

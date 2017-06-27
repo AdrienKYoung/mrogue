@@ -27,9 +27,9 @@ EVIL = 4
 
 proto = {
     'monster_zombie_goblin': {
-        'name': 'goblin lurker',
+        'name': 'zombie goblin',
         'char': 'g',
-        'color': libtcod.desaturated_green,
+        'color': libtcod.dark_purple,
         'hp': 15,
         'strength_dice' : '3d6',
         'attack_bonus' : 0,

@@ -208,6 +208,8 @@ class GameObject:
         self.is_corpse = is_corpse
         self.zombie_type = zombie_type
         self.npc = npc
+        if self.npc:
+            self.npc.owner = self
 
     @property
     def movement_type(self):
@@ -279,16 +281,16 @@ class GameObject:
             for obj in stepped_on:
                 obj.on_step(obj, self)
 
-        # Update 'in-mud' state
+        # Check terrain
         if self.fighter and self.movement_type & pathfinding.FLYING != pathfinding.FLYING:
             if current_map.tiles[self.x][self.y].tile_type == 'mud' and not self.fighter.has_status('sluggish'):
-                self.fighter.apply_status_effect(effects.sluggish(None),False)
+                self.fighter.apply_status_effect(effects.sluggish(None), dc=None, supress_message=True)
             elif current_map.tiles[self.x][self.y].tile_type != 'mud' and self.fighter.has_status('sluggish'):
                 self.fighter.remove_status('sluggish')
 
         if self is player.instance and has_skill('aquatic'):
             if current_map.tiles[self.x][self.y].is_water and not self.fighter.has_status('agile'):
-                self.fighter.apply_status_effect(effects.agile(None),False)
+                self.fighter.apply_status_effect(effects.agile(None))
             elif not current_map.tiles[self.x][self.y].is_water and self.fighter.has_status('agile'):
                 self.fighter.remove_status('agile')
 
@@ -321,7 +323,7 @@ class GameObject:
     def move(self, dx, dy):
 
         x,y = self.x + dx, self.y + dy
-        blocked = is_blocked(x,y, from_coord=(self.x, self.y), movement_type=self.movement_type)
+        blocked = is_blocked(x,y, from_coord=(self.x, self.y), movement_type=self.movement_type, is_player=self is player.instance)
 
         if not blocked:
             if self.fighter is not None:
@@ -346,9 +348,19 @@ class GameObject:
                     door_interact(door, self)
                     return True
 
-                fire = object_at_tile(x, y, 'Fire')
-                if fire is not None and self is player.instance and not has_skill('pyromaniac') and not ui.menu_y_n('Really walk into flame?'):
-                    return False
+                if self is player.instance:
+                    if current_map.tiles[x][y].tile_type == 'lava' and \
+                            not 'fire' in self.fighter.immunities and \
+                            current_map.tiles[self.x][self.y].tile_type != 'lava':
+                        if not ui.menu_y_n('Really walk into lava?'):
+                            return False
+
+                    fire = object_at_tile(x, y, 'Fire')
+                    if fire is not None and not 'fire' in self.fighter.immunities and not has_skill('pyromaniac'):
+                        old_fire = object_at_tile(self.x, self.y, 'Fire')
+                        if old_fire is None:
+                            if not ui.menu_y_n('Really walk into flame?'):
+                                return False
 
                 cost = current_map.tiles[self.x][self.y].stamina_cost
                 swim = current_map.tiles[self.x][self.y].is_water \
@@ -425,11 +437,16 @@ class GameObject:
             self.move_astar_old(target_x, target_y)
             return 'no map'
         else:
+            movement_type = self.movement_type
+            if self.fighter and 'fire' in self.fighter.immunities:
+                movement_type |= pathfinding.LAVA
+
             if not current_map.pathfinding.is_accessible((target_x, target_y)):
                 closest_adjacent = None
                 closest = 10000
                 for adj in adjacent_tiles_diagonal(target_x, target_y):
-                    if is_blocked(adj[0], adj[1], from_coord=(target_x, target_y), movement_type=self.movement_type):
+                    if is_blocked(adj[0], adj[1], from_coord=(target_x, target_y),
+                                  movement_type=movement_type, is_player=self is player.instance):
                         continue
                     dist = self.distance(adj[0], adj[1])
                     if dist < closest:
@@ -442,7 +459,7 @@ class GameObject:
                     target_x = closest_adjacent[0]
                     target_y = closest_adjacent[1]
 
-            path = current_map.pathfinding.a_star_search((self.x, self.y), (target_x, target_y), self.movement_type)
+            path = current_map.pathfinding.a_star_search((self.x, self.y), (target_x, target_y), movement_type)
 
             if consts.DEBUG_DRAW_PATHS:
                 pathfinding.draw_path(path)
@@ -521,8 +538,8 @@ class GameObject:
                 if fov.player_can_see(self.x, self.y):
                     ui.message('%s fades away as %s returns to the world from whence %s came.' %
                                (syntax.name(self).capitalize(),
-                                syntax.pronoun(self.name),
-                                syntax.pronoun(self.name)), libtcod.gray)
+                                syntax.pronoun(self),
+                                syntax.pronoun(self)), libtcod.gray)
                 self.destroy()
                 return
         if self.on_tick_specified:
@@ -680,7 +697,7 @@ def step_on_blightweed(weed, obj):
     if obj.fighter:
         obj.fighter.time_since_last_damaged = 0
         if obj.fighter.armor > 0:
-            obj.fighter.shred += 1
+            obj.fighter.get_shredded(1)
             if fov.player_can_see(obj.x, obj.y):
                 ui.message('The blightweed thorns shred %s armor!' % syntax.name(obj, possesive=True), libtcod.desaturated_red)
 
@@ -736,7 +753,7 @@ def zombie_on_hit(attacker, target, damage):
         ui.message('%s grabs %s! %s cannot move!' % (
                         syntax.name(attacker).capitalize(),
                         syntax.name(target),
-                        syntax.pronoun(target.name).capitalize()), libtcod.yellow)
+                        syntax.pronoun(target).capitalize()), libtcod.yellow)
         target.fighter.apply_status_effect(effects.immobilized(3))
 
 
@@ -1019,7 +1036,7 @@ def monster_death(monster):
     elif monster.summon_time is not None:
         monster.destroy()
         ui.message('%s corpse fades into the world from whence it came.' %
-                   syntax.pronoun(monster.name, possesive=True).capitalize(), libtcod.gray)
+                   syntax.pronoun(monster, possesive=True).capitalize(), libtcod.gray)
     else:
         monster.char = '%'
         monster.color = libtcod.darker_red
@@ -1148,7 +1165,7 @@ def closest_monster(max_range):
     closest_dist = max_range + 1
 
     for object in current_map.fighters:
-        if object is not player.instance and object.player_can_see():
+        if object is not player.instance and object.player_can_see() and not (object.npc and object.npc.active):
             dist = player.instance.distance_to(object)
             if object.fighter.has_flag(monsters.LOW_PRIORITY):
                 if dist < low_priority_dist:
@@ -1168,7 +1185,7 @@ def in_bounds(x, y):
     return 0 <= x < consts.MAP_WIDTH and 0 <= y < consts.MAP_HEIGHT
 
 
-def is_blocked(x, y, from_coord=None, movement_type=None, ignore_fighters=False):
+def is_blocked(x, y, from_coord=None, movement_type=None, ignore_fighters=False, is_player=False):
 
     tile = current_map.tiles[x][y]
 
@@ -1192,6 +1209,12 @@ def is_blocked(x, y, from_coord=None, movement_type=None, ignore_fighters=False)
             if movement_type & pathfinding.FLYING != pathfinding.FLYING:
                 # If this is a pit and we do not have the FLYING flag...
                 return True
+        elif tile.tile_type == 'lava':
+            if not is_player:
+                if movement_type & pathfinding.FLYING != pathfinding.FLYING and \
+                        movement_type & pathfinding.LAVA != pathfinding.LAVA:
+                    # If this is lava and we do not have the FLYING flag or the LAVA flag...
+                    return True
         elif elevation is not None and tile.elevation != elevation and not tile.is_ramp and not from_tile.is_ramp:
             if movement_type & pathfinding.CLIMBING != pathfinding.CLIMBING and \
                                     movement_type & pathfinding.FLYING != pathfinding.FLYING:
@@ -1245,7 +1268,7 @@ def spawn_monster(name, x, y, team='enemy'):
                     accuracy=int(p['accuracy'] * modifier.get('accuracy_bonus',1)),
                     death_function=death,
                     spell_power=p.get('spell_power', 0) * modifier.get('spell_power_bonus',1),
-                    can_breath_underwater=True,
+                    can_breath_underwater=p.get('can_breathe_underwater', True),
                     resistances=dict(p.get('resistances',{}).items() + modifier.get('resistances',{}).items()),
                     inventory=spawn_monster_inventory(p.get('equipment'),
                     loot_level=p.get('loot_level',-1)),
@@ -1354,9 +1377,68 @@ def spawn_npc(name, x, y, map_name):
     else:
         p = npc.data[name]
         npc_component = npc.NPC(p['dialog'],p['root'], p['location'])
+        fighter = None
+        behavior = None
+        attack_speed = 1.0
+        move_speed = 1.0
+        movement_type = pathfinding.NORMAL
+        if name in npc.fighters.keys():
+            f = npc.fighters[name]
+            death = monster_death
+            if f.get('death_function'):
+                death = f.get('death_function')
+            fighter = combat.Fighter(
+                hp=int(f['hp']),
+                armor=int(f['armor']),
+                evasion=int(f['evasion']),
+                accuracy=int(f['accuracy']),
+                death_function=death,
+                spell_power=f.get('spell_power', 0),
+                can_breath_underwater=p.get('can_breathe_underwater', True),
+                resistances=dict(f.get('resistances', {}).items()),
+                inventory=spawn_monster_inventory(f.get('equipment'), loot_level=f.get('loot_level', -1)),
+                on_hit=f.get('on_hit'),
+                base_shred=f.get('shred', 0),
+                base_guaranteed_shred=f.get('guaranteed_shred', 0),
+                on_get_hit=f.get('on_get_hit'),
+                base_pierce=f.get('pierce', 0),
+                hit_table=f.get('body_type'),
+                monster_flags=f.get('flags', 0),
+                subtype=f.get('subtype'),
+                damage_bonus=f.get('attack_bonus', 0),
+                monster_str_dice=f.get('strength_dice'),
+                team=f.get('team', 'neutral'),
+                stealth=f.get('stealth'),
+                _range=f.get('range', 1),
+                will=int(f.get('will', 10)),
+                fortitude=int(f.get('fortitude', 10))
+            )
+            attack_speed = 1.0 / f.get('attack_speed', 1.0)
+            move_speed = 1.0 / f.get('move_speed', 1.0)
+            movement_type = f.get('movement_type', pathfinding.NORMAL)
+            if f.get('ai'):
+                behavior = f.get('ai')()
+
         result = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, interact=npc.start_conversation,
                              description=p['description'], on_create=p.get('on_create'), npc=npc_component,
-                             movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'))
+                             fighter=fighter, behavior=behavior, movement_type=movement_type, on_tick=p.get('on_tick'))
+        result.syntax_data = {
+            'proper': p.get('proper_noun', True),
+            'gender': p.get('gender', 'neutral')
+        }
+
+        if result.fighter:
+            for i in result.fighter.inventory:
+                i.item.holder = result
+                if i.equipment:
+                    i.equipment.equip()
+
+        if result.behavior:
+            result.behavior.base_attack_speed = attack_speed
+            result.behavior.base_move_speed = move_speed
+
+        result.elevation = current_map.tiles[x][y].elevation
+
         npc.npcs[name] = result
 
     if result.npc.location == map_name:
@@ -1374,17 +1456,6 @@ def create_ability(name):
     else:
         return None
 
-
-def spawn_essence(x,y,type):
-    essence_pickup = GameObject(x,y, '*', 'mote of ' + type + ' essence',
-                    spells.essence_colors[type],
-                    description='A colored orb that glows with elemental potential.',
-                    on_step=player.pick_up_essence)
-    essence_pickup.essence_type = type
-    current_map.add_object(essence_pickup)
-    return essence_pickup
-
-
 def opposite_essence(essence):
     if essence == 'water':
         return 'fire'
@@ -1401,17 +1472,26 @@ def opposite_essence(essence):
     else:
         return essence
 
+def spawn_essence(x,y,type):
+    essence_pickup = create_essence(type)
+    essence_pickup.set_position(x, y)
+    current_map.add_object(essence_pickup)
+    return essence_pickup
+
+
+def create_essence(essence_type):
+    essence_pickup = GameObject(0, 0, '*', 'mote of ' + essence_type + ' essence',
+                                spells.essence_colors[essence_type],
+                                description='A colored orb that glows with elemental potential.',
+                                on_step=player.pick_up_essence, always_visible=True)
+    essence_pickup.essence_type = essence_type
+    return essence_pickup
 
 def create_item(name, material=None, quality=''):
     p = items.table()[name]
 
     if p['category'] == 'essence':
-        essence_pickup = GameObject(0, 0, '*', 'mote of ' + p['essence_type'] + ' essence',
-                                    spells.essence_colors[p['essence_type']],
-                                    description='A colored orb that glows with elemental potential.',
-                                    on_step=player.pick_up_essence, always_visible=True)
-        essence_pickup.essence_type = p['essence_type']
-        return essence_pickup
+        return create_essence(p['essence_type'])
 
     ability = None
     if p.get('ability') is not None and p.get('ability') in abilities.data:
@@ -1926,9 +2006,15 @@ def render_map():
 
     changed_tiles = []
 
+    #for x in range(consts.MAP_WIDTH):
+    #    for y in range(consts.MAP_HEIGHT):
+    #        if not current_map.pathfinding.is_accessible((x, y)):
+    #            libtcod.console_put_char_ex(map_con, x, y, 'X', libtcod.yellow, libtcod.darker_yellow)
+
     for obj in current_map.objects:
         if obj is not player.instance:
             obj.draw(map_con)
+
     player.instance.draw(map_con)
 
     vw = ui.MAP_VIEWPORT_WIDTH()
@@ -1992,8 +2078,14 @@ def enter_map(world_map, direction=None, destination_id=None):
     import npc
     global current_map
     world_map.visited = True
+    following = []
 
     if current_map is not None:
+        for fighter in current_map.fighters:
+            if fighter.fighter.permanent_ally:
+                following.append(fighter)
+        for fighter in following:
+            fighter.destroy()
         clear_map()
         libtcod.console_clear(ui.overlay)
         libtcod.console_blit(ui.overlay, 0, 0, ui.MAP_VIEWPORT_WIDTH(), ui.MAP_VIEWPORT_HEIGHT(), 0, ui.MAP_VIEWPORT_X, ui.MAP_VIEWPORT_Y)
@@ -2035,6 +2127,11 @@ def enter_map(world_map, direction=None, destination_id=None):
 
     if player.instance not in current_map.objects or player.instance not in current_map.fighters:
         current_map.add_object(player.instance)
+
+    for follower in following:
+        pos = find_closest_open_tile(player.instance.x, player.instance.y)
+        follower.set_position(pos[0], pos[1])
+        current_map.add_object(follower)
 
     fov.initialize_fov()
 

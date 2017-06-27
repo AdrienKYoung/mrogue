@@ -64,10 +64,12 @@ def opposite(direction):
 
 def initialize_world():
     import dungeon
+    import npc
     global world_maps
 
     for branch in dungeon.branches.values():
         branch['scaling'] = 0
+    npc.npcs = {}
 
     world_maps = {}
 

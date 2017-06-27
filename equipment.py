@@ -498,6 +498,6 @@ class Equipment:
             ui.message('%s %s %s shield.' %
                        (syntax.name(self.holder).capitalize(),
                         syntax.conjugate(self.holder is player.instance, ('raise', 'raises')),
-                        syntax.pronoun(self.holder.name, possesive=True)), libtcod.blue)
+                        syntax.pronoun(self.holder, possesive=True)), libtcod.blue)
         self.raised = True
         self.sh_points = self.sh_max

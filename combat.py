@@ -72,6 +72,8 @@ class Fighter:
         self.base_damage_bonus = damage_bonus
         self.monster_str_dice = monster_str_dice
 
+        self.permanent_ally = False  # Unit will follow player through rooms
+
     def print_description(self, console, x, y, width):
         if self.owner is player.instance:
             y += 1
@@ -104,7 +106,7 @@ class Fighter:
             s += '%'
             libtcod.console_print(console, x, y + print_height, s)
             print_height += 1
-            s = '%s Accuracy: %d%%' % (syntax.pronoun(self.owner.name, possesive=True).capitalize(), int(100.0 * get_chance_to_hit(player.instance, self.accuracy())))
+            s = '%s Accuracy: %d%%' % (syntax.pronoun(self.owner, possesive=True).capitalize(), int(100.0 * get_chance_to_hit(player.instance, self.accuracy())))
             s += '%'
             libtcod.console_print(console, x, y + print_height, s)
             print_height += 1
@@ -168,6 +170,11 @@ class Fighter:
                 if affect_shred:
                     self.time_since_last_damaged = 0
         return damage
+
+    def get_shredded(self, amount):
+        if amount > 0:
+            self.shred += min(amount, self.armor)
+            self.time_since_last_damaged = 0
 
     def get_hit(self, attacker,damage):
         if self.owner.behavior:
@@ -291,6 +298,15 @@ class Fighter:
                             main.spawn_essence(self.owner.x,self.owner.y,'water')
         elif self.breath < self.max_breath:
             self.breath += 1
+
+        # Check terrain
+        if self.owner.movement_type & pathfinding.FLYING != pathfinding.FLYING:
+            if main.current_map.tiles[self.owner.x][self.owner.y].tile_type == 'lava':
+                damage = roll_damage_ex('1d200', '0d0', None, 0, ['fire'], 1, self.resistances)
+                self.get_shredded(5)
+                if damage > 0 and (self.owner is player.instance or fov.player_can_see(self.owner.x, self.owner.y)):
+                    ui.message("The lava melts %s, dealing %d damage!" % (syntax.name(self.owner), damage), libtcod.flame)
+                self.take_damage(damage)
 
         # Manage status effect timers
         removed_effects = []
@@ -857,10 +873,9 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         if not target.fighter.has_status('invulnerable'):
             shred = fighter.attack_shred(weapon) + shred_modifier
             for i in range(shred):
-                if libtcod.random_get_int(0, 0, 4) == 0 and target.fighter.armor > 0:
-                    target.fighter.shred += 1
-            target.fighter.shred += min(fighter.attack_guaranteed_shred(weapon) + guaranteed_shred_modifier,
-                                        target.fighter.armor)
+                if libtcod.random_get_int(0, 0, 4) == 0:
+                    target.fighter.get_shredded(1)
+            target.fighter.get_shredded(fighter.attack_guaranteed_shred(weapon) + guaranteed_shred_modifier)
 
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
@@ -1038,7 +1053,8 @@ def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_types, damage
     damage = main.roll_dice(damage_dice, normalize_size=4) + main.roll_dice(stat_dice, normalize_size=4) + flat_bonus
     damage = int(float(damage) * damage_mod)
 
-    if 'bludgeoning' in damage_types or 'slashing' in damage_types or 'stabbing' in damage_types:
+    if defense is not None and \
+            ('bludgeoning' in damage_types or 'slashing' in damage_types or 'stabbing' in damage_types):
         # calculate damage reduction
         effective_defense = defense - pierce
         # without armor, targets receive no damage reduction!

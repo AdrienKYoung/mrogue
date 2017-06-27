@@ -124,7 +124,6 @@ loadouts = {
             #'charm_elementalists_lens',
             #'charm_primal_totem',
             #'charm_prayer_beads',
-            'equipment_ring_of_poison_immunity',
             'equipment_cloth_robes',
             'gem_lesser_fire',
             'gem_lesser_water',
@@ -623,6 +622,12 @@ def move_or_attack(dx, dy, ctrl=False):
         target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
         if target is not None:
             import monsters
+            if target.npc and target.fighter.team == 'neutral':
+                value = instance.move(dx, dy)
+                if value and instance.fighter.has_status('free move'):
+                    instance.fighter.remove_status('free move')
+                    return False
+                return value
             if target.fighter.team == 'ally':
                 if target.fighter.has_flag(monsters.IMMOBILE):
                     ui.message('%s cannot swap places with you.' % syntax.name(target).capitalize())
@@ -739,7 +744,6 @@ def pick_up_item():
                 return result
     return 'didnt-take-turn'
 
-
 def replace_essence(essence):
     if isinstance(essence, main.GameObject):
         essence_type = essence.essence_type
@@ -824,7 +828,12 @@ def jump(actor=None, range=None, stamina_cost=None):
                 instance.set_position(x, y)
                 instance.fighter.adjust_stamina(-stamina_cost)
                 return 'jumped'
-                #ui.message("You really don't want to jump into this bottomless pit.", libtcod.light_yellow)
+            return 'didnt-take-turn'
+        elif main.current_map.tiles[x][y].tile_type == 'lava' and instance.movement_type & pathfinding.FLYING != pathfinding.FLYING:
+            if ui.menu_y_n('Really jump into lava?'):
+                instance.set_position(x, y)
+                instance.fighter.adjust_stamina(-stamina_cost)
+                return 'jumped'
             return 'didnt-take-turn'
         elif main.is_blocked(x, y, from_coord=(instance.x, instance.y), movement_type=instance.movement_type) and main.current_map.tiles[x][y].elevation > instance.elevation:
             ui.message("You can't jump that high!", libtcod.light_yellow)

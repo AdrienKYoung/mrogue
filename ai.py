@@ -520,7 +520,7 @@ class AI_Lifeplant:
         monster = self.owner
         for obj in game.current_map.fighters:
             if is_adjacent_diagonal(obj.x, obj.y, monster.x, monster.y):
-                obj.fighter.heal(game.roll_dice('1d4'))
+                obj.fighter.heal(game.roll_dice('1d3'))
         return monster.behavior.attack_speed
 
 
@@ -649,6 +649,10 @@ class AI_General:
         self.turn_ticker -= 1.0
 
     def get_hit(self, attacker):
+        if self.owner.fighter.team == 'neutral':
+            if self.owner.npc:
+                self.owner.fighter.team = game.opposite_team(attacker.fighter.team)
+                self.owner.npc.deactivate()
         if hasattr(self.behavior, 'on_get_hit') and self.behavior.on_get_hit is not None:
             self.behavior.on_get_hit(attacker,0)
 

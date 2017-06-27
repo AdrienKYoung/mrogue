@@ -1213,7 +1213,7 @@ def strangleweeds(actor=None, target=None):
         tile = main.current_map.tiles[f.x][f.y]
         if tile.tile_type == 'grass floor':
             if actor is player.instance or fov.player_can_see(f.x, f.y):
-                ui.message('Writhing vines grip %s and hold %s in place!' % (syntax.name(f), syntax.pronoun(f.name)),
+                ui.message('Writhing vines grip %s and hold %s in place!' % (syntax.name(f), syntax.pronoun(f)),
                            spells.essence_colors['life'])
             f.fighter.apply_status_effect(effects.immobilized(duration=spell['duration']))
             f.fighter.apply_status_effect(effects.StatusEffect('strangleweeds', time_limit=spell['duration'],
@@ -1430,7 +1430,7 @@ def knock_back(actor,target):
                 syntax.name(target).capitalize(),
                 syntax.conjugate(target is actor, ('collide', 'collides')),
                 against,
-                syntax.pronoun(target.name, objective=True)), libtcod.gold)
+                syntax.pronoun(target, objective=True)), libtcod.gold)
     else:
         ui.message('%s %s knocked backwards.' % (
             syntax.name(target).capitalize(),
@@ -1558,7 +1558,7 @@ def hardness(actor=None):
     if actor is player.instance or fov.player_can_see(actor.x, actor.y):
         ui.message('%s armor is repaired and %s skin becomes as hard as stone.' % (
             syntax.name(actor, possesive=True).capitalize(),
-            syntax.pronoun(actor.name, possesive=True)),
+            syntax.pronoun(actor, possesive=True)),
             spells.essence_colors['earth'])
     return 'success'
 
