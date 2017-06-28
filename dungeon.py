@@ -321,13 +321,13 @@ branches = {
     },
     'lavalake': {
         'name'          :"the lava lake",
-        'default_wall'  : 'sea cliff',
-        'default_floor' : 'sand',
+        'default_wall'  : 'dark shale wall',
+        'default_floor' : 'shale',
         'default_ramp'  : 'shale slope',
         'scaling'       : 0,
         'loot'          : None,
         'monsters'      : None,
-        'generate'      : mapgen.make_test_space,
+        'generate'      : mapgen.make_map_lava_lake,
         'map_color'     : libtcod.darker_gray,
     },
     'slagfields': {

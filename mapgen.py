@@ -2090,6 +2090,26 @@ def make_map_grotto():
         stairs.char = chr(25)
         stairs.event = npc.event_leave_grotto
 
+def make_map_lava_lake():
+    open_tiles = []
+    create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'lava_lake', open_tiles=open_tiles)
+    stairs = []
+    for i in range(len(map.objects)):
+        if map.objects[i].name == 'stairs':
+            stairs.append(map.objects[i])
+    if len(stairs) > 0:
+        stairs.sort(key=lambda s: s.y)
+        stairs[0].name = 'Gate to the slagfields'
+        stairs[0].description = 'A winding path leading to the slagfields.'
+        stairs[0].link = map.links[1]
+        stairs[0].char = chr(26)
+        stairs[1].name = 'Gate to the badlands'
+        stairs[1].description = 'A winding path leading to the badlands.'
+        stairs[1].link = map.links[0]
+        stairs[1].char = chr(25)
+        for stair in stairs:
+            stair.interact = main.use_stairs
+
 
 def make_map_river():
     for y in range(2, consts.MAP_HEIGHT - 2):
