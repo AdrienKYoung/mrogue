@@ -22,7 +22,7 @@ table = {
         'ctrl_attack_desc'   : 'Cleave - attack all adjacent enemies. Costs 2x stamina.',
         'weapon_dice'        : '2d12',
         'str_dice'           : 3,
-        'on_hit'             : [combat.on_hit_burn],
+        'on_hit'             : ['on_hit_burn'],
         'attack_delay'       : 16,
         'crit_bonus'         : 1.5
     },
@@ -43,7 +43,7 @@ table = {
         'accuracy'           : 1,
         'weapon_dice'        : '1d8',
         'str_dice'           : 5,
-        'on_hit'             : [actions.mace_stun],
+        'on_hit'             : ['on_hit_stun'],
         'attack_delay'       : 22,
         'crit_bonus'         : 1.5
     },
@@ -63,7 +63,7 @@ table = {
         'accuracy'           : 2,
         'weapon_dice'        : '3d6',
         'str_dice'           : 2,
-        'on_hit'             : [combat.on_hit_chain_lightning],
+        'on_hit'             : ['on_hit_chain_lightning'],
         'attack_delay'       : 22,
         'crit_bonus'         : 1.5
     },
@@ -86,7 +86,7 @@ table = {
         'ctrl_attack_desc'   : 'Reach-Attack - attack an enemy up to 2 spaces away in this direction.',
         'weapon_dice'        : '3d6',
         'str_dice'           : 3,
-        'on_hit'             : [combat.on_hit_slow, combat.on_hit_sluggish],
+        'on_hit'             : ['on_hit_slow', 'on_hit_sluggish'],
         'attack_delay'       : 14,
         'crit_bonus'         : 1.5
     },
@@ -106,7 +106,7 @@ table = {
         'accuracy'           : 5,
         'weapon_dice'        : '2d4',
         'str_dice'           : 1,
-        'on_hit'             : [combat.on_hit_lifesteal],
+        'on_hit'             : ['on_hit_lifesteal'],
         'attack_delay'       : 12,
         'crit_bonus'         : 3
     },
@@ -126,7 +126,7 @@ table = {
         'accuracy'           : 4,
         'weapon_dice'        : '2d10',
         'str_dice'           : 2,
-        'on_hit'             : [combat.on_hit_freeze],
+        'on_hit'             : ['on_hit_freeze'],
         'attack_delay'       : 10,
         'crit_bonus'         : 2.5
     },
@@ -146,7 +146,7 @@ table = {
         'accuracy'           : 3,
         'weapon_dice'        : '1d10',
         'str_dice'           : 1,
-        'on_hit'             : [combat.on_hit_knockback],
+        'on_hit'             : ['on_hit_knockback'],
         'attack_delay'       : 10,
         'crit_bonus'         : 1.5
     },
@@ -169,7 +169,7 @@ table = {
         'ctrl_attack_desc'   : 'Reach-Attack - attack an enemy up to 2 spaces away in this direction.',
         'weapon_dice'        : '3d10',
         'str_dice'           : 2,
-        'on_hit'             : [combat.on_hit_reanimate],
+        'on_hit'             : ['on_hit_reanimate'],
         'attack_delay'       : 18,
         'crit_bonus'         : 1.5
     },

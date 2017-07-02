@@ -14,18 +14,19 @@
 #You should have received a copy of the GNU General Public License
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
+
+import consts
+import fov
 import game as main
 import libtcodpy as libtcod
-import math
-import ui
-import consts
-import player
-import fov
-import syntax
 import pathfinding
-import abilities
-import actions
+import player
 import spells
+import syntax
+import ui
+import effects
+
 
 class Fighter:
 
@@ -154,17 +155,18 @@ class Fighter:
                 self.get_hit(attacker,damage)
                 self.hp -= damage
                 if self.hp <= 0:
+                    from actions import on_death_actions
                     is_summoned = self.owner.summon_time is not None
                     if not is_summoned:
                         self.drop_essence()
                     self.owner.is_corpse = True
-                    function = self.death_function
+                    function = on_death_actions.table[self.death_function['function']]
                     if function is not None:
                         if sh is not None:
                             sh.sh_points = sh.sh_max
                             sh.timer = 0
                             sh.raised = True
-                        function(self.owner)
+                        function(self.owner, self.death_function)
                     if attacker is not None and attacker.fighter is not None and attacker.fighter.on_get_kill is not None and not is_summoned:
                         attacker.fighter.on_get_kill(attacker,self,damage)
                 if affect_shred:
@@ -177,10 +179,11 @@ class Fighter:
             self.time_since_last_damaged = 0
 
     def get_hit(self, attacker,damage):
-        if self.owner.behavior:
+        if self.owner.behavior is not None:
             self.owner.behavior.get_hit(attacker)
-        if self.on_get_hit:
-            self.on_get_hit(self.owner, attacker, damage)
+        if self.on_get_hit is not None:
+            from actions import on_damaged_actions
+            on_damaged_actions.table[self.on_get_hit](self.owner, attacker, damage)
 
     def drop_essence(self):
         if hasattr(self.owner, 'essence') and self.owner is not player.instance:
@@ -688,7 +691,6 @@ hit_tables = {
     }
 }
 
-import effects
 location_damage_tables = {
     'body' : {
         'damage':1.0,
@@ -890,11 +892,9 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             if result != 'blocked' and result > 0:
                 # Trigger on-hit effects
                 if on_hit is not None and target.fighter is not None:
-                    if isinstance(on_hit,(list,set,tuple)):
-                        for h in on_hit:
-                            h(fighter.owner, target, damage)
-                    else:
-                        on_hit(fighter.owner, target, damage)
+                    from actions import on_hit_actions
+                    for h in on_hit:
+                        on_hit_actions[h](fighter.owner, target, damage)
                 if weapon is not None and weapon.on_hit is not None:
                     for oh in weapon.on_hit:
                         oh(fighter.owner, target, damage)
@@ -920,7 +920,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
                 if main.has_skill('gatekeeper') and target.fighter is not None:
                     if libtcod.random_get_int(0,0,10 + target.fighter.armor) < 5:
-                        actions.knock_back(fighter.owner,target)
+                        common.knock_back(fighter.owner,target)
 
             return 'hit'
         else:
@@ -958,7 +958,8 @@ def spell_attack(fighter,target,spell_name):
                     config.get('dice',0),
                     config['element'],
                     config.get('peirce',0),
-                    config.get('shred',0))
+                    config.get('shred',0),
+                    config.get('defense','evasion'))
 
 
 def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_elements, pierce, shred = 0,
@@ -1141,94 +1142,8 @@ def get_chance_to_hit(target, accuracy, defense_type='evasion', defense_bonus=0)
     else:
         return 1.0
 
-def on_hit_burn(attacker, target, damage):
-    if target.fighter is None:
-        return
-    if libtcod.random_get_int(0, 1, 10) <= 7:
-        target.fighter.apply_status_effect(effects.burning())
-
-def on_hit_freeze(attacker, target, damage):
-    if target.fighter is None:
-        return
-    if libtcod.random_get_int(0, 1, 10) <= 3:
-        target.fighter.apply_status_effect(effects.frozen(duration=3))
-
-def on_hit_slow(attacker, target, damage):
-    if target.fighter is None:
-        return
-    if libtcod.random_get_int(0, 1, 10) <= 7:
-        target.fighter.apply_status_effect(effects.slowed(duration=5))
-
-def on_hit_sluggish(attacker, target, damage):
-    if target.fighter is None:
-        return
-    if libtcod.random_get_int(0, 1, 10) <= 7:
-        target.fighter.apply_status_effect(effects.sluggish(duration=5))
-
-def on_hit_chain_lightning(attacker, target, damage, zapped=None):
-    if zapped is None:
-        zapped = [target]
-    else:
-        zapped.append(target)
-    if target.fighter is None:
-        return
-    damage = roll_damage_ex('1d10', '0d0', target.fighter.armor, 5, 'lightning', 1.0,
-                            target.fighter.resistances)
-
-    if damage > 0:
-        attack_text_ex(attacker.fighter, target, None, None, damage, 'lightning', float(damage) / float(target.fighter.max_hp))
-
-        target.fighter.take_damage(damage, attacker=attacker)
-        for adj in main.adjacent_tiles_diagonal(target.x, target.y):
-            for obj in main.current_map.fighters:
-                if obj.x == adj[0] and obj.y == adj[1] and obj.fighter.team != attacker.fighter.team and obj not in zapped:
-                    on_hit_chain_lightning(attacker, obj, damage, zapped)
-    else:
-        ui.message('The shock does not damage %s' % syntax.name(target), libtcod.grey)
-
-def on_hit_lifesteal(attacker, target, damage):
-    attacker.fighter.heal(damage)
-
-def on_hit_knockback(attacker, target, damage, force=6):
-    if target.fighter is None:
-        return
-
-    if 'displacement' in target.fighter.immunities:
-        if fov.player_can_see(target.x, target.y):
-            ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
-                target is player.instance, ('resist', 'resists'))), libtcod.gray)
-        return
-
-    diff_x = target.x - attacker.x
-    diff_y = target.y - attacker.y
-    if diff_x > 0:
-        diff_x = diff_x / abs(diff_x)
-    if diff_y > 0:
-        diff_y = diff_y / abs(diff_y)
-    direction = (diff_x, diff_y)
-
-    steps=0
-    while steps <= force:
-        steps += 1
-        against = main.get_objects(target.x + direction[0], target.y + direction[1], lambda o: o.blocks)
-        if against is None or len(against) == 0:
-            against = syntax.name(main.current_map.tiles[target.x + direction[0]][target.y + direction[1]])
-        else:
-            against = 'the ' + against.name
-        if not target.move(direction[0], direction[1]):
-            # Could not move
-            damage = roll_damage_ex('%dd4' % steps, '0d0', target.fighter.armor, 0, 'budgeoning', 1.0,
-                                    target.fighter.resistances)
-            ui.message('%s %s backwards and collides with %s, taking %d damage.' % (
-                syntax.name(target).capitalize(),
-                syntax.conjugate(target is player.instance, ('fly', 'flies')),
-                against,
-                damage), libtcod.gray)
-            target.fighter.take_damage(damage, attacker=attacker)
-            steps = force + 1
-
-def on_hit_reanimate(attacker, target, damage):
-    main.raise_dead(attacker,target)
-
 def mul(sequence):
     return reduce(lambda x,y: x * y,sequence,1)
+
+from actions import common
+from actions import abilities

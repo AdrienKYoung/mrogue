@@ -16,11 +16,6 @@
 
 import libtcodpy as libtcod
 import game as main
-import ui
-import player
-import actions
-import spells
-import syntax
 
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
@@ -125,7 +120,8 @@ def invulnerable(duration = 5):
 
 def confusion(duration = 10):
     return StatusEffect('confusion', duration, libtcod.red, message="Madness takes hold of your mind!",
-                        description='This unit spends its turn moving erratically.', target_defense='will')
+                        description='This unit spends its turn moving erratically.', target_defense='will',
+                        on_apply=_set_confused_behavior)
 
 def silence(duration=10):
     return StatusEffect('silence', duration, libtcod.red, message="You have been silenced!",
@@ -191,7 +187,7 @@ def reflect_magic(duration=20):
 
 def doom(duration=5,stacks=1):
     return StatusEffect('doom',duration, libtcod.dark_crimson, stacking_behavior='stack-refresh', message='Death comes closer...',
-                        on_apply=actions.check_doom, description='At 13 stacks, this unit instantly dies.')
+                        on_apply=check_doom, description='At 13 stacks, this unit instantly dies.')
 
 def oiled(duration=20):
     return StatusEffect('oiled', duration, libtcod.dark_gray, message='You are covered in oil!',
@@ -299,3 +295,23 @@ def check_judgement(effect, obj=None):
 def levitation_end(effect, obj=None):
     if obj is not None:
         obj.set_position(obj.x, obj.y)
+
+
+def _set_confused_behavior(object):
+    import ai
+    if object.behavior is not None:
+        old_ai = object.behavior.behavior
+        object.behavior.behavior = ai.ConfusedMonster(old_ai)
+        object.behavior.behavior.owner = object
+
+def check_doom(effect, obj=None):
+    fx = [f for f in obj.fighter.status_effects if f.name == 'doom']
+    if len(fx) > 0 and fx[0].stacks >= 13:
+        ui.message("Death comes for {}".format(obj.name),libtcod.dark_crimson)
+        obj.fighter.take_damage(obj.fighter.max_hp)
+
+
+import ui
+import player
+import spells
+import syntax

@@ -14,9 +14,11 @@
 #You should have received a copy of the GNU General Public License
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import log
 import collections
 import string
+
+import log
+
 
 class PlayerStats:
 
@@ -408,7 +410,9 @@ def _cast_spell():
                     instance.fighter.adjust_stamina(-2 * cost)
                     return 'miscast'
                 elif cast_check:
-                    if spells.library[s].function() == 'success':
+                    result = actions.invoke_ability(spells.library[s].ability_name,instance,
+                                                    spell_context=spells.library[s].levels[level-1])
+                    if result == 'success':
                         left_hand.spell_charges[s] -= 1
                         if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
                             instance.fighter.hp -= cost - instance.fighter.stamina
@@ -895,13 +899,13 @@ def learn_ability(name):
     return lambda: _learn_ability(name)
 
 def _learn_ability(name):
-    import abilities
+    from actions import abilities
     for a in instance.perk_abilities:
         if a.name == abilities.data[name]['name']:
             return
     ability = abilities.data[name]
-    instance.perk_abilities.append(abilities.Ability(name, ability['name'],ability['description'],
-                                  ability['function'],ability['cooldown'], intent=ability.get('intent', 'aggressive')))
+    instance.perk_abilities.append(abilities.Ability(name, ability['name'], ability['description'],
+                                                     ability['function'], ability['cooldown'], intent=ability.get('intent', 'aggressive')))
 
 def on_tick(this):
     if main.has_skill('pyromaniac'):
@@ -958,7 +962,7 @@ def on_get_kill(this,other,damage):
     this.fighter.heal(this.fighter.item_equipped_count('equipment_ring_of_vampirism') * 2)
 
 def get_abilities():
-    import abilities
+    from actions import abilities
 
     # Always available
     opts = [abilities.default_abilities['attack'], abilities.default_abilities['jump']]
@@ -998,5 +1002,5 @@ import pathfinding
 import ui
 import perks
 import actions
-import abilities
+from actions import abilities
 import items

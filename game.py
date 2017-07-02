@@ -14,14 +14,14 @@
 #You should have received a copy of the GNU General Public License
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import libtcodpy as libtcod
 import math
-import shelve
-import consts
-import world
-import syntax
-import log
 import string
+
+import consts
+import libtcodpy as libtcod
+import log
+import syntax
+
 
 #############################################
 # Classes
@@ -663,8 +663,6 @@ class Tile:
 #############################################
 
 def has_skill(name):
-    if name == 'Adrien':
-        return False  # OOH, BURN!
     for skill in learned_skills.keys():
         if skill == name:
             if learned_skills[skill] > 0:
@@ -675,14 +673,11 @@ def has_skill(name):
 
 def skill_value(name):
     import perks
-    if name == 'tyler':
-        return 0 #REKT
+    v = has_skill(name)
+    if v > 0:
+        return perks.perk_list[name]['values'][v - 1]
     else:
-        v = has_skill(name)
-        if v > 0:
-            return perks.perk_list[name]['values'][v - 1]
-        else:
-            return 0
+        return 0
 
 def expire_out_of_vision(obj):
     if not fov.player_can_see(obj.x, obj.y):
@@ -738,24 +733,6 @@ def is_adjacent_orthogonal(a_x, a_y, b_x, b_y):
 
 def is_adjacent_diagonal(a_x, a_y, b_x, b_y):
     return abs(a_x - b_x) <= 1 and abs(a_y - b_y) <= 1
-
-
-def centipede_on_hit(attacker, target, damage):
-    if target.fighter is None:
-        return
-    target.fighter.apply_status_effect(effects.stung(), dc=8)
-
-
-def zombie_on_hit(attacker, target, damage):
-    if target.fighter is None:
-        return
-    if libtcod.random_get_int(0, 0, 100) < consts.ZOMBIE_IMMOBILIZE_CHANCE:
-        ui.message('%s grabs %s! %s cannot move!' % (
-                        syntax.name(attacker).capitalize(),
-                        syntax.name(target),
-                        syntax.pronoun(target).capitalize()), libtcod.yellow)
-        target.fighter.apply_status_effect(effects.immobilized(3))
-
 
 def clamp(value, min_value, max_value):
     if value < min_value:
@@ -930,94 +907,7 @@ def random_choice_index(chances):
             return choice
         choice += 1
 
-
-def bomb_beetle_corpse_tick(object=None):
-    if object is None:
-        return
-    object.bomb_timer -= 1
-    if object.bomb_timer > 2:
-        object.color = libtcod.black
-    elif object.bomb_timer > 1:
-        object.color = libtcod.darkest_red
-    elif object.bomb_timer > 0:
-        object.color = libtcod.red
-    elif object.bomb_timer <= 0:
-        ui.message('The bomb beetle corpse explodes!', libtcod.orange)
-        ui.render_explosion(object.x, object.y, 1, libtcod.yellow, libtcod.flame)
-        create_fire(object.x, object.y, 10)
-        for tile in adjacent_tiles_diagonal(object.x, object.y):
-            if libtcod.random_get_int(0, 0, 3) != 0:
-                create_fire(tile[0], tile[1], 10)
-            melt_ice(tile[0], tile[1])
-            monster = get_monster_at_tile(tile[0], tile[1])
-            if monster is not None:
-                monster.fighter.take_damage(consts.BOMB_BEETLE_DAMAGE)
-                if monster.fighter is not None:
-                    monster.fighter.apply_status_effect(effects.burning())
-        object.destroy()
-
-
-def bomb_beetle_death(beetle):
-
-    ui.message('%s is dead!' % syntax.name(beetle).capitalize(), libtcod.red)
-    beetle.char = 149
-    beetle.color = libtcod.black
-    beetle.blocks = True
-    beetle.fighter = None
-    beetle.behavior = None
-    beetle.name = 'beetle bomb'
-    beetle.description = 'The explosive carapace of a blast beetle. In a few turns, it will explode!'
-    beetle.bomb_timer = 3
-    beetle.on_tick = bomb_beetle_corpse_tick
-    current_map.fighters.remove(beetle)
-
-    if ui.selected_monster is beetle:
-        changed_tiles.append((beetle.x, beetle.y))
-        ui.selected_monster = None
-        ui.auto_target_monster()
-
-
-def scum_glob_death(glob):
-    global changed_tiles
-    ui.message('%s divides!' % syntax.name(glob).capitalize(), libtcod.red)
-    pos = glob.x, glob.y
-    glob.fighter = None
-    glob.destroy()
-    for i in range(3):
-        spawn = find_closest_open_tile(pos[0], pos[1])
-        spawn_monster('monster_scum_glob_small', spawn[0], spawn[1])
-        tile = current_map.tiles[spawn[0]][spawn[1]]
-        if not tile.is_water and not tile.tile_type == 'oil' and not tile.is_ramp:
-            tile.tile_type = 'oil'
-
-    if ui.selected_monster is glob:
-        changed_tiles.append(pos)
-        ui.selected_monster = None
-        ui.auto_target_monster()
-
-
-def blastcap_explode(blastcap):
-    blastcap.fighter = None
-    current_map.fighters.remove(blastcap)
-    ui.render_explosion(blastcap.x, blastcap.y, 1, libtcod.gold, libtcod.white, distance_h='manhattan')
-    ui.message('The blastcap explodes with a BANG, stunning nearby creatures!', libtcod.gold)
-    for obj in current_map.fighters:
-        if is_adjacent_orthogonal(blastcap.x, blastcap.y, obj.x, obj.y):
-            if obj.fighter.apply_status_effect(effects.stunned(duration=consts.BLASTCAP_STUN_DURATION)):
-                ui.message('%s %s stunned!' % (
-                                syntax.name(obj).capitalize(),
-                                syntax.conjugate(obj is player.instance, ('are', 'is'))), libtcod.gold)
-
-    if ui.selected_monster is blastcap:
-        changed_tiles.append((blastcap.x, blastcap.y))
-        ui.selected_monster = None
-        ui.auto_target_monster()
-
-    blastcap.destroy()
-    return
-
-
-def monster_death(monster):
+def monster_death(monster, context):
     global changed_tiles
 
     if hasattr(monster.fighter,'inventory') and len(monster.fighter.inventory) > 0 and monster.summon_time is None:
@@ -1072,9 +962,16 @@ def get_monster_at_tile(x, y):
             return obj
     return None
 
-def get_fighters_in_burst(x,y,radius,fov_source=None,team='ally'):
+def get_fighters_in_burst(x, y, radius, fov_source=None, team='ally'):
     return [obj for obj in current_map.fighters if distance(x,y,obj.x,obj.y) <= radius and \
             obj.fighter.team!=team and fov.monster_can_see_object(fov_source,obj)]
+
+def get_tiles_in_burst(x, y, radius):
+    tiles = []
+    for x in range(max(0, x - radius), min(x + radius, consts.MAP_WIDTH)):
+        for y in range(max(0, y - radius), min(y + radius, consts.MAP_WIDTH)):
+            tiles.append((x,y))
+    return tiles
 
 def opposite_team(team):
     if team == 'ally':
@@ -1258,7 +1155,7 @@ def spawn_monster(name, x, y, team='enemy'):
             if mod_tag != '':
                 mod_tag = mod_tag + " " #for monster description
 
-        death = monster_death
+        death = {'function': 'default'}
         if p.get('death_function'):
             death = p.get('death_function')
         fighter_component = combat.Fighter(
@@ -1449,9 +1346,10 @@ def spawn_npc(name, x, y, map_name):
 
 
 def create_ability(name):
+    from actions import abilities
     if name in abilities.data:
         a = abilities.data[name]
-        return abilities.Ability(name, a.get('name'), a.get('description'), a['function'], a.get('cooldown'),
+        return abilities.Ability(name, a.get('name'), a.get('description'), a.get('cooldown'),
                                  intent=a.get('intent', 'aggressive'))
     else:
         return None
@@ -1488,6 +1386,7 @@ def create_essence(essence_type):
     return essence_pickup
 
 def create_item(name, material=None, quality=''):
+    from actions import abilities
     p = items.table()[name]
 
     if p['category'] == 'essence':
@@ -2338,7 +2237,6 @@ import spells
 import monsters
 import dungeon
 import mapgen
-import abilities
 import effects
 import pathfinding
 import fov

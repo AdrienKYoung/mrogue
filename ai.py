@@ -14,15 +14,9 @@
 #You should have received a copy of the GNU General Public License
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from game import *
-import fov
 import consts
-import game
-import ui
-import effects
-import player
-import syntax
-import abilities
+import libtcodpy as libtcod
+
 
 def acquire_target(monster, priority=None, target_team=None, target_self=False, check_los=True):
 
@@ -112,7 +106,7 @@ def pursue(behavior):
                 return 'attacked'
 
         # Handle moving
-        if not is_adjacent_diagonal(monster.x, monster.y, behavior.target.x, behavior.target.y):
+        if not game.is_adjacent_diagonal(monster.x, monster.y, behavior.target.x, behavior.target.y):
             monster.move_astar(behavior.target.x, behavior.target.y)
             if monster.behavior is not None: #need this check because the monster may die while moving
                 return 'moved'
@@ -472,9 +466,9 @@ class AI_Reeker:
             for i in range(consts.REEKER_PUFF_MAX):
                 if libtcod.random_get_int(0, 0, 10) < 3:
                     # create puff
-                    position = random_position_in_circle(consts.REEKER_PUFF_RADIUS)
-                    puff_pos = (clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
-                                clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
+                    position = game.random_position_in_circle(consts.REEKER_PUFF_RADIUS)
+                    puff_pos = (game.clamp(monster.x + position[0], 1, consts.MAP_WIDTH - 2),
+                                game.clamp(monster.y + position[1], 1, consts.MAP_HEIGHT - 2))
                     game.create_reeker_gas(puff_pos[0], puff_pos[1])
         return monster.behavior.attack_speed
 
@@ -505,7 +499,7 @@ class AI_Sentry:
                         if a.use(monster, self.target) != 'didnt-take-turn':
                             return monster.behavior.attack_speed
 
-            if is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y):
+            if game.is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y):
                 monster.fighter.attack(self.target)
                 if monster.behavior is not None:
                     return monster.behavior.attack_speed
@@ -519,9 +513,8 @@ class AI_Lifeplant:
     def act(self, ai_state):
         monster = self.owner
         for obj in game.current_map.fighters:
-            if is_adjacent_diagonal(obj.x, obj.y, monster.x, monster.y):
+            if game.is_adjacent_diagonal(obj.x, obj.y, monster.x, monster.y):
                 obj.fighter.heal(game.roll_dice('1d3'))
-        return monster.behavior.attack_speed
 
 
 class AI_TunnelSpider:
@@ -540,7 +533,7 @@ class AI_TunnelSpider:
                 self.target = target
                 monster.behavior.ai_state = 'pursuing'
                 return 0.0
-            elif object_at_tile(monster.x, monster.y, 'spiderweb') is None:
+            elif game.object_at_tile(monster.x, monster.y, 'spiderweb') is None:
                 monster.behavior.ai_state = 'retreating'
                 return 0.0
             else:
@@ -552,7 +545,7 @@ class AI_TunnelSpider:
                 return 0.0
             else:
                 monster.move_astar(self.closest_web.x, self.closest_web.y)
-                if object_at_tile(monster.x, monster.y, 'spiderweb') is not None:
+                if game.object_at_tile(monster.x, monster.y, 'spiderweb') is not None:
                     monster.behavior.ai_state = 'resting'
                 return monster.behavior.move_speed
         elif ai_state == 'pursuing':
@@ -561,7 +554,7 @@ class AI_TunnelSpider:
                 self.target = None
                 self.last_seen_position = None
                 return 0.0
-            if is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y) and self.target.fighter.hp > 0:
+            if game.is_adjacent_diagonal(monster.x, monster.y, self.target.x, self.target.y) and self.target.fighter.hp > 0:
                 monster.fighter.attack(self.target)
                 if monster.fighter is None:
                     return 1.0
@@ -734,8 +727,17 @@ class FireBehavior:
                 obj.fighter.apply_status_effect(effects.burning())
             # Spread to adjacent tiles
             if self.temperature < 9: # don't spread on the first turn
-                for tile in adjacent_tiles_diagonal(self.owner.x, self.owner.y):
+                for tile in game.adjacent_tiles_diagonal(self.owner.x, self.owner.y):
                     if libtcod.random_get_int(0, 1, 100) <= game.current_map.tiles[tile[0]][tile[1]].flammable:
                         game.create_fire(tile[0], tile[1], 10)
                     if game.current_map.tiles[tile[0]][tile[1]].is_ice:
                         game.melt_ice(tile[0], tile[1])
+
+
+import effects
+import fov
+import game
+import player
+import syntax
+import ui
+from actions import abilities

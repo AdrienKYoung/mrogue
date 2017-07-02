@@ -898,6 +898,9 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
     render_message_panel()
     affected_tiles = []
 
+    if targeting_type == 'summon' or targeting_type == 'ranged burst':
+        targeting_type = 'pick'
+
     while not libtcod.console_is_window_closed():
         libtcod.console_flush()
         libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)

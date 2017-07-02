@@ -1,5 +1,5 @@
 import libtcodpy
-import actions
+from actions import item_actions
 import player
 
 table = {
@@ -180,7 +180,7 @@ table = {
         'pierce'             : 1,
         'shred'              : 1,
         'accuracy'           : -3,
-        'ctrl_attack'        : actions.pickaxe_dig,
+        'ctrl_attack'        : item_actions.pickaxe_dig,
         'ctrl_attack_desc'   : 'Dig - dig through walls in this direction.',
         'break'              : 5.0,
         'weapon_dice'        : '1d4',
@@ -248,7 +248,7 @@ table = {
         'accuracy'           : 2,
         'weapon_dice'        : '1d6',
         'str_dice'           : 2,
-        'on_hit'             : [actions.mace_stun],
+        'on_hit'             : ['on_hit_stun'],
         'attack_delay'       : 18,
         'crit_bonus'         : 1.5
     },
@@ -289,7 +289,7 @@ table = {
         'accuracy'           : 1,
         'weapon_dice'        : '1d8',
         'str_dice'           : 4,
-        'on_hit'             : [actions.mace_stun],
+        'on_hit'             : ['on_hit_stun'],
         'attack_delay'       : 20,
         'crit_bonus'         : 1.5
     },
@@ -309,7 +309,7 @@ table = {
         'accuracy'           : 3,
         'weapon_dice'        : '1d8',
         'str_dice'           : 2,
-        'on_hit'             : [actions.mace_stun],
+        'on_hit'             : ['on_hit_stun'],
         'attack_delay'       : 18,
         'crit_bonus'         : 1.5
     },

@@ -19,7 +19,6 @@ import ai
 import libtcodpy as libtcod
 import pathfinding
 import combat
-import actions
 
 # Monster Flags
 NO_CORPSE = 1
@@ -45,8 +44,6 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'A training dummy stuffed with straw',
         'shred': 0,
-        #'modifier_category':'default',
-        #'subtype':'default',
     },
     'monster_cockroach': {
         'name': 'cockroach',
@@ -83,7 +80,7 @@ proto = {
         'difficulty': 1,
         'ai': ai.AI_Default,
         'description': 'Many-legged arthropod with a stinging bite.',
-        'on_hit': main.centipede_on_hit,
+        'on_hit': ['on_hit_sting'],
         'shred': 2,
         'subtype':'insect',
     },
@@ -102,7 +99,7 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'A rotting corpse animated by some evil magic. It shambles slowly, but once it reaches its prey it latches on tight.',
         'resistances' : {'radiance' : -1},
-        'on_hit': main.zombie_on_hit,
+        'on_hit': ['zombie_on_hit'],
         'shred': 1,
         'flags' : NO_CORPSE | EVIL,
         'modifier_category':'default',
@@ -248,7 +245,7 @@ proto = {
         'modifier_category':'goblin',
         'subtype':'goblin',
         'attributes':['ability_throw_net'],
-        'on_hit': [actions.disarm_attack],
+        'on_hit': ['on_hit_disarm'],
     },
     'monster_snow_kite': {
         'name': 'snow kite',
@@ -284,7 +281,10 @@ proto = {
         'accuracy': 22,
         'move_speed': 0.9,
         'attack_speed': 1.5,
-        'death_function' : main.bomb_beetle_death,
+        'death_function' : {
+            'function': 'on_death_bomb',
+            'damage': 30
+        },
         'ai': ai.AI_Default,
         'description': 'A round brown beetle. A warm glow emanates from beneath its carapace.',
         'essence': [(50, 'fire')],
@@ -363,7 +363,7 @@ proto = {
         'move_speed': 0.75,
         'attack_speed': 0.33,
         'range':5,
-        'on_hit': [actions.poison_attack_1],
+        'on_hit': ['on_hit_poison'],
         'ai': ai.AI_Default,
         'description': 'Lurking hunter, armed with a bow with poisoned arrows',
         'shred': 0,
@@ -401,7 +401,10 @@ proto = {
         'description': 'A volatile yellow fungus covered in softly glowing nodules. If disrupted, it bursts in a '
                        'deafening crack, stunning anything adjacent (but not diagonally) for several turns.',
         'resistances': {'confusion' : 'immune', 'stunned' : 'immune'},
-        'death_function': main.blastcap_explode,
+        'death_function': {
+            'function':'on_death_blastcap',
+            'duration': 4,
+        },
         'flags' : NO_CORPSE | IMMOBILE | NO_BREATH | LOW_PRIORITY,
         'subtype':'plant',
         'team' : 'neutral'
@@ -480,7 +483,7 @@ proto = {
         'accuracy': 26,
         'move_speed': 1.6,
         'attack_speed': 1.0,
-        'on_hit': [actions.poison_attack_1],
+        'on_hit': ['on_hit_poison'],
         'on_create': main.tunnel_spider_spawn_web,
         'ai': ai.AI_TunnelSpider,
         'description': 'An arachnid who hunts by trapping hapless prey in its webs. Fast, but fragile.',
@@ -662,7 +665,12 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'The twisted zombie of a plague victim. When killed, the plague magic will spill forth as a Blight.',
         'resistances': {'death' : 'immune', 'poisoned' : 'immune', 'radiance' : -1},
-        'death_function' : actions.on_death_summon_meta('monster_blight',10,'A plague cloud billows forth from the wight!'),
+        'death_function' : {
+            'function': 'on_death_summon',
+            'monster': 'monster_blight',
+            'duration': 10,
+            'message': 'A plague cloud billows forth from the wight!',
+        },
         'shred': 2,
         'subtype':'undead',
         'flags' : EVIL | NO_BREATH | NO_CORPSE,
@@ -687,7 +695,7 @@ proto = {
         'flags' : NO_CORPSE | NO_BREATH | EVIL,
         'shred': 1,
         'subtype':'elemental',
-        'on_hit': actions.on_hit_rot
+        'on_hit': ['on_hit_rot']
     },
 
     'monster_nosferatu': {
@@ -730,7 +738,7 @@ proto = {
         'loot_level':2,
         'attributes': ['ability_off_hand_shoot'],
         'equipment': [{'weapon_rapier':30},{'weapon_crossbow':30},{'equipment_leather_armor':50,'equipment_cloth_robes':50}],
-        'on_hit':actions.on_hit_judgement,
+        'on_hit':['on_hit_judgement'],
         'shred': 0,
         'modifier_category':None,
         'subtype':'humanoid',
@@ -756,7 +764,7 @@ proto = {
         'flags' : NO_CORPSE | NO_BREATH,
         'shred': 3,
         'subtype':'elemental',
-        'on_hit': combat.on_hit_burn
+        'on_hit': 'on_hit_burn'
     },
     'monster_earth_elemental': {
         'name': 'earth elemental',
@@ -927,7 +935,7 @@ proto = {
         'ai': ai.AI_Default,
         'description': 'A walking hulk of rotting wood, crawling with roaches.',
         'resistances': {'fire' : -1},
-        'on_get_hit' : actions.summon_roaches,
+        'on_get_hit' : 'on_damaged_summon_roaches',
         'shred': 1,
         'flags' : NO_CORPSE | NO_BREATH,
         'subtype' : 'treant',
@@ -970,9 +978,9 @@ proto = {
         'resistances': {'fire' : -1},
         'shred': 1,
         'flags' : NO_CORPSE,
-        'death_function': main.scum_glob_death,
+        'death_function': {'function':'on_death_scum_glob'},
         'on_tick' : main.scum_glob_tick,
-        'on_hit': [actions.oil_attack],
+        'on_hit': ['on_hit_oil'],
         'on_create': main.scum_glob_on_create,
     },
     'monster_scum_glob_small': {
@@ -994,7 +1002,7 @@ proto = {
         'shred': 1,
         'flags' : NO_CORPSE,
         'on_tick' : main.scum_glob_tick,
-        'on_hit': [actions.oil_attack],
+        'on_hit': ['on_hit_oil'],
         'on_create': main.scum_glob_on_create,
     },
     'monster_dragonweed': {
@@ -1019,7 +1027,7 @@ proto = {
         'subtype' : 'plant',
         'body_type' : 'plant',
         'attributes' : ['ability_dragonweed_pull'],
-        'on_hit': [actions.immobilize_attack],
+        'on_hit': ['on_hit_immobilize'],
     },
     'monster_bloodfly': {
         'name': 'bloodfly',
@@ -1042,7 +1050,7 @@ proto = {
         'subtype': 'insect',
         'essence': [(20, 'life')],
         'on_create': main.bloodfly_on_create,
-        'on_hit': [combat.on_hit_lifesteal],
+        'on_hit': ['on_hit_lifesteal'],
         'movement_type': pathfinding.FLYING,
     },
     'monster_arachnomancer': {
@@ -1063,7 +1071,7 @@ proto = {
         'shred': 3,
         'subtype': 'verman',
         'essence': [(10, 'life'), (10, 'water')],
-        'on_hit': [actions.toxic_attack],
+        'on_hit': ['on_hit_toxic'],
         'attributes' : ['ability_summon_spiders','ability_web_bomb'],
         'flags': WEB_IMMUNE,
         'loot_level':1,
@@ -1131,7 +1139,7 @@ proto = {
         'shred': 2,
         'subtype': 'demon',
         'essence': [(100, 'chaos')],
-        'on_hit': [actions.on_hit_curse],
+        'on_hit': ['on_hit_curse'],
         'flags': NO_CORPSE,
         'range':2
     },

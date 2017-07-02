@@ -15,12 +15,11 @@
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import libtcodpy as libtcod
-import actions
 
 class Spell:
-    def __init__(self, name, function, description, levels, int_requirement = 10, cast_time=0):
+    def __init__(self, name, ability_name, description, levels, int_requirement = 10, cast_time=0):
         self.name = name
-        self.function = function
+        self.ability_name = ability_name
         self.description = description
         self.levels = levels
         self.int_requirement = int_requirement
@@ -228,7 +227,7 @@ charm_resist_effects = {
 library = {
     'spell_heat_ray' : Spell(
         'heat ray',
-        actions.heat_ray,
+        'ability_heat_ray',
         'Fire a ray of magical heat in a line',
         [
             {'stamina_cost':20,'charges':3},
@@ -239,7 +238,7 @@ library = {
 
     'spell_flame_wall' : Spell(
         'flame wall',
-        actions.flame_wall,
+        'ability_flame_wall',
         'Create a wall of flames',
         [
             {'stamina_cost':40,'charges':1},
@@ -249,7 +248,7 @@ library = {
 
     'spell_fireball' : Spell(
         'fireball',
-        actions.fireball,
+        'ability_fireball',
         'Fling an exploding fireball',
         [
             {'stamina_cost':50,'charges':1},
@@ -260,7 +259,7 @@ library = {
 
     'spell_shatter_item' : Spell(
         'shatter item',
-        actions.shatter_item,
+        'ability_shatter_item',
         'Overheat items to shatter them',
         [
             {'stamina_cost':50,'charges':2}
@@ -270,7 +269,7 @@ library = {
 
     'spell_magma_bolt' : Spell(
         'magma bolt',
-        actions.magma_bolt,
+        'ability_magma_bolt',
         'Fire a bolt of boiling magma that melts floors',
         [
             {'stamina_cost':60,'charges':2},
@@ -281,7 +280,7 @@ library = {
 
     'spell_frozen_orb' : Spell(
         'frost orb',
-        actions.frozen_orb,
+        'ability_frozen_orb',
         'Fires an orb of frost that slows struck targets.',
         [
             {'stamina_cost':25,'charges':3},
@@ -292,7 +291,7 @@ library = {
 
     'spell_flash_frost' : Spell(
         'flash frost',
-        actions.flash_frost,
+        'ability_flash_frost',
         'Attempts to freeze a target solid with a burst of magical ice.',
         [
             {'stamina_cost':40,'charges':1},
@@ -302,7 +301,7 @@ library = {
 
     'spell_ice_shards' : Spell(
         'ice shards',
-        actions.ice_shards,
+        'ability_ice_shards',
         'Blasts an area with razor sharp ice shards',
         [
             {'stamina_cost':40,'charges':2},
@@ -313,7 +312,7 @@ library = {
 
     'spell_snowstorm' : Spell(
         'snowstorm',
-        actions.snowstorm,
+        'ability_snowstorm',
         'Summons a whirling ice storm, which inhibits movement and sight.',
         [
             {'stamina_cost':45,'charges':1},
@@ -323,7 +322,7 @@ library = {
 
     'spell_avalanche' : Spell(
         'avalanche',
-        actions.avalanche,
+        'ability_avalanche',
         'Summons an avalanche to bury your enemies.',
         [
             {'stamina_cost':70,'charges':1},
@@ -334,7 +333,7 @@ library = {
 
     'spell_hex' : Spell(
         'hex',
-        actions.hex,
+        'ability_hex',
         'Curse a target, decreasing its armor, spell resist and evasion',
         [
             {'stamina_cost':25,'charges':3},
@@ -346,7 +345,7 @@ library = {
 
     'spell_defile' : Spell(
         'defile',
-        actions.defile,
+        'ability_defile',
         'Raise a corpse as a zombie, heal undead, or damage the living',
         [
             {'stamina_cost':35,'charges':2},
@@ -358,7 +357,7 @@ library = {
 
     'spell_shackles_of_the_dead' : Spell(
         'shackles of the dead',
-        actions.shackles_of_the_dead,
+        'ability_shackles_of_the_dead',
         'Create a zone of ghostly chains that immobilize targets.',
         [
             {'stamina_cost':40,'charges':1},
@@ -369,7 +368,7 @@ library = {
 
     'spell_sacrifice' : Spell(
         'sacrifice',
-        actions.sacrifice,
+        'ability_sacrifice',
         "Sacrifice a portion of your remaining hp to deal damage to nearby enemies based on your missing hp",
         [
             {'stamina_cost':25,'charges':2},
@@ -380,7 +379,7 @@ library = {
 
     'spell_corpse_dance' : Spell(
         'corpse dance',
-        actions.corpse_dance,
+        'ability_corpse_dance',
         'Raises all corpses in an area as undead and fills them with unholy fury.',
         [
             {'stamina_cost':60,'charges':1},
@@ -392,7 +391,7 @@ library = {
 
     'spell_bless' : Spell(
         'bless',
-        actions.bless,
+        'ability_bless',
         'Consecrate yourself, increasing your armor, spell power, and spell resist',
         [
             {'stamina_cost':25,'charges':1},
@@ -404,7 +403,7 @@ library = {
 
     'spell_smite' : Spell(
         'smite',
-        actions.smite,
+        'ability_smite',
         'Call down righteous fury on a target. Inflicts judgement on the target, and stuns undead and feindish foes.',
         [
             {'stamina_cost':40,'charges':2},
@@ -416,7 +415,7 @@ library = {
 
     'spell_castigate' : Spell(
         'castigate',
-        actions.castigate,
+        'ability_castigate',
         'Utter a prayer of righteous anger, branding nearby foes with judgement.',
         [
             {'stamina_cost':30,'charges':1},
@@ -427,7 +426,7 @@ library = {
 
     'spell_blessed_aegis' : Spell(
         'blessed aegis',
-        actions.blessed_aegis,
+        'ability_blessed_aegis',
         "Summon a a radiant shield to deflect attacks",
         [
             {'stamina_cost':40,'charges':1},
@@ -438,7 +437,7 @@ library = {
 
     'spell_holy_lance' : Spell(
         'holy lance',
-        actions.holy_lance,
+        'ability_holy_lance',
         'Call down an angelic lance on a target area to deal massive damage.',
         [
             {'stamina_cost':70,'charges':1},
@@ -450,7 +449,7 @@ library = {
 
     'spell_green_touch' : Spell(
         'green touch',
-        actions.green_touch,
+        'ability_green_touch',
         'Creates a small patch of grass and reeds.',
         [
             {'stamina_cost':10,'charges':6},
@@ -462,7 +461,7 @@ library = {
 
     'spell_fungal_growth' : Spell(
         'fungal growth',
-        actions.fungal_growth,
+        'ability_fungal_growth',
         'Create a Blastcap from target corpse.',
         [
             {'stamina_cost':25,'charges':3},
@@ -474,7 +473,7 @@ library = {
 
     'spell_dragonseed' : Spell(
         'dragonseed',
-        actions.summon_dragonweed,
+        'ability_summon_dragonweed',
         'Plant a dragonweed sapling on a grass space. In a few turns, it will mature into a friendly dragonweed.',
         [
             {'stamina_cost':45,'charges':1},
@@ -486,7 +485,7 @@ library = {
 
     'spell_bramble' : Spell(
         'bramble',
-        actions.bramble,
+        'ability_bramble',
         'Create a field of brambles that damage and bleed anyone who walks through them, other than the caster.',
         [
             {'stamina_cost':35,'charges':2},
@@ -497,7 +496,7 @@ library = {
 
     'spell_strangleweeds' : Spell(
         'strangleweeds',
-        actions.strangleweeds,
+        'ability_strangleweeds',
         'Summon grasping vines from the earth, immobilizing and damaging every enemy on a grass space that you can see.',
         [
             {'stamina_cost':40,'charges':1},

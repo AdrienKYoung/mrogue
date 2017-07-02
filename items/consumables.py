@@ -1,5 +1,5 @@
 import libtcodpy
-import actions
+from actions import item_actions
 import spells
 import player
 
@@ -10,7 +10,7 @@ table = {
         'category' : 'scroll',
         'char' : '#',
         'color': libtcodpy.yellow,
-        'on_use' : actions.forge,
+        'on_use' : item_actions.forge,
         'type' : 'item',
         'description' : 'Upgrades the quality of your held weapon.'
     },
@@ -32,7 +32,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['fire'],
-        'on_use'        : actions.potion_essence('fire'), #not a bug, returns a lambda
+        'on_use'        : item_actions.potion_essence('fire'), #not a bug, returns a lambda
         'description'   : 'The essence of fire burns within this gemstone. Absorbing it will bestow a single fire essence.'
     },
     'gem_lesser_earth': {
@@ -41,7 +41,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['earth'],
-        'on_use'        : actions.potion_essence('earth'), #not a bug, returns a lambda
+        'on_use'        : item_actions.potion_essence('earth'), #not a bug, returns a lambda
         'description'   : 'The essence of earth resonates within this gemstone. Absorbing it will bestow a single earth essence.'
     },
     'gem_lesser_life': {
@@ -50,7 +50,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['life'],
-        'on_use'        : actions.potion_essence('life'), #not a bug, returns a lambda
+        'on_use'        : item_actions.potion_essence('life'), #not a bug, returns a lambda
         'description'   : 'The essence of life emanates from this gemstone. Absorbing it will bestow a single life essence.'
     },
     'gem_lesser_air': {
@@ -59,7 +59,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['air'],
-        'on_use'        : actions.potion_essence('air'), #not a bug, returns a lambda
+        'on_use'        : item_actions.potion_essence('air'), #not a bug, returns a lambda
         'description'   : 'The essence of air swirls in this crystal. Absorbing it will bestow a single air essence.'
     },
     'gem_lesser_water': {
@@ -68,7 +68,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['water'],
-        'on_use'        : actions.potion_essence('water'), #not a bug, returns a lambda
+        'on_use'        : item_actions.potion_essence('water'), #not a bug, returns a lambda
         'description'   : 'The essence of water flows through this gemstone. Absorbing it will bestow a single water essence.'
     },
     'gem_lesser_cold': {
@@ -77,7 +77,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['cold'],
-        'on_use'        : actions.potion_essence('cold'), #not a bug, returns a lambda
+        'on_use'        : item_actions.potion_essence('cold'), #not a bug, returns a lambda
         'description'   : 'The essence of cold chills the surface of this gemstone. Absorbing it will bestow a single cold essence.'
     },
     'gem_lesser_arcane': {
@@ -86,7 +86,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['arcane'],
-        'on_use'        : actions.potion_essence('arcane'), #not a bug, returns a lambda
+        'on_use'        : item_actions.potion_essence('arcane'), #not a bug, returns a lambda
         'description'   : 'The essence of arcana hums within this gemstone. Absorbing it will bestow a single arcane essence.'
     },
     'gem_lesser_radiance': {
@@ -95,7 +95,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['radiance'],
-        'on_use'        : actions.potion_essence('radiance'), #not a bug, returns a lambda
+        'on_use'        : item_actions.potion_essence('radiance'), #not a bug, returns a lambda
         'description'   : 'The essence of radiance shines through this gemstone. Absorbing it will bestow a single radiance essence.'
     },
     'gem_lesser_death': {
@@ -104,7 +104,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['death'],
-        'on_use'        : actions.potion_essence('death'), #not a bug, returns a lambda
+        'on_use'        : item_actions.potion_essence('death'), #not a bug, returns a lambda
         'description'   : 'The essence of dark envelops this gemstone. Absorbing it will bestow a single dark essence.'
     },
 
