@@ -2111,6 +2111,25 @@ def make_map_lava_lake():
             stair.interact = main.use_stairs
 
 
+def make_map_crypt():
+    open_tiles = []
+    create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'crypt', open_tiles=open_tiles)
+    for tile in open_tiles:
+        if main.roll_dice('1d4') == 1:
+            main.make_spiderweb(tile[0], tile[1])
+    stairs = None
+    for i in range(len(map.objects) - 1, 0, -1):
+        if map.objects[i].name == 'stairs':
+            stairs = map.objects[i]
+            break
+    if stairs is not None:
+        stairs.name = "Staircase to the badlands"
+        stairs.description = 'A narrow stone stairway leading up to the badlands.'
+        stairs.link = map.links[0]
+        stairs.interact = main.use_stairs
+        stairs.char = '>'
+
+
 def make_map_river():
     for y in range(2, consts.MAP_HEIGHT - 2):
         for x in range(2, consts.MAP_WIDTH - 2):

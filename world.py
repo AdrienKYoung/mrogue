@@ -16,6 +16,7 @@
 
 import game as main
 import consts
+import libtcodpy as libtcod
 
 class Map:
     def __init__(self, branch, coord=None, depth=None, difficulty=0):
@@ -103,6 +104,11 @@ def initialize_world():
                 new_map.add_link(world_maps['badlands_' + str(x) + '_' + str(y - 1)], 'north')
             world_maps[new_map.name] = new_map
     world_maps['badlands_0_1'].add_link(world_maps['beach'], 'west')
+
+    # Make crypt at a random badlands room and link back to the badlands
+    new_map = Map('crypt')
+    world_maps['badlands_%d_1' % libtcod.random_get_int(0, 0, 1)].add_link(new_map, 'down')
+    world_maps[new_map.name] = new_map
 
     # Make lines of goblin tunnels and link them below the badlands and marshes
     for x in range(3):

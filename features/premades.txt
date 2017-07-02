@@ -288,3 +288,26 @@ HEIGHT 1
          ....>....
 ENDHEIGHT
 ENDFEATURE
+//*******************
+// Crypt
+//*******************
+FEATURE crypt
+CATEGORY crypt
+DEFINE 1 MONSTER_ID monster_rotting_zombie
+DEFINE 2 MONSTER_ID monster_skeleton
+DEFINE 3 MONSTER_ID monster_necromancer
+DEFINE $ ITEM_ID treasure_burial_mask
+###############
+###....>....###
+##...........##
+#1....###....1#
+##...##$##...##
+#1...#...#...1#
+##...#232#...##
+#1...#...#...1#
+##...##.##...##
+#1....#+#....1#
+##...........##
+###.........###
+###############
+ENDFEATURE

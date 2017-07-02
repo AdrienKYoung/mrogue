@@ -220,10 +220,17 @@ table = {
         'armor_2',
         'weapons_2',
         'scroll_forge',
+        'treasure_0'
     ],
 
     'treasure_0': [
-      'treasure_bejeweled_chalice'
+        'treasure_bejeweled_chalice',
+        'treasure_burial_mask',
+        'treasure_chest_of_coins',
+        'treasure_giant_pearl',
+        'treasure_jade_necklace',
+        'treasure_silver_tiara',
+        'treasure_music_box',
     ],
 
 }

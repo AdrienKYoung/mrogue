@@ -384,7 +384,7 @@ proto = {
         'description': 'A short, stocky fungus that emits puffs of foul-smelling gas.',
         'resistances': {'confusion' : 'immune', 'stunned' : 'immune', 'fire' : -1},
         'essence': [(25, 'life')],
-        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH | LOW_PRIORITY,
+        'flags' : NO_CORPSE | IMMOBILE | NO_BREATH,
         'subtype':'plant',
     },
     'monster_blastcap': {

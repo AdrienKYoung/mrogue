@@ -1064,7 +1064,7 @@ def closest_monster(max_range):
     for object in current_map.fighters:
         if object is not player.instance and object.player_can_see() and not (object.npc and object.npc.active):
             dist = player.instance.distance_to(object)
-            if object.fighter.has_flag(monsters.LOW_PRIORITY):
+            if object.fighter.has_flag(monsters.LOW_PRIORITY) or object.fighter.team == 'ally':
                 if dist < low_priority_dist:
                     low_priority_dist = dist
                     low_priority_enemy = object

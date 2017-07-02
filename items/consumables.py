@@ -216,4 +216,54 @@ table = {
         'type': 'item',
         'description': 'A golden chalice, encrusted with precious jewels. Mundane, but valuable.'
     },
+    'treasure_giant_pearl': {
+        'name': 'giant pearl',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'An enormous pearl the size of a walnut. Mundane, but valuable.'
+    },
+    'treasure_chest_of_coins': {
+        'name': 'chest of coins',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'A small chest full of ancient coins stamped with the likeness of the Emperor. '
+                       'Mundane, but valuable.'
+    },
+    'treasure_silver_tiara': {
+        'name': 'silver tiara',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'A finely-crafted tiara of shining silver. Mundane, but valuable.'
+    },
+    'treasure_jade_necklace': {
+        'name': 'jade necklace',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'An elegant piece of jewelry made from many jade stones. Mundane, but valuable.'
+    },
+    'treasure_burial_mask': {
+        'name': 'burial mask',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'A golden mask with the likeness of a long-dead noble. Mundane, but valuable.'
+    },
+    'treasure_music_box': {
+        'name': 'music box',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'A finely crafted wooden box inlaid with gold. When wound, it plays a haunting tune. '
+                       'Mundane, but valuable.'
+    },
 }

@@ -82,6 +82,17 @@ branches = {
         'generate'      : mapgen.make_map_badlands,
         'map_color'     : libtcod.Color(96, 96, 96),
     },
+    'crypt': {
+        'name'          : "crypt",
+        'default_wall'  : 'stone brick wall',
+        'default_floor' : 'shale',
+        'default_ramp'  : 'shale slope',
+        'scaling'       : 0,
+        'loot'          : None,
+        'monsters'      : None,
+        'generate'      : mapgen.make_map_crypt,
+        'map_color'     : libtcod.darker_gray,
+    },
     'marsh': {
         'name'          : 'the marshes',
         'default_wall'  : 'mossy stone wall',
