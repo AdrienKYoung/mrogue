@@ -113,7 +113,7 @@ loadouts = {
     'wizard' : {
         'str':6,
         'agi':8,
-        'int':12,
+        'int':120,
         'spr':10,
         'con':8,
         'inventory':[

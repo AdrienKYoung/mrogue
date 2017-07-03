@@ -80,6 +80,9 @@ def _get_ability_target(actor, info, target_override):
     target = None
     burst = info.get('burst')
 
+    if targeting == 'override':
+        return (0,0)
+
     if targeting == 'self' and burst is None:
         target = actor
 

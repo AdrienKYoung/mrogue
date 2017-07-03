@@ -90,6 +90,12 @@ data = {
         'function': lambda a,t,_: player.jump(a,2)
     },
 
+    'ability_raise_shield': {
+        'name': 'Jump',
+        'targeting': 'self',
+        'function': item_actions.recover_shield
+    },
+
     'ability_attack': {
         'name': 'Attack',
         'targeting': 'self',
@@ -307,6 +313,20 @@ data = {
         'burst': 1,
         'hits_friendlies': True,
         'intent': 'aggressive',
+    },
+
+    'ability_shatter_item': {
+        'name': 'shatter item',
+        'function': spell_actions.shatter_item,
+        'cooldown': 50,
+        'element':['slashing'],
+        'dice' : 1,
+        'base_damage' : '4d4',
+        'range':10,
+        'targeting': 'override', #invented override targeting for this ability
+        'intent': 'aggressive',
+        'save_dc': 8,
+        'burst': 1
     },
 
     'ability_magma_bolt': {
@@ -546,6 +566,7 @@ data = {
         'cooldown': 30,
         'element':['radiance'],
         'intent': 'supportive',
+        'targeting': 'self'
     },
 
     'ability_smite': {

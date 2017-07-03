@@ -57,6 +57,60 @@ def fireball(actor, target, context):
         for _y in range(y - 1, y + 2):
             main.melt_ice(_x, _y)
 
+def shatter_item(actor, target, context):
+    x, y = 0, 0
+    dc = context['save_dc']
+    if actor is player.instance:  # player is casting
+        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
+        (x, y) = ui.target_tile()
+        if x is None:
+            return 'cancelled'
+        choices = main.get_objects(x, y, lambda o:o.fighter and o.fighter.inventory and len(o.fighter.inventory) > 0)
+        if len(choices) == 0:
+            choices = main.get_objects(x, y, lambda o:o.item is not None)
+        if len(choices) > 1:
+            target = choices[ui.menu('Which target?', [i.name for i in choices], 24)]
+        elif len(choices) > 0:
+            target = choices[0]
+        else:
+            ui.message('No valid targets here', libtcod.gray)
+            return 'cancelled'
+        dc += 4
+    else:
+        x, y = target.x, target.y
+
+    if target is None:
+        return 'cancelled'
+    item = None
+    inventory = None
+    if target.fighter is not None:
+        inventory = target.fighter.inventory
+        if inventory is None or len(inventory) == 0:
+            if actor == player.instance:
+                ui.message('Target has no items', libtcod.light_blue)
+            return 'cancelled'
+        item = inventory[libtcod.random_get_int(0, 0, len(inventory) - 1)]
+        dc += 5
+    elif target.item is not None:
+        item = target
+
+    if main.roll_dice('1d20') + main.roll_dice('1d{}'.format(actor.fighter.spell_power)) > dc:
+        ui.render_explosion(x, y, 1, libtcod.yellow, libtcod.flame)
+        ui.message("The {} shatters into pieces!".format(item.name), libtcod.flame)
+        if inventory is not None:
+            inventory.remove(item)
+        item.destroy()
+        damage_factor = 4
+        if item.equipment is not None:
+            damage_factor = item.equipment.weight
+        for obj in main.current_map.fighters:
+            if obj.distance(x, y) <= context['burst']:
+                combat.spell_attack_ex(actor.fighter, obj, None, '2d{}'.format(damage_factor), context['dice'], ['slashing'], 0)
+        return 'success'
+    else:
+        ui.message("Shatter failed to break the {}!".format(item.name), libtcod.yellow)
+        return 'success'
+
 def magma_bolt(actor, target, context):
     for tile in target:
         main.create_temp_terrain('lava', [tile], main.roll_dice(context['lava_duration']))
