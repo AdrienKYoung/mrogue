@@ -138,7 +138,7 @@ def hardness(target):
     if target is player.instance or fov.player_can_see(target.x, target.y):
         ui.message('%s armor is repaired and %s skin becomes as hard as stone.' % (
             syntax.name(target, possesive=True).capitalize(),
-            syntax.pronoun(target.name, possesive=True)),
+            syntax.pronoun(target, possesive=True)),
             spells.essence_colors['earth'])
     return 'success'
 
@@ -158,7 +158,7 @@ def cleanse():
         return 'didnt-take-turn'
 
 def invulnerable(actor, target, context):
-    target.apply_status_effect(effects.invulnerable(10))
+    target.fighter.apply_status_effect(effects.invulnerable(10))
 
 def summon_elemental(actor, target, context):
     return common.summon_ally(context['summon'], context['duration_base'] + main.roll_dice(context['duration_variance']))

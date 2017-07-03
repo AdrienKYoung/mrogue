@@ -28,6 +28,12 @@ class PlayerStats:
         self.base_str = str
         self.base_agi = agi
         self.base_con = con
+        if consts.DEBUG_STATBOOST:
+            self.base_int += 50
+            self.base_wiz += 50
+            self.base_str += 50
+            self.base_agi += 50
+            self.base_con += 50
 
     @property
     def int(self):
@@ -99,7 +105,7 @@ loadouts = {
     'fanatic' : {
         'str':13,
         'agi':9,
-        'int':20,
+        'int':12,
         'spr':10,
         'con':9,
         'inventory':[
@@ -113,7 +119,7 @@ loadouts = {
     'wizard' : {
         'str':6,
         'agi':8,
-        'int':120,
+        'int':12,
         'spr':10,
         'con':8,
         'inventory':[
@@ -433,7 +439,10 @@ def _cast_spell():
                     instance.fighter.adjust_stamina(-2 * cost)
                     return 'miscast'
                 elif cast_check:
-                    if spells.library[s].function() == 'success':
+
+                    result = actions.invoke_ability(spells.library[s].ability_name, instance,
+                                                    spell_context=spells.library[s].levels[level - 1])
+                    if result == 'success':
                         instance.memory.spell_charges[s] -= 1
                         if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
                             instance.fighter.hp -= cost - instance.fighter.stamina
@@ -930,7 +939,8 @@ def on_tick(this):
         instance.fighter.adjust_stamina(instance.fighter.stamina_regen)
 
     for ability in abilities.default_abilities.values():
-        ability.on_tick()
+        if ability not in get_abilities():
+            ability.on_tick() #  Raise Shield cools down even when not accessible
 
     if instance.fighter.hp < 25:
         instance.fighter.heal(instance.fighter.item_equipped_count('equipment_ring_of_tenacity'))
@@ -986,7 +996,8 @@ def get_abilities():
 
     # Raise shield
     sh = instance.fighter.get_equipped_shield()
-    if sh is not None and not sh.raised:
+    if sh is not None and (not sh.raised or sh.sh_points < sh.sh_max):
+        abilities.default_abilities['raise shield'].stamina_cost = sh.sh_raise_cost
         opts.append(abilities.default_abilities['raise shield'])
 
     return opts

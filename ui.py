@@ -1345,6 +1345,10 @@ def show_ability_screen():
             stamina_cost = player.instance.fighter.get_equipped_shield().sh_raise_cost
         elif opt.name == 'Cleave':
             stamina_cost = player.instance.fighter.calculate_attack_stamina_cost() * 2
+        elif opt.name == 'Jump':
+            stamina_cost = consts.JUMP_STAMINA_COST
+        elif opt.name == 'Bash':
+            stamina_cost = consts.BASH_STAMINA_COST
         else:
             stamina_cost = opt.stamina_cost
         if stamina_cost > player.instance.fighter.stamina:
@@ -1370,7 +1374,6 @@ def show_ability_screen():
         letter_index += 1
 
     index = menu_ex('Abilities', opts_ex, 40)
-    #index = menu('Abilities',[opt.name for opt in opts],20)
     if index is not None:
         choice = opts[index]
         if choice is not None:

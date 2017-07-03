@@ -44,7 +44,7 @@ proto = {
         'resistances': {'radiance' : -1},
         'shred': 1,
         'flags' : NO_CORPSE | EVIL,
-        'subtype':'zombie',
+        'subtype':'undead',
     },
     'monster_zombie_vermin': {
         'name': 'zombie vermin',
@@ -83,7 +83,7 @@ proto = {
         'description': 'Rotting corpse of some insect, animated by evil magic.',
         'resistances': {'radiance' : -1},
         'shred': 1,
-        'subtype':'insect',
+        'subtype':'undead',
         'flags' : NO_CORPSE | EVIL,
     },
     'monster_zombie_beast': {
@@ -102,7 +102,7 @@ proto = {
         'description': 'A rotting corpose of some beast, animated by evil magic',
         'resistances': {'radiance' : -1},
         'shred': 1,
-        'subtype':'zombie',
+        'subtype':'undead',
         'flags' : NO_CORPSE | EVIL,
     },
     'monster_dark_angel': {
@@ -123,7 +123,7 @@ proto = {
         'description': 'A twisted fallen angel, aweful and beautiful',
         'resistances': {'radiance' : -1, 'death' : 1},
         'shred': 2,
-        'subtype':'angel',
+        'subtype':'undead',
         'loot_level':15,
         'equipment': [{'weapon_greatsword':30,'weapon_halberd':30,'weapon_warhammer':30},{'equipment_plate_armor':100}],
         'movement_type': pathfinding.FLYING,

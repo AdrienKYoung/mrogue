@@ -78,6 +78,8 @@ class Item:
 
 
     def drop(self, no_message=False):
+        if self.holder is None:
+            return
         if self.owner not in self.holder.fighter.inventory:
             return
         if self.owner.equipment:
@@ -771,6 +773,10 @@ def scum_glob_tick(glob):
 def scum_glob_on_create(obj):
     obj.fighter.apply_status_effect(effects.oiled(duration=None))
 
+def lifeplant_pulse(self):
+    for obj in current_map.fighters:
+        if is_adjacent_diagonal(obj.x, obj.y, self.x, self.y):
+            obj.fighter.heal(roll_dice('1d3'))
 
 def bloodfly_on_create(obj):
     obj.fighter.hp = obj.fighter.max_hp / 2
@@ -962,15 +968,15 @@ def get_monster_at_tile(x, y):
             return obj
     return None
 
-def get_fighters_in_burst(x, y, radius, fov_source=None, team='ally'):
-    return [obj for obj in current_map.fighters if distance(x,y,obj.x,obj.y) <= radius and \
-            obj.fighter.team!=team and fov.monster_can_see_object(fov_source,obj)]
+def get_fighters_in_burst(x, y, radius, fov_source=None, condition=None):
+    return [obj for obj in current_map.fighters if distance(x,y,obj.x,obj.y) < radius + 1 and \
+            fov.monster_can_see_object(fov_source,obj) and (condition is None or condition(obj))]
 
 def get_tiles_in_burst(x, y, radius):
     tiles = []
-    for x in range(max(0, x - radius), min(x + radius + 1, consts.MAP_WIDTH)):
-        for y in range(max(0, y - radius), min(y + radius, consts.MAP_WIDTH)):
-            tiles.append((x,y))
+    for _x in range(max(0, x - radius), min(x + radius + 1, consts.MAP_WIDTH)):
+        for _y in range(max(0, y - radius), min(y + radius + 1, consts.MAP_HEIGHT)):
+            tiles.append((_x,_y))
     return tiles
 
 def opposite_team(team):
@@ -1398,6 +1404,10 @@ def create_item(name, material=None, quality=''):
     item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], ability=ability, charges=p.get('charges'))
     equipment_component = None
     if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book' or p['category'] == 'accessory':
+        if consts.DEBUG_UNLOCK_TOMES and 'level' in p.keys():
+            level = 10
+        else:
+            level = p.get('level', 0)
         equipment_component = equipment.Equipment(
             slot=p['slot'],
             category=p['category'],
@@ -1429,7 +1439,7 @@ def create_item(name, material=None, quality=''):
             crit_bonus=p.get('crit_bonus',1.0),
             resistances=p.get('resistances',{}),
             subtype=p.get('subtype'),
-            starting_level=p.get('level',0),
+            starting_level=level,
             weight=p.get('weight',0),
             _range=p.get('range',1),
             sh_max=p.get('sh_max', 0),

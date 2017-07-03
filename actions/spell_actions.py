@@ -43,9 +43,9 @@ def flame_wall(actor, target, context):
     main.create_fire(target[0], target[1], 10)
 
 def fireball(actor, target, context):
-    if actor is not player.instance and not fov.monster_can_see_object(actor, target):
-        return 'cancelled'
     (x, y) = context['origin']
+    if actor is not player.instance and not fov.monster_can_see_tile(actor, x, y):
+        return 'cancelled'
     ui.message('The fireball explodes!', libtcod.flame)
     ui.render_explosion(x, y, 1, libtcod.yellow, libtcod.flame)
     for obj in target:
@@ -170,8 +170,8 @@ def avalanche(actor, target, context):
         for obj in main.current_map.fighters:
             if obj.x == l[0] and obj.y == l[1]:
                 combat.spell_attack(actor.fighter, obj, 'ability_avalanche')
-                if actor.fighter is not None:
-                    actor.fighter.apply_status_effect(effects.immobilized(), context['save_dc'], actor)
+                if obj.fighter is not None:
+                    obj.fighter.apply_status_effect(effects.immobilized(), context['save_dc'], actor)
         if libtcod.random_get_int(0, 0, 3) > 0:
             tile = main.current_map.tiles[l[0]][l[1]]
             if tile.is_floor and tile.tile_type != 'snow drift' and tile.tile_type != 'ice':
@@ -184,32 +184,42 @@ def avalanche(actor, target, context):
 def hex(actor,target, context):
     target.fighter.apply_status_effect(effects.cursed(),context['save_dc'] + actor.fighter.spell_power,actor)
 
-def defile(actor,target, context):
-    if target is not None and not isinstance(target, main.Tile):
-        if target.is_corpse:
-            main.raise_dead(actor,target, duration=100)
-        elif target.fighter is not None and (target.fighter.subtype == 'undead' or target.fighter.subtype == 'fiend'):
-            target.fighter.heal(int(target.fighter.max_hp / 3))
-            ui.message("Dark magic strengthens {}!".format(target.name))
-        elif target.fighter is not None:
-            combat.spell_attack(actor.fighter, target, 'ability_defile')
+def defile(actor, target, context):
+    objects = main.get_objects(target[0], target[1],
+                               condition=lambda o: o.is_corpse or o.fighter and o is not actor is not None)
+    if len(objects) == 0:
+        if actor is player.instance:
+            ui.message('There is no body to defile here.', libtcod.gray)
+        return 'cancelled'
+    elif len(objects) == 1:
+        target = objects[0]
+    else:
+        index = ui.menu('Defile what?', [o.name for o in objects])
+        if index is None or index < 0 or index >= len(objects):
+            return 'cancelled'
+        target = objects[index]
+
+    if target.is_corpse:
+        main.raise_dead(actor,target, duration=100)
+    elif target.fighter.subtype == 'undead' or target.fighter.subtype == 'fiend':
+        target.fighter.heal(int(target.fighter.max_hp / 3))
+        ui.message("Dark magic strengthens {}!".format(target.name))
+    else:
+        combat.spell_attack(actor.fighter, target, 'ability_defile')
 
 def shackles_of_the_dead(actor,target, context):
-    x, y = target
-    for (_x,_y) in main.adjacent_tiles_diagonal(x,y):
-        obj = main.get_monster_at_tile(_x,_y)
-        if obj is not None:
-            obj.fighter.apply_status_effect(effects.immobilized(), context['save_dc'] + actor.fighter.spell_power, actor)
+    for t in target:
+        t.fighter.apply_status_effect(
+            effects.immobilized(duration=context['duration'] + (actor.fighter.spell_power / 5)),
+            context['save_dc'] + actor.fighter.spell_power, actor)
 
 def sacrifice(actor, target, context):
     actor.fighter.take_damage(min(30,int(actor.fighter.hp / 2)), attacker=actor)
-    damage_mod = int((actor.fighter.max_hp - actor.fighter.hp )/ actor.fighter.max_hp)
+    damage_mod = float(actor.fighter.max_hp - actor.fighter.hp )/ float(actor.fighter.max_hp)
     ui.render_explosion(actor.x, actor.y, 1, libtcod.violet, libtcod.darkest_violet)
-
-    for (_x,_y) in main.adjacent_tiles_diagonal(actor.x,actor.y):
-        obj = main.get_monster_at_tile(_x,_y)
-        if obj is not None and obj.fighter.team == 'enemy':
-            combat.spell_attack_ex(actor.fighter,obj,None,context['base_damage'],0,['death'],context['pierce'],0,1 + damage_mod)
+    for f in target:
+        combat.spell_attack_ex(actor.fighter, f, None, context['base_damage'], context['dice'], ['death'],
+                               context['pierce'], 0, damage_mod=1 + damage_mod, defense_type='will')
 
 def corpse_dance(actor, target, context):
     x, y = target
@@ -237,36 +247,42 @@ def smite(actor, target, context):
     return 'success'
 
 def castigate(actor, target, context):
-    ui.render_explosion(actor.x, actor.y, 1, libtcod.violet, libtcod.light_yellow)
+    origin = context['origin']
+    ui.render_explosion(origin[0], origin[1], 1, libtcod.violet, libtcod.light_yellow)
     dc = context['save_dc'] + actor.fighter.spell_power
-    for (_x,_y) in main.adjacent_tiles_diagonal(actor.x,actor.y):
-        obj = main.get_monster_at_tile(_x,_y)
-        if obj is not None and obj.fighter.team == 'enemy':
-            obj.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('3d8')), dc, actor)
-    return 'success'
+    for f in target:
+        f.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('3d8')), dc, actor)
 
 #player only
 def blessed_aegis(actor, target, context):
     common.summon_equipment('shield_blessed_aegis')
 
 def holy_lance(actor, target, context):
-    x, y = target
-    ui.render_explosion(x, y, context['radius'], libtcod.violet, libtcod.light_yellow)
+    import actions
+    x, y = context['origin']
+    ui.render_explosion(x, y, context['burst'], libtcod.violet, libtcod.light_yellow)
 
-    lance = main.GameObject(x, y, chr(23), 'Holy Lance', libtcod.light_azure, on_tick=lambda a: _holy_lance_tick(a,context), summon_time=10)
-    lance.creator = actor
+    spell_context = {
+        'stamina_cost' : context['stamina_cost'],
+        'charges' : context['charges'],
+        'caster' : actor,
+        'team' : actor.fighter.team,
+    }
+    lance = main.GameObject(x, y, chr(23), 'Holy Lance', libtcod.light_azure,
+                            on_tick=lambda o: actions.invoke_ability('ability_holy_lance_tick', o,
+                                                                     spell_context=spell_context), summon_time=10)
     main.current_map.add_object(lance)
 
-    for obj in main.get_fighters_in_burst(x,y,context['radius'],lance,actor.fighter.team):
+    for obj in main.get_fighters_in_burst(x,y,context['burst'],lance,actor.fighter.team):
             combat.spell_attack(actor.fighter, obj, 'ability_holy_lance')
     return 'success'
 
 
-def _holy_lance_tick(actor, context):
-    spell = context['tick']
-    ui.render_explosion(actor.x, actor.y, spell['radius'], libtcod.violet, libtcod.light_yellow)
-    for obj in main.get_fighters_in_burst(actor.x, actor.y, spell['radius'], actor, actor.creator.fighter.team):
-        combat.spell_attack(actor.fighter, obj, 'ability_holy_lance_tick')
+def holy_lance_tick(actor, target, context):
+    caster = context['caster']
+    ui.render_explosion(actor.x, actor.y, context['burst'], libtcod.violet, libtcod.light_yellow)
+    for f in target:
+        combat.spell_attack(caster.fighter, f, 'ability_holy_lance_tick')
 
 
 def green_touch(actor, target, context):

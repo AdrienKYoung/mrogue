@@ -51,7 +51,7 @@ def recover_shield(actor, target, context):
         return 'didnt-take-turn'
 
 
-def offhand_shot(actor, target):
+def offhand_shot(actor, target, context):
     weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'left hand')
     ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
     combat.attack_ex(actor.fighter,target,0,verb=("shoot","shoots"),weapon=weapon)

@@ -736,7 +736,6 @@ proto = {
         'description':  'A powerful fighter armed with sword and crossbow.'
                         'Demon Hunters willingly accept exile to hunt heretics and abominations.',
         'loot_level':2,
-        'attributes': ['ability_off_hand_shoot'],
         'equipment': [{'weapon_rapier':30},{'weapon_crossbow':30},{'equipment_leather_armor':50,'equipment_cloth_robes':50}],
         'on_hit':['on_hit_judgement'],
         'shred': 0,
@@ -863,7 +862,7 @@ proto = {
         'accuracy': 0,
         'move_speed': 1.0,
         'attack_speed': 1.0,
-        'ai': ai.AI_Lifeplant,
+        'on_tick': main.lifeplant_pulse,
         'description': 'A twisting, climbing vine adorned with golden flowers. '
                        'It glows with a soft warmth - those close enough to touch'
                        ' it can feel that warmth flow through them, healing their wounds.',

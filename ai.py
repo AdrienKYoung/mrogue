@@ -50,7 +50,8 @@ def target_damaged_ally(actor):
         return None
     target = None
     most_damage = 1.0
-    for ally in game.get_fighters_in_burst(actor.x, actor.y, consts.TORCH_RADIUS, actor, team=game.opposite_team(actor.fighter.team)):
+    for ally in game.get_fighters_in_burst(actor.x, actor.y, consts.TORCH_RADIUS, actor,
+                                           condition=lambda o: o.fighter.team == actor.fighter.team):
         if ally.fighter is not None:
             damage = float(ally.fighter.hp) / float(ally.fighter.max_hp)
             if damage < most_damage:
@@ -70,6 +71,16 @@ def target_clear_line_of_fire(actor):
     if game.beam_interrupt(actor.x, actor.y, target.x, target.y) == (target.x, target.y):
         return target
     return None
+
+def target_open_space_near_target(actor):
+    if actor is None or \
+            actor.behavior is None or \
+            actor.behavior.behavior is None or \
+            actor.behavior.behavior.target is None or \
+            actor.fighter is None:
+        return None
+    target = actor.behavior.behavior.target
+    return game.find_closest_open_tile(target.x, target.y)
 
 def aggro_on_hit(monster, attacker):
     if attacker is None:
@@ -200,7 +211,7 @@ def avoid(behavior):
         if dist <= consts.AVOID_DISTANCE:
             exclude = []
             for enemy in game.get_fighters_in_burst(monster.x, monster.y, consts.TORCH_RADIUS, monster,
-                                                    team=monster.fighter.team):
+                                        condition=lambda o: o.fighter.team == game.opposite_team(monster.fighter.team)):
                 for y in range(enemy.y - consts.AVOID_DISTANCE, enemy.y + consts.AVOID_DISTANCE + 1):
                     for x in range(enemy.x - consts.AVOID_DISTANCE, enemy.x + consts.AVOID_DISTANCE + 1):
                         if game.distance(monster.x, monster.y, x, y) <= consts.AVOID_DISTANCE:
@@ -506,15 +517,6 @@ class AI_Sentry:
                 else:
                     return 1
         return 1
-
-
-class AI_Lifeplant:
-
-    def act(self, ai_state):
-        monster = self.owner
-        for obj in game.current_map.fighters:
-            if game.is_adjacent_diagonal(obj.x, obj.y, monster.x, monster.y):
-                obj.fighter.heal(game.roll_dice('1d3'))
 
 
 class AI_TunnelSpider:

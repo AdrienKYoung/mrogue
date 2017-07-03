@@ -43,7 +43,7 @@ def mace_stun(attacker, target, damage):
         target.fighter.apply_status_effect(effects.stunned(stun_duration))
 
 def disarm_attack(actor,target,damage):
-    if main.roll_dice('1d10') == 10:
+    if main.roll_dice('1d5') == 5:
         common.disarm(target)
 
 def poison_attack(actor,target,damage):
@@ -200,5 +200,5 @@ table = {
     'on_hit_sluggish': on_hit_sluggish,
     'on_hit_chain_lightning': on_hit_chain_lightning,
     'on_hit_knockback': on_hit_knockback,
-    'zombie_on_hit': zombie_on_hit
+    'zombie_on_hit': zombie_on_hit,
 }

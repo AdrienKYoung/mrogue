@@ -11,7 +11,7 @@ table = {
         'slot'          : 'left hand',
         'description'   : 'A tome bound in red leather. The faint spell of smoke rises from its singed pages.',
         'essence':'fire',
-        'level' : 10,
+        'level' : 1,
         'spells': [
             'spell_heat_ray',
             'spell_flame_wall',

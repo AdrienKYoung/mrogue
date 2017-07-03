@@ -27,7 +27,6 @@ import syntax
 import ui
 import effects
 
-
 class Fighter:
 
     def __init__(self, hp=1, stamina=0, armor=0, evasion=0, accuracy=25, spell_power=0, death_function=None, breath=6,
@@ -891,13 +890,13 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             result = target.fighter.take_damage(damage, attacker=fighter.owner, blockable=blockable)
             if result != 'blocked' and result > 0:
                 # Trigger on-hit effects
+                from actions import on_hit_actions
                 if on_hit is not None and target.fighter is not None:
-                    from actions import on_hit_actions
                     for h in on_hit:
                         on_hit_actions.table[h](fighter.owner, target, damage)
                 if weapon is not None and weapon.on_hit is not None:
                     for oh in weapon.on_hit:
-                        oh(fighter.owner, target, damage)
+                        on_hit_actions.table[oh](fighter.owner, target, damage)
 
                 if target.fighter is not None and target.fighter.has_status('judgement'):
                     target.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('1d4')))
@@ -1129,7 +1128,9 @@ def roll_to_hit(target,  accuracy, defense_type='evasion', defense_bonus=0):
     return libtcod.random_get_float(0, 0, 1) < get_chance_to_hit(target, accuracy, defense_type=defense_type, defense_bonus=defense_bonus)
 
 def get_chance_to_hit(target, accuracy, defense_type='evasion', defense_bonus=0):
-    if defense_type == 'will':
+    if defense_type is None:
+        return 1.0
+    elif defense_type == 'will':
         return 1.0 - float(target.fighter.will + defense_bonus) / float(max(accuracy, target.fighter.will + 1))
     elif defense_type == 'fortitude':
         return 1.0 - float(target.fighter.fortitude + defense_bonus) / float(max(accuracy, target.fighter.fortitude + 1))

@@ -166,7 +166,6 @@ FEATURE grotto_entrance
 CATEGORY beach
 FLAGS NOROTATE NOREFLECT
 DEFINE : stone brick wall
-DEFINE 1 MONSTER_ID monster_giant_frog
 ###:::::###
 ###:.>.:###
    :...:
@@ -176,7 +175,7 @@ DEFINE 1 MONSTER_ID monster_giant_frog
 ..-.....-..
 .#-.....-#.
 ...........
- ....1....
+ .........
     ...
 ENDFEATURE
 

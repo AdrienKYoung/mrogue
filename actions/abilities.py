@@ -30,7 +30,7 @@ import common
 import actions
 
 class Ability:
-    def __init__(self, ability_id, name, description, cooldown, stamina_cost=0, intent='aggressive'):
+    def __init__(self, ability_id, name, description, cooldown=0, stamina_cost=0, intent='aggressive'):
         self.ability_id = ability_id
         self.name = name
         self.description = description
@@ -42,9 +42,11 @@ class Ability:
     def use(self, actor=None, target=None):
         if self.current_cd < 1:
             info = data[self.ability_id]
-            result = actions.invoke_ability(self.ability_id, actor, target)
+            result = actions.invoke_ability(self.ability_id, actor, target, spell_context={'stamina_cost': self.stamina_cost})
             if result != 'didnt-take-turn' and result != 'cancelled':
                 self.current_cd = self.cooldown
+                if self.stamina_cost != 0 and actor is player.instance:
+                    actor.fighter.adjust_stamina(-self.stamina_cost)
             else:
                 result = 'didnt-take-turn'
         else:
@@ -64,8 +66,17 @@ data = {
         'function': common.attack_reach,
         'cooldown': 0,
         'intent': 'aggressive',
-        'targeting': 'beam interrupt',
+        'targeting': 'beam_interrupt',
         'range': 1
+    },
+
+    'ability_raise_shield': {
+        'name': 'raise shield',
+        'description': 'restore your shield points to maximum',
+        'function': lambda a,t,_: a.fighter.get_equipped_shield().sh_raise(),
+        'targeting': 'self',
+        'intent': 'supportive',
+        'cooldown': 10
     },
 
     'ability_bash': {
@@ -88,12 +99,6 @@ data = {
         'name': 'Jump',
         'targeting': 'self',
         'function': lambda a,t,_: player.jump(a,2)
-    },
-
-    'ability_raise_shield': {
-        'name': 'Jump',
-        'targeting': 'self',
-        'function': item_actions.recover_shield
     },
 
     'ability_attack': {
@@ -182,6 +187,7 @@ data = {
         'function': monster_actions.berserk_self,
         'cooldown': 30,
         'intent': 'supportive',
+        'targeting': 'self'
     },
 
     'ability_summon_vermin': {
@@ -203,7 +209,7 @@ data = {
     'ability_grapel': {
         'name': 'Grapel',
         'function': monster_actions.frog_tongue,
-        'targeting': 'beam interrupt',
+        'targeting': 'beam_interrupt',
         'cooldown': 3,
         'intent': 'aggressive',
         'range': 4,
@@ -213,10 +219,11 @@ data = {
     'ability_dragonweed_pull': {
         'name': 'Dragonweed Pull',
         'function': monster_actions.dragonweed_pull,
-        'targeting': 'beam interrupt',
+        'targeting': 'beam_interrupt',
         'cooldown': 1,
         'intent': 'aggressive',
         'target_function' : ai.target_clear_line_of_fire,
+        'save_dc': 15,
     },
 
     'ability_silence': {
@@ -270,6 +277,7 @@ data = {
         'pre_cast': monster_actions.great_dive_channel,
         'burst': 1,
         'intent': 'aggressive',
+        'warning': True
     },
 
     'ability_heat_ray': {
@@ -295,7 +303,7 @@ data = {
         'dice' : 0,
         'target_ground': True,
         'base_damage' : '0d0',
-        'range':1,
+        'range': 3,
         'intent': 'aggressive',
     },
 
@@ -353,7 +361,7 @@ data = {
         'dice' : 1,
         'base_damage' : '3d6',
         'pierce': 0,
-        'range':5,
+        'range':10,
         'intent': 'aggressive',
         'targeting': 'beam_interrupt',
         'target_function' : ai.target_clear_line_of_fire,
@@ -367,7 +375,7 @@ data = {
         'dice' : 2,
         'base_damage' : '3d4',
         'save_dc': 10,
-        'targeting': 'beam-interrupt',
+        'targeting': 'beam_interrupt',
         'range':4,
         'intent': 'aggressive',
     },
@@ -468,12 +476,12 @@ data = {
         'element':['death'],
         'dice' : 0,
         'base_damage' : '0d0',
-        'target_ground': True,
         'save_dc': 15,
         'pierce': 0,
-        'range':6,
+        'range':5,
         'burst':1,
         'intent': 'aggressive',
+        'duration': 5,
     },
 
     'ability_sacrifice': {
@@ -481,11 +489,11 @@ data = {
         'function': spell_actions.sacrifice,
         'cooldown': 10,
         'element':['death'],
-        'dice' : 2,
-        'base_damage' : '3d8',
+        'dice' : 1,
+        'base_damage' : '1d24',
         'targeting': 'self',
         'pierce': 2,
-        'burst': 2,
+        'burst': 1,
         'intent': 'aggressive',
     },
 
@@ -498,7 +506,7 @@ data = {
         'base_damage' : '0d0',
         'target_ground': True,
         'targeting':'self',
-        'burst':3,
+        'radius':3,
         'cast_time':3,
         'buff_duration':50,
         'intent': 'supportive',
@@ -551,13 +559,14 @@ data = {
 
     'ability_strangleweeds': {
         'name': 'strangleweeds',
-        'function': spell_actions.bramble,
+        'function': spell_actions.strangleweeds,
         'cooldown': 5,
         'element':['life'],
         'intent': 'aggressive',
         'tick_damage': '3d10',
         'duration': 10,
-        'range': 10
+        'range': 10,
+        'targeting': 'self',
     },
 
     'ability_bless': {
@@ -567,6 +576,15 @@ data = {
         'element':['radiance'],
         'intent': 'supportive',
         'targeting': 'self'
+    },
+
+    'ability_blessed_aegis': {
+        'name': 'blessed aegis',
+        'function': charm_actions.summon_weapon,
+        'item': 'shield_blessed_aegis',
+        'targeting': 'self',
+        'intent': 'supportive',
+        'element': ['radiance']
     },
 
     'ability_smite': {
@@ -590,6 +608,9 @@ data = {
         'cooldown': 10,
         'element':['radiance'],
         'intent': 'aggressive',
+        'targeting': 'self',
+        'burst': 1,
+        'save_dc': 15,
     },
 
     'ability_holy_lance': {
@@ -600,20 +621,24 @@ data = {
         'dice' : 2,
         'base_damage' : '2d8',
         'target_ground' : True,
-        'burst':2,
-        'range':8,
+        'range':7,
         'intent': 'aggressive',
-        'tick': {
-            'cooldown': 1,
-            'dice' : 1,
-            'base_damage' : '1d8',
-            'element':['radiance'],
-            'intent': 'aggressive',
-        },
+        'burst': 2
     },
 
-    'ability_off_hand_shoot': {
-        'name': 'Off Hand Shot',
+    'ability_holy_lance_tick': {
+        'name': 'holy lance tick',
+        'function': spell_actions.holy_lance_tick,
+        'dice': 1,
+        'base_damage': '1d8',
+        'element': ['radiance'],
+        'intent': 'aggressive',
+        'targeting': 'self',
+        'burst': 2,
+    },
+
+    'ability_off_hand_shot': {
+        'name': 'Off-Hand Shot',
         'function': item_actions.offhand_shot,
         'cooldown': 5,
         'range': 10,
@@ -683,6 +708,7 @@ data = {
         'cooldown': 8,
         'intent': 'aggressive',
         'range': 3,
+        'target_ground': True
     },
 
     'ability_fire_bomb': {
@@ -715,6 +741,7 @@ data = {
         'range': 5,
         'delay': 3,
         'target_ground': True,
+        'target_function': ai.target_open_space_near_target
     },
 
     'ability_summon_demon': {
@@ -728,19 +755,28 @@ data = {
     'ability_mass_heal': {
         'name': 'mass heal',
         'function': charm_actions.mass_heal,
-        'targeting': 'allies'
+        'targeting': 'self',
+        'burst' : 10,
+        'intent' : 'support',
+        'allies_only': True
     },
 
     'ability_mass_cleanse': {
         'name': 'mass cleanse',
         'function': charm_actions.mass_cleanse,
-        'targeting': 'allies'
+        'targeting': 'self',
+        'burst' : 10,
+        'intent' : 'support',
+        'allies_only': True
     },
 
     'ability_mass_reflect': {
         'name': 'mass reflect',
         'function': charm_actions.mass_reflect,
-        'targeting': 'allies'
+        'targeting': 'self',
+        'burst' : 10,
+        'intent' : 'support',
+        'allies_only': True
     },
 
     'ability_holy_water': {
@@ -807,7 +843,7 @@ data = {
         'intent': 'support',
         'function': charm_actions.summon_lifeplant,
         'duration_base': 15,
-        'duration_variance': '0d0',
+        'duration_variance': '1d10',
     },
 
     'ability_dig': {
@@ -851,9 +887,9 @@ data = {
 }
 
 default_abilities = {
-    'attack' : Ability('ability_attack', 'Attack','Attack an enemy',0),
-    'bash' : Ability('ability_bash', 'Bash','Knock an enemy back',0, stamina_cost=20),
-    'jump' : Ability('ability_jump', 'Jump','Jump to a tile',0, stamina_cost=50),
+    'attack' : Ability('ability_attack', 'Attack','Attack an enemy'),
+    'bash' : Ability('ability_bash', 'Bash','Knock an enemy back'),
+    'jump' : Ability('ability_jump', 'Jump','Jump to a tile'),
     'raise shield' : Ability('ability_raise_shield', 'Raise Shield',
                              'Spend stamina to recover your shield after it has been knocked aside.',
                               cooldown=10)

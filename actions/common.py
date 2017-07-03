@@ -144,6 +144,8 @@ def summon_equipment_on_tick(ticker):
     if dead_flag:
         ticker.dead = True
         if ticker.equipment is not None:
+            if hasattr(ticker.equipment.equipment, 'raised'):
+                ticker.equipment.equipment.sh_raise()
             ticker.equipment.item.drop(no_message=True)
             ticker.equipment.destroy()
         if owner and owner.fighter:
@@ -174,7 +176,8 @@ def summon_ally(name, duration, x=None, y=None):
     import monsters
     if name in monsters.proto.keys():
         summon = main.spawn_monster(name, summon_pos[0], summon_pos[1], team='ally')
-        summon.behavior.follow_target = player.instance
+        if summon.behavior is not None:
+            summon.behavior.follow_target = player.instance
 
         # Set summon duration
         summon.summon_time = duration + libtcod.random_get_int(0, 0, duration)

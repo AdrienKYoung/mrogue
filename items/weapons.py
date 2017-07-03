@@ -334,7 +334,7 @@ table = {
         'attack_delay'      : 1000,
         'crit_bonus'        : 1.5,
         'range'             : 10,
-        'ability'           : 'ability_off_hand_shoot'
+        'ability'           : 'ability_off_hand_shot'
 
     }
 }
