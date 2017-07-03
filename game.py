@@ -64,7 +64,7 @@ class Item:
             if self.use_function() != 'cancelled':
                 if self.type == 'item' and not(self.category == 'gem' and consts.DEBUG_INFINITE_GEMS):
                     if self.category == 'charm':
-                        if self.charges is not None:
+                        if self.charges is not None and not consts.DEBUG_INFINITE_GEMS:
                             self.charges -= 1
                             if self.charges <= 0:
                                 self.holder.fighter.inventory.remove(self.owner)
@@ -968,7 +968,7 @@ def get_fighters_in_burst(x, y, radius, fov_source=None, team='ally'):
 
 def get_tiles_in_burst(x, y, radius):
     tiles = []
-    for x in range(max(0, x - radius), min(x + radius, consts.MAP_WIDTH)):
+    for x in range(max(0, x - radius), min(x + radius + 1, consts.MAP_WIDTH)):
         for y in range(max(0, y - radius), min(y + radius, consts.MAP_WIDTH)):
             tiles.append((x,y))
     return tiles
@@ -1281,9 +1281,9 @@ def spawn_npc(name, x, y, map_name):
         movement_type = pathfinding.NORMAL
         if name in npc.fighters.keys():
             f = npc.fighters[name]
-            death = monster_death
-            if f.get('death_function'):
-                death = f.get('death_function')
+            death = {'function': 'default'}
+            if p.get('death_function'):
+                death = p.get('death_function')
             fighter = combat.Fighter(
                 hp=int(f['hp']),
                 armor=int(f['armor']),

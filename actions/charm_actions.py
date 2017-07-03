@@ -71,7 +71,7 @@ def icebomb(actor, target, context):
             f.fighter.apply_status_effect(effects.frozen(duration=6))
 
 def timebomb(actor, target, context):
-    (x, y) = main.find_closest_open_tile(target.x, target.y)
+    (x, y) = target[0], target[1]
     rune = main.GameObject(x, y, chr(21), 'time bomb', spells.essence_colors['arcane'],
                            description='"I prepared explosive runes this morning"')
     main.current_map.add_object(rune)
@@ -159,3 +159,38 @@ def cleanse():
 
 def invulnerable(actor, target, context):
     target.apply_status_effect(effects.invulnerable(10))
+
+def summon_elemental(actor, target, context):
+    return common.summon_ally(context['summon'], context['duration_base'] + main.roll_dice(context['duration_variance']))
+
+def summon_lifeplant(actor, target, context):
+    return common.summon_ally('monster_lifeplant', context['duration_base'] + main.roll_dice(context['duration_variance']))
+
+def summon_weapon(actor, target, context):
+    return common.summon_equipment(actor, context['item'])
+
+def farmers_talisman_dig(actor, target, context):
+    x, y = target[0], target[1]
+    direction = x - player.instance.x, y - player.instance.y
+    depth = context['min_depth'] + main.roll_dice(context['depth_variance'])
+    return common.dig_line(player.instance.x, player.instance.y, direction[0], direction[1], depth)
+
+def create_terrain(actor, target, context):
+    import dungeon, mapgen
+    (x, y) = target[0], target[1]
+
+    terrain = context['terrain_type']
+    if terrain == 'wall':
+        terrain = dungeon.branches[main.current_map.branch]['default_wall']
+
+    tiles = main.adjacent_tiles_orthogonal(x, y)
+    tiles.append((x, y))
+
+    main.create_temp_terrain(terrain, tiles, 100)
+    if terrain == 'shallow water':
+        main.create_temp_terrain('deep water', [(x, y)], 100)
+    if terrain == 'grass floor':
+        mapgen.scatter_reeds(tiles, 75)
+        for t in tiles:
+            fov.set_fov_properties(t[0], t[1], len(main.get_objects(t[0], t[1], lambda o: o.blocks_sight)) > 0,
+                                   elevation=main.current_map.tiles[t[0]][t[1]].elevation)

@@ -894,7 +894,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
                 if on_hit is not None and target.fighter is not None:
                     from actions import on_hit_actions
                     for h in on_hit:
-                        on_hit_actions[h](fighter.owner, target, damage)
+                        on_hit_actions.table[h](fighter.owner, target, damage)
                 if weapon is not None and weapon.on_hit is not None:
                     for oh in weapon.on_hit:
                         oh(fighter.owner, target, damage)
@@ -958,8 +958,8 @@ def spell_attack(fighter,target,spell_name):
                     config.get('dice',0),
                     config['element'],
                     config.get('peirce',0),
-                    config.get('shred',0),
-                    config.get('defense','evasion'))
+                    shred=config.get('shred',0),
+                    defense_type=config.get('defense','evasion'))
 
 
 def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_elements, pierce, shred = 0,
@@ -1082,7 +1082,7 @@ def attack_text_ex(fighter,target,verb,location,damage,damage_types,severity):
     if verb is None:
         verb = main.normalized_choice(damage_description_tables[damage_type], severity)
 
-    target_name = syntax.name(target)
+    target_name = syntax.name(target, reflexive=fighter.owner)
 
     if fighter is None:
         name = 'something'

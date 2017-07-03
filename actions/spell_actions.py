@@ -45,26 +45,24 @@ def flame_wall(actor, target, context):
 def fireball(actor, target, context):
     if actor is not player.instance and not fov.monster_can_see_object(actor, target):
         return 'cancelled'
-    (x,y) = target
+    (x, y) = context['origin']
     ui.message('The fireball explodes!', libtcod.flame)
     ui.render_explosion(x, y, 1, libtcod.yellow, libtcod.flame)
-    for obj in main.current_map.fighters:
-        if obj.distance(x, y) <= context['radius']:
-            combat.spell_attack(actor.fighter, obj, 'ability_fireball')
-            if obj.fighter is not None:
-                obj.fighter.apply_status_effect(effects.burning())
+    for obj in target:
+        combat.spell_attack(actor.fighter, obj, 'ability_fireball')
+        if obj.fighter is not None:
+            obj.fighter.apply_status_effect(effects.burning())
+
     for _x in range(x - 1, x + 2):
         for _y in range(y - 1, y + 2):
             main.melt_ice(_x, _y)
 
 def magma_bolt(actor, target, context):
-    (x,y) = target
-    if target is not None:
-        fighter = main.get_monster_at_tile(x,y)
-        combat.spell_attack(fighter, target,'ability_magma_bolt')
-    main.current_map.tiles[x][y].tile_type = 'lava'
-    main.current_map.pathfinding.mark_blocked((x, y))
-    main.changed_tiles.append((x, y))
+    for tile in target:
+        main.create_temp_terrain('lava', [tile], main.roll_dice(context['lava_duration']))
+        for fighter in main.current_map.fighters:
+            if fighter.x == tile[0] and fighter.y == tile[1]:
+                combat.spell_attack(actor.fighter, fighter, 'ability_magma_bolt')
 
 def frozen_orb(actor, target, context):
     if combat.spell_attack(actor.fighter, target,'ability_frozen_orb') == 'hit' and target.fighter is not None:
@@ -94,19 +92,24 @@ def ice_shards(actor, target, context):
                     obj.fighter.apply_status_effect(effects.bleeding(), dc=dc, source_fighter=actor)
 
 def snowstorm(actor, target, context):
-    callback = lambda (a,t): _snowstorm_tick(a,t,context)
-    zone = main.Zone(context['radius'],callback,callback)
-    storm = main.GameObject(target[0],target[1],'@','Snowstorm',libtcod.light_azure,zones=[zone],summon_time=10)
+    import actions
+    (x, y) = target
+    storm = main.GameObject(x, y, '@', 'Snowstorm', libtcod.lightest_azure, summon_time=10)
+    storm.on_tick_specified = lambda o: actions.invoke_ability('ability_snowstorm_tick', storm, spell_context={'caster': actor, 'team': actor.fighter.team})
     storm.creator = actor
+    main.current_map.add_object(storm)
 
-def _snowstorm_tick(actor,target,context):
-    dc = context['save_dc'] + actor.fighter.spell_power
-    if main.roll_dice('1d10' > 7):
-        combat.spell_attack(actor.owner.creator.fighter,target,'ability_snowstorm')
-        target.fighter.apply_status_effect(effects.slowed(), dc, actor)
-        target.fighter.apply_status_effect(effects.blinded(), dc, actor)
-        fx = main.GameObject(target.x,target.y,'*','cloud of cold',libtcod.light_azure,summon_time=2)
-        main.current_map.objects.append(fx)
+def snowstorm_tick(actor,target,context):
+    caster = context['caster']
+    dc = context['save_dc'] + caster.fighter.spell_power
+    for t in target:
+        if main.roll_dice('1d10') > 7:
+            combat.spell_attack(caster.fighter,t,'ability_snowstorm')
+            if t.fighter is not None:
+                t.fighter.apply_status_effect(effects.slowed(), dc, caster)
+                t.fighter.apply_status_effect(effects.blinded(), dc, caster)
+            fx = main.GameObject(t.x,t.y,'*','cloud of snow',libtcod.lightest_azure,summon_time=2)
+            main.current_map.objects.append(fx)
 
 def avalanche(actor, target, context):
     for l in target:

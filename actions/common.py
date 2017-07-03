@@ -24,7 +24,7 @@ import fov
 import spells
 import consts
 
-def attack(actor, target, context):
+def attack():
     x,y = ui.target_tile(max_range=1)
     target = None
     for object in main.current_map.fighters:
@@ -71,7 +71,7 @@ def cleave_attack(actor, target, context):
             actor.fighter.attack(t)
     return 'success'
 
-def bash_attack(actor, target, context):
+def bash_attack(actor):
     x,y = ui.target_tile(max_range=1)
     target = None
     for object in main.current_map.fighters:
@@ -84,8 +84,8 @@ def bash_attack(actor, target, context):
             return result
     return 'didnt-take-turn'
 
-def summon_equipment(item):
-    if len(player.instance.fighter.inventory) >= 26:
+def summon_equipment(actor, item):
+    if actor is player.instance and len(player.instance.fighter.inventory) >= 26:
         ui.message('You are carrying too many items to summon another.')
         return 'didnt-take-turn'
 
@@ -97,45 +97,58 @@ def summon_equipment(item):
     equipped_item = None
     expire_ticker.old_left = None
     if summoned_equipment.equipment.slot == 'both hands':
-        equipped_item = main.get_equipped_in_slot(player.instance.fighter.inventory, 'right hand')
-        expire_ticker.old_left = main.get_equipped_in_slot(player.instance.fighter.inventory, 'left hand')
+        equipped_item = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+        expire_ticker.old_left = main.get_equipped_in_slot(actor.fighter.inventory, 'left hand')
     elif summoned_equipment.equipment.slot == 'floating shield':
         #can't stack two shields
-        equipped_item = player.instance.fighter.get_equipped_shield()
+        equipped_item = actor.fighter.get_equipped_shield()
     else:
-        equipped_item = main.get_equipped_in_slot(player.instance.fighter.inventory, summoned_equipment.equipment.slot)
+        equipped_item = main.get_equipped_in_slot(actor.fighter.inventory, summoned_equipment.equipment.slot)
     expire_ticker.old_equipment = equipped_item
 
     if equipped_item is not None:
         equipped_item.dequip()
-    summoned_equipment.item.pick_up(player.instance,True)
+    summoned_equipment.item.pick_up(actor,True)
     expire_ticker.equipment = summoned_equipment
     effect = effects.StatusEffect('summoned equipment', expire_ticker.max_ticks + 1, summoned_equipment.color)
-    player.instance.fighter.apply_status_effect(effect)
+    actor.fighter.apply_status_effect(effect)
     expire_ticker.effect = effect
+    expire_ticker.owner = actor
     main.current_map.tickers.append(expire_ticker)
 
-    ui.message("A {} appears!".format(summoned_equipment.name),libtcod.white)
+    if actor is player.instance:
+        ui.message("A {} appears!".format(summoned_equipment.name),libtcod.white)
 
     return 'success'
 
 def summon_equipment_on_tick(ticker):
     dead_flag = False
     dropped = False
-    if not ticker.equipment.equipment.is_equipped:
-        ui.message('The %s fades away as you release it from your grasp.' % ticker.equipment.name.title(), libtcod.light_blue)
+    owner = ticker.owner
+    if not owner or not owner.fighter:
+        dead_flag = True
+    elif not ticker.equipment.equipment.is_equipped:
+        if owner is player.instance or fov.player_can_see(owner.x, owner.y):
+            ui.message('The %s fades away as %s %s it from %s grasp.' %
+                               (ticker.equipment.name.title(),
+                                syntax.name(owner),
+                                syntax.conjugate(owner is player.instance, ('release', 'releases')),
+                                syntax.pronoun(owner, possesive=True)),
+                                libtcod.light_blue)
         dead_flag = True
         dropped = True
     elif ticker.ticks > ticker.max_ticks:
         dead_flag = True
-        ui.message("The %s fades away as it's essence depletes." % ticker.equipment.name.title(), libtcod.light_blue)
+        if owner is player.instance or fov.player_can_see(owner.x, owner.y):
+            ui.message("The %s fades away as it's essence depletes." % ticker.equipment.name.title(), libtcod.light_blue)
     if dead_flag:
         ticker.dead = True
         if ticker.equipment is not None:
             ticker.equipment.item.drop(no_message=True)
             ticker.equipment.destroy()
-        player.instance.fighter.remove_status('summoned equipment')
-        if not dropped:
+        if owner and owner.fighter:
+            owner.fighter.remove_status('summoned equipment')
+        if not dropped and owner and owner.fighter:
             if ticker.old_equipment is not None:
                 ticker.old_equipment.equip()
             if ticker.old_left is not None:

@@ -21,6 +21,7 @@ import effects
 import player
 import syntax
 import ui
+import npc
 import common
 
 def on_death_summon(obj,context):
@@ -91,7 +92,7 @@ def bomb_beetle_death(beetle, context):
     beetle.name = 'beetle bomb'
     beetle.description = 'The explosive carapace of a blast beetle. In a few turns, it will explode!'
     beetle.bomb_timer = 3
-    beetle.on_tick = lambda o: bomb_beetle_corpse_tick(o,context)
+    beetle.on_tick = bomb_beetle_corpse_tick
     main.current_map.fighters.remove(beetle)
 
     if ui.selected_monster is beetle:
@@ -100,7 +101,7 @@ def bomb_beetle_death(beetle, context):
         ui.auto_target_monster()
 
 
-def bomb_beetle_corpse_tick(object, context):
+def bomb_beetle_corpse_tick(object=None, context=None):
     if object is None:
         return
     object.bomb_timer -= 1
@@ -120,7 +121,7 @@ def bomb_beetle_corpse_tick(object, context):
                 main.melt_ice(tile[0], tile[1])
             monster = main.get_monster_at_tile(tile[0], tile[1])
             if monster is not None:
-                monster.fighter.take_damage(context['damage'])
+                monster.fighter.take_damage(main.roll_dice('22d3'))
                 if monster.fighter is not None:
                     monster.fighter.apply_status_effect(effects.burning())
         object.destroy()
@@ -130,5 +131,6 @@ table = {
     'on_death_scum_glob': scum_glob_death,
     'on_death_blastcap': blastcap_explode,
     'on_death_bomb': bomb_beetle_death,
-    'default': main.monster_death
+    'default': main.monster_death,
+    'player': player.on_death,
 }

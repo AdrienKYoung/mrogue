@@ -68,6 +68,14 @@ data = {
         'range': 1
     },
 
+    'ability_bash': {
+        'name': 'Bash',
+        'description': 'Knock an enemy back',
+        'targeting': 'self',
+        'function': lambda a,t,_: common.bash_attack(a),
+        'intent': 'aggressive',
+    },
+
     'ability_cleave': {
         'name': 'Cleave',
         'description': 'Make an attack against all adjacent enemies',
@@ -78,7 +86,17 @@ data = {
 
     'ability_jump': {
         'name': 'Jump',
-        'function': lambda(a,t,_): player.jump(a,t)
+        'targeting': 'self',
+        'function': lambda a,t,_: player.jump(a,2)
+    },
+
+    'ability_attack': {
+        'name': 'Attack',
+        'targeting': 'self',
+        'description': 'Attack an enemy with your held weapon',
+        'function': lambda a,t,_: common.attack(),
+        'cooldown': 0,
+        'intent': 'aggressive',
     },
 
     'ability_pommel_strike': {
@@ -182,6 +200,8 @@ data = {
         'targeting': 'beam interrupt',
         'cooldown': 3,
         'intent': 'aggressive',
+        'range': 4,
+        'target_function' : ai.target_clear_line_of_fire,
     },
 
     'ability_dragonweed_pull': {
@@ -206,9 +226,9 @@ data = {
         'function' : monster_actions.raise_zombie,
         'cooldown' : 3,
         'intent': 'neutral',
-        'targeting': 'burst',
+        'targeting': 'self',
         'target_ground': True,
-        'radius':1
+        'burst':1
     },
 
     'ability_flame_breath': {
@@ -239,17 +259,18 @@ data = {
         'function' : monster_actions.great_dive,
         'cooldown' : 10,
         'range': 10,
-        'radius': 1,
         'cast_time': 1,
         'target_ground': True,
         'pre_cast': monster_actions.great_dive_channel,
-        'targeting': 'ranged burst',
+        'burst': 1,
         'intent': 'aggressive',
     },
 
     'ability_heat_ray': {
         'name': 'heat ray',
         'function': spell_actions.heat_ray,
+        'target_ground': True,
+        'targeting': 'beam',
         'cooldown': 2,
         'element':['fire'],
         'dice' : 1,
@@ -268,7 +289,7 @@ data = {
         'dice' : 0,
         'target_ground': True,
         'base_damage' : '0d0',
-        'range':10,
+        'range':1,
         'intent': 'aggressive',
     },
 
@@ -279,12 +300,12 @@ data = {
         'element': ['fire'],
         'dice': 2,
         'base_damage': '2d6',
-        'targeting': 'beam',
-        'target_ground': True,
         'pierce': 1,
         'cast_time': 2,
         'range': 8,
-        'radius': 2,
+        'targeting': 'beam_interrupt',
+        'burst': 1,
+        'hits_friendlies': True,
         'intent': 'aggressive',
     },
 
@@ -297,9 +318,11 @@ data = {
         'base_damage' : '3d6',
         'target_ground': True,
         'pierce': 1,
-        'range':10,
+        'range': 5,
         'intent': 'aggressive',
+        'targeting' : 'beam',
         'target_function' : ai.target_clear_line_of_fire,
+        'lava_duration': '3d4'
     },
 
     'ability_arcane_arrow': {
@@ -352,7 +375,6 @@ data = {
         'target_ground': True,
         'save_dc': 10,
         'range': 5,
-        'radius': 1,
         'intent': 'aggressive',
     },
 
@@ -362,11 +384,21 @@ data = {
         'cooldown': 10,
         'element':['cold'],
         'dice' : 1,
-        'save_dc':10,
         'base_damage' : '1d4',
         'range':10,
-        'radius':4,
         'intent': 'aggressive',
+        'target_ground': True
+    },
+
+    'ability_snowstorm_tick': {
+        'targeting': 'self',
+        'name': 'snowstorm tick',
+        'function': spell_actions.snowstorm_tick,
+        'save_dc':10,
+        'burst': 4,
+        'element':['cold'],
+        'dice' : 1,
+        'base_damage' : '1d4',
     },
 
     'ability_avalanche': {
@@ -420,7 +452,7 @@ data = {
         'save_dc': 15,
         'pierce': 0,
         'range':6,
-        'radius':1,
+        'burst':1,
         'intent': 'aggressive',
     },
 
@@ -431,9 +463,9 @@ data = {
         'element':['death'],
         'dice' : 2,
         'base_damage' : '3d8',
-        'targeting': 'burst',
+        'targeting': 'self',
         'pierce': 2,
-        'radius': 2,
+        'burst': 2,
         'intent': 'aggressive',
     },
 
@@ -445,8 +477,8 @@ data = {
         'dice' : 0,
         'base_damage' : '0d0',
         'target_ground': True,
-        'range':6,
-        'radius':3,
+        'targeting':'self',
+        'burst':3,
         'cast_time':3,
         'buff_duration':50,
         'intent': 'supportive',
@@ -458,7 +490,6 @@ data = {
         'cooldown': 5,
         'element':['life'],
         'range':8,
-        'radius':3,
         'intent': 'neutral',
         'target_ground': True,
     },
@@ -548,7 +579,7 @@ data = {
         'dice' : 2,
         'base_damage' : '2d8',
         'target_ground' : True,
-        'radius':2,
+        'burst':2,
         'range':8,
         'intent': 'aggressive',
         'tick': {
@@ -635,22 +666,24 @@ data = {
 
     'ability_fire_bomb': {
         'name': 'Time Bomb',
-        'function': charm_actions.timebomb,
+        'function': charm_actions.firebomb,
         'cooldown': 6,
         'intent': 'aggressive',
-        'targeting': 'ranged burst',
-        'radius': 1,
-        'range': 6,
+        'targeting': 'beam_interrupt',
+        'burst': 1,
+        'range': 5,
+        'hits_friendlies': True,
     },
 
     'ability_ice_bomb': {
         'name': 'Time Bomb',
-        'function': charm_actions.timebomb,
+        'function': charm_actions.icebomb,
         'cooldown': 6,
         'intent': 'aggressive',
-        'targeting': 'ranged burst',
-        'radius': 1,
-        'range': 6,
+        'targeting': 'beam_interrupt',
+        'burst': 1,
+        'range': 5,
+        'hits_friendlies': True,
     },
 
     'ability_time_bomb': {
@@ -658,8 +691,9 @@ data = {
         'function': charm_actions.timebomb,
         'cooldown': 6,
         'intent': 'aggressive',
-        'range': 6,
+        'range': 5,
         'delay': 3,
+        'target_ground': True,
     },
 
     'ability_summon_demon': {
@@ -671,20 +705,20 @@ data = {
     },
 
     'ability_mass_heal': {
-        'name': 'Mass Heal',
-        'function': None,
+        'name': 'mass heal',
+        'function': charm_actions.mass_heal,
         'targeting': 'allies'
     },
 
     'ability_mass_cleanse': {
-        'name': 'Mass Heal',
-        'function': None,
+        'name': 'mass cleanse',
+        'function': charm_actions.mass_cleanse,
         'targeting': 'allies'
     },
 
     'ability_mass_reflect': {
-        'name': 'Mass Heal',
-        'function': None,
+        'name': 'mass reflect',
+        'function': charm_actions.mass_reflect,
         'targeting': 'allies'
     },
 
@@ -701,9 +735,98 @@ data = {
         'targeting': 'beam_interrupt'
     },
 
-    'summon_guardian_angel': {
+    'ability_summon_guardian_angel': {
         'targeting': 'summon'
     },
+
+    'ability_healing_trance': {
+        'targeting': 'self',
+        'intent': 'support',
+        'function': charm_actions.healing_trance,
+    },
+
+    'ability_summon_fire_elemental': {
+        'targeting': 'self',
+        'intent': 'aggressive',
+        'function': charm_actions.summon_elemental,
+        'summon': 'monster_fire_elemental',
+        'duration_base': 15,
+        'duration_variance': '1d10',
+    },
+
+    'ability_summon_earth_elemental': {
+        'targeting': 'self',
+        'intent': 'aggressive',
+        'function': charm_actions.summon_elemental,
+        'summon': 'monster_earth_elemental',
+        'duration_base': 50,
+        'duration_variance': '1d10',
+    },
+
+    'ability_summon_water_elemental': {
+        'targeting': 'self',
+        'intent': 'aggressive',
+        'function': charm_actions.summon_elemental,
+        'summon': 'monster_water_elemental',
+        'duration_base': 30,
+        'duration_variance': '1d10',
+    },
+
+    'ability_summon_air_elemental': {
+        'targeting': 'self',
+        'intent': 'aggressive',
+        'function': charm_actions.summon_elemental,
+        'summon': 'monster_air_elemental',
+        'duration_base': 30,
+        'duration_variance': '1d10',
+    },
+
+    'ability_summon_lifeplant': {
+        'targeting': 'self',
+        'intent': 'support',
+        'function': charm_actions.summon_lifeplant,
+        'duration_base': 15,
+        'duration_variance': '0d0',
+    },
+
+    'ability_dig': {
+        'target_ground': True,
+        'range': 1,
+        'min_depth': 3,
+        'depth_variance': '1d4',
+        'function': charm_actions.farmers_talisman_dig,
+    },
+
+    'ability_create_terrain_wall': {
+        'target_ground': True,
+        'range': 5,
+        'terrain_type': 'wall',
+        'function': charm_actions.create_terrain,
+    },
+    'ability_create_terrain_grass': {
+        'target_ground': True,
+        'range': 5,
+        'terrain_type': 'grass floor',
+        'function': charm_actions.create_terrain,
+    },
+    'ability_create_terrain_water': {
+        'target_ground': True,
+        'range': 5,
+        'terrain_type': 'shallow water',
+        'function': charm_actions.create_terrain,
+    },
+    'ability_create_terrain_lava': {
+        'target_ground': True,
+        'range': 5,
+        'terrain_type': 'lava',
+        'function': charm_actions.create_terrain,
+    },
+    'ability_summon_soul_reaper': {
+        'targeting': 'self',
+        'intent': 'aggressive',
+        'function': charm_actions.summon_weapon,
+        'item': 'weapon_soul_reaper',
+    }
 }
 
 default_abilities = {

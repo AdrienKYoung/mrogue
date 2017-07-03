@@ -149,7 +149,7 @@ def create(loadout):
     global instance
 
     loadout = loadouts[loadout]
-    fighter_component = combat.Fighter(hp=100, stamina=100, death_function=on_death, on_get_hit=on_get_hit,
+    fighter_component = combat.Fighter(hp=100, stamina=100, death_function={'function':'player'}, on_get_hit='player_get_hit',
                                        on_get_kill=on_get_kill, team='ally', evasion=5)
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),
@@ -588,7 +588,7 @@ def purchase_skill():
                 instance.skill_points -= cost
             ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
-def on_death(instance):
+def on_death(object=instance, context=None):
     if instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
         rings = main.get_equipped_in_slot(instance.fighter.inventory, 'ring')
         broken = None
@@ -696,13 +696,14 @@ def cleave_attack(dx, dy):
 
 
 def bash_attack(dx, dy):
+    from actions import common
     target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
     if target is not None:
         result = combat.attack_ex(instance.fighter, target, consts.BASH_STAMINA_COST,
                                   damage_multiplier=consts.BASH_DMG_MOD, verb=('bash', 'bashes'))
         if result == 'hit' and target.fighter:
             ui.select_monster(target)
-            actions.knock_back(instance,target)
+            common.knock_back(instance,target)
 
         return result
     else:
@@ -939,7 +940,7 @@ def on_get_hit(this,other,damage):
         if not hasattr(instance,'heir_to_the_heavens_cd'):
             instance.heir_to_the_heavens_cd = 0
         if (this.fighter.hp <= (damage * 2) or this.fighter.hp < (this.fighter.max_hp * 0.2)) and instance.heir_to_the_heavens_cd < 1:
-            if actions.summon_guardian_angel() != 'failed':
+            if actions.invoke_ability('ability_summon_guardian_angel', instance) != 'failed':
                 instance.heir_to_the_heavens_cd = 70
                 instance.fighter.apply_status_effect(effects.invulnerable(1),True)
 

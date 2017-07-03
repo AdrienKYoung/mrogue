@@ -55,8 +55,9 @@ def invoke_ability(ability_key, actor, target_override=None, spell_context=None)
             player.delay(info['cast_time'], delegate, 'channel-spell')
         else:
             actor.behavior.behavior.queue_action(delegate, info['cast_time'])
+        return 'success'
     else:
-        _invoke_ability_continuation(info, actor, target_override, function)
+        return _invoke_ability_continuation(info, actor, target_override, function)
 
 
 def _invoke_ability_continuation(info, actor, target_override, function):
@@ -77,12 +78,10 @@ def _get_ability_target(actor, info, target_override):
     range = info.get('range', 1000)
     ground_targeting = info.get('target_ground', False)
     target = None
+    burst = info.get('burst')
 
-    if targeting == 'self':
+    if targeting == 'self' and burst is None:
         target = actor
-
-    if 'target_function' in info and actor is not player.instance:
-        target = info['target_function'](actor)
 
     if target is None and targeting is not None:
         if actor is player.instance:
@@ -91,10 +90,13 @@ def _get_ability_target(actor, info, target_override):
             if ui.selected_monster is not None:
                 default_target = ui.selected_monster.x, ui.selected_monster.y
             target = ui.target_tile(range, targeting, default_target=default_target)
+
         else:
-            if targeting == 'pick' or targeting == 'ranged burst':
+            if target_override is not None and actor.distance_to(target_override) > range:
+                target = None
+                return target
+            if targeting == 'pick':
                 target = (target_override.x, target_override.y)
-                info['origin'] = target
             elif targeting == 'cone':
                 target = main.cone(actor.x, actor.y, target_override.x, target_override.y, max_range=info['range'])
             elif targeting == 'beam':
@@ -103,25 +105,42 @@ def _get_ability_target(actor, info, target_override):
                 # TODO: Support wide beam outside of player targeting
                 raise Exception("Not supported")
             elif targeting == 'beam interrupt':
-                target = main.beam_interrupt(actor.x, actor.y, target_override[0], target_override[1])
+                target = main.beam_interrupt(actor.x, actor.y, target_override.x, target_override.y)
             elif targeting == 'summon':
-                target = main.find_closest_open_tile(target_override[0], target_override[1])
+                target = main.find_closest_open_tile(target_override.x, target_override.y)
             elif targeting == 'allies':
                 target = target_override
-            elif targeting == 'burst':
-                target = (actor.x, actor.y)
+            elif targeting == 'self':
+                target = actor.x, actor.y
 
-        if targeting == 'ranged burst' or targeting == 'burst':
-            if not ground_targeting:
-                target = main.get_fighters_in_burst(target[0], target[1], info['radius'], actor, actor.fighter.team)
+        if isinstance(target, tuple) and target[0] is None:
+            target = None
+        if target is None:
+            return target
+
+        if burst is not None and isinstance(target, tuple):
+            if info.get('hits_friendlies', False):
+                team = None
+            elif info.get('team') is not None:
+                team = info.get('team')
             else:
-                target = main.get_tiles_in_burst(target[0], target[1], info['radius'])
+                team = actor.fighter.team
+            info['origin'] = target[0], target[1]
+            if not ground_targeting:
+                target = main.get_fighters_in_burst(target[0], target[1], burst, actor, team)
+            else:
+                target = main.get_tiles_in_burst(target[0], target[1], burst)
         elif not ground_targeting and targeting != 'summon':
             if target is not None:
                 if isinstance(target, list):
                     target = [main.get_monster_at_tile(*t) for t in target]
                 else:
-                    target = main.get_monster_at_tile(*target)
+                    pos = target
+                    target = None
+                    for fighter in main.current_map.fighters:
+                        if fighter.x == pos[0] and fighter.y == pos[1]:
+                            target = fighter
+                            break
     return target
 
 def _spawn_warning(actor,tiles):

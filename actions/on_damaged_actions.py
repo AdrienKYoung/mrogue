@@ -46,5 +46,6 @@ def summon_roaches(actor, attacker, damage):
             actor.summons.append(main.spawn_monster('monster_cockroach', adj[0], adj[1]))
 
 table = {
-    'on_damaged_summon_roaches': summon_roaches
+    'on_damaged_summon_roaches': summon_roaches,
+    'player_get_hit': player.on_get_hit
 }
