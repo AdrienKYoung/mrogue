@@ -27,6 +27,12 @@ import syntax
 # Classes
 #############################################
 
+class Light:
+    def __init__(self, color, power, radius):
+        self.color = color
+        self.power = power
+        self.radius = radius
+
 class Item:
     def __init__(self, category, use_function=None, type='item', ability=None, holder=None, charges=None):
         self.category = category
@@ -154,7 +160,7 @@ class GameObject:
                  player_stats=None, always_visible=False, interact=None, description="", on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
                  elevation=None, background_color=None, movement_type=0, summon_time = None, zones=[], is_corpse=False,
-                 zombie_type=None, npc =None):
+                 zombie_type=None, npc=None, light=None):
         self.x = x
         self.y = y
         self.char = char
@@ -212,6 +218,7 @@ class GameObject:
         self.npc = npc
         if self.npc:
             self.npc.owner = self
+        self.light = light
 
     @property
     def movement_type(self):
@@ -381,6 +388,12 @@ class GameObject:
 
                 if current_map.tiles[x][y].on_step is not None:
                     current_map.tiles[x][y].on_step(x,y,self)
+
+                if self.light is not None:
+                    for _x in range(max(0, self.x - self.light.radius), min(consts.MAP_WIDTH, self.x + self.light.radius + 1)):
+                        for _y in range(max(0, self.y - self.light.radius),
+                                       min(consts.MAP_WIDTH, self.y + self.light.radius + 1)):
+                            changed_tiles.append((_x,_y))
 
             self.set_position(x,y)
 
@@ -1212,6 +1225,8 @@ def spawn_monster(name, x, y, team='enemy'):
                              movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'),
                              zombie_type=zombie_type)
 
+        monster.light = Light(libtcod.flame, 1, 2)
+
         for i in monster.fighter.inventory:
             i.item.holder = monster
             if i.equipment:
@@ -1871,8 +1886,23 @@ def clear_map():
     libtcod.console_clear(map_con)
 
 
+lighting = [[libtcod.black for x in range(consts.MAP_WIDTH)] for y in range(consts.MAP_HEIGHT)]
+
 def render_map():
-    global changed_tiles, visible_tiles
+    global changed_tiles, visible_tiles, lighting
+
+    if consts.ENABLE_LIGHTING:
+        for x in range(0,consts.MAP_WIDTH):
+            for y in range(0,consts.MAP_HEIGHT):
+                lighting[x][y] = libtcod.dark_gray #global illumination
+        lights = [obj for obj in current_map.objects if obj.light is not None]
+        for ll in lights:
+            for x in range(max(0,ll.x - ll.light.radius), min(consts.MAP_WIDTH, ll.x + ll.light.radius + 1)):
+                for y in range(max(0, ll.y - ll.light.radius), min(consts.MAP_WIDTH, ll.y + ll.light.radius + 1)):
+                    if fov.monster_can_see_tile(ll,x,y):
+                        val = libtcod.color_lerp(ll.light.color, ll.light.color * lighting[x][y],
+                                                 distance(x,y,ll.x,ll.y) / ll.light.radius)
+                        lighting[x][y] = val
 
     if fov.fov_recompute:
         fov.fov_recompute = False
@@ -1895,10 +1925,13 @@ def render_map():
         x = tile[0]
         y = tile[1]
         visible = libtcod.map_is_in_fov(fov.fov_player, x, y)
+        light = libtcod.white
+        if consts.ENABLE_LIGHTING:
+            light = lighting[x][y]
         color_fg = libtcod.Color(current_map.tiles[x][y].color_fg[0], current_map.tiles[x][y].color_fg[1],
-                                 current_map.tiles[x][y].color_fg[2])
+                                 current_map.tiles[x][y].color_fg[2]) * light
         color_bg = libtcod.Color(current_map.tiles[x][y].color_bg[0], current_map.tiles[x][y].color_bg[1],
-                                 current_map.tiles[x][y].color_bg[2])
+                                 current_map.tiles[x][y].color_bg[2]) * light
         tint = clamp(1.0 + 0.25 * float(current_map.tiles[x][y].elevation), 0.1, 2.0)
         libtcod.color_scale_HSV(color_fg, 1.0, tint)
         libtcod.color_scale_HSV(color_bg, 1.0, tint)
