@@ -162,6 +162,7 @@ def create(loadout):
                         int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
                         'island for your crimes. This place will surely be your grave.',
                         movement_type=pathfinding.NORMAL, on_tick=on_tick)
+    instance.light = main.Light(libtcod.white, 5, 10)
     instance.level = 1
     instance.essence = []
     instance.known_spells = []

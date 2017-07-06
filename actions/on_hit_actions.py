@@ -89,7 +89,7 @@ def zombie_on_hit(attacker, target, damage):
         ui.message('%s grabs %s! %s cannot move!' % (
                         syntax.name(attacker).capitalize(),
                         syntax.name(target),
-                        syntax.pronoun(target.name).capitalize()), libtcod.yellow)
+                        syntax.pronoun(target).capitalize()), libtcod.yellow)
         target.fighter.apply_status_effect(effects.immobilized(3))
 
 def on_hit_burn(attacker, target, damage):
@@ -201,4 +201,5 @@ table = {
     'on_hit_chain_lightning': on_hit_chain_lightning,
     'on_hit_knockback': on_hit_knockback,
     'zombie_on_hit': zombie_on_hit,
+    'on_hit_lifesteal': on_hit_lifesteal
 }
