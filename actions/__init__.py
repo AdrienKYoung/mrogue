@@ -32,7 +32,9 @@ def invoke_ability(ability_key, actor, target_override=None, spell_context=None)
         raise Exception("No function for action {}".format(ability_key))
 
     if spell_context is not None:
-        info = dict(info.items() + spell_context.items())
+        for key in spell_context.keys():
+                info[key] = spell_context[key]
+        #info = dict(info.items() + spell_context.items())
 
     if 'require_weapon' in info.keys():
         weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')

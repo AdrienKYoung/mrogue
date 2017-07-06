@@ -230,9 +230,9 @@ library = {
         'ability_heat_ray',
         'Fire a ray of magical heat in a line',
         [
-            {'stamina_cost':20,'charges':3},
-            {'stamina_cost':15,'charges':4},
-            {'stamina_cost':10,'charges':5}
+            {'stamina_cost':20,'charges':3, 'range': 3},
+            {'stamina_cost':15,'charges':4, 'range': 4},
+            {'stamina_cost':10,'charges':5, 'range': 5}
         ],
         14),
 

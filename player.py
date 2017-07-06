@@ -571,8 +571,9 @@ def gain_wis():
     check_skill_up()
 
 def full_heal():
+    import actions.common
     if instance.fighter is not None:
-        actions.heal(100, True)
+        actions.common.heal(100, True)
 
 def purchase_skill():
     learned_skills = main.learned_skills
