@@ -21,6 +21,7 @@ import consts
 import libtcodpy as libtcod
 import log
 import syntax
+import shelve
 
 
 #############################################
@@ -1894,7 +1895,7 @@ def render_map():
     if consts.ENABLE_LIGHTING:
         for x in range(0,consts.MAP_WIDTH):
             for y in range(0,consts.MAP_HEIGHT):
-                lighting[x][y] = libtcod.black #global illumination
+                lighting[x][y] = libtcod.dark_gray #global illumination
         lights = [obj for obj in current_map.objects if obj.light is not None]
         for ll in lights:
             for x in range(max(0,ll.x - ll.light.radius), min(consts.MAP_WIDTH, ll.x + ll.light.radius + 1)):
@@ -2078,7 +2079,7 @@ def enter_map(world_map, direction=None, destination_id=None):
     fov.initialize_fov()
 
     ui.display_fading_text(string.capwords(dungeon.branches[current_map.branch]['name']), 60, 20)
-
+    save_game()
 
 def generate_level(world_map):
     mapgen.make_map(world_map)
@@ -2089,26 +2090,28 @@ def generate_level(world_map):
 #############################################
 
 def main_menu():
-    global windowx, windowy, tilex, tiley
+    global windowx, windowy, tilex, tiley, in_game
 
     mapgen.initialize_features()
 
     while not libtcod.console_is_window_closed():
         render_main_menu_splash()
 
-        choice = ui.menu('', ['NEW GAME', 'QUIT'], 24, x_center=SCREEN_WIDTH() / 2)
+        choice = ui.menu('', ['NEW GAME', 'LOAD', 'QUIT'], 24, x_center=SCREEN_WIDTH() / 2)
         
         if choice == 0: #new game
             if new_game() != 'cancelled':
                 play_game()
-        #elif choice == 1:
-        #    try:
-        #        load_game()
-        #    except:
-        #        ui.msgbox('\n No saved game to load.\n', 24)
-        #        continue
-        #    play_game()
         elif choice == 1:
+            load_game()
+            try:
+                load_game()
+            except:
+                in_game = False
+                ui.menu('\n No saved game to load.\n', [], 30, x_center=SCREEN_WIDTH() / 2)
+                continue
+            play_game()
+        elif choice == 2:
             print('Quitting game...')
             return
 
@@ -2140,13 +2143,12 @@ def new_game():
     # generate map
     dungeon_level = 1
 
+    game_state = 'playing'
+
     if consts.DEBUG_STARTING_MAP is not None:
         enter_map(world.world_maps[consts.DEBUG_STARTING_MAP])
     else:
         enter_map(world.world_maps['beach'])
-
-    # initialize_fov()
-    game_state = 'playing'
 
     player.instance.memory = equipment.Equipment(None,'tome',spell_list=[])
 
@@ -2159,45 +2161,37 @@ def new_game():
 
 
 def save_game():
-    pass
-    #file = shelve.open('savegame', 'n')
-    #file['map'] = dungeon_map
-    #file['objects'] = objects
-    #file['player_index'] = objects.index(player)
-    #file['stairs_index'] = objects.index(stairs)
-    #file['memory'] = memory
-    #file['game_msgs'] = ui.game_msgs
-    #file['game_state'] = game_state
-    #file['dungeon_level'] = dungeon_level
-    #file['learned_skills'] = learned_skills
-    #file.close()
+    import world
+    f = shelve.open('savegame', 'n')
+    f['map'] = world.world_maps
+    f['current_map'] = current_map.name
+    f['player_index'] = current_map.objects.index(player.instance)
+    f['learned_skills'] = learned_skills
+    f['game_msgs'] = ui.game_msgs
+    f['game_state'] = game_state
+    f.close()
 
 
 def load_game():
-    pass
-    #global dungeon_map, objects, player, memory, game_state, dungeon_level, stairs, in_game, selected_monster, learned_skills
+    import world
+    global game_state, current_map, in_game, learned_skills
 
-    #in_game = True
+    in_game = True
 
-    #file = shelve.open('savegame', 'r')
-    #dungeon_map = file['map']
-    #objects = file['objects']
-    #player = objects[file['player_index']]
-    #stairs = objects[file['stairs_index']]
-    #memory = file['memory']
-    #ui.game_msgs = file['game_msgs']
-    #game_state = file['game_state']
-    #dungeon_level = file['dungeon_level']
-    #selected_monster = None
-    #learned_skills = file['learned_skills']
-    #file.close()
+    file = shelve.open('savegame', 'r')
+    world.world_maps = file['map']
+    current_map = world.get_map(file['current_map'])
+    player.instance = current_map.objects[file['player_index']]
+    learned_skills = file['learned_skills']
+    ui.game_msgs = file['game_msgs']
+    game_state = file['game_state']
+    file.close()
 
-    #current_map.pathfinding.initialize(dungeon_map)
-    #fov.initialize_fov()
+    fov.initialize_fov()
 
-    #for y in range(consts.MAP_HEIGHT):
-    #    for x in range(consts.MAP_WIDTH):
-    #        changed_tiles.append((x, y))
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            changed_tiles.append((x, y))
 
 def SCREEN_WIDTH():
     return windowx / tilex

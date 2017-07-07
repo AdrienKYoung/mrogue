@@ -635,6 +635,9 @@ def apply_data(x, y, data):
                 door.send_to_back()
 
 def apply_object(x, y, data):
+    # Don't apply objects on the map's edge
+    if x <= 0 or y <= 0 or x >= consts.MAP_WIDTH - 1 or y >= consts.MAP_HEIGHT - 1:
+        return
     monster_id = None
     npc_id = None
     go_name = None

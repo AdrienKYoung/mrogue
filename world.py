@@ -63,6 +63,11 @@ def opposite(direction):
     else:
         return None
 
+def get_map(map_name):
+    if map_name not in world_maps.keys():
+        raise Exception('Map not found: %s' % map_name)
+    return world_maps[map_name]
+
 def initialize_world():
     import dungeon
     import npc

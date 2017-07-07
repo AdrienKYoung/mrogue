@@ -162,7 +162,7 @@ def create(loadout):
                         int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
                         'island for your crimes. This place will surely be your grave.',
                         movement_type=pathfinding.NORMAL, on_tick=on_tick)
-    instance.light = main.Light(libtcod.white, 2, 10)
+    instance.light = main.Light(libtcod.white, 2, 5)
     instance.level = 1
     instance.essence = []
     instance.known_spells = []
@@ -917,7 +917,7 @@ def _learn_ability(name):
             return
     ability = abilities.data[name]
     instance.perk_abilities.append(abilities.Ability(name, ability['name'], ability['description'],
-                                                     ability['function'], ability['cooldown'], intent=ability.get('intent', 'aggressive')))
+                ability.get('cooldown', 0), ability.get('stamina_cost', 0), intent=ability.get('intent', 'aggressive')))
 
 def on_tick(this):
     if main.has_skill('pyromaniac'):

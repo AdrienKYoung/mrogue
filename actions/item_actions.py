@@ -56,9 +56,24 @@ def offhand_shot(actor, target, context):
     ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
     combat.attack_ex(actor.fighter,target,0,verb=("shoot","shoots"),weapon=weapon)
 
-def potion_essence(essence):
-    return lambda : use_gem(essence)
-
+def use_ruby():
+    return use_gem('fire')
+def use_garnet():
+    return use_gem('earth')
+def use_emerald():
+    return use_gem('life')
+def use_quartz():
+    return use_gem('air')
+def use_aquamarine():
+    return use_gem('water')
+def use_zircon():
+    return use_gem('cold')
+def use_amethyst():
+    return use_gem('arcane')
+def use_diamond():
+    return use_gem('radiance')
+def use_onyx():
+    return use_gem('death')
 def use_gem(essence):
     if player.instance.fighter.item_equipped_count('equipment_ring_of_alchemy') > 0:
         old_essence = essence

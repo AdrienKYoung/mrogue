@@ -808,7 +808,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
         if fighter.owner is player.instance:
             # perks!
-            if main.has_skill('find_the_gap') and weapon.subtype == 'dagger':
+            if main.has_skill('find_the_gap') and weapon is not None and weapon.subtype == 'dagger':
                 pierce_modifier += 1
 
             if main.has_skill('ravager') and target.fighter.armor - (fighter.attack_pierce(weapon) + pierce_modifier) < 1:
