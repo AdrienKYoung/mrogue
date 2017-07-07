@@ -1894,15 +1894,15 @@ def render_map():
     if consts.ENABLE_LIGHTING:
         for x in range(0,consts.MAP_WIDTH):
             for y in range(0,consts.MAP_HEIGHT):
-                lighting[x][y] = libtcod.dark_gray #global illumination
+                lighting[x][y] = libtcod.black #global illumination
         lights = [obj for obj in current_map.objects if obj.light is not None]
         for ll in lights:
             for x in range(max(0,ll.x - ll.light.radius), min(consts.MAP_WIDTH, ll.x + ll.light.radius + 1)):
                 for y in range(max(0, ll.y - ll.light.radius), min(consts.MAP_WIDTH, ll.y + ll.light.radius + 1)):
                     if fov.monster_can_see_tile(ll,x,y):
                         val = libtcod.color_lerp(ll.light.color, ll.light.color * lighting[x][y],
-                                                 distance(x,y,ll.x,ll.y) / ll.light.radius)
-                        lighting[x][y] = val
+                                                 clamp(distance(x,y,ll.x,ll.y) / ll.light.radius, 0, 1))
+                        lighting[x][y] += val
 
     if fov.fov_recompute:
         fov.fov_recompute = False
