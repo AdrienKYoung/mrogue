@@ -42,7 +42,8 @@ class Ability:
     def use(self, actor=None, target=None):
         if self.current_cd < 1:
             info = data[self.ability_id]
-            result = actions.invoke_ability(self.ability_id, actor, target, spell_context={'stamina_cost': self.stamina_cost})
+            result = actions.invoke_ability(self.ability_id, actor, target,
+                                            spell_context={'stamina_cost': self.stamina_cost})
             if result != 'didnt-take-turn' and result != 'cancelled':
                 self.current_cd = self.cooldown
                 if self.stamina_cost != 0 and actor is player.instance:
@@ -883,6 +884,15 @@ data = {
         'intent': 'aggressive',
         'function': charm_actions.summon_weapon,
         'item': 'weapon_soul_reaper',
+    },
+    'ability_wild_growth': {
+        'intent': 'aggressive',
+        'range': 7,
+        'cooldown': 1,
+        'function': monster_actions.wild_growth,
+        'root_duration': '3d2',
+        'damage_per_tick': '1d10',
+        'save_dc': 15
     }
 }
 
@@ -890,7 +900,6 @@ default_abilities = {
     'attack' : Ability('ability_attack', 'Attack','Attack an enemy'),
     'bash' : Ability('ability_bash', 'Bash','Knock an enemy back'),
     'jump' : Ability('ability_jump', 'Jump','Jump to a tile'),
-    'raise shield' : Ability('ability_raise_shield', 'Raise Shield',
-                             'Spend stamina to recover your shield after it has been knocked aside.',
-                              cooldown=10)
+    'raise shield' : Ability('ability_raise_shield', 'Raise Shield', 'Spend stamina to fully recover your shield.',
+                             cooldown=10)
 }

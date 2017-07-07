@@ -259,9 +259,39 @@ def silence(actor,target, context):
             syntax.conjugate(target is player.instance, ('are', 'is'))), libtcod.light_blue)
 
 def confuse(actor,target, context):
-    if monster.fighter.apply_status_effect(
+    import consts
+    if target.fighter.apply_status_effect(
             effects.StatusEffect('confusion', consts.CONFUSE_NUM_TURNS, color=libtcod.pink,
                                  )):
         ui.message('%s %s confused!' % (
-            syntax.name(monster).capitalize(),
-            syntax.conjugate(monster is player.instance, ('are', 'is'))), libtcod.light_blue)
+            syntax.name(target).capitalize(),
+            syntax.conjugate(target is player.instance, ('are', 'is'))), libtcod.light_blue)
+
+def wild_growth(actor, target, context):
+    import mapgen
+    terrain = main.current_map.tiles[target.x][target.y].tile_type
+    if target.fighter and target.fighter.has_status('immobilized'):
+        return 'cancelled'
+    if terrain == 'grass floor':
+        if target.fighter:
+            if target is player.instance or fov.player_can_see(target.x, target.y):
+                ui.message('The grass sprouts a tangle of grasping vines!', libtcod.lime)
+            duration = main.roll_dice(context['root_duration'])
+            immobilized = target.fighter.apply_status_effect(effects.immobilized(
+                duration=duration), dc=context['save_dc'])
+            if immobilized:
+                target.fighter.apply_status_effect(effects.StatusEffect('wild growth', time_limit=duration,
+                           color=libtcod.lime, on_tick=wild_growth_tick, message='You are gripped by writhing vines!',
+                           description='This unit will take damage every turn', cleanseable=True), dc=None)
+    else:
+        if target is player.instance or fov.player_can_see(target.x, target.y):
+            ui.message('Grass springs from the %s...' % terrain, libtcod.lime)
+        grass = mapgen.create_terrain_patch((target.x, target.y), 'grass floor', min_patch=4, max_patch=12, overwrite=True)
+        for tile in grass:
+            main.changed_tiles.append(tile)
+
+def wild_growth_tick(effect, object):
+    import abilities
+    if object is not None and object.fighter is not None:
+        spell = abilities.data['ability_wild_growth']
+        object.fighter.take_damage(main.roll_dice(spell['damage_per_tick'], normalize_size=4))

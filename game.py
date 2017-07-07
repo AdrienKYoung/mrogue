@@ -2103,7 +2103,6 @@ def main_menu():
             if new_game() != 'cancelled':
                 play_game()
         elif choice == 1:
-            load_game()
             try:
                 load_game()
             except:
@@ -2169,6 +2168,7 @@ def save_game():
     f['learned_skills'] = learned_skills
     f['game_msgs'] = ui.game_msgs
     f['game_state'] = game_state
+    f['branch_scaling'] = world.get_branch_scaling()
     f.close()
 
 
@@ -2178,14 +2178,15 @@ def load_game():
 
     in_game = True
 
-    file = shelve.open('savegame', 'r')
-    world.world_maps = file['map']
-    current_map = world.get_map(file['current_map'])
-    player.instance = current_map.objects[file['player_index']]
-    learned_skills = file['learned_skills']
-    ui.game_msgs = file['game_msgs']
-    game_state = file['game_state']
-    file.close()
+    f = shelve.open('savegame', 'r')
+    world.world_maps = f['map']
+    current_map = world.get_map(f['current_map'])
+    player.instance = current_map.objects[f['player_index']]
+    learned_skills = f['learned_skills']
+    ui.game_msgs = f['game_msgs']
+    game_state = f['game_state']
+    world.set_branch_scaling(f['branch_scaling'])
+    f.close()
 
     fov.initialize_fov()
 
@@ -2197,7 +2198,7 @@ def SCREEN_WIDTH():
     return windowx / tilex
 
 def SCREEN_HEIGHT():
-    return (windowy / tiley) - 2 #filthy hack to deal with the header-bar
+    return (windowy / tiley) - 4 #filthy hack to deal with the header-bar
 
 def play_game():
     global key, mouse, game_state, in_game, windowx, windowy

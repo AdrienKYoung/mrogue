@@ -68,6 +68,18 @@ def get_map(map_name):
         raise Exception('Map not found: %s' % map_name)
     return world_maps[map_name]
 
+def get_branch_scaling():
+    import dungeon
+    scaling = {}
+    for branch in dungeon.branches.keys():
+        scaling[branch] = dungeon.branches[branch]['scaling']
+    return scaling
+
+def set_branch_scaling(scaling):
+    import dungeon
+    for branch in scaling.keys():
+        dungeon.branches[branch]['scaling'] = scaling[branch]
+
 def initialize_world():
     import dungeon
     import npc

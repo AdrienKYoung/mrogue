@@ -930,7 +930,7 @@ def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400, cross
 
         for adj in main.adjacent_tiles_diagonal(tile[0], tile[1]):
             adj_tile = map.tiles[adj[0]][adj[1]]
-            if overwrite or (not adj_tile.blocks and not adj_tile.is_water and not adj_tile.is_ramp and \
+            if overwrite or (not adj_tile.blocks and not adj_tile.is_water and not adj_tile.is_ramp and
                     (cross_elevation or adj_tile.elevation == map.tiles[tile[0]][tile[1]].elevation)):
                 adjacent.append(adj)
 
