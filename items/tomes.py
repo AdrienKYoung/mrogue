@@ -3,7 +3,7 @@ import spells
 
 table = {
     'book_lesser_fire' : {
-        'name'          : 'Lesser Book of Fire',
+        'name'          : 'Book of Lesser Flames',
         'category'      : 'book',
         'char'          : '#',
         'color'         : spells.essence_colors['fire'],
@@ -119,18 +119,18 @@ table = {
         'slot'          : 'left hand',
         'description'   : 'A thin book of Life magic, its vivid green cover stained with soil.',
         'essence': 'life',
-        'level' : 4,
+        'level' : 1,
         'spells': [
             'spell_green_touch',
             'spell_fungal_growth',
             'spell_dragonseed',
-            'spell_sacrifice',
-            'spell_corpse_dance'
+            'spell_bramble',
+            'spell_strangleweeds'
         ],
         'levels': [
-            'spell_green_touch', 'spell_fungal_growth', 'spell_green_touch', 'spell_dragonseed', 'spell_fungal_growth', 'spell_sacrifice',
-            'spell_corpse_dance', 'spell_green_touch','spell_fungal_growth', 'spell_dragonseed',
-            'spell_corpse_dance', 'spell_sacrifice', 'spell_corpse_dance'
+            'spell_green_touch', 'spell_fungal_growth', 'spell_green_touch', 'spell_dragonseed', 'spell_fungal_growth', 'spell_bramble',
+            'spell_strangleweeds', 'spell_green_touch','spell_fungal_growth', 'spell_dragonseed',
+            'spell_strangleweeds', 'spell_bramble', 'spell_strangleweeds'
         ],
         'level_costs': [
             1,1,1,2,2,2,3,3,3,3,4,4,4

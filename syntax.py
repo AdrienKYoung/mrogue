@@ -21,8 +21,23 @@ def conjugate(is_player, conjugations):
         return conjugations[0]
     return conjugations[1]
 
-def name(object, possesive=False, proper=False):
+def name(object, possesive=False, reflexive=None):
     _name = object.name
+    proper = False
+    gender = 'neutral'
+    if hasattr(object, 'syntax_data'):
+        proper = object.syntax_data.get('proper', False)
+        gender = object.syntax_data.get('gender', 'neutral')
+    if reflexive == object:
+        if _name == 'player':
+            return 'yourself'
+        else:
+            if get_gender(gender) == 'M':
+                return 'himself'
+            elif get_gender(gender) == 'F':
+                return 'herself'
+            else:
+                return 'itself'
     if object.fighter and object.fighter.team == 'ally':
         article = 'your '
     else:
@@ -49,30 +64,34 @@ def name(object, possesive=False, proper=False):
             return article + _name
 
 
-def pronoun(_name, possesive=False, objective=False, gender='N'):
+def pronoun(object, possesive=False, objective=False):
+    _name = object.name
+    gender = 'neutral'
+    if hasattr(object, 'syntax_data'):
+        gender = object.syntax_data.get('gender', 'neutral')
     if _name == 'player':
         if possesive:
             return 'your'
         else:
             return 'you'
     if possesive:
-        if gender == 'M':
+        if get_gender(gender) == 'M':
             return 'his'
-        elif gender == 'F':
+        elif get_gender(gender) == 'F':
             return 'her'
         else:
             return 'its'
     elif objective:
-        if gender == 'M':
+        if get_gender(gender) == 'M':
             return 'him'
-        elif gender == 'F':
+        elif get_gender(gender) == 'F':
             return 'her'
         else:
             return 'it'
     else:
-        if gender == 'M':
+        if get_gender(gender) == 'M':
             return 'he'
-        elif gender == 'F':
+        elif get_gender(gender) == 'F':
             return 'she'
         else:
             return 'it'
@@ -88,3 +107,10 @@ def relative_adjective(a,b,adjectives):
         return adjectives[1]
     else:
         return ""
+
+def get_gender(g):
+    if g == 'male' or g == 'Male' or g == 'm' or g == 'M':
+        return 'M'
+    elif g == 'female' or g == 'Female' or g == 'f' or g == 'F':
+        return 'F'
+    return 'N'

@@ -23,16 +23,17 @@ import ui
 import collections
 import fov
 import syntax
+import effects
 
 class Equipment:
     def __init__(self, slot, category, max_hp_bonus=0, strength_dice_bonus=0,
                  armor_bonus=0, evasion_bonus=0, spell_power_bonus=0, stamina_cost=0, str_requirement=0, shred_bonus=0,
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
-                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_type=None, attack_speed_bonus=0,
+                 break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_types=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
-                 resistances=[], immunities=[], modifiers = {}, base_id=None, _range=1,
+                 resistances={}, modifiers = {}, base_id=None, _range=1,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
-                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0):
+                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None, will_bonus=0, fortitude_bonus=0):
         self.is_equipped = False
         self.slot = slot
         self.base_id = base_id
@@ -52,8 +53,9 @@ class Equipment:
         self._max_hp_bonus = max_hp_bonus
         self._armor_bonus = armor_bonus
         self._evasion_bonus = evasion_bonus
-        self._resistances = list(resistances)
-        self._immunities = list(immunities)
+        self._resistances = dict(resistances)
+        self._will_bonus = will_bonus
+        self._fortitude_bonus = fortitude_bonus
 
         self._sh_max = sh_max
         self._sh_recovery = sh_recovery
@@ -63,7 +65,7 @@ class Equipment:
             self.sh_timer = self.sh_recovery
             self.sh_points = self.sh_max
 
-        self.damage_type = damage_type
+        self.damage_types = damage_types
         self.weapon_dice = weapon_dice
         self._strength_dice_bonus = strength_dice_bonus
         self._on_hit = on_hit  # expects list
@@ -81,6 +83,8 @@ class Equipment:
 
         self._spell_power_bonus = spell_power_bonus
         self._spell_resist_bonus = spell_resist_bonus
+
+        self.status_effect = status_effect
 
         self.essence = essence
         self.level = 0
@@ -135,6 +139,14 @@ class Equipment:
         return self._evasion_bonus + self.get_bonus('evasion_bonus')
 
     @property
+    def will_bonus(self):
+        return self._will_bonus + self.get_bonus('will_bonus')
+
+    @property
+    def fortitude_bonus(self):
+        return self._fortitude_bonus + self.get_bonus('fortitude_bonus')
+
+    @property
     def accuracy_bonus(self):
         return self._accuracy_bonus + self.get_bonus('accuracy_bonus')
 
@@ -144,11 +156,15 @@ class Equipment:
 
     @property
     def resistances(self):
-        return self._resistances + [mod.get('resistance') for mod in self.modifiers.values() if mod.get('resistance') is not None]
-
-    @property
-    def immunities(self):
-        return self._immunities + [mod.get('resistance') for mod in self.modifiers.values() if mod.get('immunities') is not None]
+        resists = dict(self._resistances)
+        mod_resists = [mod.get('resistance') for mod in self.modifiers.values() if mod.get('resistance') is not None]
+        for r in mod_resists:
+            if r in resists.keys() and r[1] != 'immune':
+                if resists[r[0]] != 'immune':
+                    resists[r[0]] += r[1]
+            else:
+                resists[r[0]] = r[1]
+        return resists
 
     @property
     def strength_dice_bonus(self):
@@ -204,6 +220,8 @@ class Equipment:
 
     @property
     def sh_max(self):
+        if self._sh_max <= 0:
+            return 0
         return self._sh_max + self.get_bonus('sh_max_bonus')
 
     @property
@@ -221,6 +239,9 @@ class Equipment:
             return self.equip()
 
     def equip(self, no_message=False):
+        if self.is_equipped:
+            return  # already equipped
+
         old_equipment = None
         if self.slot == 'ring':
             rings = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
@@ -228,7 +249,8 @@ class Equipment:
                 options_ex = collections.OrderedDict()
                 options_ex['a'] = {'option': {'text': rings[0].name}}
                 options_ex['b'] = {'option': {'text': rings[1].name}}
-                old_equipment = rings[ord(ui.menu_ex("Unequip which ring?", options_ex, 40)) - ord('a')]
+                index = ui.menu_ex("Unequip which ring?", options_ex, 40, return_as_char=True)
+                old_equipment = rings[ord(index) - ord('a')].equipment
         else:
             old_equipment = main.get_equipped_in_slot(self.holder.fighter.inventory, self.slot)
 
@@ -255,6 +277,13 @@ class Equipment:
         self.is_equipped = True
         if self.holder is player.instance and not no_message:
             ui.message('Equipped ' + self.owner.name + '.', libtcod.orange)
+        if self.status_effect is not None and self.holder.fighter is not None:
+            self.holder.fighter.apply_status_effect(self.status_effect(None))
+        if self.category == 'book' and self.holder == player.instance:
+            for spell, level in self.get_active_spells().items():
+                if self.spell_charges[spell] < spells.library[spell].max_spell_charges(level):
+                    player.instance.fighter.apply_status_effect(effects.meditate())
+                    break
         return 'success'
 
     def dequip(self, no_message=False):
@@ -273,6 +302,12 @@ class Equipment:
         self.is_equipped = False
         if not no_message and self.holder is player.instance:
             ui.message('Dequipped ' + self.owner.name + ' from ' + self.slot + '.', libtcod.orange)
+        if self.category == 'book' and self.holder is player.instance:
+            player.instance.fighter.remove_status('meditate')
+        if self.status_effect is not None:
+            dummy_effect = self.status_effect()
+            if self.holder.fighter is not None:
+                self.holder.fighter.remove_status(dummy_effect.name)
         return 'success'
 
     def print_description(self, console, x, y, width):
@@ -286,7 +321,11 @@ class Equipment:
             print_height += 1
             libtcod.console_set_default_foreground(console, libtcod.white)
         libtcod.console_print(console, x, y + print_height, 'Slot: ' + self.slot)
-        print_height += 2
+        print_height += 1
+        if self.subtype is not None:
+            libtcod.console_print(console, x, y + print_height, 'Category: ' + self.subtype)
+            print_height += 1
+        print_height += 1
         if self.level_progression is not None and self.level_progression != 0:
             libtcod.console_print(console, x, y + print_height, 'Level: ' + str(self.level) + '/' + str(self.max_level))
             print_height += 1
@@ -459,6 +498,6 @@ class Equipment:
             ui.message('%s %s %s shield.' %
                        (syntax.name(self.holder).capitalize(),
                         syntax.conjugate(self.holder is player.instance, ('raise', 'raises')),
-                        syntax.pronoun(self.holder.name, possesive=True)), libtcod.blue)
+                        syntax.pronoun(self.holder, possesive=True)), libtcod.blue)
         self.raised = True
         self.sh_points = self.sh_max

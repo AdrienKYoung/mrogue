@@ -7,8 +7,6 @@ import combat
 import actions
 import spells
 import effects
-import dungeon
-import mapgen
 import fov
 
 def select_essence(data,options='any'):
@@ -69,38 +67,21 @@ def shard_of_creation():
     if essence is None:
         return 'didnt-take-turn'
 
-    ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-    (x, y) = ui.target_tile(5)
-
-    if x is None:
-        return 'didnt-take-turn'
-
-    terrain = None
     if essence == 'fire':
-        terrain = 'lava'
+        ability = 'ability_create_terrain_lava'
     elif essence == 'life':
-        terrain = 'grass floor'
+        ability = 'ability_create_terrain_grass'
     elif essence == 'earth':
-        terrain = dungeon.branches[main.current_map.branch]['default_wall']
+        ability = 'ability_create_terrain_wall'
     elif essence == 'water':
-        terrain = 'shallow water'
-
-    tiles = main.adjacent_tiles_orthogonal(x,y)
-    tiles.append((x,y))
-
-    if terrain is not None:
-        main.create_temp_terrain(terrain,tiles,100)
-        if terrain == 'shallow water':
-            main.create_temp_terrain('deep water', [(x, y)], 100)
-        if terrain == 'grass floor':
-            mapgen.scatter_reeds(tiles, 75)
-            for t in tiles:
-                fov.set_fov_properties(t[0], t[1], len(main.get_objects(t[0], t[1], lambda o: o.blocks_sight)) > 0,
-                                       elevation=main.current_map.tiles[t[0]][t[1]].elevation)
-        player.instance.essence.remove(essence)
-        return 'success'
+        ability = 'ability_create_terrain_water'
     else:
-        return 'didnt-take-turn'
+        return 'failure'
+
+    result = actions.invoke_ability(ability, player.instance)
+    if result == 'success':
+        player.instance.essence.remove(essence)
+    return result
 
 def farmers_talisman():
     essence = select_essence(spells.charm_farmers_talisman)
@@ -110,15 +91,9 @@ def farmers_talisman():
     result = 'didnt-take-turn'
 
     if essence == 'life':
-        result = actions.summon_ally('monster_lifeplant',15)
+        result = actions.invoke_ability('ability_summon_lifeplant', player.instance)
     elif essence == 'earth':
-        ui.message_flush('Left-click a target tile, or right-click to cancel.', libtcod.white)
-        (x, y) = ui.target_tile(1)
-        if x is None:
-            return 'didnt-take-turn'
-        direction = x - player.instance.x, y - player.instance.y
-        depth = 3 + libtcod.random_get_int(0, 1, 3)
-        result = actions.dig_line(player.instance.x, player.instance.y, direction[0], direction[1], depth)
+        result = actions.invoke_ability('ability_dig', player.instance)
 
     if result == 'success':
         player.instance.essence.remove(essence)
@@ -132,11 +107,13 @@ def primal_totem():
     result = 'didnt-take-turn'
 
     if essence == 'fire':
-        result = actions.berserk_self(player.instance)
+        result = actions.invoke_ability('ability_berserk', player.instance)
     elif essence == 'air':
-        result = actions.battle_cry(player.instance)
+        player.instance.fighter.adjust_stamina(100)
+        ui.message('Fresh air fills your lungs!', spells.essence_colors['air'])
+        result = 'success'
     elif essence == 'death':
-        result = actions.summon_equipment('weapon_soul_reaper')
+        result = actions.invoke_ability('ability_summon_soul_reaper', player.instance)
 
     if result == 'success':
         player.instance.essence.remove(essence)
@@ -150,11 +127,11 @@ def holy_symbol():
     result = 'didnt-take-turn'
 
     if essence == 'life':
-        result = actions.mass_heal(player.instance)
+        result = actions.invoke_ability('ability_mass_heal', player.instance)
     elif essence == 'water':
-        result = actions.mass_cleanse(player.instance)
+        result = actions.invoke_ability('ability_holy_water', player.instance)
     elif essence == 'radiance':
-        result = actions.mass_reflect(player.instance)
+        result = actions.invoke_ability('ability_mass_reflect', player.instance)
 
     if result == 'success':
         player.instance.essence.remove(essence)
@@ -172,30 +149,31 @@ def charm_resist():
     player.instance.essence.remove(essence)
 
 def charm_raw():
+    from actions import charm_actions, common, spell_actions, monster_actions, abilities
     essence = select_essence(spells.charm_raw_effects)
     if essence is None:
         return 'didnt-take-turn'
 
     elif essence == 'fire':
-        result = actions.flame_wall()
+        result = actions.invoke_ability('ability_flame_wall', player.instance)
     elif essence == 'life':
-        result = actions.heal(amount=20, use_percentage=False)
+        result = common.heal(amount=20, use_percentage=False)
     elif essence == 'earth':
-        result = actions.hardness()
+        result = charm_actions.hardness(player.instance)
     elif essence == 'water':
-        result = actions.cleanse()
+        result = charm_actions.cleanse()
     elif essence == 'cold':
-        result = actions.flash_frost()
+        result = actions.invoke_ability('ability_flash_frost', player.instance)
     elif essence == 'air':
         result = player.jump(player.instance, 3, 0)
         if result != 'didnt-take-turn':
             ui.message('A gust of air lifts you to your destination', spells.essence_colors['air'])
     elif essence == 'arcane':
-        result = actions.create_teleportal(player.instance.x, player.instance.y)
+        result = actions.invoke_ability('ability_teleportal', player.instance)
     elif essence == 'death':
-        result = actions.raise_zombie()
+        result = actions.invoke_ability('ability_raise_zombie', player.instance)
     elif essence == 'radiance':
-        result = actions.invulnerable()
+        result = charm_actions.invulnerable(player.instance, player.instance, None)
     elif essence == 'void':
         result = 'didnt-take-turn' #TODO: mutate self
     else:
@@ -213,11 +191,11 @@ def volatile_orb():
     result = 'didnt-take-turn'
 
     if essence == 'fire':
-        result = actions.firebomb()
+        result = actions.invoke_ability('ability_fire_bomb', player.instance)
     elif essence == 'cold':
-        result = actions.icebomb()
+        result = actions.invoke_ability('ability_ice_bomb', player.instance)
     elif essence == 'arcane':
-        result = actions.timebomb()
+        result = actions.invoke_ability('ability_time_bomb', player.instance)
 
     if result != 'didnt-take-turn' and result != 'cancelled':
         player.instance.essence.remove(essence)
@@ -228,22 +206,7 @@ def elementalists_lens():
     if essence is None:
         return 'didnt-take-turn'
 
-    summon = None
-    duration = 0
-
-    if essence == 'fire':
-        summon = 'monster_fire_elemental'
-        duration = 15 + main.roll_dice('1d10')
-    elif essence == 'water':
-        summon = 'monster_water_elemental'
-        duration = 30 + main.roll_dice('1d10')
-    elif essence == 'earth':
-        summon = 'monster_earth_elemental'
-        duration = 50 + main.roll_dice('1d10')
-    elif essence == 'air':
-        summon = 'monster_air_elemental'
-        duration = 30 + main.roll_dice('1d10')
-    result = actions.summon_ally(summon, duration)
+    result = actions.invoke_ability('ability_summon_' + essence + '_elemental', player.instance)
 
     if result != 'didnt-take-turn' and result != 'cancelled':
         ui.message('An elemental appears before you.', color=spells.essence_colors[essence])
@@ -251,6 +214,7 @@ def elementalists_lens():
     return result
 
 def prayer_beads():
+    import actions.charm_actions
     essence = select_essence(spells.charm_prayer_beads)
     if essence is None:
         return 'didnt-take-turn'
@@ -258,13 +222,10 @@ def prayer_beads():
     result = 'didnt-take-turn'
 
     if essence == 'life':
-        result = actions.healing_trance()
+        result = actions.invoke_ability('ability_healing_trance', player.instance)
     elif essence == 'air':
-        player.instance.fighter.adjust_stamina(100)
-        ui.message('Fresh air fills your lungs!', spells.essence_colors['air'])
+        player.instance.fighter.apply_status_effect(effects.levitating())
         result = 'success'
-    elif essence == 'water':
-        result = actions.holy_water()
 
     if result != 'didnt-take-turn' and result != 'cancelled':
         player.instance.essence.remove(essence)

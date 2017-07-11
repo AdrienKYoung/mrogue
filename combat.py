@@ -14,26 +14,26 @@
 #You should have received a copy of the GNU General Public License
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
+
+import consts
+import fov
 import game as main
 import libtcodpy as libtcod
-import math
-import ui
-import consts
-import player
-import fov
-import syntax
 import pathfinding
-import abilities
-import actions
+import player
 import spells
+import syntax
+import ui
+import effects
 
 class Fighter:
 
     def __init__(self, hp=1, stamina=0, armor=0, evasion=0, accuracy=25, spell_power=0, death_function=None, breath=6,
-                 can_breath_underwater=False, resistances=[], weaknesses=[], immunities=[], inventory=[], on_hit=None, base_shred=0,
+                 can_breath_underwater=False, resistances={}, inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
-                 damage_bonus=0, monster_str_dice=None, spell_resist=0, team='enemy', on_get_hit=None, stealth=None,
-                 attributes=[], _range=1, on_get_kill=None):
+                 damage_bonus=0, monster_str_dice=None, team='enemy', on_get_hit=None, stealth=None,
+                 attributes=[], _range=1, on_get_kill=None, will=0, fortitude=0):
         self.owner = None
         self.base_max_hp = hp
         self.hp = hp
@@ -43,14 +43,11 @@ class Fighter:
         self.base_armor = armor
         self.base_evasion = evasion
         self.base_spell_power = spell_power
-        self.base_spell_resist = spell_resist
         self.base_accuracy = accuracy
         self.max_breath = breath
         self.breath = breath
         self.can_breath_underwater = can_breath_underwater
-        self.resistances = list(resistances)
-        self.weaknesses = list(weaknesses)
-        self.immunities = list(immunities)
+        self._resistances = dict(resistances)
         self.inventory = list(inventory)
         self.attributes = list(attributes)
         self.base_shred = base_shred
@@ -69,11 +66,19 @@ class Fighter:
         self.stealth = stealth
         self.range = _range
         self.on_get_kill = on_get_kill
+        self.base_will = will
+        self.base_fortitude = fortitude
 
         self.base_damage_bonus = damage_bonus
         self.monster_str_dice = monster_str_dice
 
+        self.permanent_ally = False  # Unit will follow player through rooms
+
     def print_description(self, console, x, y, width):
+        if self.owner is player.instance:
+            y += 1
+            return ui.character_info_screen(console, x, y, width)
+
         print_height = 1
         # Print ally status
         if self.team == 'ally':
@@ -101,15 +106,17 @@ class Fighter:
             s += '%'
             libtcod.console_print(console, x, y + print_height, s)
             print_height += 1
-            s = '%s Accuracy: %d%%' % (syntax.pronoun(self.owner.name, possesive=True).capitalize(), int(100.0 * get_chance_to_hit(player.instance, self.accuracy())))
+            s = '%s Accuracy: %d%%' % (syntax.pronoun(self.owner, possesive=True).capitalize(), int(100.0 * get_chance_to_hit(player.instance, self.accuracy())))
             s += '%'
             libtcod.console_print(console, x, y + print_height, s)
             print_height += 1
 
-        for effect in self.status_effects:
-            libtcod.console_set_default_foreground(console, effect.color)
-            libtcod.console_print(console, x, y + print_height, effect.description)
-            print_height += 1
+        for e in self.status_effects:
+            libtcod.console_set_default_foreground(console, e.color)
+            h = libtcod.console_get_height_rect(console, x, y + print_height, width - 4, 10, e.description)
+            libtcod.console_print_rect(console, x, y + print_height, width - 4, h, e.description)
+            print_height += h
+
         libtcod.console_set_default_foreground(console, libtcod.white)
 
         return print_height
@@ -147,26 +154,35 @@ class Fighter:
                 self.get_hit(attacker,damage)
                 self.hp -= damage
                 if self.hp <= 0:
-                    self.drop_essence()
+                    from actions import on_death_actions
+                    is_summoned = self.owner.summon_time is not None
+                    if not is_summoned:
+                        self.drop_essence()
                     self.owner.is_corpse = True
-                    function = self.death_function
+                    function = on_death_actions.table[self.death_function['function']]
                     if function is not None:
                         if sh is not None:
                             sh.sh_points = sh.sh_max
                             sh.timer = 0
                             sh.raised = True
-                        function(self.owner)
-                    if attacker is not None and attacker.fighter is not None and attacker.fighter.on_get_kill is not None:
+                        function(self.owner, self.death_function)
+                    if attacker is not None and attacker.fighter is not None and attacker.fighter.on_get_kill is not None and not is_summoned:
                         attacker.fighter.on_get_kill(attacker,self,damage)
                 if affect_shred:
                     self.time_since_last_damaged = 0
         return damage
 
+    def get_shredded(self, amount):
+        if amount > 0:
+            self.shred += min(amount, self.armor)
+            self.time_since_last_damaged = 0
+
     def get_hit(self, attacker,damage):
-        if self.owner.behavior:
+        if self.owner.behavior is not None:
             self.owner.behavior.get_hit(attacker)
-        if self.on_get_hit:
-            self.on_get_hit(self.owner, attacker, damage)
+        if self.on_get_hit is not None:
+            from actions import on_damaged_actions
+            on_damaged_actions.table[self.on_get_hit](self.owner, attacker, damage)
 
     def drop_essence(self):
         if hasattr(self.owner, 'essence') and self.owner is not player.instance:
@@ -213,6 +229,10 @@ class Fighter:
     def attack(self, target):
         result = 'failed'
         attacks = self.calculate_attack_count()
+        if target.fighter is None:
+            return 'failed'
+        if target.fighter.stealth is not None and target.fighter.stealth < self.owner.distance_to(target):
+            return 'failed' # cannot attack targets that cannot be seen
         for i in range(attacks):
             result = attack_ex(self, target, self.calculate_attack_stamina_cost(), on_hit=self.on_hit)
             if result == 'failed':
@@ -281,6 +301,15 @@ class Fighter:
         elif self.breath < self.max_breath:
             self.breath += 1
 
+        # Check terrain
+        if self.owner.movement_type & pathfinding.FLYING != pathfinding.FLYING:
+            if main.current_map.tiles[self.owner.x][self.owner.y].tile_type == 'lava':
+                damage = roll_damage_ex('1d200', '0d0', None, 0, ['fire'], 1, self.resistances)
+                self.get_shredded(5)
+                if damage > 0 and (self.owner is player.instance or fov.player_can_see(self.owner.x, self.owner.y)):
+                    ui.message("The lava melts %s, dealing %d damage!" % (syntax.name(self.owner), damage), libtcod.flame)
+                self.take_damage(damage)
+
         # Manage status effect timers
         removed_effects = []
         for effect in self.status_effects:
@@ -291,10 +320,10 @@ class Fighter:
                 if effect.time_limit == 0:
                     removed_effects.append(effect)
         for effect in removed_effects:
-            if effect.on_end is not None:
-                effect.on_end(effect,self.owner)
             if effect in self.status_effects:  # It can sometimes be removed in the on-tick function
                 self.status_effects.remove(effect)
+            if effect.on_end is not None:
+                effect.on_end(effect,self.owner)
 
         # Manage ability cooldowns
         for ability in self.abilities:
@@ -302,26 +331,42 @@ class Fighter:
                 ability.on_tick()
 
 
-    def apply_status_effect(self, new_effect,supress_message=False):
-        # check for immunity
-        if new_effect.name == 'burning' and self.owner is player.instance and main.has_skill('pyromaniac'):
-            return False
+    def apply_status_effect(self, new_effect, dc=20, source_fighter=None, supress_message=False):
+        fighter = self
+        if self.has_status('reflect-magic') and new_effect.target_defense is not None and source_fighter is not None:
+            fighter = source_fighter
 
-        for resist in self.getResists() + self.getImmunities():
+        # check for immunity
+        if new_effect.name == 'burning' and fighter.owner is player.instance and main.has_skill('pyromaniac'):
+            return False
+        for resist in fighter.immunities:
             if resist == new_effect.name:
-                if fov.player_can_see(self.owner.x, self.owner.y):
-                    ui.message('%s %s.' % (syntax.name(self.owner).capitalize(), syntax.conjugate(
-                                    self.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
+                if fov.player_can_see(fighter.owner.x, fighter.owner.y):
+                    ui.message('%s %s.' % (syntax.name(fighter.owner).capitalize(), syntax.conjugate(
+                        fighter.owner is player.instance, ('are immune', 'is immune'))), libtcod.gray)
+                return False
+
+        # roll to hit
+        if new_effect.target_defense is not None:
+            resist_bonus = 0
+            for resist in fighter.resistances.keys():
+                if resist == new_effect.name:
+                    resist_bonus = fighter.resistances[resist]
+                    break
+            if not roll_to_hit(fighter.owner, dc, new_effect.target_defense, defense_bonus=resist_bonus):
+                if fov.player_can_see(fighter.owner.x, fighter.owner.y):
+                    ui.message('%s %s.' % (syntax.name(fighter.owner).capitalize(), syntax.conjugate(
+                        fighter.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
                 return False
 
         if new_effect.time_limit is not None:
            new_effect.time_limit = int(new_effect.time_limit *
-                                       (1 - (self.item_equipped_count('equipment_ring_of_fortitude') * 0.3)))
+                                       (1 - (fighter.item_equipped_count('equipment_ring_of_fortitude') * 0.3)))
 
 
         # check for existing matching effects
         add_effect = True
-        for effect in self.status_effects:
+        for effect in fighter.status_effects:
             if effect.name == new_effect.name:
                 if 'refresh' in new_effect.stacking_behavior:
                     # refresh the effect
@@ -343,10 +388,10 @@ class Fighter:
                     add_effect = False
 
         if add_effect:
-            self.status_effects.append(new_effect)
+            fighter.status_effects.append(new_effect)
         if new_effect.on_apply is not None:
-            new_effect.on_apply(new_effect, self.owner)
-        if new_effect.message is not None and self.owner is player.instance and not supress_message:
+            new_effect.on_apply(new_effect, fighter.owner)
+        if new_effect.message is not None and fighter.owner is player.instance and not supress_message:
             ui.message(new_effect.message, new_effect.color)
 
         return True
@@ -361,6 +406,8 @@ class Fighter:
         for effect in self.status_effects:
             if effect.name == name:
                 self.status_effects.remove(effect)
+                if effect.on_end is not None:
+                    effect.on_end(effect, self.owner)
                 return
 
     def has_attribute(self, name):
@@ -392,7 +439,7 @@ class Fighter:
         if self.owner.player_stats and weapon is not None:
             flat_bonus -= 5 * max(weapon.str_requirement - self.owner.player_stats.str, 0)
 
-        return max((self.base_accuracy + flat_bonus) * mod, 1)
+        return max(int((self.base_accuracy + flat_bonus) * mod), 1)
 
     def damage_bonus(self):
         return self.base_damage_bonus
@@ -403,7 +450,7 @@ class Fighter:
 
         bonus = 0
         if weapon is not None:
-            bonus = weapon._strength_dice_bonus
+            bonus = weapon.strength_dice_bonus
 
         bonus += sum(equipment.strength_dice_bonus for equipment in main.get_all_equipped(self.inventory) if equipment.category != "weapon")
         if self.owner.player_stats:
@@ -492,31 +539,42 @@ class Fighter:
     @property
     def evasion(self):
         bonus = sum(equipment.evasion_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus * mul(effect.evasion_mod for effect in self.status_effects))
+        mul_bonus = 1.0 * mul(effect.evasion_mod for effect in self.status_effects)
         if self.has_status('sluggish') or self.has_status('cursed'):
             bonus -= 5
         if self.owner.player_stats:
-            return max(self.base_evasion + (self.owner.player_stats.agi / 3) + bonus, 0)
+            return max(int((self.base_evasion + (self.owner.player_stats.agi / 3) + bonus) * mul_bonus), 0)
         else:
-            return max(self.base_evasion + bonus, 0)
+            return max(int((self.base_evasion + bonus) * mul_bonus), 0)
 
     @property
-    def spell_power(self):
+    def will(self):
+        bonus = sum(equipment.will_bonus for equipment in main.get_all_equipped(self.inventory))
+        mul_bonus = 1.0 * mul(effect.will_mod for effect in self.status_effects)
+        if self.owner.player_stats:
+            return max(int((self.base_will + (self.owner.player_stats.wiz / 3) + bonus) * mul_bonus), 0)
+        else:
+            return max(int((self.base_will + bonus) * mul_bonus), 0)
+
+    @property
+    def fortitude(self):
+        bonus = sum(equipment.fortitude_bonus for equipment in main.get_all_equipped(self.inventory))
+        mul_bonus = 1.0 * mul(effect.fortitude_mod for effect in self.status_effects)
+        if self.owner.player_stats:
+            return max(int((self.base_fortitude + (self.owner.player_stats.con / 3) + bonus) * mul_bonus), 0)
+        else:
+            return max(int((self.base_fortitude + bonus) * mul_bonus), 0)
+
+    @property
+    def spell_power(self, elements=[]):
         bonus = sum(equipment.spell_power_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus * mul(effect.spell_power_mod for effect in self.status_effects))
+        mul_bonus = 1.0 * mul(effect.spell_power_mod for effect in self.status_effects)
         if self.owner.player_stats:
-            return self.base_spell_power + self.owner.player_stats.int + bonus
+            for s_e in elements:
+                bonus += main.skill_value("{}_affinity".format(s_e))
+            return int((self.base_spell_power + self.owner.player_stats.int + bonus) * mul_bonus)
         else:
-            return self.base_spell_power + bonus
-
-    @property
-    def spell_resist(self):
-        bonus = sum(equipment.spell_resist_bonus for equipment in main.get_all_equipped(self.inventory))
-        bonus = int(bonus * mul(effect.spell_resist_mod for effect in self.status_effects))
-        if self.owner.player_stats:
-            return self.base_spell_resist + int(self.owner.player_stats.wiz/4) + bonus
-        else:
-            return self.base_spell_resist + bonus
+            return int((self.base_spell_power + bonus) * mul_bonus)
 
     @property
     def max_hp(self):
@@ -564,19 +622,33 @@ class Fighter:
                 bonus += -i.weight
         return self.owner.player_stats.str * 2 + bonus
 
-    def getResists(self):
-        from_equips = reduce(lambda a,b: a | set(b.resistances), main.get_all_equipped(self.inventory), set())
-        from_effects = reduce(lambda a,b: a | set(b.resistance_mod), self.status_effects, set())
-        return list(set(self.resistances) | from_equips | from_effects)
+    @property
+    def resistances(self):
+        resists = dict(self._resistances)
+        for e in main.get_all_equipped(self.inventory):
+            for r in e.resistances.keys():
+                if r in resists.keys() and e.resistances[r] != 'immune':
+                    if resists[r] != 'immune':
+                        resists[r] += e.resistances[r]
+                else:
+                    resists[r] = e.resistances[r]
+        for e in self.status_effects:
+            for r in e.resistance_mod.keys():
+                if r in resists.keys() and e.resistance_mod[r] != 'immune':
+                    if resists[r] != 'immune':
+                        resists[r] += e.resistance_mod[r]
+                else:
+                    resists[r] = e.resistance_mod[r]
 
-    def getImmunities(self):
-        from_equips = reduce(lambda a,b: a | set(b.immunities), main.get_all_equipped(self.inventory), set())
-        from_effects = reduce(lambda a,b: a | set(b.immunity_mod), self.status_effects, set())
-        return list(set(self.immunities) | from_equips | from_effects)
+        return resists
 
-    def getWeaknesses(self):
-        from_effects = reduce(lambda a, b: a | set(b.weakness_mod), self.status_effects, set())
-        return list(set(self.weaknesses) | from_effects)
+    @property
+    def immunities(self):
+        i = []
+        for resist in self.resistances.keys():
+            if self.resistances[resist] == 'immune':
+                i.append(resist)
+        return i
 
     def get_equipped_shield(self):
         shield = main.get_equipped_in_slot(self.inventory, 'floating shield')
@@ -618,7 +690,6 @@ hit_tables = {
     }
 }
 
-import effects
 location_damage_tables = {
     'body' : {
         'damage':1.0,
@@ -723,13 +794,11 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
         damage_mod = location_damage_tables[location]['damage']
 
         # Attacks against stunned targets are critical
-
-        if weapon and ((target.fighter.has_status('stunned') and verb != 'bashes')
-                       or target.fighter.has_status('off balance')):
-            damage_mod *= weapon.crit_bonus
-
-        if target.fighter.has_status('stung'):
-            damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
+        if (target.fighter.has_status('stunned') or target.fighter.has_status('off balance')) and verb != 'bashes':
+            if weapon:
+                damage_mod *= weapon.crit_bonus
+            else:
+                damage_mod *= 2.0 # unarmed crit bonus
 
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
@@ -738,20 +807,21 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             damage_mod *= 1.5
 
         if fighter.owner is player.instance:
-            #perks!
-            if main.has_skill('find_the_gap') and weapon.subtype == 'dagger':
+            # perks!
+            if main.has_skill('find_the_gap') and weapon is not None and weapon.subtype == 'dagger':
                 pierce_modifier += 1
 
             if main.has_skill('ravager') and target.fighter.armor - (fighter.attack_pierce(weapon) + pierce_modifier) < 1:
                 damage_mod *= 1.0 + main.skill_value('ravager')
 
             if main.has_skill('lord_of_the_fray'):
-                damage_mod *= 1.1 * len(main.get_objects(fighter.owner.x,fighter.owner.y,distance=1,
+                damage_mod *= 1.15 * len(main.get_objects(fighter.owner.x,fighter.owner.y,distance=1,
                                             condition=lambda o: o.fighter is not None and o.fighter.team == 'enemy'))
 
             if main.has_skill('rising_storm'):
                 if hasattr(fighter.owner,'rising_storm_last_attack') and fighter.owner.rising_storm_last_attack > 2:
                     damage_mod *= 1.5
+                    fighter.remove_status('Rising Storm')
                     fighter.owner.rising_storm_last_attack = 0
 
         damage_mod *= mul(effect.attack_power_mod for effect in fighter.status_effects)
@@ -760,18 +830,10 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             damage_mod *= damage_multiplier
 
         # weapon-specific damage verbs
-        if weapon is not None and weapon.damage_type is not None:
-            hit_type = weapon.damage_type
+        if weapon is not None and weapon.damage_types is not None:
+            hit_type = weapon.damage_types
         else:
-            hit_type = 'bludgeoning'
-
-        # dark immunity
-        if target.fighter.has_status('lichform') and hit_type == 'dark':
-            ui.message('%s %s unnaffected by dark energy!' % (
-                syntax.name(target),
-                syntax.conjugate(fighter.owner is player.instance, ('are', 'is'))),
-                       libtcod.darker_crimson)
-            return 'immune'
+            hit_type = ['bludgeoning']
 
         # perks
         if fighter.owner is player.instance:
@@ -806,18 +868,18 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             strength_dice = "{}d{}".format(strength_dice_number, str_dice_size)
 
         damage = roll_damage_ex(weapon_dice,strength_dice, target.fighter.armor,
-                            fighter.attack_pierce(weapon) + pierce_modifier, hit_type, damage_mod, target.fighter.getResists(),
-                            target.fighter.getWeaknesses(), flat_bonus=fighter.damage_bonus(), immunities=target.fighter.getImmunities())
+                            fighter.attack_pierce(weapon) + pierce_modifier, hit_type, damage_mod, target.fighter.resistances, flat_bonus=fighter.damage_bonus())
+
+        # Shred armor
+        if not target.fighter.has_status('invulnerable'):
+            shred = fighter.attack_shred(weapon) + shred_modifier
+            for i in range(shred):
+                if libtcod.random_get_int(0, 0, 4) == 0:
+                    target.fighter.get_shredded(1)
+            target.fighter.get_shredded(fighter.attack_guaranteed_shred(weapon) + guaranteed_shred_modifier)
 
         if damage > 0:
             percent_hit = float(damage) / float(target.fighter.max_hp)
-            # Shred armor if not blocked by a shield
-            if target.fighter.shield == 0 and not target.fighter.has_status('invulnerable'):
-                shred = fighter.attack_shred(weapon) + shred_modifier
-                for i in range(shred):
-                    if libtcod.random_get_int(0, 0, 4) == 0 and target.fighter.armor > 0:
-                        target.fighter.shred += 1
-                target.fighter.shred += min(fighter.attack_guaranteed_shred(weapon) + guaranteed_shred_modifier, target.fighter.armor)
             # Receive effect
             if effect is not None and percent_hit > 0.1:
                 target.fighter.apply_status_effect(effect)
@@ -828,15 +890,13 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
             result = target.fighter.take_damage(damage, attacker=fighter.owner, blockable=blockable)
             if result != 'blocked' and result > 0:
                 # Trigger on-hit effects
+                from actions import on_hit_actions
                 if on_hit is not None and target.fighter is not None:
-                    if isinstance(on_hit,(list,set,tuple)):
-                        for h in on_hit:
-                            h(fighter.owner, target, damage)
-                    else:
-                        on_hit(fighter.owner, target, damage)
+                    for h in on_hit:
+                        on_hit_actions.table[h](fighter.owner, target, damage)
                 if weapon is not None and weapon.on_hit is not None:
                     for oh in weapon.on_hit:
-                        oh(fighter.owner, target, damage)
+                        on_hit_actions.table[oh](fighter.owner, target, damage)
 
                 if target.fighter is not None and target.fighter.has_status('judgement'):
                     target.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('1d4')))
@@ -859,7 +919,7 @@ def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_mo
 
                 if main.has_skill('gatekeeper') and target.fighter is not None:
                     if libtcod.random_get_int(0,0,10 + target.fighter.armor) < 5:
-                        actions.knock_back(fighter.owner,target)
+                        common.knock_back(fighter.owner,target)
 
             return 'hit'
         else:
@@ -897,124 +957,151 @@ def spell_attack(fighter,target,spell_name):
                     config.get('dice',0),
                     config['element'],
                     config.get('peirce',0),
-                    config.get('shred',0))
+                    shred=config.get('shred',0),
+                    defense_type=config.get('defense','evasion'))
 
 
-def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_element, spell_pierce, spell_shred = 0, damage_mod=1):
+def spell_attack_ex(fighter, target, accuracy, base_damage, spell_dice, spell_elements, pierce, shred = 0,
+                    damage_mod=1, defense_type='evasion'):
     if target.fighter.has_status('reflect-magic'):
         target = fighter.owner
 
-    #dark immunity
-    if target.fighter.has_status('lichform') and spell_element == 'dark':
-        ui.message('%s %s unnaffected by dark energy!' % (
-            syntax.name(target),
-            syntax.conjugate(fighter.owner is player.instance, ('are', 'is'))),
-            libtcod.darker_crimson)
-        return
-
-    if accuracy is None or roll_to_hit(target, accuracy):
+    if accuracy is None or roll_to_hit(target, accuracy, defense_type=defense_type):
         # Target was hit
         if target.fighter.has_status('stung'):
             damage_mod *= consts.CENTIPEDE_STING_AMPLIFICATION
 
-        if fighter.owner is player.instance and main.has_skill('searing_mind'):
+        if fighter is not None and fighter.owner is player.instance and main.has_skill('searing_mind'):
             damage_mod *= 1.1
 
         if target.fighter.has_status('solace'):
             damage_mod *= 0.5
 
-        spell_power = fighter.spell_power
-        if fighter.owner is player.instance:
-            spell_power += main.skill_value("{}_affinity".format(spell_element))
+        if fighter is None:
+            spell_power = 0
+        else:
+            spell_power = fighter.spell_power
 
         damage = roll_damage_ex(base_damage, "{}d{}".format(spell_dice, spell_power),
-                                target.fighter.spell_resist, spell_pierce, spell_element, damage_mod,
-                                target.fighter.getResists(), target.fighter.getWeaknesses(), 0, immunities=target.fighter.getImmunities())
+                                target.fighter.armor, pierce, spell_elements, damage_mod,
+                                target.fighter.resistances, 0)
 
         if damage > 0:
-            attack_text_ex(fighter,target,None,None,damage,spell_element,float(damage) / float(target.fighter.max_hp))
-            target.fighter.take_damage(damage, attacker=fighter.owner)
+            attack_text_ex(fighter,target,None,None,damage,spell_elements,float(damage) / float(target.fighter.max_hp))
+            attacker = None
+            if fighter is not None:
+                attacker = fighter.owner
+            target.fighter.take_damage(damage, attacker=attacker)
 
             if target.fighter is not None:
                 # Shred armor
-                if fighter.owner is player.instance and main.has_skill('spellshards'):
-                    spell_shred += 2
+                if fighter is not None and fighter.owner is player.instance and main.has_skill('spellshards'):
+                    shred += 2
 
-                for i in range(spell_shred):
+                for i in range(shred):
                     if libtcod.random_get_int(0, 0, 4) == 0 and target.fighter.armor > 0:
                         target.fighter.shred += 1
             return 'hit'
         else:
+            if fighter is None:
+                name = "something's"
+            else:
+                name = syntax.name(fighter.owner, possesive=True)
             verbs = damage_description_tables['deflected']
             verb = verbs[libtcod.random_get_int(0, 0, len(verbs) - 1)]
             ui.message('%s attack %s %s' % (
-                            syntax.name(fighter.owner, possesive=True).capitalize(),
+                            name.capitalize(),
                             verb[0],
                             syntax.name(target)), libtcod.grey)
-            weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
-            if weapon:
-                main.check_breakage(weapon)
             return 'blocked'
     else:
+        if fighter is None:
+            name = 'something'
+            is_player = False
+        else:
+            name = syntax.name(fighter.owner)
+            is_player = fighter.owner is player.instance
         ui.message('%s %s %s, but %s!' % (
-                            syntax.name(fighter.owner).capitalize(),
-                            syntax.conjugate(fighter.owner is player.instance, ('attack', 'attacks')),
+                            name.capitalize(),
+                            syntax.conjugate(is_player, ('attack', 'attacks')),
                             syntax.name(target),
-                            syntax.conjugate(fighter.owner is player.instance, ('miss', 'misses'))), libtcod.grey)
+                            syntax.conjugate(is_player, ('miss', 'misses'))), libtcod.grey)
         return 'miss'
 
-def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_type, damage_modifier_ex, resists, weaknesses, flat_bonus=0, immunities=[]):
+resist_values = {
+    -4 : 7.7,
+    -3 : 4.6,
+    -2 : 2.7,
+    -1 : 1.6,
+    0 : 1.0,
+    1 : 0.6,
+    2 : 0.36,
+    3 : 0.216,
+    4 : 0.13,
+}
+def roll_damage_ex(damage_dice, stat_dice, defense, pierce, damage_types, damage_modifier_ex, resists, flat_bonus=0):
     damage_mod = damage_modifier_ex
 
-    if damage_type in resists:
-        damage_mod *= consts.RESISTANCE_FACTOR
-    if damage_type in weaknesses:
-        damage_mod *= consts.WEAKNESS_FACTOR
-    if damage_type in immunities:
-        damage_mod = 0
+    for d_t in damage_types:
+        if d_t in resists.keys():
+            if resists[d_t] == 'immune':
+                damage_mod = 0
+            else:
+                damage_mod *= resist_values[max(min(resists[d_t], 4), -4)]
 
     #calculate damage
     damage = main.roll_dice(damage_dice, normalize_size=4) + main.roll_dice(stat_dice, normalize_size=4) + flat_bonus
     damage = int(float(damage) * damage_mod)
 
-    # calculate damage reduction
-    effective_defense = defense - pierce
-    # without armor, targets receive no damage reduction!
-    if effective_defense > 0:
-        # Damage is reduced by 25% + 5% for every point of armor up to 5 armor (50% reduction)
-        reduction_factor = consts.ARMOR_REDUCTION_BASE + consts.ARMOR_REDUCTION_STEP * min(effective_defense,
-                                                                                           consts.ARMOR_REDUCTION_DROPOFF)
-        # For every point of armor after 5, damage is further reduced by 2.5% (15+ armor = 100% reduction!)
-        if effective_defense > consts.ARMOR_REDUCTION_DROPOFF:
-            reduction_factor += 0.5 * consts.ARMOR_REDUCTION_STEP * (
-                effective_defense - consts.ARMOR_REDUCTION_DROPOFF)
-        # Apply damage reduction
-        damage = math.ceil(damage * (1 - reduction_factor))
-        # After reduction, apply a flat reduction that is a random amount from 0 to the target's armor value
-        damage = max(0, damage - libtcod.random_get_int(0, 0, effective_defense))
-    else:
-        damage = int(damage * (1.0 + main.skill_value('ravager')))
+    if defense is not None and \
+            ('bludgeoning' in damage_types or 'slashing' in damage_types or 'stabbing' in damage_types):
+        # calculate damage reduction
+        effective_defense = defense - pierce
+        # without armor, targets receive no damage reduction!
+        if effective_defense > 0:
+            # Damage is reduced by 25% + 5% for every point of armor up to 5 armor (50% reduction)
+            reduction_factor = consts.ARMOR_REDUCTION_BASE + consts.ARMOR_REDUCTION_STEP * min(effective_defense,
+                                                                                               consts.ARMOR_REDUCTION_DROPOFF)
+            # For every point of armor after 5, damage is further reduced by 2.5% (15+ armor = 100% reduction!)
+            if effective_defense > consts.ARMOR_REDUCTION_DROPOFF:
+                reduction_factor += 0.5 * consts.ARMOR_REDUCTION_STEP * (
+                    effective_defense - consts.ARMOR_REDUCTION_DROPOFF)
+            # Apply damage reduction
+            damage = math.ceil(damage * (1 - reduction_factor))
+            # After reduction, apply a flat reduction that is a random amount from 0 to the target's armor value
+            damage = max(0, damage - libtcod.random_get_int(0, 0, effective_defense))
+        else:
+            damage = int(damage * (1.0 + main.skill_value('ravager')))
 
     return int(math.ceil(damage))
 
-def attack_text_ex(fighter,target,verb,location,damage,damage_type,severity):
+def attack_text_ex(fighter,target,verb,location,damage,damage_types,severity):
+    damage_type = damage_types[libtcod.random_get_int(0, 0, len(damage_types) - 1)]
+
     if verb is None:
         verb = main.normalized_choice(damage_description_tables[damage_type], severity)
 
-    target_name = syntax.name(target)
+    target_name = syntax.name(target, reflexive=fighter.owner)
+
+    if fighter is None:
+        name = 'something'
+        is_player = False
+    else:
+        name = syntax.name(fighter.owner)
+        is_player = fighter.owner is player.instance
 
     if damage is not None:
         if location is not None:
             ui.message('%s %s %s in the %s for %s%d damage!' % (
-                syntax.name(fighter.owner).capitalize(),
-                syntax.conjugate(fighter.owner is player.instance, verb),
+                name.capitalize(),
+                syntax.conjugate(is_player, verb),
                 target_name, location,
                 syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
                 damage), libtcod.grey)
         else:
             ui.message('%s %s %s for %s%d damage!' % (
-                syntax.name(fighter.owner).capitalize(),
-                syntax.conjugate(fighter.owner is player.instance, verb),
+                name.capitalize(),
+                syntax.conjugate(is_player, verb),
                 target_name,
                 syntax.relative_adjective(damage, damage, ['an increased ', 'a reduced ']),
                 damage), libtcod.grey)
@@ -1037,105 +1124,27 @@ def roll_location_effect(inventory, location):
     else:
         return None
 
-def roll_to_hit(target,  accuracy):
-    return libtcod.random_get_float(0, 0, 1) < get_chance_to_hit(target, accuracy)
+def roll_to_hit(target,  accuracy, defense_type='evasion', defense_bonus=0):
+    return libtcod.random_get_float(0, 0, 1) < get_chance_to_hit(target, accuracy, defense_type=defense_type, defense_bonus=defense_bonus)
 
-
-def get_chance_to_hit(target, accuracy):
-    if target.fighter.has_status('stunned'):
+def get_chance_to_hit(target, accuracy, defense_type='evasion', defense_bonus=0):
+    if defense_type is None:
         return 1.0
-    if target.behavior and (target.behavior.ai_state == 'resting' or target.behavior.ai_state == 'wandering'):
+    elif defense_type == 'will':
+        return 1.0 - float(target.fighter.will + defense_bonus) / float(max(accuracy, target.fighter.will + 1))
+    elif defense_type == 'fortitude':
+        return 1.0 - float(target.fighter.fortitude + defense_bonus) / float(max(accuracy, target.fighter.fortitude + 1))
+    elif defense_type == 'evasion':
+        if target.fighter.has_status('stunned') or target.fighter.has_status('frozen'):
+            return 1.0
+        if target.behavior and (target.behavior.ai_state == 'resting' or target.behavior.ai_state == 'wandering'):
+            return 1.0
+        return 1.0 - float(target.fighter.evasion + defense_bonus) / float(max(accuracy, target.fighter.evasion + 1))
+    else:
         return 1.0
-    return 1.0 - float(target.fighter.evasion) / float(max(accuracy, target.fighter.evasion + 1))
-
-def on_hit_burn(attacker, target, damage):
-    if target.fighter is None:
-        return
-    if libtcod.random_get_int(0, 1, 10) <= 7:
-        target.fighter.apply_status_effect(effects.burning())
-
-def on_hit_freeze(attacker, target, damage):
-    if target.fighter is None:
-        return
-    if libtcod.random_get_int(0, 1, 10) <= 3:
-        target.fighter.apply_status_effect(effects.frozen(duration=3))
-
-def on_hit_slow(attacker, target, damage):
-    if target.fighter is None:
-        return
-    if libtcod.random_get_int(0, 1, 10) <= 7:
-        target.fighter.apply_status_effect(effects.slowed(duration=5))
-
-def on_hit_sluggish(attacker, target, damage):
-    if target.fighter is None:
-        return
-    if libtcod.random_get_int(0, 1, 10) <= 7:
-        target.fighter.apply_status_effect(effects.sluggish(duration=5))
-
-def on_hit_chain_lightning(attacker, target, damage, zapped=None):
-    if zapped is None:
-        zapped = [target]
-    else:
-        zapped.append(target)
-    if target.fighter is None:
-        return
-    damage = roll_damage_ex('1d10', '0d0', target.fighter.spell_resist, 5, 'lightning', 1.0,
-                            target.fighter.getResists(), target.fighter.getWeaknesses(), immunities=target.fighter.getImmunities())
-
-    if damage > 0:
-        attack_text_ex(attacker.fighter, target, None, None, damage, 'lightning', float(damage) / float(target.fighter.max_hp))
-
-        target.fighter.take_damage(damage, attacker=attacker)
-        for adj in main.adjacent_tiles_diagonal(target.x, target.y):
-            for obj in main.current_map.fighters:
-                if obj.x == adj[0] and obj.y == adj[1] and obj.fighter.team != attacker.fighter.team and obj not in zapped:
-                    on_hit_chain_lightning(attacker, obj, damage, zapped)
-    else:
-        ui.message('The shock does not damage %s' % syntax.name(target), libtcod.grey)
-
-def on_hit_lifesteal(attacker, target, damage):
-    attacker.fighter.heal(damage)
-
-def on_hit_knockback(attacker, target, damage, force=6):
-    if target.fighter is None:
-        return
-
-    if 'displacement' in target.fighter.getImmunities() + target.fighter.getResists():
-        if fov.player_can_see(target.x, target.y):
-            ui.message('%s %s.' % (syntax.name(target).capitalize(), syntax.conjugate(
-                target is player.instance, ('resist', 'resists'))), libtcod.gray)
-        return
-
-    diff_x = target.x - attacker.x
-    diff_y = target.y - attacker.y
-    if diff_x > 0:
-        diff_x = diff_x / abs(diff_x)
-    if diff_y > 0:
-        diff_y = diff_y / abs(diff_y)
-    direction = (diff_x, diff_y)
-
-    steps=0
-    while steps <= force:
-        steps += 1
-        against = main.get_objects(target.x + direction[0], target.y + direction[1], lambda o: o.blocks)
-        if against is None or len(against) == 0:
-            against = syntax.name(main.current_map.tiles[target.x + direction[0]][target.y + direction[1]])
-        else:
-            against = 'the ' + against.name
-        if not target.move(direction[0], direction[1]):
-            # Could not move
-            damage = roll_damage_ex('%dd4' % steps, '0d0', target.fighter.armor, 0, 'budgeoning', 1.0,
-                                    target.fighter.getResists(), target.fighter.getWeaknesses(), immunities=target.fighter.getImmunities())
-            ui.message('%s %s backwards and collides with %s, taking %d damage.' % (
-                syntax.name(target).capitalize(),
-                syntax.conjugate(target is player.instance, ('fly', 'flies')),
-                against,
-                damage), libtcod.gray)
-            target.fighter.take_damage(damage, attacker=attacker)
-            steps = force + 1
-
-def on_hit_reanimate(attacker, target, damage):
-    main.raise_dead(attacker,target)
 
 def mul(sequence):
     return reduce(lambda x,y: x * y,sequence,1)
+
+from actions import common
+from actions import abilities

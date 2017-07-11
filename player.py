@@ -14,9 +14,11 @@
 #You should have received a copy of the GNU General Public License
 #along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import log
 import collections
 import string
+
+import log
+
 
 class PlayerStats:
 
@@ -26,6 +28,12 @@ class PlayerStats:
         self.base_str = str
         self.base_agi = agi
         self.base_con = con
+        if consts.DEBUG_STATBOOST:
+            self.base_int += 50
+            self.base_wiz += 50
+            self.base_str += 50
+            self.base_agi += 50
+            self.base_con += 50
 
     @property
     def int(self):
@@ -97,7 +105,7 @@ loadouts = {
     'fanatic' : {
         'str':13,
         'agi':9,
-        'int':20,
+        'int':12,
         'spr':10,
         'con':9,
         'inventory':[
@@ -115,7 +123,7 @@ loadouts = {
         'spr':10,
         'con':8,
         'inventory':[
-            ['book_lesser_cold', 'book_lesser_fire', 'book_lesser_life'],
+            ['book_lesser_cold', 'book_lesser_fire'],
             'charm_raw',
             #'charm_farmers_talisman',
             #'charm_holy_symbol',
@@ -147,13 +155,14 @@ def create(loadout):
     global instance
 
     loadout = loadouts[loadout]
-    fighter_component = combat.Fighter(hp=100, stamina=100, death_function=on_death, on_get_hit=on_get_hit,
+    fighter_component = combat.Fighter(hp=100, stamina=100, death_function={'function':'player'}, on_get_hit='player_get_hit',
                                        on_get_kill=on_get_kill, team='ally', evasion=5)
     instance = main.GameObject(25, 23, '@', 'player', libtcod.white, blocks=True, fighter=fighter_component,
                         player_stats=PlayerStats(int(loadout['int']),int(loadout['spr']),int(loadout['str']),
                         int(loadout['agi']),int(loadout['con'])), description='An exile, banished to this forsaken '
                         'island for your crimes. This place will surely be your grave.',
                         movement_type=pathfinding.NORMAL, on_tick=on_tick)
+    instance.light = main.Light(libtcod.white, 2, 5)
     instance.level = 1
     instance.essence = []
     instance.known_spells = []
@@ -165,6 +174,7 @@ def create(loadout):
     if consts.DEBUG_INVINCIBLE:
         instance.fighter.apply_status_effect(effects.invulnerable(duration=None))
 
+    index = ord('a')
     for item in loadout['inventory']:
         i = None
         prototype = item
@@ -181,14 +191,18 @@ def create(loadout):
         else:
             i = main.create_item(prototype)
 
+
         instance.fighter.inventory.append(i)
+        i.item.inventory_index = chr(index)
+        index += 1
         i.item.holder = instance
         if i.equipment is not None:
             i.equipment.equip(no_message=True)
 
     if consts.DEBUG_STARTING_ITEM is not None:
         test = main.create_item(consts.DEBUG_STARTING_ITEM)
-        instance.fighter.inventory.append(test)
+        test.item.pick_up(instance, no_message=True)
+
     return 'success'
 
 def handle_keys():
@@ -299,8 +313,8 @@ def handle_keys():
                 purchase_skill()
                 return 'didnt-take-turn'
             if mouse.rbutton_pressed:
-                offsetx, offsety = instance.x - consts.MAP_VIEWPORT_WIDTH / 2, instance.y - consts.MAP_VIEWPORT_HEIGHT / 2
-                mouse_pos = mouse.cx + offsetx - consts.MAP_VIEWPORT_X, mouse.cy + offsety - consts.MAP_VIEWPORT_Y
+                offsetx, offsety = instance.x - ui.MAP_VIEWPORT_WIDTH() / 2, instance.y - ui.MAP_VIEWPORT_HEIGHT() / 2
+                mouse_pos = mouse.cx + offsetx - ui.MAP_VIEWPORT_X, mouse.cy + offsety - ui.MAP_VIEWPORT_Y
                 if main.in_bounds(mouse_pos[0], mouse_pos[1]):
                     ui.examine(mouse_pos[0], mouse_pos[1])
             return 'didnt-take-turn'
@@ -403,15 +417,16 @@ def _cast_spell():
                     instance.fighter.adjust_stamina(-2 * cost)
                     return 'miscast'
                 elif cast_check:
-                    if spells.library[s].function() == 'success':
+                    result = actions.invoke_ability(spells.library[s].ability_name,instance,
+                                                    spell_context=spells.library[s].levels[level-1])
+                    if result == 'success':
                         left_hand.spell_charges[s] -= 1
                         if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
                             instance.fighter.hp -= cost - instance.fighter.stamina
                             instance.fighter.stamina = 0
                         else:
                             instance.fighter.adjust_stamina(-cost)
-                        instance.fighter.apply_status_effect(effects.StatusEffect('meditate', time_limit=None,
-                                          color=libtcod.yellow, description='Meditating will renew your missing spells.'))
+                        instance.fighter.apply_status_effect(effects.meditate())
                         return 'cast-spell'
                     else:
                         return 'didnt-take-turn'
@@ -425,7 +440,10 @@ def _cast_spell():
                     instance.fighter.adjust_stamina(-2 * cost)
                     return 'miscast'
                 elif cast_check:
-                    if spells.library[s].function() == 'success':
+
+                    result = actions.invoke_ability(spells.library[s].ability_name, instance,
+                                                    spell_context=spells.library[s].levels[level - 1])
+                    if result == 'success':
                         instance.memory.spell_charges[s] -= 1
                         if main.has_skill('blood_magic') and instance.fighter.stamina < cost:
                             instance.fighter.hp -= cost - instance.fighter.stamina
@@ -554,8 +572,9 @@ def gain_wis():
     check_skill_up()
 
 def full_heal():
+    import actions.common
     if instance.fighter is not None:
-        actions.heal(100, True)
+        actions.common.heal(100, True)
 
 def purchase_skill():
     learned_skills = main.learned_skills
@@ -580,7 +599,7 @@ def purchase_skill():
                 instance.skill_points -= cost
             ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
-def on_death(instance):
+def on_death(object=instance, context=None):
     if instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
         rings = main.get_equipped_in_slot(instance.fighter.inventory, 'ring')
         broken = None
@@ -618,6 +637,12 @@ def move_or_attack(dx, dy, ctrl=False):
         target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
         if target is not None:
             import monsters
+            if target.npc and target.fighter.team == 'neutral':
+                value = instance.move(dx, dy)
+                if value and instance.fighter.has_status('free move'):
+                    instance.fighter.remove_status('free move')
+                    return False
+                return value
             if target.fighter.team == 'ally':
                 if target.fighter.has_flag(monsters.IMMOBILE):
                     ui.message('%s cannot swap places with you.' % syntax.name(target).capitalize())
@@ -682,13 +707,14 @@ def cleave_attack(dx, dy):
 
 
 def bash_attack(dx, dy):
+    from actions import common
     target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
     if target is not None:
         result = combat.attack_ex(instance.fighter, target, consts.BASH_STAMINA_COST,
                                   damage_multiplier=consts.BASH_DMG_MOD, verb=('bash', 'bashes'))
         if result == 'hit' and target.fighter:
             ui.select_monster(target)
-            actions.knock_back(instance,target)
+            common.knock_back(instance,target)
 
         return result
     else:
@@ -733,7 +759,6 @@ def pick_up_item():
                     result = 'interacted'
                 return result
     return 'didnt-take-turn'
-
 
 def replace_essence(essence):
     if isinstance(essence, main.GameObject):
@@ -791,12 +816,12 @@ def jump(actor=None, range=None, stamina_cost=None):
         range = consts.BASE_JUMP_RANGE
     if stamina_cost is None:
         stamina_cost = consts.JUMP_STAMINA_COST
-    if not main.current_map.tiles[instance.x][instance.y].jumpable:
+    if not main.current_map.tiles[instance.x][instance.y].jumpable and stamina_cost > 0:
         ui.message('You cannot jump from this terrain!', libtcod.light_yellow)
         return 'didnt-take-turn'
 
     web = main.object_at_tile(instance.x, instance.y, 'spiderweb')
-    if web is not None:
+    if web is not None and stamina_cost > 0:
         ui.message('You struggle against the web.')
         web.destroy()
         return 'webbed'
@@ -814,8 +839,17 @@ def jump(actor=None, range=None, stamina_cost=None):
         if main.current_map.tiles[x][y].blocks:
             ui.message('There is something in the way.', libtcod.light_yellow)
             return 'didnt-take-turn'
-        elif main.current_map.tiles[x][y].is_pit:
-            ui.message("You really don't want to jump into this bottomless pit.", libtcod.light_yellow)
+        elif main.current_map.tiles[x][y].is_pit and instance.movement_type & pathfinding.FLYING != pathfinding.FLYING:
+            if ui.menu_y_n('Really jump into that pit?'):
+                instance.set_position(x, y)
+                instance.fighter.adjust_stamina(-stamina_cost)
+                return 'jumped'
+            return 'didnt-take-turn'
+        elif main.current_map.tiles[x][y].tile_type == 'lava' and instance.movement_type & pathfinding.FLYING != pathfinding.FLYING:
+            if ui.menu_y_n('Really jump into lava?'):
+                instance.set_position(x, y)
+                instance.fighter.adjust_stamina(-stamina_cost)
+                return 'jumped'
             return 'didnt-take-turn'
         elif main.is_blocked(x, y, from_coord=(instance.x, instance.y), movement_type=instance.movement_type) and main.current_map.tiles[x][y].elevation > instance.elevation:
             ui.message("You can't jump that high!", libtcod.light_yellow)
@@ -877,13 +911,13 @@ def learn_ability(name):
     return lambda: _learn_ability(name)
 
 def _learn_ability(name):
-    import abilities
+    from actions import abilities
     for a in instance.perk_abilities:
         if a.name == abilities.data[name]['name']:
             return
     ability = abilities.data[name]
-    instance.perk_abilities.append(abilities.Ability(ability['name'],ability['description'],
-                                                                  ability['function'],ability['cooldown']))
+    instance.perk_abilities.append(abilities.Ability(name, ability['name'], ability['description'],
+                ability.get('cooldown', 0), ability.get('stamina_cost', 0), intent=ability.get('intent', 'aggressive')))
 
 def on_tick(this):
     if main.has_skill('pyromaniac'):
@@ -898,13 +932,17 @@ def on_tick(this):
     if main.has_skill('rising_storm'):
         if hasattr(instance,'rising_storm_last_attack'):
             instance.rising_storm_last_attack += 1
+            if instance.rising_storm_last_attack > 3:
+                instance.fighter.apply_status_effect(effects.StatusEffect('Rising Storm', time_limit=None,
+                              color=libtcod.dark_blue, description='Your weapon is ready to deliver a heavy attack.'))
         else:
             instance.rising_storm_last_attack = 0
     if instance.fighter.stamina_regen > 0:
         instance.fighter.adjust_stamina(instance.fighter.stamina_regen)
 
     for ability in abilities.default_abilities.values():
-        ability.on_tick()
+        if ability not in get_abilities():
+            ability.on_tick() #  Raise Shield cools down even when not accessible
 
     if instance.fighter.hp < 25:
         instance.fighter.heal(instance.fighter.item_equipped_count('equipment_ring_of_tenacity'))
@@ -914,7 +952,7 @@ def on_get_hit(this,other,damage):
         if not hasattr(instance,'heir_to_the_heavens_cd'):
             instance.heir_to_the_heavens_cd = 0
         if (this.fighter.hp <= (damage * 2) or this.fighter.hp < (this.fighter.max_hp * 0.2)) and instance.heir_to_the_heavens_cd < 1:
-            if actions.summon_guardian_angel() != 'failed':
+            if actions.invoke_ability('ability_summon_guardian_angel', instance) != 'failed':
                 instance.heir_to_the_heavens_cd = 70
                 instance.fighter.apply_status_effect(effects.invulnerable(1),True)
 
@@ -937,7 +975,7 @@ def on_get_kill(this,other,damage):
     this.fighter.heal(this.fighter.item_equipped_count('equipment_ring_of_vampirism') * 2)
 
 def get_abilities():
-    import abilities
+    from actions import abilities
 
     # Always available
     opts = [abilities.default_abilities['attack'], abilities.default_abilities['jump']]
@@ -960,7 +998,8 @@ def get_abilities():
 
     # Raise shield
     sh = instance.fighter.get_equipped_shield()
-    if sh is not None and not sh.raised:
+    if sh is not None and (not sh.raised or sh.sh_points < sh.sh_max):
+        abilities.default_abilities['raise shield'].stamina_cost = sh.sh_raise_cost
         opts.append(abilities.default_abilities['raise shield'])
 
     return opts
@@ -977,5 +1016,5 @@ import pathfinding
 import ui
 import perks
 import actions
-import abilities
+from actions import abilities
 import items

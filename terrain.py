@@ -140,6 +140,23 @@ data = {
                              'ground made of a thick sheet of ice', isFloor=True, isIce=True),
 
     ###############################################
+    #                   GARDENS
+    ###############################################
+
+
+    'marble path': TileData(False, False, 'marble path', '.', (113, 113, 130), (68, 68, 79),
+                            'A path made of marble blocks. Tufts of grass push through the ancient cracks.', isFloor=True),
+
+    'marble wall': TileData(True, True, 'marble wall', '#', libtcod.lightest_gray, libtcod.light_gray,
+                            'A wall of polished marble, now overgrown with wild greenery', isWall=True, diggable=True),
+
+    'hedge': TileData(True, True, 'hedge', '#', (21, 51, 7), (17, 40, 6),
+                            'A thick hedge', isWall=True, diggable=False, flammable=5),
+
+    'cypress tree': TileData(True, True, 'cypress tree', libtcod.CHAR_ARROW2_N, (17, 40, 6), (29, 71, 10),
+                            'A tall, narrow tree.', isWall=True, diggable=False, flammable=5),
+
+    ###############################################
     #                     MISC
     ###############################################
 
@@ -153,8 +170,8 @@ data = {
     'mud': TileData(False, False, 'mud', 247, (94, 75, 47), (63, 50, 31),
                              'a thick puddle of mud that impedes movement - dodging attacks will be much more difficult here',
                             consts.MUD_COST, isWater=True),
-    'lava': TileData(False,False,'lava',247,libtcod.yellow,libtcod.dark_red,'Bubbling molten rock',
-                            consts.DEEP_WATER_COST,jumpable=True),
+    'lava': TileData(False,False,'lava',247,libtcod.orange,libtcod.dark_red,'Bubbling molten rock',
+                            consts.DEEP_WATER_COST,jumpable=False),
     'chasm': TileData(False, False, 'chasm', libtcod.CHAR_BLOCK1, (16, 16, 32), (0, 0, 16),
                              'a pit descending into darkness', isPit=True),
     'scorched floor': TileData(False, False, 'scorched floor', '.', (94, 55, 55), (30, 30, 30),

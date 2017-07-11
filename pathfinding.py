@@ -28,6 +28,7 @@ FLYING = 2
 AQUATIC = 4
 CLIMBING = 8
 TUNNELING = 16
+LAVA = 32
 
 class Edge:
     def __init__(self, coord):
@@ -37,7 +38,8 @@ class Edge:
             FLYING : None,
             AQUATIC : None,
             CLIMBING : None,
-            TUNNELING : None
+            TUNNELING : None,
+            LAVA : None,
         }
 
 class Graph:
@@ -76,7 +78,9 @@ class Graph:
         if not neighbor_tile.blocks:
             # If the tile is not blocked, that's all we care about for flying movement.
             edge.weights[FLYING] = 1.0 * mod
-            if neighbor_tile.elevation == source_tile.elevation or neighbor_tile.is_ramp or source_tile.is_ramp:
+            if neighbor_tile.tile_type == 'lava':
+                edge.weights[LAVA] = 1.0 * mod
+            elif neighbor_tile.elevation == source_tile.elevation or neighbor_tile.is_ramp or source_tile.is_ramp:
                 # If these tiles are on the same elevation, or one of them is a ramp, we have normal connectivity
                 if neighbor_tile.is_water:
                     # If this tile is a water space, it has normal movement costs for aquatic movement
@@ -121,7 +125,7 @@ class Graph:
         return False
 
 
-    def a_star_search(self, start, goal, movement_type=NORMAL):
+    def a_star_search(self, start, goal, movement_type=NORMAL, max_edges=MAX_EDGES_DISCOVERED):
         log.info("PATH","Getting {} path from {} to {}",[movement_type,start,goal])
         discovered = 0
         closed_set = []
@@ -139,7 +143,7 @@ class Graph:
 
         while len(open_set) > 0:
             discovered += 1
-            if discovered > MAX_EDGES_DISCOVERED:
+            if max_edges is not None and discovered > max_edges:
                 break
             shortest = float('inf')
             for open in open_set:
@@ -159,6 +163,8 @@ class Graph:
                 for neighbor in self.edges[current]:  # 'neighbor' is an Edge
                     w = None
                     for weight in neighbor.weights.keys():
+                        if weight == LAVA and neighbor.weights[weight] is not None:
+                            pass
                         if weight & movement_type == weight and neighbor.weights[weight] is not None:
                             if w is None:
                                 w = neighbor.weights[weight]

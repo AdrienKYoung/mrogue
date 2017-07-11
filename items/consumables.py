@@ -1,5 +1,5 @@
 import libtcodpy
-import actions
+from actions import item_actions
 import spells
 import player
 
@@ -10,7 +10,7 @@ table = {
         'category' : 'scroll',
         'char' : '#',
         'color': libtcodpy.yellow,
-        'on_use' : actions.forge,
+        'on_use' : item_actions.forge,
         'type' : 'item',
         'description' : 'Upgrades the quality of your held weapon.'
     },
@@ -32,7 +32,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['fire'],
-        'on_use'        : actions.potion_essence('fire'), #not a bug, returns a lambda
+        'on_use'        : item_actions.use_ruby,
         'description'   : 'The essence of fire burns within this gemstone. Absorbing it will bestow a single fire essence.'
     },
     'gem_lesser_earth': {
@@ -41,7 +41,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['earth'],
-        'on_use'        : actions.potion_essence('earth'), #not a bug, returns a lambda
+        'on_use'        : item_actions.use_garnet,
         'description'   : 'The essence of earth resonates within this gemstone. Absorbing it will bestow a single earth essence.'
     },
     'gem_lesser_life': {
@@ -50,7 +50,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['life'],
-        'on_use'        : actions.potion_essence('life'), #not a bug, returns a lambda
+        'on_use'        : item_actions.use_emerald,
         'description'   : 'The essence of life emanates from this gemstone. Absorbing it will bestow a single life essence.'
     },
     'gem_lesser_air': {
@@ -59,7 +59,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['air'],
-        'on_use'        : actions.potion_essence('air'), #not a bug, returns a lambda
+        'on_use'        : item_actions.use_quartz,
         'description'   : 'The essence of air swirls in this crystal. Absorbing it will bestow a single air essence.'
     },
     'gem_lesser_water': {
@@ -68,7 +68,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['water'],
-        'on_use'        : actions.potion_essence('water'), #not a bug, returns a lambda
+        'on_use'        : item_actions.use_aquamarine,
         'description'   : 'The essence of water flows through this gemstone. Absorbing it will bestow a single water essence.'
     },
     'gem_lesser_cold': {
@@ -77,7 +77,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['cold'],
-        'on_use'        : actions.potion_essence('cold'), #not a bug, returns a lambda
+        'on_use'        : item_actions.use_zircon,
         'description'   : 'The essence of cold chills the surface of this gemstone. Absorbing it will bestow a single cold essence.'
     },
     'gem_lesser_arcane': {
@@ -86,7 +86,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['arcane'],
-        'on_use'        : actions.potion_essence('arcane'), #not a bug, returns a lambda
+        'on_use'        : item_actions.use_amethyst,
         'description'   : 'The essence of arcana hums within this gemstone. Absorbing it will bestow a single arcane essence.'
     },
     'gem_lesser_radiance': {
@@ -95,7 +95,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['radiance'],
-        'on_use'        : actions.potion_essence('radiance'), #not a bug, returns a lambda
+        'on_use'        : item_actions.use_diamond,
         'description'   : 'The essence of radiance shines through this gemstone. Absorbing it will bestow a single radiance essence.'
     },
     'gem_lesser_death': {
@@ -104,7 +104,7 @@ table = {
         'category'      : 'gem',
         'char'          : chr(4),
         'color'         : spells.essence_colors['death'],
-        'on_use'        : actions.potion_essence('death'), #not a bug, returns a lambda
+        'on_use'        : item_actions.use_onyx,
         'description'   : 'The essence of dark envelops this gemstone. Absorbing it will bestow a single dark essence.'
     },
 
@@ -215,5 +215,55 @@ table = {
         'color': libtcodpy.yellow,
         'type': 'item',
         'description': 'A golden chalice, encrusted with precious jewels. Mundane, but valuable.'
+    },
+    'treasure_giant_pearl': {
+        'name': 'giant pearl',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'An enormous pearl the size of a walnut. Mundane, but valuable.'
+    },
+    'treasure_chest_of_coins': {
+        'name': 'chest of coins',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'A small chest full of ancient coins stamped with the likeness of the Emperor. '
+                       'Mundane, but valuable.'
+    },
+    'treasure_silver_tiara': {
+        'name': 'silver tiara',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'A finely-crafted tiara of shining silver. Mundane, but valuable.'
+    },
+    'treasure_jade_necklace': {
+        'name': 'jade necklace',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'An elegant piece of jewelry made from many jade stones. Mundane, but valuable.'
+    },
+    'treasure_burial_mask': {
+        'name': 'burial mask',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'A golden mask with the likeness of a long-dead noble. Mundane, but valuable.'
+    },
+    'treasure_music_box': {
+        'name': 'music box',
+        'category': 'treasure',
+        'char': '$',
+        'color': libtcodpy.yellow,
+        'type': 'item',
+        'description': 'A finely crafted wooden box inlaid with gold. When wound, it plays a haunting tune. '
+                       'Mundane, but valuable.'
     },
 }

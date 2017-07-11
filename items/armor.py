@@ -128,7 +128,7 @@ table = {
         'evasion_bonus' : 0,
         'slot'          : 'head',
         'description'   : 'A black pointed hat, suitable for the fashionable culdron stirrer.',
-        'resistances'   : ['fire','burning'],
+        'resistances'   : {'fire' : 1, 'burning' : 1},
         'weight'        : 3
     },
 

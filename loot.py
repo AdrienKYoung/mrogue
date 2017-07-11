@@ -136,6 +136,8 @@ table = {
         'book_lesser_fire',
         'book_lesser_death',
         'book_lesser_cold',
+        'book_lesser_life',
+        'book_lesser_radiance',
     ],
 
     'gems_1': [
@@ -197,6 +199,7 @@ table = {
         'equipment_ring_of_freedom',
         'equipment_ring_of_salvation',
         'equipment_ring_of_blessings',
+        'equipment_ring_of_levitation',
     ],
 
     'elixirs_0': [
@@ -217,10 +220,17 @@ table = {
         'armor_2',
         'weapons_2',
         'scroll_forge',
+        'treasure_0'
     ],
 
     'treasure_0': [
-      'treasure_bejeweled_chalice'
+        'treasure_bejeweled_chalice',
+        'treasure_burial_mask',
+        'treasure_chest_of_coins',
+        'treasure_giant_pearl',
+        'treasure_jade_necklace',
+        'treasure_silver_tiara',
+        'treasure_music_box',
     ],
 
 }
@@ -280,7 +290,7 @@ def choose_loot_table(branch):
         return main.random_choice(b['loot'])
 
 def choose_weapon_material(loot_level=0):
-    roll = libtcodpy.random_get_int(0, 0, min(100 + 30 * loot_level, 150))
+    roll = libtcodpy.random_get_int(0, 0, min(100 + 25 * loot_level, 150))
     if roll < 5:
         return choose_weapon_material(loot_level + 1)
     elif roll < 15:
@@ -337,10 +347,10 @@ def check_special_drop():
     elixir_stat_ticker += 1
     scroll_forge_ticker += 1
     elixir_life_ticker += 1
-    if main.roll_dice('1d500') <= elixir_life_ticker:
+    if main.roll_dice('1d850') <= elixir_life_ticker:
         elixir_life_ticker = 0
         return 'elixir_life'
-    elif main.roll_dice('1d350') <= elixir_stat_ticker:
+    elif main.roll_dice('1d300') <= elixir_stat_ticker:
         elixir_stat_ticker = 0
         return table['elixirs_0'][libtcodpy.random_get_int(0,0,len(table['elixirs_0']))-1]
     elif main.roll_dice('1d200') <= scroll_forge_ticker:
@@ -543,14 +553,11 @@ weapon_materials = {
 
 armor_materials = {
     ''              :   {},
-    'reinforced'    :   {'resistance':'slashing'},
-    'hardened'      :   {'resistance':'stabbing'},
-    'padded'        :   {'resistance':'bludgeoning'},
-    'fire-proof'    :   {'resistance':'fire'},
-    'insulated'     :   {'resistance':'lightning'},
-    'fur-lined'     :   {'resistance':'cold'},
-    'blessed'       :   {'resistance':'death'},
-    'infernal'      :   {'resistance':'radiance'},
-    'enchanted'     :   {'resistance':'spell'}
-    #TODO: heavy - increased weight and +1 armor
+    'heavy'         :   {'armor_bonus': 1, 'weight_bonus' : 3},
+    'fire-proof'    :   {'resistance': ('fire', 1)},
+    'insulated'     :   {'resistance': ('lightning', 1)},
+    'fur-lined'     :   {'resistance': ('cold', 1)},
+    'blessed'       :   {'resistance': ('death', 1)},
+    'infernal'      :   {'resistance': ('radiance', 1)},
+    'enchanted'     :   {'will_bonus': 1}
 }

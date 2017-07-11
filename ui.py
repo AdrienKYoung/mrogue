@@ -93,6 +93,7 @@ def menu_y_n(header, width=30, x_center=None):
 def menu_ex(header, options, width, x_center=None, render_func=None, return_as_char=False):
 
     menu_window = libtcod.console_new(main.SCREEN_WIDTH(), main.SCREEN_HEIGHT())
+    text_color = libtcod.lightest_gray
 
     # Prepare header spacing
     if header is None:
@@ -112,7 +113,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
     libtcod.console_flush()
 
     # Print header
-    libtcod.console_set_default_foreground(menu_window, libtcod.white)
+    libtcod.console_set_default_foreground(menu_window, text_color)
     libtcod.console_print_rect_ex(menu_window, 1, 1, width - 2, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
 
     draw_height = header_height + 1
@@ -148,7 +149,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
                         col_widths[category] = len(option[item]['text']) + 2
 
         # column widths have been established - print column headers
-        libtcod.console_set_default_foreground(menu_window, libtcod.white)
+        libtcod.console_set_default_foreground(menu_window, text_color)
         x = 0
         for category in categories:
             libtcod.console_print(menu_window, 5 + x, draw_height, string.capwords(category))
@@ -165,7 +166,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
         if options[index] is None or len(options[index]) == 0:
             continue
         # Print letter index
-        libtcod.console_set_default_foreground(menu_window, libtcod.white)
+        libtcod.console_set_default_foreground(menu_window, text_color)
         libtcod.console_print(menu_window, 1, draw_height, '(%s)' % index)
         # Print category items
         if len(options[index]) > 2 or (len(options[index]) > 1 and not has_descriptions):
@@ -179,7 +180,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
                         if 'color' in options[index][option].keys():
                             libtcod.console_set_default_foreground(menu_window, options[index][option]['color'])
                         else:
-                            libtcod.console_set_default_foreground(menu_window, libtcod.white)
+                            libtcod.console_set_default_foreground(menu_window, text_color)
                         libtcod.console_print(menu_window, 5 + x, draw_height, options[index][option]['text'])
                     x += col_widths[category]
 
@@ -188,7 +189,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
             if 'color' in d.keys():
                 libtcod.console_set_default_foreground(menu_window, d['color'])
             else:
-                libtcod.console_set_default_foreground(menu_window, libtcod.white)
+                libtcod.console_set_default_foreground(menu_window, text_color)
             libtcod.console_print(menu_window, 5, draw_height, d['text'])
 
         draw_height += 1
@@ -196,7 +197,7 @@ def menu_ex(header, options, width, x_center=None, render_func=None, return_as_c
     # Draw 'description' prompt
     if has_descriptions:
         draw_height += 1
-        libtcod.console_set_default_foreground(menu_window, libtcod.white)
+        libtcod.console_set_default_foreground(menu_window, text_color)
         libtcod.console_print(menu_window, 1, draw_height, '[Shift] + option for descriptions')
 
 
@@ -248,7 +249,7 @@ def inventory_menu(header):
     libtcod.console_set_default_foreground(window, libtcod.white)
     libtcod.console_print(window, 1, 1, header)
     y = 3
-    letter_index = ord('a')
+    #letter_index = ord('a')
     menu_items = []
     item_categories = []
 
@@ -280,7 +281,7 @@ def inventory_menu(header):
                     menu_items.append(item)
 
                     libtcod.console_set_default_foreground(window, libtcod.white)
-                    libtcod.console_print(window, 1, y, '(' + chr(letter_index) + ') ')
+                    libtcod.console_print(window, 1, y, '(' + item.item.inventory_index + ') ')
                     libtcod.console_put_char_ex(window, 5, y, item.char, item.color, libtcod.black)
                     libtcod.console_print(window, 7, y, string.capwords(item.name))
 
@@ -289,7 +290,7 @@ def inventory_menu(header):
                         libtcod.console_print_ex(window, INVENTORY_WIDTH - 2, y, libtcod.BKGND_DEFAULT,
                                                  libtcod.RIGHT, '[E]')
                     y += 1
-                    letter_index += 1
+                    #letter_index += 1
 
     x = MAP_VIEWPORT_X + 1
     y = MAP_VIEWPORT_Y + 1
@@ -297,16 +298,20 @@ def inventory_menu(header):
     libtcod.console_flush()
 
     key = libtcod.console_wait_for_keypress(True)
-    index = key.c - ord('a')
-    if 0 <= index < len(player.instance.fighter.inventory):
-        return menu_items[index].item
+    index = key.c
+    for item in player.instance.fighter.inventory:
+        if item.item.inventory_index == chr(index):
+            return item.item
+    #if 0 <= index < len(player.instance.fighter.inventory):
+    #    return menu_items[index].item
     return None
 
 
 def auto_target_monster():
+    import monsters
     global selected_monster
 
-    if selected_monster is None:
+    if selected_monster is None or selected_monster.fighter.has_flag(monsters.LOW_PRIORITY):
         monster = main.closest_monster(consts.TORCH_RADIUS)
         if monster is not None:
             select_monster(monster)
@@ -323,7 +328,7 @@ def target_next_monster():
 
     nearby = []
     for obj in main.current_map.fighters:
-        if fov.player_can_see(obj.x, obj.y) and obj is not player.instance:
+        if fov.player_can_see(obj.x, obj.y) and obj is not player.instance and not (obj.npc and obj.npc.active):
             nearby.append((obj.distance_to(player.instance), obj))
     nearby.sort(key=lambda m: m[0])
 
@@ -368,7 +373,7 @@ def mouse_select_monster():
         monster = None
         for obj in main.current_map.fighters:
             if obj.x == x and obj.y == y and (fov.player_can_see(obj.x, obj.y) or (obj.always_visible and
-                                       main.current_map.tiles[obj.x][obj.y].explored)) and obj is not player.instance:
+                                       main.current_map.tiles[obj.x][obj.y].explored)) and obj is not player.instance and not (obj.npc and obj.npc.active):
                 monster = obj
                 break
         if monster is not None:
@@ -522,17 +527,19 @@ def render_side_panel(acc_mod=1.0):
 
     # Base stats
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
-    libtcod.console_print(side_panel, 2, drawHeight, 'INT: ' + str(player.instance.player_stats.int))
+    libtcod.console_print(side_panel, 2, drawHeight,     'INT: ' + str(player.instance.player_stats.int))
     libtcod.console_print(side_panel, 2, drawHeight + 1, 'WIS: ' + str(player.instance.player_stats.wiz))
     libtcod.console_print(side_panel, 2, drawHeight + 2, 'STR: ' + str(player.instance.player_stats.str))
     libtcod.console_print(side_panel, 2, drawHeight + 3, 'AGI: ' + str(player.instance.player_stats.agi))
     libtcod.console_print(side_panel, 2, drawHeight + 4, 'CON: ' + str(player.instance.player_stats.con))
 
-    # Level/XP
-    libtcod.console_print(side_panel, 11, drawHeight, 'Lvl: ' + str(player.instance.level))
-    libtcod.console_print(side_panel, 11, drawHeight + 1, 'XP:  ' + str(player.instance.fighter.xp))
-    libtcod.console_print(side_panel, 11, drawHeight + 2, 'SP:  ' + str(player.instance.skill_points))
+    if player.instance.skill_points >= 10:
+        libtcod.console_set_default_foreground(side_panel, libtcod.dark_green)
+        libtcod.console_print(side_panel, 10, drawHeight, '(p) Skill')
+        libtcod.console_print(side_panel, 10, drawHeight + 1, 'Available')
+
     drawHeight += 6
+    libtcod.console_set_default_foreground(side_panel, libtcod.white)
 
     # Mana
     libtcod.console_print(side_panel, 2, drawHeight, 'Essence:')
@@ -890,6 +897,9 @@ def target_tile(max_range=None, targeting_type='pick', acc_mod=1.0, default_targ
     render_side_panel()
     render_message_panel()
     affected_tiles = []
+
+    if targeting_type == 'summon' or targeting_type == 'ranged burst':
+        targeting_type = 'pick'
 
     while not libtcod.console_is_window_closed():
         libtcod.console_flush()
@@ -1335,6 +1345,10 @@ def show_ability_screen():
             stamina_cost = player.instance.fighter.get_equipped_shield().sh_raise_cost
         elif opt.name == 'Cleave':
             stamina_cost = player.instance.fighter.calculate_attack_stamina_cost() * 2
+        elif opt.name == 'Jump':
+            stamina_cost = consts.JUMP_STAMINA_COST
+        elif opt.name == 'Bash':
+            stamina_cost = consts.BASH_STAMINA_COST
         else:
             stamina_cost = opt.stamina_cost
         if stamina_cost > player.instance.fighter.stamina:
@@ -1360,7 +1374,6 @@ def show_ability_screen():
         letter_index += 1
 
     index = menu_ex('Abilities', opts_ex, 40)
-    #index = menu('Abilities',[opt.name for opt in opts],20)
     if index is not None:
         choice = opts[index]
         if choice is not None:
@@ -1496,7 +1509,7 @@ def render_projectile(start, end, color, character=None):
 
     if character is None: bolt_char = chr(7)
     else: bolt_char = character
-    bolt = main.GameObject(start[0], start[1], bolt_char, 'bolt', color=color)
+    bolt = main.GameObject(start[0], start[1], bolt_char, 'bolt', color=color, movement_type=2)
 
     line = main.beam(start[0], start[1], end[0], end[1])
     main.current_map.add_object(bolt)
@@ -1598,15 +1611,22 @@ def buy(item,payment_type,success,cancelled):
     else:
         payment = next((n for n in inventory if n.name == selection))
         inventory.remove(payment)
-        main.create_item(item).item.pick_up(player.instance)
+        if callable(item):
+            item()
+        else:
+            main.create_item(item).item.pick_up(player.instance)
         return success
 
 def character_info_screen(console, x, y, width):
     print_height = 0
 
     # XP Progress
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    libtcod.console_print(console, 2, y + print_height, 'Level %d' % player.instance.level)
+    print_height += 2
+
     next_lvl = consts.LEVEL_UP_BASE + player.instance.level * consts.LEVEL_UP_FACTOR
-    render_bar(x + 2, y, BAR_WIDTH, 'XP', player.instance.fighter.xp, next_lvl, libtcod.light_sky, libtcod.dark_sky, console=console)
+    render_bar(x + 2, y + print_height, BAR_WIDTH, 'XP', player.instance.fighter.xp, next_lvl, libtcod.light_sky, libtcod.dark_sky, console=console)
     print_height += 2
 
     # Skill Progress
@@ -1623,6 +1643,52 @@ def character_info_screen(console, x, y, width):
     libtcod.console_print(console, 2, y + print_height, 'Evasion: ')
     libtcod.console_set_default_foreground(console, libtcod.yellow)
     libtcod.console_print(console, 11, y + print_height, str(player.instance.fighter.evasion))
+    print_height += 1
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    libtcod.console_print(console, 2, y + print_height, 'Fortitude: ')
+    libtcod.console_set_default_foreground(console, libtcod.orange)
+    libtcod.console_print(console, 13, y + print_height, str(player.instance.fighter.fortitude))
+    print_height += 1
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    libtcod.console_print(console, 2, y + print_height, 'Will: ')
+    libtcod.console_set_default_foreground(console, libtcod.blue)
+    libtcod.console_print(console, 8, y + print_height, str(player.instance.fighter.will))
+
+    # Resistances / Immunities / Weaknesses
+    alt_height = 0
+    libtcod.console_set_default_foreground(console, libtcod.orange)
+    libtcod.console_print(console, 26, y, 'Resistances:')
+    libtcod.console_set_default_foreground(console, libtcod.white)
+    alt_height += 2
+    for r in player.instance.fighter.resistances.keys():
+        if player.instance.fighter.resistances[r] == 'immune':
+            r_string = 'Immune'
+        else:
+            r_string = str(player.instance.fighter.resistances[r])
+        libtcod.console_print(console, 26, y + alt_height, r.capitalize() + ': ' + r_string)
+        alt_height += 1
+    if alt_height == 2:
+        libtcod.console_print(console, 26, y + alt_height, 'None')
+        alt_height += 1
+
+    print_height = max(print_height, alt_height)
+    print_height += 2
+
+    # Status effects
+    libtcod.console_set_default_foreground(console, libtcod.purple)
+    libtcod.console_print(console, 2, y + print_height, 'Status Effects:')
+    print_height += 1
+    if len(player.instance.fighter.status_effects) == 0:
+        libtcod.console_set_default_foreground(console, libtcod.white)
+        libtcod.console_print(console, 2, y + print_height, 'None')
+        print_height += 1
+    else:
+        print_height += 1
+        for e in player.instance.fighter.status_effects:
+            libtcod.console_set_default_foreground(console, e.color)
+            h = libtcod.console_get_height_rect(console, 2, y + print_height, width - 4, 10, e.description)
+            libtcod.console_print_rect(console, 2, y + print_height, width - 4, h, e.description)
+            print_height += h
 
     print_height += 1
     return print_height

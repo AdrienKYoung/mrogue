@@ -1,5 +1,5 @@
 import libtcodpy
-import actions
+from actions import item_actions
 import player
 
 table = {
@@ -8,7 +8,7 @@ table = {
         'name'               : 'longsword',
         'category'           : 'weapon',
         'subtype'            : 'sword',
-        'damage_type'        : 'slashing',
+        'damage_types'       : ['slashing'],
         'char'               : '/',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -27,7 +27,7 @@ table = {
         'name'               : 'rapier',
         'category'           : 'weapon',
         'subtype'            : 'sword',
-        'damage_type'        : 'stabbing',
+        'damage_types'       : ['stabbing'],
         'char'               : '/',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -46,7 +46,7 @@ table = {
         'name'               : 'greatsword',
         'category'           : 'weapon',
         'subtype'            : 'sword',
-        'damage_type'        : 'slashing',
+        'damage_types'       : ['slashing'],
         'char'               : '/',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -65,7 +65,7 @@ table = {
         'name'               : 'dagger',
         'category'           : 'weapon',
         'subtype'            : 'dagger',
-        'damage_type'        : 'stabbing',
+        'damage_types'       : ['stabbing'],
         'char'               : '-',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -83,7 +83,7 @@ table = {
     'weapon_messer': { #lit. german: 'knife'. no english period term
         'name'               : 'messer',
         'category'           : 'weapon',
-        'damage_type'        : 'slashing',
+        'damage_types'       : ['slashing'],
         'subtype'            : 'dagger',
         'char'               : '-',
         'color'              : libtcodpy.yellow,
@@ -102,7 +102,7 @@ table = {
     'weapon_katar': {
         'name'               : 'katar',
         'category'           : 'weapon',
-        'damage_type'        : 'stabbing',
+        'damage_types'       : ['stabbing'],
         'subtype'            : 'dagger',
         'char'               : chr(19),
         'color'              : libtcodpy.yellow,
@@ -122,7 +122,7 @@ table = {
         'name'               : 'spear',
         'category'           : 'weapon',
         'subtype'            : 'polearm',
-        'damage_type'        : 'stabbing',
+        'damage_types'       : ['stabbing'],
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -145,7 +145,7 @@ table = {
         'name'               : 'halberd',
         'category'           : 'weapon',
         'subtype'            : 'polearm',
-        'damage_type'        : 'slashing',
+        'damage_types'       : ['slashing'],
         'char'               : libtcodpy.CHAR_ARROW_N,
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -153,6 +153,7 @@ table = {
         'description'        : 'A superior two-handed polearm with a spike, axe and hook on its head.',
         'stamina_cost'       : 12,
         'str_requirement'    : 16,
+        'ability'            : 'ability_thrust',
         'pierce'             : 1,
         'shred'              : 0,
         'accuracy'           : 2,
@@ -167,11 +168,11 @@ table = {
         'name'               : 'pickaxe',
         'category'           : 'weapon',
         'subtype'            : 'axe',
-        'damage_type'        : 'stabbing',
+        'damage_types'       : ['stabbing'],
         'char'               : 'T',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
-        'slot'               :'right hand',
+        'slot'               : 'both hands',
         'description'        : 'A heavy digging implement used by miners. Can be used to dig through the walls '
                                'of the dungeon',
         'stamina_cost'       : 18,
@@ -179,7 +180,7 @@ table = {
         'pierce'             : 1,
         'shred'              : 1,
         'accuracy'           : -3,
-        'ctrl_attack'        : actions.pickaxe_dig,
+        'ctrl_attack'        : item_actions.pickaxe_dig,
         'ctrl_attack_desc'   : 'Dig - dig through walls in this direction.',
         'break'              : 5.0,
         'weapon_dice'        : '1d4',
@@ -191,7 +192,7 @@ table = {
         'name'               : 'hatchet',
         'category'           : 'weapon',
         'subtype'            : 'axe',
-        'damage_type'        : 'slashing',
+        'damage_types'       : ['slashing'],
         'char'               : 'p',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -213,7 +214,7 @@ table = {
         'name'               : 'dane axe',
         'category'           : 'weapon',
         'subtype'            : 'axe',
-        'damage_type'        : 'slashing',
+        'damage_types'       : ['slashing'],
         'char'               : 'P',
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -235,7 +236,7 @@ table = {
         'name'               : 'mace',
         'category'           : 'weapon',
         'subtype'            : 'mace',
-        'damage_type'        : 'bludgeoning',
+        'damage_types'       : ['bludgeoning'],
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -247,7 +248,7 @@ table = {
         'accuracy'           : 2,
         'weapon_dice'        : '1d6',
         'str_dice'           : 2,
-        'on_hit'             : [actions.mace_stun],
+        'on_hit'             : ['on_hit_stun'],
         'attack_delay'       : 18,
         'crit_bonus'         : 1.5
     },
@@ -255,7 +256,7 @@ table = {
         'name'               : 'club',
         'category'           : 'weapon',
         'subtype'            : 'mace',
-        'damage_type'        : 'bludgeoning',
+        'damage_types'       : ['bludgeoning'],
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -275,7 +276,7 @@ table = {
         'name'               : 'warhammer',
         'category'           : 'weapon',
         'subtype'            : 'mace',
-        'damage_type'        : 'bludgeoning',
+        'damage_types'       : ['bludgeoning'],
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
         'type'               : 'item',
@@ -288,14 +289,14 @@ table = {
         'accuracy'           : 1,
         'weapon_dice'        : '1d8',
         'str_dice'           : 4,
-        'on_hit'             : [actions.mace_stun],
+        'on_hit'             : ['on_hit_stun'],
         'attack_delay'       : 20,
         'crit_bonus'         : 1.5
     },
     'weapon_coal_mace': {
         'name'               : 'coal-brazer mace',
         'category'           : 'weapon',
-        'damage_type'        : 'fire',
+        'damage_types'       : ['fire'],
         'subtype'            : 'mace',
         'char'               : chr(157),
         'color'              : libtcodpy.yellow,
@@ -308,7 +309,7 @@ table = {
         'accuracy'           : 3,
         'weapon_dice'        : '1d8',
         'str_dice'           : 2,
-        'on_hit'             : [actions.mace_stun],
+        'on_hit'             : ['on_hit_stun'],
         'attack_delay'       : 18,
         'crit_bonus'         : 1.5
     },
@@ -316,7 +317,7 @@ table = {
     'weapon_crossbow': {
         'name'              : 'crossbow',
         'category'          : 'weapon',
-        'damage_type'       : 'stabbing',
+        'damage_types'      : ['stabbing'],
         'subtype'           : 'ranged',
         'char'              : chr(23),
         'color'             : libtcodpy.yellow,
@@ -333,7 +334,7 @@ table = {
         'attack_delay'      : 1000,
         'crit_bonus'        : 1.5,
         'range'             : 10,
-        'ability'           : 'ability_off_hand_shoot'
+        'ability'           : 'ability_off_hand_shot'
 
     }
 }

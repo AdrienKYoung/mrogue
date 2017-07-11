@@ -140,10 +140,13 @@ ENDFEATURE
 //*******************
 FEATURE garden_hgate
 CATEGORY garden_hlink
+DEFAULT ,
+DEFINE : cypress tree
+DEFINE # marble wall
 FLAGS NOREFLECT
-###
-.>.
-...
+#######
+:,:>:,:
+,,,,,,,
 ENDFEATURE
 //*******************
 // Garden Vertical Gate
@@ -174,4 +177,24 @@ DEFINE : stone brick wall
 ...........
  .........
     ...
+ENDFEATURE
+
+//*******************
+//  Crypt Entrance
+//*******************
+FEATURE crypt_entrance
+CATEGORY crypt_vlink
+FLAGS NOSPAWNS NOELEV
+SCRIPT create_slopes
+DEFINE # stone brick wall
+DEFINE : gnarled tree
+______________
+___########___
+_###......###_
+_#........##:_
+_#.>......*.._
+_#........##:_
+_###......###_
+___########___
+______________
 ENDFEATURE

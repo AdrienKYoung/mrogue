@@ -18,14 +18,22 @@ from distutils.core import setup
 import py2exe
 import zipfile, os
 
-project_name = "mrogue-prealpha"
-version = "0.1.4"
+project_name = "mrogue"
+version = "0.2.0"
 dependencies = ['SDL2.dll','libtcod.dll',
                 'terminal16x16_gs_ro.png','menu_background.png','features.txt',
-                'legal/COPYING','legal/LIBTCOD-LICENSE.txt','legal/MROGUE-LICENSE.txt']
+                'legal/COPYING','legal/LIBTCOD-LICENSE.txt','legal/MROGUE-LICENSE.txt',
+                'README.md']
 
-features = ['features/branch-gates.txt','features/features-badlands.txt','features/features-forest.txt',
-                'features/features-gtunnels.txt','features/features-marsh.txt','features/premades.txt']
+features = [
+    'features/branch-gates.txt',
+    'features/features-badlands.txt',
+    'features/features-garden.txt',
+    'features/features-forest.txt',
+    'features/features-gtunnels.txt',
+    'features/features-marsh.txt',
+    'features/premades.txt',
+]
 
 setup(
     version=version,
@@ -35,9 +43,9 @@ setup(
     options = {
         "build": {"build_base":"build"},
         'py2exe': {
-        #"optimize": 2,
         "compressed": True,
-        "bundle_files": 1
+        "bundle_files": 1,
+        "includes":["dbhash"]
       }}
 )
 

@@ -26,6 +26,7 @@ import player
 import dungeon
 import loot
 import log
+from collections import deque
 
 angles = [0,
           0.5 * math.pi,
@@ -86,40 +87,6 @@ class BSP_Leaf:
             self.left.split_recursive()
             self.right.split_recursive()
 
-class NSP_Node:
-    def __init__(self,rect,type):
-        self.rect = rect
-        self.type = type
-        self.children = []
-
-    def split(self,max_size,min_size,partition_options,partition_strat=None):
-        wf = float(self.rect.w - min_size) / float(max_size - min_size)
-        hf = float(self.rect.h - min_size) / float(max_size - min_size)
-        f = min(wf,hf)
-
-        if self.rect.w <= min_size or self.rect.h <= min_size or libtcod.random_get_double(0, 0, 1) > f:
-            self.type = "leaf"
-            return
-
-        if partition_strat is None:
-            partition_strat = main.random_choice(partition_options)
-
-        symetrical = None
-        if libtcod.random_get_double(0, 0, 1) < 0.35:
-            symetrical = main.random_choice(partition_options)
-
-        for part in partition_strat(self.rect,min_size):
-            child = NSP_Node(part[0],part[1])
-            self.children.append(child)
-            if child.type == "branch":
-                child.split(max_size, min_size, partition_options,symetrical)
-
-    def dump_log(self, level=0):
-        log.info("mapgen","{}{}",["  " * level,str(self.rect)])
-        for c in self.children:
-            c.dump_log(level + 1)
-
-
 
 # It's not a bug, it's a
 class Feature:
@@ -153,6 +120,11 @@ class Room:
             return 0, 0
         else:
             return self.max_x - self.min_x + 1, self.max_y - self.min_y + 1
+
+    @property
+    def rect(self):
+        bounds = self.bounds
+        return Rect(self.min_x, self.min_y, bounds[0] - 1, bounds[1] - 1)
 
     @property
     def width(self):
@@ -265,6 +237,27 @@ class Room:
             #else:
             #    self.data[(x, y)] += (' ' + ele_str)
 
+    def remove_tile(self, x, y):
+        if not (x, y) in self.tiles.keys():
+            return
+        del self.tiles[(x, y)]
+        if (x, y) in self.data.keys():
+            del self.data[(x, y)]
+        if x == self.min_x or x == self.max_x or y == self.min_y or y == self.max_y:
+            self.max_x = None
+            self.min_x = None
+            self.max_y = None
+            self.min_y = None
+            for t in self.tiles:
+                if self.min_x is None or self.min_x > t[0]:
+                    self.min_x = t[0]
+                if self.max_x is None or self.max_x < t[0]:
+                    self.max_x = t[0]
+                if self.min_y is None or self.min_y > t[1]:
+                    self.min_y = t[1]
+                if self.max_y is None or self.max_y < t[1]:
+                    self.max_y = t[1]
+
     def get_open_tiles(self):
         return_tiles = []
         for tile in self.tiles.keys():
@@ -323,15 +316,19 @@ class Room:
         else:
             return None
 
+    def distance_to(self,other):
+        c = self.center()
+        co = other.center()
+        size = (self.bounds[0] + self.bounds[1]) / 2
+        other_size = size = (other.bounds[0] + other.bounds[1]) / 2
+        return abs(c[0] - co[0]) + abs(c[1] - co[1]) - size - other_size
+
 class Rect:
     def __init__(self, x, y, w, h):
         self.x1 = x
         self.y1 = y
         self.x2 = x + w
         self.y2 = y + h
-
-    def __str__(self):
-        return "(({},{}),({},{}))".format(self.x1,self.y1,self.x2,self.y2)
 
     def center(self):
         center_x = (self.x1 + self.x2) / 2
@@ -638,6 +635,9 @@ def apply_data(x, y, data):
                 door.send_to_back()
 
 def apply_object(x, y, data):
+    # Don't apply objects on the map's edge
+    if x <= 0 or y <= 0 or x >= consts.MAP_WIDTH - 1 or y >= consts.MAP_HEIGHT - 1:
+        return
     monster_id = None
     npc_id = None
     go_name = None
@@ -680,7 +680,7 @@ def apply_object(x, y, data):
     if monster_id is not None:
         main.spawn_monster(monster_id, x, y)
     elif npc_id is not None:
-        main.spawn_npc(npc_id, x, y)
+        main.spawn_npc(npc_id, x, y, map.name)
     elif go_name is not None:
         new_obj = main.GameObject(x, y, go_char, go_name, go_color, blocks=go_blocks, description=go_description)
         map.add_object(new_obj)
@@ -889,6 +889,14 @@ def create_v_tunnel(y1, y2, x, tile_type=default_floor):
         change_map_tile(x, y, tile_type)
 
 
+def create_hv_tunnel(x1, y1, x2, y2, tile_type=default_floor):
+    if libtcod.random_get_float(0,0,1) < 0.5:
+        create_v_tunnel(y1,y2,x1,tile_type)
+        create_h_tunnel(x1, x2, y2, tile_type)
+    else:
+        create_h_tunnel(x1, x2, y1, tile_type)
+        create_v_tunnel(y1, y2, x2, tile_type)
+
 def scatter_reeds(tiles, probability=20):
     for tile in tiles:
         if libtcod.random_get_int(0, 1, 100) < probability and not map.tiles[tile[0]][tile[1]].blocks:
@@ -907,7 +915,7 @@ def fill_blightweed(tiles):
             create_blightweed(tile[0], tile[1])
 
 
-def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400, cross_elevation=False):
+def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400, cross_elevation=False, overwrite=False):
     patch_limit = min_patch + libtcod.random_get_int(0, 0, max_patch - min_patch)
     patch_count = 0
     Q = Queue.Queue()
@@ -922,8 +930,8 @@ def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400, cross
 
         for adj in main.adjacent_tiles_diagonal(tile[0], tile[1]):
             adj_tile = map.tiles[adj[0]][adj[1]]
-            if not adj_tile.blocks and not adj_tile.is_water and not adj_tile.is_ramp and \
-                    (cross_elevation or adj_tile.elevation == map.tiles[tile[0]][tile[1]].elevation):
+            if overwrite or (not adj_tile.blocks and not adj_tile.is_water and not adj_tile.is_ramp and
+                    (cross_elevation or adj_tile.elevation == map.tiles[tile[0]][tile[1]].elevation)):
                 adjacent.append(adj)
 
         for i in range(3):
@@ -994,6 +1002,27 @@ def create_door(x, y, locked=False):
     door.locked = locked
     door.closed = True
     return door
+
+def create_gate_switch(gatex,gatey,switchx,switchy):
+    obj = main.get_objects(gatex, gatey)
+    if len(obj) > 0:
+        return None,None  # object in the way
+
+    type_here = map.tiles[gatex][gatey].tile_type
+    if terrain.data[type_here].isFloor:
+        change_map_tile(gatex, gatey, default_floor)
+    description = 'A heavy iron gate, locked by some unknown mechanism.'
+    door = main.GameObject(gatex, gatey, '=', 'iron gate', libtcod.brass, always_visible=True, description=description,
+                           blocks_sight=True, blocks=False, burns=False, background_color=libtcod.darkest_flame,
+                           interact=main.door_interact)
+    door.locked = True
+    door.closed = True
+
+    switch = main.GameObject(switchx, switchy, '!', 'hanging chain', libtcod.dark_gray, always_visible=True,
+                             description='A hanging chain. Enticingly pullable.', blocks_sight=False, blocks=False,
+                             burns=False, interact=lambda o,a: main.switch_interact(door), background_color=libtcod.darkest_flame)
+
+    return door, switch
 
 def initialize_features():
     global feature_categories, features
@@ -1219,6 +1248,17 @@ def apply_scripts(feature, room=None):
         elif script == 'your script here':
             pass
 
+def clear_borders_from_open_set(open_tiles):
+    for x in range(consts.MAP_WIDTH):
+        if (x, 0) in open_tiles:
+            open_tiles.remove((x, 0))
+        if (x, consts.MAP_HEIGHT - 1) in open_tiles:
+            open_tiles.remove((x, consts.MAP_HEIGHT - 1))
+    for y in range(consts.MAP_WIDTH):
+        if (0, y) in open_tiles:
+            open_tiles.remove((0, y))
+        if (consts.MAP_WIDTH - 1, y) in open_tiles:
+            open_tiles.remove((consts.MAP_WIDTH - 1, y))
 
 def choose_random_tile(tile_list, exclusive=True):
     chosen_tile = tile_list[libtcod.random_get_int(0, 0, len(tile_list) - 1)]
@@ -1260,6 +1300,8 @@ def erode_map(floor_type=default_floor, iterations=1):
         eroded = []
         for y in range(consts.MAP_HEIGHT):
             for x in range(consts.MAP_WIDTH):
+                if not map.tiles[x][y].is_wall:
+                    continue
                 open_count = 0
                 adjacent = main.adjacent_tiles_diagonal(x, y)
                 for tile in adjacent:
@@ -1341,7 +1383,7 @@ def make_rooms_and_corridors():
                 # else:
                 #    create_v_tunnel(prev_y, new_y, prev_x)
                 #    create_h_tunnel(prev_x, new_x, new_y)
-            main.place_objects(room_array.get_open_tiles())
+            #main.place_objects(room_array.get_open_tiles())
             if libtcod.random_get_int(0, 0, 5) == 0:
                 scatter_reeds(room_array.get_open_tiles())
             rooms.append(room_bounds)
@@ -1358,7 +1400,81 @@ def make_rooms_and_corridors():
     #map.add_object(level_shrine)
     #level_shrine.send_to_back()
 
-def make_garden_rooms_legacy(leaf):
+def mirror_map():
+    for x in range(consts.MAP_WIDTH / 2):
+        for y in range(consts.MAP_HEIGHT):
+            change_map_tile(consts.MAP_WIDTH - 1 - x, y, map.tiles[x - 1][y].tile_type)
+
+def make_garden_connections(room, direction):
+    other = room.connections[direction]
+    if other is None: return
+    if other.connections[main.opposite_direction(direction)] == room:
+        other.connections[main.opposite_direction(direction)] = None
+    if direction == 'right' or direction == 'left':
+        if direction == 'right':
+            x_r = (room.max_x, other.min_x)
+        else:
+            x_r = (other.max_x, room.min_x)
+        if other.height < room.height:
+            if other.height % 2 == 0:
+                y_r = (other.center()[1] - 1, other.center()[1])
+            else:
+                y_r = (other.center()[1], other.center()[1])
+        else:
+            if room.height % 2 == 0:
+                y_r = (room.center()[1] - 1, room.center()[1])
+            else:
+                y_r = (room.center()[1], room.center()[1])
+            if abs(y_r[0] - other.max_y) < 1 or abs(y_r[0] - other.min_y) < 2:
+                return
+    else:
+        if direction == 'bottom':
+            y_r = (room.max_y, other.min_y)
+        else:
+            y_r = (other.max_y, room.min_y)
+        if other.width < room.width:
+            if other.width % 2 == 0:
+                x_r = (other.center()[0] - 1, other.center()[0])
+            else:
+                x_r = (other.center()[0], other.center()[0])
+        else:
+            if room.width % 2 == 0:
+                x_r = (room.center()[0] - 1, room.center()[0])
+            else:
+                x_r = (room.center()[0], room.center()[0])
+            if abs(x_r[0] - other.max_x) < 1 or abs(x_r[0] - other.min_x) < 2:
+                return
+    tiles = []
+    for y in range(y_r[0], y_r[1] + 1):
+        for x in range(x_r[0], x_r[1] + 1):
+            if map.tiles[x][y].tile_type == default_wall:
+                change_map_tile(x, y, 'marble path', no_overwrite=True)
+                tiles.append((x, y))
+            if (x, y) in room.tiles.keys():
+                room.data[(x, y)] = 'nowall'
+            if (x, y) in other.tiles.keys():
+                other.data[(x, y)] = 'nowall'
+    if len(tiles) > 0:
+        decorate_garden_connection(tiles, direction == 'top' or direction == 'bottom')
+    else:
+        pass
+
+def decorate_garden_connection(tiles, horizontal, tile_type=None):
+    if tile_type is None:
+        options = ['cypress tree', 'hedge']
+        tile_type = options[libtcod.random_get_int(0, 0, len(options) - 1)]
+    if horizontal:
+        left = min(tiles[0][0], tiles[len(tiles) - 1][0])
+        right = max(tiles[0][0], tiles[len(tiles) - 1][0])
+        change_map_tile(left - 1, tiles[0][1], tile_type, no_overwrite=True)
+        change_map_tile(right + 1, tiles[0][1], tile_type, no_overwrite=True)
+    else:
+        top = min(tiles[0][1], tiles[len(tiles) - 1][1])
+        bottom = max(tiles[0][1], tiles[len(tiles) - 1][1])
+        change_map_tile(tiles[0][0], top - 1, tile_type, no_overwrite=True)
+        change_map_tile(tiles[0][0], bottom + 1, tile_type, no_overwrite=True)
+
+def make_garden_rooms(leaf):
     if leaf.left is None or leaf.right is None:
         room = Room()
         for x in range(leaf.w):
@@ -1373,110 +1489,421 @@ def make_garden_rooms_legacy(leaf):
         make_garden_rooms(leaf.left)
         make_garden_rooms(leaf.right)
 
-def make_map_garden_legacy():
+def decorate_garden_room(room):
+    w = room.width
+    h = room.height
+    shortest = min(w, h)
+    # Set default ground
+    garden_set_default_ground(room)
+    # Border
+    border_decorations = [garden_corners, garden_small_corners, garden_passable_border]
+    if shortest >= 7:
+        border_decorations.append(garden_border)
+        border_decorations.append(garden_large_corners)
+        if w % 2 == 1 and h % 2 == 1:
+            border_decorations.append(garden_border_staggered_1)
+    if h >= 7:
+        border_decorations.append(garden_border_h)
+    if w >= 7:
+        border_decorations.append(garden_border_v)
+    border_decorations.append(None)
+    choice = border_decorations[libtcod.random_get_int(0, 0, len(border_decorations) - 1)]
+    if choice is not None:
+        choice(room)
+    garden_fill_center(room)
+    if len(room.tiles) > 0:
+        garden_center_features(room)
 
-    for x in range(consts.MAP_WIDTH):
-        for y in range(consts.MAP_HEIGHT):
-            change_map_tile(x, y, default_floor)
-    root = BSP_Leaf(0, 0, consts.MAP_WIDTH - 1, consts.MAP_HEIGHT - 1)
-    root.split_recursive()
-    make_garden_rooms(root)
+def garden_set_default_ground(room, type=None):
+    if type is None:
+        types=['grass floor', 'marble path']
+        type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    if room.min_x is None:
+        return
+    room.default_floor = type
+    for y in range(room.min_y, room.max_y + 1):
+        for x in range(room.min_x, room.max_x + 1):
+            change_map_tile(x, y, type)
 
-def make_garden_rooms(node):
-    if 'leaf' in node.type:
-        room = Room()
-        for x in range(node.rect.w):
-            room.set_tile(x, 0, default_wall)
-            room.set_tile(x, node.rect.h, default_wall)
-        for y in range(node.rect.h):
-            room.set_tile(0, y, default_wall)
-            room.set_tile(node.rect.w, y, default_wall)
-        room.set_pos(node.rect.x1 + room.width / 2, node.rect.y1 + room.height / 2)
-        apply_room(room)
-    elif 'path' in node.type:
-        room = Room()
-        for x in range(node.rect.w):
-            for y in range(node.rect.h):
-                room.set_tile(x, y,'grass floor')
-        room.set_pos(node.rect.x1 + room.width / 2, node.rect.y1 + room.height / 2)
-        apply_room(room)
+def garden_fill_center(room, type=None):
+    if type is None:
+        if room.default_floor == 'grass floor':
+            type = 'marble path'
+        else:
+            type = 'grass floor'
+    to_remove = []
+    for tile in room.tiles:
+        if (tile[0], tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0], tile[1] - 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1]) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1]) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1] - 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1] - 1) in room.tiles.keys():
+            change_map_tile(tile[0], tile[1], type)
+        else:
+            to_remove.append(tile)
+    for tile in to_remove:
+        room.remove_tile(tile[0], tile[1])
+
+def garden_passable_border(room):
+    w = room.width
+    h = room.height
+    types=['grass floor', 'shallow water']
+    fncs = [garden_border, garden_border_h, garden_border_v, garden_corners, garden_large_corners]
+    if w % 2 == 1 and h % 2 == 1:
+        fncs.append(garden_border_staggered_1)
+    fncs[libtcod.random_get_int(0, 0, len(fncs) - 1)](room, types[libtcod.random_get_int(0, 0, len(types) - 1)])
+
+def garden_border(room, terrain_type='hedge'):
+    min_x = room.min_x
+    max_x = room.max_x
+    min_y = room.min_y
+    max_y = room.max_y
+    for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x + 1):
+            if x == min_x or x == max_x or y == min_y or y == max_y:
+                if (x, y) not in room.data.keys():
+                    change_map_tile(x, y, terrain_type)
+                    room.remove_tile(x, y)
+
+def garden_border_h(room, terrain_type=None):
+    if terrain_type is None:
+        types=['hedge', 'cypress tree']
+        terrain_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+
+    for x in range(room.min_x, room.max_x + 1):
+        if (x, room.min_y) not in room.data.keys():
+            change_map_tile(x, room.min_y, terrain_type)
+            room.remove_tile(x, room.min_y)
+        if (x, room.max_y) not in room.data.keys():
+            change_map_tile(x, room.max_y, terrain_type)
+            room.remove_tile(x, room.max_y)
+
+def garden_border_v(room, terrain_type=None):
+    if terrain_type is None:
+        types=['hedge', 'cypress tree']
+        terrain_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    for y in range(room.min_y, room.max_y + 1):
+        if (room.min_x, y) not in room.data.keys():
+            change_map_tile(room.min_x, y, terrain_type)
+            room.remove_tile(room.min_x, y)
+        if (room.max_x, y) not in room.data.keys():
+            change_map_tile(room.max_x, y, terrain_type)
+            room.remove_tile(room.max_x, y)
+
+def garden_border_staggered_1(room, terrain_type='cypress tree'):
+    min_x = room.min_x
+    max_x = room.max_x
+    min_y = room.min_y
+    max_y = room.max_y
+    for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x + 1):
+            if x == min_x or x == max_x or y == min_y or y == max_y:
+                room.remove_tile(x, y)
+                if (x - min_x) % 2 == 0 and (y - min_y) % 2 == 0 and (x, y) not in room.data.keys():
+                    change_map_tile(x, y, terrain_type)
+
+def garden_small_corners(room, tile_type='cypress tree'):
+    corners = [
+        (room.min_x, room.min_y),
+        (room.max_x, room.min_y),
+        (room.min_x, room.max_y),
+        (room.max_x, room.max_y),
+    ]
+    for corner in corners:
+        change_map_tile(corner[0], corner[1], tile_type)
+        room.remove_tile(corner[0], corner[1])
+
+def garden_corners(room, tile_type='hedge'):
+    corners = [
+        (room.min_x, room.min_y),
+        (room.min_x + 1, room.min_y),
+        (room.min_x, room.min_y + 1),
+        (room.max_x, room.min_y),
+        (room.max_x - 1, room.min_y),
+        (room.max_x, room.min_y + 1),
+        (room.min_x, room.max_y),
+        (room.min_x + 1, room.max_y),
+        (room.min_x, room.max_y - 1),
+        (room.max_x, room.max_y),
+        (room.max_x - 1, room.max_y),
+        (room.max_x, room.max_y - 1),
+    ]
+    for corner in corners:
+        change_map_tile(corner[0], corner[1], tile_type)
+        room.remove_tile(corner[0], corner[1])
+
+def garden_large_corners(room, tile_type='marble wall', size=2):
+    s = size - 1
+    min_x = room.min_x
+    max_x = room.max_x
+    min_y = room.min_y
+    max_y = room.max_y
+    for y in range(min_y, max_y + 1):
+        for x in range(min_x, max_x + 1):
+            if (abs(x - min_x) <= s and abs(y - min_y) <= 1) or \
+                    (abs(x - max_x) <= s and abs(y - min_y) <= s) or \
+                    (abs(x - min_x) <= s and abs(y - max_y) <= s) or \
+                    (abs(x - max_x) <= s and abs(y - max_y) <= s):
+                change_map_tile(x, y, tile_type)
+                room.remove_tile(x, y)
+
+def garden_center_features(room):
+    w = room.width
+    h = room.height
+    choices = []
+    legal_features = [feature.name for feature in feature_categories['garden'] if
+                      ((feature.room.width <= w and feature.room.height <= h and feature.room.width % 2 == w % 2 and feature.room.height % 2 == h % 2) or
+                       (feature.room.height <= w and feature.room.width <= h and feature.room.height % 2 == w % 2 and feature.room.width % 2 == h % 2))]
+    if len(legal_features) > 0:
+        choices.append((garden_make_feature, legal_features[libtcod.random_get_int(0, 0, len(legal_features) - 1)]))
+    if w % 2 == 1 and h % 2 == 1:
+        choices.append((garden_cross_small, None))
+        if w > 5 and h > 5:
+            choices.append((garden_cross_large, None))
+    if w >= 5 and h >= 5:
+        choices.append((garden_inner_walls, None))
+    #choices.append(None)
+    if len(choices) > 0 and main.roll_dice('1d1') == 1:
+        choice = choices[libtcod.random_get_int(0, 0, len(choices) - 1)]
+        if choice is not None:
+            choice[0](room, choice[1])
+
+def garden_make_feature(room, feature):
+    c = room.center()
+    f = features[feature]
+    H = False
+    V = False
+    if room.width >= f.room.width and room.width % 2 == f.room.width % 2:
+        H = True
+    if room.height >= f.room.width and room.height % 2 == f.room.width % 2:
+        V = True
+    if H and not V:
+        rotation = angles[0]
+    elif V and not H:
+        rotation = angles[1]
+    elif V and H:
+        opts = [angles[0], angles[1], angles[2], angles[3]]
+        rotation = opts[libtcod.random_get_int(0, 0, 1)]
     else:
-        for c in node.children:
-            make_garden_rooms(c)
+        return
+    create_feature(c[0], c[1], feature, rotation=rotation)
+
+def garden_cross_small(room, tile_type=None):
+    c = room.center()
+    if tile_type is None:
+        types = ['hedge', 'cypress tree', 'marble wall', 'chasm', 'shallow water', 'deep water']
+        tile_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    change_map_tile(c[0], c[1], tile_type)
+    change_map_tile(c[0] + 1, c[1], tile_type)
+    change_map_tile(c[0] - 1, c[1], tile_type)
+    change_map_tile(c[0], c[1] + 1, tile_type)
+    change_map_tile(c[0], c[1] - 1, tile_type)
+
+def garden_cross_large(room, tile_type=None):
+    c = room.center()
+    if tile_type is None:
+        types = ['hedge', 'cypress tree', 'marble wall', 'chasm', 'shallow water', 'deep water']
+        tile_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    for x in range(c[0] - 2, c[0] + 3):
+        change_map_tile(x, c[1], tile_type)
+    for y in range(c[1] - 2, c[1] + 3):
+        change_map_tile(c[0], y, tile_type)
+
+def garden_inner_walls(room, tile_type=None):
+    center_x = [room.center()[0]]
+    center_y = [room.center()[1]]
+    if room.width % 2 == 0:
+        center_x.append(room.center()[0] - 1)
+    if room.height % 2 == 0:
+        center_y.append(room.center()[1] - 1)
+    if tile_type is None:
+        types = ['hedge', 'marble wall']
+        tile_type = types[libtcod.random_get_int(0, 0, len(types) - 1)]
+    for tile in room.tiles.keys():
+        if (tile[0], tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0], tile[1] - 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1]) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1]) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0] - 1, tile[1] - 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1] + 1) in room.tiles.keys() and \
+                        (tile[0] + 1, tile[1] - 1) in room.tiles.keys():
+            continue
+        if tile[0] not in center_x and tile[1] not in center_y:
+            change_map_tile(tile[0], tile[1], tile_type)
 
 def make_map_garden():
+    import random
+
     for x in range(consts.MAP_WIDTH):
         for y in range(consts.MAP_HEIGHT):
             change_map_tile(x, y, default_floor)
-    root = NSP_Node(Rect(0, 0, consts.MAP_WIDTH - 1, consts.MAP_HEIGHT - 1),"branch")
-    root.split(15,4,{garden_wall_partition:10,garden_path_partition:10})
+    root = BSP_Leaf(0, 0, consts.MAP_WIDTH / 2 + 1, consts.MAP_HEIGHT - 1)
+    root.split_recursive()
     make_garden_rooms(root)
+    mirror_map()
 
-def garden_wall_partition(rect,min_size):
-    dir = rect.w / rect.h
-    result = None
+    # arrange the cells into new Room objects
+    garden_cells = []
+    filled_lists = []
+    tiles = {}
+    for x in range(consts.MAP_WIDTH):
+        for y in range(consts.MAP_HEIGHT):
+            tiles[(x, y)] = map.tiles[x][y].tile_type
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            if (x, y) in tiles.keys() and tiles[(x, y)] != default_wall:
+                if len(filled_lists) > 0:
+                    for filled in filled_lists:
+                        if (x, y) in filled:
+                            continue
+                new_list = flood_fill(tiles, filled_lists, x, y)
+                if len(new_list) > 0:
+                    filled_lists.append(new_list)
 
-    if(dir < libtcod.random_get_float(0,0,2)):
-        if(rect.h < min_size):
-            return []
+    for filled in filled_lists[1:]:
+        new_cell = Room()
+        for tile in filled:
+            new_cell.set_tile(tile[0], tile[1], map.tiles[tile[0]][tile[1]].tile_type)
+        garden_cells.append(new_cell)
 
-        split_value = libtcod.random_get_int(0, min_size, rect.h - min_size)
+    # Make connections
+    for cell in garden_cells:
+        cell.connections = {
+            'left' : None,
+            'right' : None,
+            'top' : None,
+            'bottom' : None,
+        }
+    for cell in garden_cells:
+        left = cell.min_x - 2
+        right = cell.max_x + 2
+        top = cell.min_y - 2
+        bottom = cell.max_y + 2
+        c = cell.center()
+        for other in garden_cells:
+            if cell.connections['left'] is None and left > 0 and (left, c[1]) in other.tiles.keys():
+                cell.connections['left'] = other
+                other.connections['right'] = cell
+            if cell.connections['right'] is None and right < consts.MAP_WIDTH - 2 and (right, c[1]) in other.tiles.keys():
+                cell.connections['right'] = other
+                other.connections['left'] = cell
+            if cell.connections['top'] is None and top > 0 and (c[0], top) in other.tiles.keys():
+                cell.connections['top'] = other
+                other.connections['bottom'] = cell
+            if cell.connections['bottom'] is None and bottom < consts.MAP_HEIGHT - 1 and (c[0], bottom) in other.tiles.keys():
+                cell.connections['bottom'] = other
+                other.connections['top'] = cell
 
-        result = [
-            (Rect(rect.x1, rect.y1, rect.w, split_value), "branch"),
-            (Rect(rect.x1, rect.y1 + split_value, rect.w, rect.h - split_value), "branch")
-        ]
-        log.info("mapgen", "Horizontal split from {} at h={} into: {} and {}",
-                 [rect, split_value, result[0][0], result[1][0]])
-    else:
-        if (rect.w < min_size):
-            return []
+    # TODO: Prim's algorithm to ensure connectivity of garden cells
+    root = garden_cells[libtcod.random_get_int(0, 0, len(garden_cells) - 1)]
+    open_set = [root]
+    closed_set = []
+    while len(open_set) > 0:
+        cell = open_set[libtcod.random_get_int(0, 0, len(open_set) - 1)]
+        open_set.remove(cell)
+        closed_set.append(cell)
+        keys = [key for key in cell.connections.keys() if cell.connections[key] is not None and not cell.connections[key] in closed_set]
+        if len(keys) == 0:
+            continue
+        link_count = libtcod.random_get_int(0, 1, len(keys))
+        random.shuffle(keys)
+        for i in range(link_count):
+            make_garden_connections(cell, keys[i])
+            open_set.append(cell.connections[keys[i]])
 
-        split_value = libtcod.random_get_int(0, min_size, rect.w - min_size) + min_size
+    if len(closed_set) < len(garden_cells):
+        # If we didn't make enough connections, try again
+        return make_map_garden()
 
-        result = [
-            (Rect(rect.x1, rect.y1, split_value, rect.h), "branch"),
-            (Rect(rect.x1 + split_value, rect.y1, rect.w - split_value, rect.h), "branch")
-        ]
-        log.info("mapgen", "Vertical split from {} at w={} into: {} and {}",
-                 [rect, split_value, result[0][0], result[1][0]])
-    return result
+    # Decorate rooms
+    for cell in garden_cells:
+        decorate_garden_room(cell)
+    to_be_removed = []
+    for cell in garden_cells:
+        if len(cell.tiles) == 0:
+            to_be_removed.append(cell)
+    for cell in to_be_removed:
+        garden_cells.remove(cell)
 
-def garden_path_partition(rect,min_size):
-    dir = rect.w / rect.h
-    result = None
+    open_tiles = []
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            if not map.tiles[x][y].blocks:
+                open_tiles.append((x, y))
 
-    if (dir < libtcod.random_get_float(0, 0, 2)):
-        path_width = int(rect.h / 8)
+    active_branch = dungeon.branches[map.branch]
 
-        if (rect.h < min_size or path_width < 1):
-            return []
+    clear_borders_from_open_set(open_tiles)
 
-        split_value = libtcod.random_get_int(0, min_size, rect.h - min_size)
+    main.place_objects(open_tiles,
+                       main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
+                       main.roll_dice(active_branch['loot_dice']),
+                       active_branch['xp_amount'])
 
-        result = [
-            (Rect(rect.x1, rect.y1, rect.w, split_value - path_width), "branch"),
-            (Rect(rect.x1, rect.y1 + split_value - path_width, rect.w, path_width * 2), "path"),
-            (Rect(rect.x1, rect.y1 + split_value + path_width, rect.w, rect.h - split_value - path_width), "branch")
-        ]
-        log.info("mapgen", "Horizontal path split from {} at h={} into: {}, {} and {}",
-                 [rect, split_value, result[0][0], result[1][0], result[2][0]])
-    else:
-        path_width = min(int(rect.w / 8),2)
+    # Map links
+    for link in map.links:
+        hlink = True
+        c = '>'
+        if link[0] == 'north':
+            x = consts.MAP_WIDTH / 2
+            y = 1
+            r = angles[0]
+            c = chr(24)
+        elif link[0] == 'south':
+            x = consts.MAP_WIDTH / 2
+            y = consts.MAP_HEIGHT - 2
+            r = angles[2]
+            c = chr(25)
+        elif link[0] == 'east':
+            x = consts.MAP_WIDTH - 3
+            y = consts.MAP_HEIGHT / 2
+            r = angles[1]
+            c = chr(26)
+        elif link[0] == 'west':
+            x = 1
+            y = consts.MAP_WIDTH / 2
+            r = angles[3]
+            c = chr(27)
+        else:
+            x = libtcod.random_get_int(0, consts.MAP_WIDTH / 3, consts.MAP_WIDTH * 2 / 3)
+            y = libtcod.random_get_int(0, consts.MAP_HEIGHT / 3, consts.MAP_HEIGHT * 2 / 3)
+            r = None
+            if link[0] == 'up':
+                c = '>'
+            elif link[0] == 'down':
+                c = '<'
+            hlink = False
+        if hlink:
+            link_feature_category = link[1].branch + '_hlink'
+        else:
+            link_feature_category = link[1].branch + '_vlink'
+        if link_feature_category in feature_categories and len(feature_categories[link_feature_category]) > 0:
+            link_feature = random_from_list(feature_categories[link_feature_category]).name
+        else:
+            link_feature = feature_categories['default_gate'][0].name
+        # find map cell closest to this location:
+        garden_cells.sort(key=lambda cell: main.distance(cell.center()[0], cell.center()[1], x, y))
+        if link[0] == 'east' or link[0] == 'west' or not hlink:
+            y = garden_cells[0].center()[1]
+        if link[0] =='north' or link[0] == 'south' or not hlink:
+            x = garden_cells[0].center()[0]
+        create_feature(x, y, link_feature, hard_override=True, rotation=r)
+        stairs = None
+        for i in range(len(map.objects) - 1, 0, -1):
+            if map.objects[i].name == 'stairs':
+                stairs = map.objects[i]
+                break
+        if stairs is not None:
+            stairs.name = 'Path to ' + dungeon.branches[link[1].branch]['name']
+            stairs.description = 'A winding path leading to ' + dungeon.branches[link[1].branch]['name']
+            stairs.link = link
+            stairs.interact = main.use_stairs
+            stairs.char = c
 
-        if (rect.h < min_size or path_width < 1):
-            return []
-
-        split_value = libtcod.random_get_int(0, min_size, rect.w - min_size)
-
-        result = [
-            (Rect(rect.x1, rect.y1, split_value - path_width, rect.h), "branch"),
-            (Rect(rect.x1 + split_value - path_width, rect.y1, path_width * 2, rect.h), "path"),
-            (Rect(rect.x1 + split_value + path_width, rect.y1, rect.w - split_value - path_width, rect.h), "branch")
-        ]
-        log.info("mapgen", "Vertical path split from {} at h={} into: {}, {} and {}",
-                 [rect, split_value, result[0][0], result[1][0], result[2][0]])
-    return result
 
 def make_map_forest():
 
@@ -1550,6 +1977,9 @@ def make_map_forest():
         create_feature(tile[0], tile[1], feature_name, open_tiles)
 
     active_branch = dungeon.branches[map.branch]
+
+    clear_borders_from_open_set(open_tiles)
+
     main.place_objects(open_tiles,
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),
@@ -1595,6 +2025,7 @@ def make_map_marsh():
         create_feature(tile[0], tile[1], feature_name, open_tiles)
 
     active_branch = dungeon.branches[map.branch]
+    clear_borders_from_open_set(open_tiles)
     main.place_objects(open_tiles,
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d'+str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),
@@ -1652,6 +2083,7 @@ def make_map_beach():
 
 
 def make_map_grotto():
+    import npc
     open_tiles = []
     create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'grotto', open_tiles=open_tiles)
     stairs = None
@@ -1665,7 +2097,84 @@ def make_map_grotto():
         stairs.link = map.links[0]
         stairs.interact = main.use_stairs
         stairs.char = chr(25)
+        stairs.event = npc.event_leave_grotto
 
+def make_map_lava_lake():
+    open_tiles = []
+    create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'lava_lake', open_tiles=open_tiles)
+    stairs = []
+    for i in range(len(map.objects)):
+        if map.objects[i].name == 'stairs':
+            stairs.append(map.objects[i])
+    if len(stairs) > 0:
+        stairs.sort(key=lambda s: s.y)
+        stairs[0].name = 'Gate to the slagfields'
+        stairs[0].description = 'A winding path leading to the slagfields.'
+        stairs[0].link = map.links[1]
+        stairs[0].char = chr(26)
+        stairs[1].name = 'Gate to the badlands'
+        stairs[1].description = 'A winding path leading to the badlands.'
+        stairs[1].link = map.links[0]
+        stairs[1].char = chr(25)
+        for stair in stairs:
+            stair.interact = main.use_stairs
+
+
+def make_map_crypt():
+    open_tiles = []
+    create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'crypt', open_tiles=open_tiles)
+    for tile in open_tiles:
+        if main.roll_dice('1d4') == 1:
+            main.make_spiderweb(tile[0], tile[1])
+    stairs = None
+    for i in range(len(map.objects) - 1, 0, -1):
+        if map.objects[i].name == 'stairs':
+            stairs = map.objects[i]
+            break
+    if stairs is not None:
+        stairs.name = "Staircase to the badlands"
+        stairs.description = 'A narrow stone stairway leading up to the badlands.'
+        stairs.link = map.links[0]
+        stairs.interact = main.use_stairs
+        stairs.char = '>'
+
+
+def make_map_river():
+    for y in range(2, consts.MAP_HEIGHT - 2):
+        for x in range(2, consts.MAP_WIDTH - 2):
+            map.tiles[x][y].tile_type = default_floor
+
+    bank_noise = libtcod.noise_new(1)
+    width_noise = libtcod.noise_new(1)
+    shallows_noise = libtcod.noise_new(1)
+    north_bank = 20
+    for x in range(consts.MAP_WIDTH):
+        shore = libtcod.noise_get_fbm(bank_noise, [float(x) / 10.0, float(x) / 10.0 + 1.0], libtcod.NOISE_PERLIN)
+        this_shore = north_bank + int(shore * 10)
+        width = libtcod.noise_get_fbm(width_noise, [float(x) / 10.0, float(x) / 10.0 + 1.0], libtcod.NOISE_PERLIN)
+        this_width = 15 + int(width * 10)
+        shallows = libtcod.noise_get_fbm(shallows_noise, [float(x) / 10.0, float(x) / 10.0 + 1.0], libtcod.NOISE_PERLIN)
+        this_shallows = 2 + abs(int(shallows * 10))
+        min_y = this_shore
+        max_y = this_shore + this_width
+        for y in range(min_y - this_shallows - 1):
+            change_map_tile(x, y, 'cypress tree')
+        for y in range(min_y - this_shallows, min_y):
+            change_map_tile(x, y, 'shallow water')
+        for y in range(min_y, max_y):
+            change_map_tile(x, y, 'deep water')
+        for y in range(max_y, max_y + this_shallows):
+            change_map_tile(x, y, 'shallow water')
+        for y in range(max_y + this_shallows + 1, consts.MAP_HEIGHT - 1):
+            change_map_tile(x, y, 'cypress tree')
+    erode_map('grass floor', iterations=4)
+
+    make_river_map_links()
+
+def make_map_crossing():
+    open_tiles = []
+    create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'stonewater_crossing', open_tiles=open_tiles)
+    make_river_map_links()
 
 def make_map_badlands():
 
@@ -1741,6 +2250,7 @@ def make_map_badlands():
         scatter_blightweed(blight_tile)
 
     active_branch = dungeon.branches[map.branch]
+    clear_borders_from_open_set(open_tiles)
     main.place_objects(open_tiles,
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d'+str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),
@@ -1825,12 +2335,265 @@ def make_map_gtunnels():
         if t not in open_tiles:
             open_tiles.append(t)
 
+    clear_borders_from_open_set(open_tiles)
     main.place_objects(open_tiles,
                        main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
                        main.roll_dice(active_branch['loot_dice']),
                        active_branch['xp_amount'])
 
     make_basic_map_links()
+
+def make_map_catacombs():
+    rooms = []
+    rects = []
+    num_rooms = 0
+
+    #Create chasms
+    chasm_count = main.roll_dice('1d8') + 6
+    for i in range(chasm_count):
+        create_terrain_patch((libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 4),
+                           libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 4)), 'chasm', overwrite=True, min_patch=200, max_patch=1200)
+
+
+    #for i in range(libtcod.random_get_int(0,2,18)):
+    #    change_map_tile(libtcod.random_get_int(0, 3, consts.MAP_WIDTH - 4),
+    #                       libtcod.random_get_int(0, 3, consts.MAP_HEIGHT - 4), 'chasm')
+    #    if main.roll_dice('1d2') == 1:
+    #        erode_map('chasm',1)
+    #erode_map('chasm',libtcod.random_get_int(0,5,8))
+
+    #First, create the entrance
+    entrance = create_room_rectangle(['snowy ground'])
+    dimensions = entrance.bounds
+    x = libtcod.random_get_int(0, 1 + dimensions[0] / 2, consts.MAP_WIDTH - dimensions[0] / 2 - 1)
+    y = consts.MAP_HEIGHT - dimensions[1] / 2 - 1
+    room_bounds = Rect(x, y, dimensions[0], dimensions[1])
+    entrance.set_pos(room_bounds.x1, room_bounds.y1)
+    apply_room(entrance)
+    rooms.append(entrance)
+    rects.append(room_bounds)
+    num_rooms += 1
+
+    exit = Room()
+    exit.add_rectangle(width=3,height=3,tile_type='snowy ground')
+    dimensions = exit.bounds
+    x = libtcod.random_get_int(0, 1 + dimensions[0] / 2, consts.MAP_WIDTH - dimensions[0] / 2 - 1)
+    y = 1 + dimensions[1] / 2
+    room_bounds = Rect(x, y, dimensions[0], dimensions[1])
+    exit.set_pos(room_bounds.x1, room_bounds.y1)
+    #apply_room(exit)
+    #rooms.append(exit)
+    rects.append(room_bounds)
+    num_rooms += 1
+
+    #Create other rooms
+    for r in range(consts.MG_MAX_ROOMS):
+
+        room = create_room_rectangle(['stone floor'])
+        dimensions = room.bounds
+
+        x = libtcod.random_get_int(0, 1 + dimensions[0] / 2, consts.MAP_WIDTH - dimensions[0] / 2 - 1)
+        y = libtcod.random_get_int(0, 1 + dimensions[1] / 2, consts.MAP_HEIGHT - dimensions[1] / 2 - 1)
+        room_bounds = Rect(x-1, y-1, dimensions[0]+2, dimensions[1]+2)
+
+        failed = False
+        for other_room in rects:
+            if room_bounds.intersect(other_room):
+               failed = True
+
+        if not failed:
+            room.set_pos(room_bounds.x1, room_bounds.y1)
+            apply_room(room)
+            rooms.append(room)
+            rects.append(room_bounds)
+            num_rooms += 1
+
+    #make_basic_map_links()
+
+    connection_threshold_step = 8
+    open = deque()
+    open.append(entrance)
+    closed = []
+    tcount = 0
+
+    nodes = []
+    nodes.append({'nr':0, 'room':entrance,'parent':None,'connections':[]})
+
+    #Create room connections
+    while len(open) > 0:
+        curr = open.popleft()
+        closed.append(curr)
+        connections = []
+        node = [n for n in nodes if n['room'] is curr][0]
+        threshold = connection_threshold_step
+        while len(connections) == 0 and threshold < consts.MAP_WIDTH * 2:
+            connections = [r for r in rooms if (r is not curr) and (curr.distance_to(r) < threshold) \
+                           and (r not in open) and (r not in closed)]
+            threshold += connection_threshold_step
+
+        for con in connections:
+            if con not in open and con not in closed:
+                tcount += 1
+                open.append(con)
+                center_old = con.center()
+                center_new = curr.center()
+                tunnel = catacombs_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1], con.rect, curr.rect)
+                tmp = {'nr':tcount,'parent':node, 'room': con, 'connections': []}
+                node['connections'].append({'tunnel':tunnel, 'connection':tmp})
+                nodes.append(tmp)
+                #for tn in tunnel:
+                #    main.current_map.add_object(main.GameObject(tn[0],tn[1],chr(ord('0') + tcount % 10),'blah',libtcod.white, always_visible=True))
+
+    #Connect the exit
+    apply_room(exit)
+    exit_connector = sorted(rooms,key= lambda r: exit.distance_to(r))[1]
+    node = [n for n in nodes if n['room'] is exit_connector][0]
+    rooms.append(exit)
+    center_old = exit.center()
+    center_new = exit_connector.center()
+    tunnel = catacombs_hv_tunnel(center_old[0], center_old[1], center_new[0], center_new[1], exit.rect, exit_connector.rect)
+    tmp = {'nr': tcount, 'parent': node, 'room': exit, 'connections': []}
+    node['connections'].append({'tunnel': tunnel, 'connection': tmp})
+    nodes.append(tmp)
+
+    # Create switch-door puzzles
+    segments = deque()
+    exit_node = [n for n in nodes if n['room'] is exit][0]
+    segments.append((nodes[0],exit_node))
+    blacklist = [nodes[0],exit_node]
+
+    iterations = 0
+    while len(segments) > 0 and iterations < consts.MG_PUZZLE_MAX_COUNT:
+        start,end = segments.popleft()
+        length = get_back_path_length(start,end)
+        if length < 2:
+            continue
+        print("Processing segment {}:{} (length {})".format(start['nr'],end['nr'],length))
+
+        prev = None
+        pivot = end
+        for i in range(libtcod.random_get_int(0,1,length)):
+            prev = pivot
+            pivot = pivot['parent']
+        blacklist.append(pivot)
+        connected_nodes = get_connected_nodes(nodes, start, blacklist)
+        print("Connected nodes: {}",[(n[0]['nr'],n[1]) for n in connected_nodes])
+        switch = connected_nodes[-1][0]
+        print("Selected node {} at distance {} for switch (of {} options)".format(switch['nr'],connected_nodes[-1][1],len(connected_nodes)))
+        if switch not in blacklist:
+            blacklist.append(switch)
+            tunnel = [p for p in pivot['connections'] if p['connection']][0]['tunnel']
+            door_location = None
+            for loc in tunnel:
+                adjacent_walls = [tile for tile in main.adjacent_tiles_orthogonal(*loc) \
+                                  if is_wall_or_pit(main.current_map.tiles[tile[0]][tile[1]])]
+                if len(adjacent_walls) == 2:
+                    door_location = loc
+                    break
+            center = switch['room'].center()
+            if door_location is not None:
+                d, s = create_gate_switch(door_location[0],door_location[1],center[0],center[1])
+                if d is not None:
+                    print("Successfully created switch-gate pair")
+                    main.current_map.add_object(d)
+                    main.current_map.add_object(s)
+                    segments.append((start, switch))
+        segments.append((start,pivot))
+        segments.append((prev,end))
+
+def build_edge(corner1, corner2):
+    if corner1[0] == corner2[0]:
+        step = (corner2[1] - corner1[1]) / abs(corner2[1] - corner1[1])
+        for y in range(corner1[1], corner2[1] + step, step):
+            change_map_tile(corner1[0], y, default_wall)
+    elif corner1[1] == corner2[1]:
+        step = (corner2[0] - corner1[0]) / abs(corner2[0] - corner1[0])
+        for x in range(corner1[0], corner2[0] + step, step):
+            change_map_tile(x, corner1[1], default_wall)
+
+
+def is_wall_or_pit(tile):
+    return tile.is_wall or tile.is_pit
+
+def get_back_path_length(a,b):
+    c = b
+    length = 0
+    while c is not a:
+        length += 1
+        c = c['parent']
+    return length
+
+def get_connected_nodes(nodes,n,blacklist):
+    open = [(n,0)]
+    closed = []
+    while len(open) > 0:
+        curr = open.pop()
+        closed.append(curr)
+        for c in curr[0]['connections']:
+            if c['connection'] not in blacklist:
+                open.append((c['connection'],curr[1]+1))
+    closed.sort(key=lambda o: o[1])
+    return closed
+
+def catacombs_h_tunnel(x1, x2, y, tile_type=default_floor):
+    if x1 == x2:
+        return []
+    changed = []
+    started = False
+    step = (x2 - x1) / abs(x2 - x1)
+    for x in range(x1, x2 + step, step):
+        if is_wall_or_pit(map.tiles[x][y]):
+            started = True
+            change_map_tile(x, y, tile_type)
+            changed.append((x,y))
+        elif started:
+            break
+    return changed
+
+
+def catacombs_v_tunnel(y1, y2, x, tile_type=default_floor):
+    if y1 == y2:
+        return []
+    changed = []
+    started = False
+    step = (y2 - y1) / abs(y2 - y1)
+    for y in range(y1, y2 + step, step):
+        if is_wall_or_pit(map.tiles[x][y]):
+            started = True
+            change_map_tile(x, y, tile_type)
+            changed.append((x,y))
+        elif started:
+            break
+    return changed
+
+
+def catacombs_hv_tunnel(x1, y1, x2, y2, rect1, rect2, tile_type=default_floor):
+
+    if libtcod.random_get_float(0,0,1) < 0.5:
+        if x1 == rect2.x1 - 1:
+            build_edge((rect2.x1, rect2.y1), (rect2.x1, rect2.y2))
+        if x1 == rect2.x2 + 1:
+            build_edge((rect2.x2, rect2.y1), (rect2.x2, rect2.y2))
+        if y2 == rect1.y1 - 1:
+            build_edge((rect1.x1, rect1.y1), (rect1.x2, rect1.y1))
+        if y2 == rect1.y2 + 1:
+            build_edge((rect1.x1, rect1.y2), (rect1.x2, rect1.y2))
+        tunnel = catacombs_v_tunnel(y1, y2, x1, tile_type)
+        if len(tunnel) == 0 or tunnel[len(tunnel) - 1] == (x1, y2):
+            tunnel += catacombs_h_tunnel(x1, x2, y2, tile_type)
+    else:
+        if y1 == rect2.y1 - 1:
+            build_edge((rect2.x1, rect2.y1), (rect2.x2, rect2.y1))
+        if y1 == rect2.y2 + 1:
+            build_edge((rect2.x1, rect2.y2), (rect2.x2, rect2.y2))
+        if x2 == rect1.x1 - 1:
+            build_edge((rect1.x1, rect1.y1), (rect1.x1, rect1.y2))
+        if x2 == rect1.x2 + 1:
+            build_edge((rect1.x2, rect1.y1), (rect1.x2, rect1.y2))
+        tunnel = catacombs_h_tunnel(x1, x2, y1, tile_type)
+        if len(tunnel) == 0 or tunnel[len(tunnel) - 1] == (x2, y1):
+            tunnel += catacombs_v_tunnel(y1, y2, x2, tile_type)
+    return tunnel
 
 def make_test_space():
     for y in range(2, consts.MAP_HEIGHT - 2):
@@ -1852,12 +2615,58 @@ def make_test_space():
         else:
             main.spawn_monster(consts.DEBUG_TEST_MONSTER, player_tile[0], player_tile[1] - 20)
 
+    make_basic_map_links()
+
     #stair_tile = (player_tile[0], player_tile[1] + 3)
     #main.stairs = main.GameObject(stair_tile[0], stair_tile[1], '<', 'stairs downward', libtcod.white,
     #                              always_visible=True)
     #map.objects.append(main.stairs)
     #main.stairs.send_to_back()
 
+def make_river_map_links():
+    northwest = None
+    southwest = None
+    northeast = None
+    southeast = None
+    for y in range(0, consts.MAP_HEIGHT - 1):
+        if northwest is None and map.tiles[1][y].tile_type == 'shallow water':
+            northwest = (1, y - 2)
+        if northeast is None and map.tiles[consts.MAP_WIDTH - 2][y].tile_type == 'shallow water':
+            northeast = (consts.MAP_WIDTH - 2, y - 2)
+        if map.tiles[1][y].tile_type == 'shallow water':
+            if southwest is None or y > southwest[1] - 2:
+                southwest = (1, y + 2)
+        if map.tiles[consts.MAP_WIDTH - 2][y].tile_type == 'shallow water':
+            if southeast is None or y > southeast[1] - 2:
+                southeast = (consts.MAP_WIDTH - 2, y + 2)
+
+    for link in map.links:
+        if link[1].branch == 'river' or link[1].branch == 'crossing':
+            if link[0] == 'east':
+                link_pos = northeast, southeast
+                link_id = 'northeast', 'southeast'
+                link_destination_id = 'northwest', 'southwest'
+                link_char = chr(26)
+            elif link[0] == 'west':
+                link_pos = northwest, southwest
+                link_id = 'northwest', 'southwest'
+                link_destination_id = 'northeast', 'southeast'
+                link_char = chr(27)
+            else:
+                continue
+            for i in range(2):
+                stairs = main.GameObject(link_pos[i][0], link_pos[i][1], '>', 'stairs', libtcod.white,
+                                         always_visible=True)
+                stairs.name = "Gate to %s" % dungeon.branches[link[1].branch]['name']
+                stairs.description = 'A winding path leading to %s.' % dungeon.branches[link[1].branch]['name']
+                stairs.link = link
+                stairs.interact = main.use_stairs
+                stairs.char = link_char
+                stairs.link_id = link_id[i]
+                stairs.destination_id = link_destination_id[i]
+                map.add_object(stairs)
+        else:
+            make_basic_map_link(link)
 
 def make_basic_map_links():
     # make map links
@@ -1951,9 +2760,12 @@ def make_map(_map):
     main.spawned_bosses = {}
 
     # choose generation type
-    if consts.DEBUG_TEST_MAP:
-        make_test_space()
-    else: dungeon.branches[map.branch]['generate']()
+    dungeon.branches[map.branch]['generate']()
+
+    open_tile = main.find_closest_open_tile(25, 23)
+    if open_tile is not None:
+        player.instance.x = open_tile[0]
+        player.instance.y = open_tile[1]
 
     # make sure the edges are undiggable walls
     for i in range(consts.MAP_WIDTH):
