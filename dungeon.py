@@ -251,6 +251,7 @@ branches = {
         'monsters':[
             {'min_depth':0, 'max_depth': 0, 'encounter':['monster_reeker']},
             {'min_depth':0, 'max_depth': 1, 'encounter':['monster_goblin_wizard']},
+            {'min_depth':0, 'max_depth': 2, 'encounter':['monster_dragonweed']},
             {'min_depth':0, 'max_depth': 2, 'encounter':['monster_infested_treant']},
             {'min_depth':0, 'max_depth': 2, 'encounter':['monster_corvid_silencer']},
             {'min_depth':0, 'max_depth': None, 'encounter':['monster_mycosaur']},
