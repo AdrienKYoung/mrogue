@@ -1819,15 +1819,6 @@ def make_map_garden():
         # If we didn't make enough connections, try again
         return make_map_garden()
 
-    #for cell in garden_cells:
-    #    keys = [key for key in cell.connections.keys() if cell.connections[key] is not None]
-    #    if len(keys) == 0:
-    #        continue
-    #    random.shuffle(keys)
-    #    link_count = libtcod.random_get_int(0, 1, len(keys) - 1)
-    #    for i in range(link_count):
-    #        make_garden_connections(cell, keys[i])
-
     # Decorate rooms
     for cell in garden_cells:
         decorate_garden_room(cell)
@@ -1837,6 +1828,21 @@ def make_map_garden():
             to_be_removed.append(cell)
     for cell in to_be_removed:
         garden_cells.remove(cell)
+
+    open_tiles = []
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            if not map.tiles[x][y].blocks:
+                open_tiles.append((x, y))
+
+    active_branch = dungeon.branches[map.branch]
+
+    clear_borders_from_open_set(open_tiles)
+
+    main.place_objects(open_tiles,
+                       main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
+                       main.roll_dice(active_branch['loot_dice']),
+                       active_branch['xp_amount'])
 
     # Map links
     for link in map.links:

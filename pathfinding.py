@@ -125,7 +125,7 @@ class Graph:
         return False
 
 
-    def a_star_search(self, start, goal, movement_type=NORMAL):
+    def a_star_search(self, start, goal, movement_type=NORMAL, max_edges=MAX_EDGES_DISCOVERED):
         log.info("PATH","Getting {} path from {} to {}",[movement_type,start,goal])
         discovered = 0
         closed_set = []
@@ -143,7 +143,7 @@ class Graph:
 
         while len(open_set) > 0:
             discovered += 1
-            if discovered > MAX_EDGES_DISCOVERED:
+            if max_edges is not None and discovered > max_edges:
                 break
             shortest = float('inf')
             for open in open_set:

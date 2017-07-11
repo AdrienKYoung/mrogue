@@ -28,6 +28,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.dark_red,
+        'enabled'       : True
     },
     'beach': {
         'name'          : 'the shore',
@@ -41,6 +42,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_map_beach,
         'map_color'     : libtcod.Color(0, 95, 191),
+        'enabled'       : True
     },
     'badlands': {
         'name'          : 'the badlands',
@@ -81,6 +83,7 @@ branches = {
         ],
         'generate'      : mapgen.make_map_badlands,
         'map_color'     : libtcod.Color(96, 96, 96),
+        'enabled'       : True
     },
     'crypt': {
         'name'          : "crypt",
@@ -92,6 +95,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_map_crypt,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : True
     },
     'marsh': {
         'name'          : 'the marshes',
@@ -131,6 +135,7 @@ branches = {
         ],
         'generate':mapgen.make_map_marsh,
         'map_color'     : libtcod.Color(255, 191, 0),
+        'enabled'       : True
     },
     'gtunnels': {
         'name'          : 'the goblin tunnels',
@@ -175,6 +180,7 @@ branches = {
             {'min_depth':4, 'max_depth': None, 'encounter':['monster_arachnomancer']},
             {'min_depth':5, 'max_depth': None, 'encounter':['monster_mycosaur']},
         ],
+        'enabled'       : True
     },
     'forest': {
         'name'          :"the frozen forest",
@@ -216,6 +222,7 @@ branches = {
         ],
         'generate':mapgen.make_map_forest,
         'map_color'     : libtcod.darkest_sky,
+        'enabled'       : True
     },
     'garden': {
         'name'          :"the gardens",
@@ -223,17 +230,38 @@ branches = {
         'default_floor' : 'marble path',
         'default_ramp'  : 'stone ramp',
         'scaling'       : 0,
-        'loot':{},
-        'loot_level':0,
+        'loot_level':2,
+        'loot':{
+            'consumables_1':27,
+            'armor_1':5,
+            'armor_2':13,
+            'weapons_1':5,
+            'weapons_2':13,
+            'gems_1':15,
+            'charms_1':5,
+            'charms_2':5,
+            'rings_1':7,
+            'tomes_1':4,
+            'keys_1':1,
+        },
         'loot_dice':'2d4',
         'encounter_dice':'1d4+5',
-        'xp_amount':4,
-        'encounter_range':6,
+        'xp_amount':5,
+        'encounter_range':7,
         'monsters':[
-            {'min_depth':3, 'max_depth': None, 'encounter':['monster_dragon']},
+            {'min_depth':0, 'max_depth': 0, 'encounter':['monster_reeker']},
+            {'min_depth':0, 'max_depth': 1, 'encounter':['monster_goblin_wizard']},
+            {'min_depth':0, 'max_depth': 2, 'encounter':['monster_infested_treant']},
+            {'min_depth':0, 'max_depth': 2, 'encounter':['monster_corvid_silencer']},
+            {'min_depth':0, 'max_depth': None, 'encounter':['monster_mycosaur']},
+            {'min_depth':0, 'max_depth': None, 'encounter':['monster_possessed_statue']},
+            {'min_depth':1, 'max_depth': None, 'encounter':['monster_blooming_treant']},
+            {'min_depth':1, 'max_depth': None, 'encounter':['monster_arachnomancer']},
+            {'min_depth':2, 'max_depth': None, 'encounter':['monster_dragon']},
         ],
         'generate':mapgen.make_map_garden,
         'map_color'     : libtcod.darker_green,
+        'enabled'       : True
     },
     'catacombs': {
         'name'          :"the catacombs",
@@ -252,6 +280,7 @@ branches = {
         ],
         'generate':mapgen.make_map_catacombs,
         'map_color'     : libtcod.darker_blue,
+        'enabled'       : False
     },
     'bone': {
         'name'          :"the bone pits",
@@ -263,6 +292,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'grotto': {
         'name'          :"pilgrim's grotto",
@@ -274,6 +304,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_map_grotto,
         'map_color'     : libtcod.dark_sea,
+        'enabled'       : True
     },
     'river': {
         'name'          :"stonewater river",
@@ -285,6 +316,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_map_river,
         'map_color'     : libtcod.darker_sky,
+        'enabled'       : True
     },
     'crossing': {
         'name'          :"stonewater crossing",
@@ -296,6 +328,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_map_crossing,
         'map_color'     : libtcod.darker_sky,
+        'enabled'       : True
     },
     'tower': {
         'name'          :"tower of the mages",
@@ -307,6 +340,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'giantwoods': {
         'name'          :"the giant woods",
@@ -318,6 +352,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'canopy': {
         'name'          :"the giant woods canopy",
@@ -329,6 +364,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'lavalake': {
         'name'          :"the lava lake",
@@ -340,6 +376,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_map_lava_lake,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : True
     },
     'slagfields': {
         'name'          :"the slagfields",
@@ -351,6 +388,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'foundry': {
         'name'          :"foundry of war",
@@ -362,6 +400,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'tomb': {
         'name'          :"the unnamed tomb",
@@ -373,6 +412,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'temple': {
         'name'          :"the sunken temple",
@@ -384,6 +424,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'mines': {
         'name'          :"the mines",
@@ -395,6 +436,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'depths': {
         'name'          :"the depths",
@@ -406,6 +448,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'menagerie': {
         'name'          :"the menagerie",
@@ -417,6 +460,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'gatehouse': {
         'name'          :"the gatehouse",
@@ -428,6 +472,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'battlements': {
         'name'          :"the battlements",
@@ -439,6 +484,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'city': {
         'name'          :"the capital",
@@ -450,6 +496,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'cathedral': {
         'name'          :"the cathedral",
@@ -461,6 +508,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
     'cursed': {
         'name'          :"the cursed path",
@@ -472,5 +520,6 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
+        'enabled'       : False
     },
 }

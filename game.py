@@ -332,6 +332,9 @@ class GameObject:
 
     def move(self, dx, dy):
 
+        if dx == 0 and dy == 0:
+            return False
+
         x,y = self.x + dx, self.y + dy
         blocked = is_blocked(x,y, from_coord=(self.x, self.y), movement_type=self.movement_type, is_player=self is player.instance)
 
@@ -677,6 +680,14 @@ class Tile:
 #############################################
 # General Functions
 #############################################
+
+def get_path_to_point(start, end, movement_type=0):
+    if current_map is None or current_map.pathfinding is None:
+        return None
+    path = current_map.pathfinding.a_star_search(start, end, movement_type=movement_type, max_edges=None)
+    if path == 'failure' or len(path) == 0:
+        return None
+    return path
 
 def has_skill(name):
     for skill in learned_skills.keys():

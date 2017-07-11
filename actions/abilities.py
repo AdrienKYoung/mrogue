@@ -888,9 +888,9 @@ data = {
     'ability_wild_growth': {
         'intent': 'aggressive',
         'range': 7,
-        'cooldown': 1,
+        'cooldown': 4,
         'function': monster_actions.wild_growth,
-        'root_duration': '3d2',
+        'root_duration': '1d5',
         'damage_per_tick': '1d10',
         'save_dc': 15
     }

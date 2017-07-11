@@ -286,7 +286,7 @@ def wild_growth(actor, target, context):
     else:
         if target is player.instance or fov.player_can_see(target.x, target.y):
             ui.message('Grass springs from the %s...' % terrain, libtcod.lime)
-        grass = mapgen.create_terrain_patch((target.x, target.y), 'grass floor', min_patch=4, max_patch=12, overwrite=True)
+        grass = mapgen.create_terrain_patch((target.x, target.y), 'grass floor', min_patch=4, max_patch=12, overwrite=False)
         for tile in grass:
             main.changed_tiles.append(tile)
 

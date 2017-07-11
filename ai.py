@@ -92,7 +92,7 @@ def aggro_on_hit(monster, attacker):
             monster.behavior.behavior.last_seen_position = attacker.x, attacker.y
             monster.behavior.ai_state = 'pursuing'
     elif monster.behavior.ai_state != 'pursuing':
-        monster.behavior.behavior.wander_destination = attacker.x, attacker.y
+        monster.behavior.behavior.wander_path = game.get_path_to_point((monster.x, monster.y), (attacker.x, attacker.y), monster.movement_type)
         monster.behavior.ai_state = 'wandering'
 
 def pursue(behavior):
@@ -175,14 +175,26 @@ def wander(behavior):
     if target is not None:
         behavior.last_seen_position = target.x, target.y
         behavior.target = target
-        behavior.wander_destination = None
+        behavior.wander_path = None
         return 'acquired-target'
     else:
-        if behavior.wander_destination is None or \
-                (monster.x == behavior.wander_destination[0] and monster.y == behavior.wander_destination[1]):
-            rand_pos = libtcod.random_get_int(0, 0, consts.MAP_WIDTH), libtcod.random_get_int(0, 0, consts.MAP_HEIGHT)
-            behavior.wander_destination = game.find_closest_open_tile(rand_pos[0], rand_pos[1])
-        monster.move_astar(behavior.wander_destination[0], behavior.wander_destination[1])
+        if behavior.wander_path is None or len(behavior.wander_path) == 0:
+            rand_x = libtcod.random_get_int(0, min(1, monster.x - 10), max(consts.MAP_WIDTH - 2, monster.x + 10))
+            rand_y = libtcod.random_get_int(0, min(1, monster.y - 10), max(consts.MAP_HEIGHT - 2, monster.y + 10))
+            rand_pos = rand_x, rand_y
+            rand_pos = game.find_closest_open_tile(rand_pos[0], rand_pos[1])
+            if rand_pos is None:
+                return 'wandered'
+            behavior.wander_path = game.get_path_to_point((monster.x, monster.y), rand_pos, monster.movement_type)
+            if behavior.wander_path is None:
+                return 'wandered'
+        old_pos = monster.x, monster.y
+        next_move = monster.x, monster.y
+        while next_move == old_pos and len(behavior.wander_path) > 0:
+            next_move = behavior.wander_path.pop(0)
+        monster.move(next_move[0] - monster.x, next_move[1] - monster.y)
+        if old_pos == (monster.x, monster.y):
+            monster.behavior.wander_path= None
         return 'wandered'
 
 def channel(behavior):
@@ -272,7 +284,7 @@ class AI_Support:
 
     def __init__(self):
         self.last_seen_position = None
-        self.wander_destination = None
+        self.wander_path = None
         self.target = None
         self.queued_action = None
         self.delay_turns = 0
@@ -365,7 +377,7 @@ class AI_Default:
 
     def __init__(self):
         self.last_seen_position = None
-        self.wander_destination = None
+        self.wander_path = None
         self.target = None
         self.queued_action = None
         self.delay_turns = 0
