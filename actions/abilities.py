@@ -893,7 +893,33 @@ data = {
         'root_duration': '1d5',
         'damage_per_tick': '1d10',
         'save_dc': 15
-    }
+    },
+    'ability_acid_flask': {
+        'name': 'acid flask',
+        'intent': 'aggressive',
+        'range': 5,
+        'targeting': 'beam_interrupt',
+        'cooldown': 6,
+        'function': charm_actions.acid_flask,
+        'burst':1,
+        'base_damage': '5d4',
+        'shred': '4d3',
+    },
+    'ability_frostfire': {
+        'name': 'frostfire',
+        'function': charm_actions.frostfire,
+        'cooldown': 10,
+        'element':['cold'],
+        'target_ground': True,
+        'range': 3,
+        'intent': 'aggressive',
+    },
+    'ability_vitality_potion': {
+        'name': 'vitality potion',
+        'targeting': 'self',
+        'intent': 'support',
+        'function': charm_actions.vitality_potion,
+    },
 }
 
 default_abilities = {

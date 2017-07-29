@@ -138,6 +138,22 @@ charm_prayer_beads = {
     },
 }
 
+charm_alchemists_flask = {
+    'water': {
+        'name': 'Acid Flask',
+        'description': 'Hurl a flask of acid that explodes on impact, severely shredding armor'
+    },
+    'cold': {
+        'name': 'Frostfire',
+        'description': 'Ignite a frostfire that freezes water and cools lava'
+    },
+    'life': {
+        'name': 'Vitality Potion',
+        'description': 'Drink a potion that regenerates your health and reduces all incoming damage by half for a '
+                       'short time'
+    }
+}
+
 charm_raw_effects = {
     'fire': {
         'name': 'Ignite',

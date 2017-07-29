@@ -48,7 +48,7 @@ class Item:
         if self.type == 'item':
             if len(actor.fighter.inventory) >= 26:
                 if actor is player.instance:
-                    ui.message('Your inventory is too full to pick up ' + self.owner.name)
+                    ui.message('Your inventory is too full to pick up the ' + self.owner.name)
             else:
                 index = ord('a')
                 while chr(index) in [i.item.inventory_index for i in actor.fighter.inventory]:
@@ -843,19 +843,22 @@ def raise_dead(actor,target, duration=None):
         ui.message('A corpse walks again...', libtcod.dark_violet)
 
 
-def create_temp_terrain(type,tiles,duration):
+def create_temp_terrain(type, tiles, duration, save_old_terrain=False):
     terrain_data = terrain.data[type]
-    ticker = Ticker(duration,_temp_terrain_on_tick)
+    ticker = Ticker(duration, _temp_terrain_on_tick)
     ticker.restore = []
     ticker.map = current_map
 
-    for (x,y) in tiles:
+    for (x, y) in tiles:
         # Don't place walls over game objects
         if terrain_data.blocks and len(get_objects(x, y)) > 0:
             continue
         tile = current_map.tiles[x][y]
         if tile.diggable or not tile.is_wall:
-            ticker.restore.append((x,y,dungeon.branches[current_map.branch]['default_floor']))
+            if save_old_terrain:
+                ticker.restore.append((x,y,tile.tile_type))
+            else:
+                ticker.restore.append((x,y,dungeon.branches[current_map.branch]['default_floor']))
             tile.tile_type = type
             changed_tiles.append((x, y))
             if terrain_data.blocks:
@@ -1562,9 +1565,22 @@ def melt_ice(x, y):
         current_map.tiles[x][y].tile_type = 'deep water'
     changed_tiles.append((x, y))
 
+def freeze_water(x, y, permanent=False):
+    if x < 0 or y < 0 or x >= consts.MAP_WIDTH or y >= consts.MAP_WIDTH:
+        return
+    if not current_map.tiles[x][y].is_water:
+        return
+    if current_map.tiles[x][y].jumpable:
+        ice_type = 'ice'
+    else:
+        ice_type = 'deep_ice'
+    if permanent:
+        current_map.tiles[x][y].tile_type = ice_type
+        changed_tiles.append((x, y))
+    else:
+        create_temp_terrain(ice_type, [(x, y)], 30 + roll_dice('1d30'), save_old_terrain=True)
 
-def create_fire(x,y,temp):
-    global changed_tiles
+def create_fire(x ,y, temp):
 
     tile = current_map.tiles[x][y]
     if tile.is_water or (tile.blocks and tile.flammable == 0) or tile.is_pit:
@@ -1593,6 +1609,23 @@ def create_fire(x,y,temp):
         obj.destroy()
     changed_tiles.append((x, y))
 
+def create_frostfire(x, y):
+    tile = current_map.tiles[x][y]
+    if tile.is_water:
+        freeze_water(x, y)
+    elif tile.tile_type == 'lava':
+        tile.tile_type = 'scorched floor'
+        changed_tiles.append((x, y))
+    current = object_at_tile(x, y, 'Frostfire')
+    if current is not None:
+        if current.misc.temperature < 10:
+            current.misc.temperature = 10
+        return
+    component = ai.FrostfireBehavior(10)
+    obj = GameObject(x, y, libtcod.CHAR_ARROW2_N, 'Frostfire', libtcod.light_sky, misc=component,
+                     description='An eerie blue flame of pure cold, freezing anything it touches')
+    current_map.add_object(obj)
+    changed_tiles.append((x, y))
 
 def create_reeker_gas(x, y, duration=consts.REEKER_PUFF_DURATION):
     if not current_map.tiles[x][y].blocks and \

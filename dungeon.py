@@ -389,7 +389,7 @@ branches = {
         'monsters'      : None,
         'generate'      : mapgen.make_test_space,
         'map_color'     : libtcod.darker_gray,
-        'enabled'       : False
+        'enabled'       : True
     },
     'foundry': {
         'name'          :"foundry of war",

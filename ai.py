@@ -747,6 +747,34 @@ class FireBehavior:
                     if game.current_map.tiles[tile[0]][tile[1]].is_ice:
                         game.melt_ice(tile[0], tile[1])
 
+class FrostfireBehavior:
+    def __init__(self, temp):
+        self.temperature = temp
+
+    def on_tick(self, object=None):
+        if self.temperature > 8:
+            self.owner.color = libtcod.white
+        elif self.temperature > 6:
+            self.owner.color = libtcod.lightest_sky
+        elif self.temperature > 4:
+            self.owner.color = libtcod.light_sky
+        elif self.temperature > 2:
+            self.owner.color = libtcod.sky
+        else:
+            self.owner.color = libtcod.desaturated_sky
+
+        self.temperature -= 1
+        if self.temperature == 0:
+            self.owner.destroy()
+        else:
+            for obj in game.get_objects(self.owner.x, self.owner.y, lambda o: o.fighter is not None):
+                obj.fighter.apply_status_effect(effects.frozen(duration=5))
+            if self.temperature < 9: # don't spread on the first turn
+                for adj in game.adjacent_tiles_diagonal(self.owner.x, self.owner.y):
+                    tile = game.current_map.tiles[adj[0]][adj[1]]
+                    if libtcod.random_get_int(0, 1, 100) <= 20 and (tile.is_water or tile.tile_type == 'lava'):
+                        game.create_frostfire(adj[0], adj[1])
+
 
 import effects
 import fov

@@ -140,6 +140,9 @@ class Fighter:
         if self.has_status('cursed') or self.has_status('stung') and damage > 0:
             damage = int(damage * 1.25)
 
+        if self.has_status('vitality'):
+            damage = int(damage * 0.5)
+
         if damage > 0:
             sh = self.get_equipped_shield()
             if blockable and sh is not None and sh.raised and sh.sh_points > 0:
@@ -768,6 +771,12 @@ damage_description_tables = {
         ('curse','curses'),
         ('defile', 'defiles'),
         ('torment', 'torments')
+    ],
+    'acid': [
+        ('singe', 'singes'),
+        ('burn', 'burns'),
+        ('dissolve', 'dissolves'),
+        ('melt', 'melts'),
     ]
 }
 

@@ -194,3 +194,16 @@ def create_terrain(actor, target, context):
         for t in tiles:
             fov.set_fov_properties(t[0], t[1], len(main.get_objects(t[0], t[1], lambda o: o.blocks_sight)) > 0,
                                    elevation=main.current_map.tiles[t[0]][t[1]].elevation)
+
+def acid_flask(actor, target, context):
+    (x, y) = context['origin']
+    ui.render_projectile((actor.x, actor.y), (x, y), libtcod.lime, character='!')
+    ui.render_explosion(x, y, 1, libtcod.lightest_lime, libtcod.dark_lime)
+    for t in target:
+        combat.spell_attack_ex(actor.fighter, t, None, context['base_damage'], 0, ['acid'], 0, main.roll_dice(context['shred']))
+
+def frostfire(actor, target, context):
+    main.create_frostfire(target[0], target[1])
+
+def vitality_potion(actor, target, context):
+    actor.fighter.apply_status_effect(effects.vitality())

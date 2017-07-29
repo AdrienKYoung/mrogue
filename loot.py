@@ -173,11 +173,13 @@ table = {
         'charm_shard_of_creation',
         'charm_volatile_orb',
         'charm_prayer_beads',
+        'charm_alchemists_flask',
     ],
 
     'charms_2': [
         'charm_holy_symbol',
         'charm_volatile_orb',
+        'charm_alchemists_flask',
         'charm_elementalists_lens',
         'charm_prayer_beads',
     ],
