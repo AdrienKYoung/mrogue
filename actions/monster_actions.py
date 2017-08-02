@@ -159,10 +159,9 @@ def raise_zombie(actor, target, context):
 
 def reeker_breath(actor, target, context):
     #TODO: Upgrade this to use auto targeting
-    spell = context
     x = target.x
     y = target.y
-    tiles = main.cone(actor.x,actor.y,x,y,max_range=spell['range'])
+    tiles = main.cone(actor.x,actor.y,x,y,max_range=context['range'])
 
     if tiles is None or len(tiles) == 0 or tiles[0] is None:
         return 'cancelled'
@@ -175,7 +174,7 @@ def reeker_breath(actor, target, context):
         main.create_reeker_gas(tile[0], tile[1], duration=main.roll_dice('1d6')+3)
         for obj in main.current_map.fighters:
             if obj.x == tile[0] and obj.y == tile[1]:
-                combat.spell_attack(actor.fighter, obj, 'ability_reeker_breath')
+                combat.attack_magical(actor.fighter, obj, 'ability_reeker_breath')
 
 def flame_breath(actor, target, context):
     for tile in target:
@@ -186,7 +185,7 @@ def flame_breath(actor, target, context):
 
         for obj in main.current_map.fighters:
             if obj.x == tile[0] and obj.y == tile[1]:
-                combat.spell_attack(actor.fighter, obj, 'ability_flame_breath')
+                combat.attack_magical(actor.fighter, obj, 'ability_flame_breath')
                 if obj.fighter is not None:
                     obj.fighter.apply_status_effect(effects.burning(), context['save_dc'], actor)
 
@@ -253,10 +252,14 @@ def dragonweed_pull(actor, target, context):
                 target.fighter.apply_status_effect(effects.immobilized(duration=2), context['save_dc'], actor)
 
 def silence(actor,target, context):
-    if target.fighter.apply_status_effect(effects.silence(),True):
-        ui.message('%s %s silenced!' % (
-            syntax.name(target).capitalize(),
-            syntax.conjugate(target is player.instance, ('are', 'is'))), libtcod.light_blue)
+    if target.fighter.apply_status_effect(effects.silence(duration=context.get('duration', 10)),
+                                          dc=context.get('base_dc', 20) + actor.fighter.spell_power(['arcane']),
+                                          source_fighter=actor.fighter,
+                                          supress_message=True):
+        if actor is player.instance or target is player.instance or fov.player_can_see(target.x, target.y):
+            ui.message('%s %s silenced!' % (
+                syntax.name(target).capitalize(),
+                syntax.conjugate(target is player.instance, ('are', 'is'))), libtcod.light_blue)
 
 def confuse(actor,target, context):
     import consts

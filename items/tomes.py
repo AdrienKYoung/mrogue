@@ -136,4 +136,30 @@ table = {
             1,1,1,2,2,2,3,3,3,3,4,4,4
         ]
     },
+    'book_lesser_arcane' : {
+        'name'          : "The Sorcerer's Handbook",
+        'category'      : 'book',
+        'char'          : '#',
+        'color'         : spells.essence_colors['arcane'],
+        'type'          : 'item',
+        'slot'          : 'left hand',
+        'description'   : 'A heavy tome bound in aged leather. It seems to vibrate with an inner power.',
+        'essence':'arcane',
+        'level' : 1,
+        'spells': [
+            'spell_arcane_arrow',
+            'spell_flame_wall',
+            'spell_fireball',
+            'spell_shatter_item',
+            'spell_magma_bolt'
+        ],
+        'levels': [
+            'spell_arcane_arrow', 'spell_flame_wall', 'spell_arcane_arrow', 'spell_fireball', 'spell_shatter_item',
+            'spell_fireball', 'spell_magma_bolt', 'spell_arcane_arrow','spell_flame_wall', 'spell_fireball',
+            'spell_magma_bolt', 'spell_shatter_item', 'spell_magma_bolt'
+        ],
+        'level_costs': [
+            1,1,1,2,2,2,3,3,3,3,4,4,4
+        ]
+    },
 }

@@ -123,7 +123,8 @@ loadouts = {
         'spr':10,
         'con':8,
         'inventory':[
-            ['book_lesser_cold', 'book_lesser_fire'],
+            ['book_lesser_cold', 'book_lesser_fire', 'book_lesser_arcane'],
+            'equipment_cloth_robes',
             'charm_raw',
             #'charm_farmers_talisman',
             #'charm_holy_symbol',
@@ -132,7 +133,7 @@ loadouts = {
             #'charm_elementalists_lens',
             #'charm_primal_totem',
             #'charm_prayer_beads',
-            'equipment_cloth_robes',
+            #'charm_alchemists_flask',
             'gem_lesser_fire',
             'gem_lesser_water',
             'gem_lesser_earth',

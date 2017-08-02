@@ -953,14 +953,16 @@ def monster_death(monster, context):
             current_map.add_object(item)
             item.send_to_back()
 
-    ui.message('%s is dead!' % syntax.name(monster).capitalize(), libtcod.red)
+    if context.get('suppress_messages', False):
+        ui.message('%s is dead!' % syntax.name(monster).capitalize(), libtcod.red)
 
     if monster.fighter.has_flag(monsters.NO_CORPSE):
         monster.destroy()
     elif monster.summon_time is not None:
         monster.destroy()
-        ui.message('%s corpse fades into the world from whence it came.' %
-                   syntax.pronoun(monster, possesive=True).capitalize(), libtcod.gray)
+        if context.get('suppress_messages', False):
+            ui.message('%s corpse fades back to the world from whence it came.' %
+                       syntax.pronoun(monster, possesive=True).capitalize(), libtcod.gray)
     else:
         monster.char = '%'
         monster.color = libtcod.darker_red

@@ -123,11 +123,11 @@ def on_hit_chain_lightning(attacker, target, damage, zapped=None):
         zapped.append(target)
     if target.fighter is None:
         return
-    damage = combat.roll_damage_ex('1d10', '0d0', target.fighter.armor, 5, 'lightning', 1.0,
+    damage = combat.roll_damage('1d10', '0d0', target.fighter.armor, 5, 'lightning', 1.0,
                             target.fighter.resistances)
 
     if damage > 0:
-        combat.attack_text_ex(attacker.fighter, target, None, None, damage, 'lightning', float(damage) / float(target.fighter.max_hp))
+        combat.attack_text(attacker.fighter, target, None, None, damage, 'lightning', float(damage) / float(target.fighter.max_hp))
 
         target.fighter.take_damage(damage, attacker=attacker)
         for adj in main.adjacent_tiles_diagonal(target.x, target.y):
@@ -168,7 +168,7 @@ def on_hit_knockback(attacker, target, damage, force=6):
             against = 'the ' + against.name
         if not target.move(direction[0], direction[1]):
             # Could not move
-            damage = combat.roll_damage_ex('%dd4' % steps, '0d0', target.fighter.armor, 0, 'budgeoning', 1.0,
+            damage = combat.roll_damage('%dd4' % steps, '0d0', target.fighter.armor, 0, 'budgeoning', 1.0,
                                     target.fighter.resistances)
             ui.message('%s %s backwards and collides with %s, taking %d damage.' % (
                 syntax.name(target).capitalize(),

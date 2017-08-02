@@ -520,6 +520,17 @@ library = {
         ],
         23
     ),
+
+    'spell_arcane_arrow' : Spell(
+        'arcane arrow',
+        'ability_arcane_arrow',
+        'Fire a dart of magical energy',
+        [
+            {'stamina_cost':15,'charges':5,},
+            {'stamina_cost':13,'charges':7,},
+            {'stamina_cost':10,'charges':10,}
+        ],
+        14),
 }
 
 essence_colors = {
