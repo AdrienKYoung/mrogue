@@ -1209,7 +1209,7 @@ def roll_damage(damage_dice, stat_dice, defense, pierce, damage_types, damage_mu
 def attack_text(fighter,target,verb,location,damage,damage_types,severity,attack_name=None):
     # Early exit if the attacker and target are not visible
     if fighter.owner is not player.instance and target is not player.instance and \
-        not fov.player_can_see(target.x, target.y) and not fov.player_can_see(fighter.x, fighter.y):
+        not fov.player_can_see(target.x, target.y) and not fov.player_can_see(fighter.owner.x, fighter.owner.y):
         return
 
     # Choose a damage type from the types provided, or default to 'bludgeoning'

@@ -3,7 +3,7 @@ import spells
 
 table = {
     'book_lesser_fire' : {
-        'name'          : 'Book of Lesser Flames',
+        'name'          : 'Book of Embers',
         'category'      : 'book',
         'char'          : '#',
         'color'         : spells.essence_colors['fire'],
@@ -148,18 +148,18 @@ table = {
         'level' : 1,
         'spells': [
             'spell_arcane_arrow',
-            'spell_flame_wall',
-            'spell_fireball',
-            'spell_shatter_item',
-            'spell_magma_bolt'
+            'spell_spatial_exchange',
+            'spell_shimmering_swords',
+            'spell_time_bomb',
+            'spell_arcane_construct'
         ],
         'levels': [
-            'spell_arcane_arrow', 'spell_flame_wall', 'spell_arcane_arrow', 'spell_fireball', 'spell_shatter_item',
-            'spell_fireball', 'spell_magma_bolt', 'spell_arcane_arrow','spell_flame_wall', 'spell_fireball',
-            'spell_magma_bolt', 'spell_shatter_item', 'spell_magma_bolt'
+            'spell_arcane_arrow', 'spell_spatial_exchange', 'spell_arcane_arrow', 'spell_shimmering_swords', 'spell_time_bomb',
+            'spell_spatial_exchange', 'spell_arcane_construct', 'spell_arcane_arrow','spell_spatial_exchange', 'spell_shimmering_swords',
+            'spell_arcane_construct', 'spell_time_bomb', 'spell_arcane_construct', 'spell_shimmering_swords', 'spell_time_bomb'
         ],
         'level_costs': [
-            1,1,1,2,2,2,3,3,3,3,4,4,4
+            1,1,1,1,2,2,2,3,3,3,3,4,4,4,4
         ]
     },
 }

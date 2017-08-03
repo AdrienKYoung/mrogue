@@ -133,6 +133,7 @@ table = {
     ],
 
     'tomes_1': [
+        'book_lesser_arcane',
         'book_lesser_fire',
         'book_lesser_death',
         'book_lesser_cold',

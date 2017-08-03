@@ -1311,7 +1311,7 @@ def spawn_npc(name, x, y, map_name):
         result = npc.npcs[name]
     else:
         p = npc.data[name]
-        npc_component = npc.NPC(p['dialog'],p['root'], p['location'])
+        npc_component = npc.NPC(name, p['root'])
         fighter = None
         behavior = None
         attack_speed = 1.0
@@ -2198,7 +2198,7 @@ def new_game():
     player.instance.memory = equipment.Equipment(None,'tome',spell_list=[])
 
     ui.game_msgs = []
-    ui.message('Welcome to the dungeon...', libtcod.gold)
+    ui.message('You wake up on a beach...', libtcod.gold)
 
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):

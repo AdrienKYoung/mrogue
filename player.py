@@ -123,7 +123,7 @@ loadouts = {
         'spr':10,
         'con':8,
         'inventory':[
-            ['book_lesser_cold', 'book_lesser_fire', 'book_lesser_arcane'],
+            ['book_lesser_arcane', 'book_lesser_cold', 'book_lesser_fire'],
             'equipment_cloth_robes',
             'charm_raw',
             #'charm_farmers_talisman',

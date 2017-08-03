@@ -413,4 +413,32 @@ def strangleweed_on_tick(effect, object):
 
 def arcane_arrow(actor, target, context):
     ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.fuchsia, None)
-    combat.attack_magical(actor.fighter, target, 'ability_arcane_arrow')
+    combat.attack_magical(actor.fighter, target, 'ability_arcane_arrow', accuracy_bonus=actor.fighter.spell_power(['arcane']))
+
+def spatial_exchange(actor, target, context):
+    if combat.attack_magical(actor.fighter, target, 'ability_spatial_exchange',
+                             accuracy_bonus=actor.fighter.spell_power(['arcane'])) == 'hit':
+        ui.render_explosion(actor.x, actor.y, 0, libtcod.white, spells.essence_colors['arcane'])
+        ui.render_explosion(target.x, target.y, 0, libtcod.white, spells.essence_colors['arcane'])
+        actor.swap_positions(target)
+
+def shimmering_swords(actor, target, context):
+    import pathfinding
+    sp = actor.fighter.spell_power(context['element'])
+    adjacent = []
+    for tile in main.adjacent_tiles_diagonal(actor.x, actor.y):
+        if not main.is_blocked(tile[0], tile[1], movement_type=pathfinding.FLYING):
+            adjacent.append(tile)
+    for i in range(context['sword_count']):
+        if len(adjacent) < 1:
+            break
+        summon_pos = adjacent[libtcod.random_get_int(0, 0, len(adjacent) - 1)]
+        common.summon_ally('monster_shimmering_sword',
+                           context['duration_base'] + main.roll_dice('1d%d' % sp),
+                           summon_pos[0], summon_pos[1])
+        adjacent.remove(summon_pos)
+
+def summon_arcane_construct(actor, target, context):
+    common.summon_ally('monster_arcane_construct',
+                       duration=context['duration_base'] +
+                            main.roll_dice('1d%d' % actor.fighter.spell_power(context['element']), normalize_size=4))

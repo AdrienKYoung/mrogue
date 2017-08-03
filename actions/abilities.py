@@ -376,11 +376,37 @@ data = {
         'element':['arcane'],
         'damage_types':['lightning'],
         'defense_types' : ['evasion'],
-        'base_acc': 20,
+        'accuracy': 14,
         'dice' : 1,
         'base_damage' : '2d6',
         'blockable': True,
         'intent': 'aggressive',
+    },
+
+    'ability_spatial_exchange': {
+        'name': 'spatial exchange',
+        'function': spell_actions.spatial_exchange,
+        'targeting': 'beam_interrupt',
+        'target_function' : ai.target_clear_line_of_fire,
+        'range': 5,
+        'cooldown': 10,
+        'element': ['arcane'],
+        'damage_types': ['bludgeoning'],
+        'defense_types': ['will'],
+        'accuracy': 10,
+        'dice': 1,
+        'base_damage': '1d6',
+        'intent': 'aggressive'
+    },
+
+    'ability_shimmering_swords': {
+        'function': spell_actions.shimmering_swords,
+        'targeting': 'self',
+        'cooldown': 30,
+        'element': ['arcane'],
+        'duration_base': 3,
+        'intent': 'aggressive',
+        'sword_count': 4
     },
 
     'ability_frozen_orb': {
@@ -890,6 +916,15 @@ data = {
         'summon': 'monster_air_elemental',
         'duration_base': 30,
         'duration_variance': '1d10',
+    },
+
+    'ability_summon_arcane_construct': {
+        'targeting': 'self',
+        'intent': 'aggressive',
+        'function': spell_actions.summon_arcane_construct,
+        'summon': 'monster_air_elemental',
+        'duration_base': 20,
+        'element': ['arcane'],
     },
 
     'ability_summon_lifeplant': {
