@@ -57,7 +57,7 @@ def firebomb(actor, target, context):
     if actor is player.instance or fov.player_can_see(x, y):
         ui.message('The firebomb explodes!', spells.essence_colors['fire'])
     for f in target:
-        if combat.attack_magical(actor.fighter, f, 'ability_firebomb') == 'hit' and f.fighter is not None:
+        if combat.attack_magical(actor.fighter, f, 'ability_fire_bomb') == 'hit' and f.fighter is not None:
             f.fighter.apply_status_effect(effects.burning())
 
 def icebomb(actor, target, context):
@@ -67,7 +67,7 @@ def icebomb(actor, target, context):
     if actor is player.instance or fov.player_can_see(x, y):
         ui.message('The icebomb explodes!', spells.essence_colors['cold'])
     for f in target:
-        if combat.attack_magical(actor.fighter, f, 'ability_firebomb') == 'hit' and f.fighter is not None:
+        if combat.attack_magical(actor.fighter, f, 'ability_ice_bomb') == 'hit' and f.fighter is not None:
             f.fighter.apply_status_effect(effects.frozen(duration=context['freeze_duration']))
 
 def timebomb(actor, target, context):
