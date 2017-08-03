@@ -417,10 +417,11 @@ def arcane_arrow(actor, target, context):
 
 def spatial_exchange(actor, target, context):
     if combat.attack_magical(actor.fighter, target, 'ability_spatial_exchange',
-                             accuracy_bonus=actor.fighter.spell_power(['arcane'])) == 'hit':
+                             accuracy_bonus=actor.fighter.spell_power(['arcane'])) != 'missed':
         ui.render_explosion(actor.x, actor.y, 0, libtcod.white, spells.essence_colors['arcane'])
         ui.render_explosion(target.x, target.y, 0, libtcod.white, spells.essence_colors['arcane'])
         actor.swap_positions(target)
+        combat.attack_magical(actor.fighter, target, 'data_ability_spatial_exchange')
 
 def shimmering_swords(actor, target, context):
     import pathfinding

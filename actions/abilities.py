@@ -386,14 +386,22 @@ data = {
     'ability_spatial_exchange': {
         'name': 'spatial exchange',
         'function': spell_actions.spatial_exchange,
-        'targeting': 'beam_interrupt',
-        'target_function' : ai.target_clear_line_of_fire,
         'range': 5,
         'cooldown': 10,
         'element': ['arcane'],
         'damage_types': ['bludgeoning'],
         'defense_types': ['will'],
         'accuracy': 10,
+        'dice': 0,
+        'base_damage': '0d0',
+        'intent': 'aggressive'
+    },
+
+    'data_ability_spatial_exchange': {
+        'name': 'spatial exchange',
+        'element': ['arcane'],
+        'damage_types': ['bludgeoning'],
+        'defense_types': None,
         'dice': 1,
         'base_damage': '1d6',
         'intent': 'aggressive'
