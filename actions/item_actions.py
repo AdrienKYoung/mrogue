@@ -54,7 +54,12 @@ def recover_shield(actor, target, context):
 def offhand_shot(actor, target, context):
     weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'left hand')
     ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
-    combat.attack_ex(actor.fighter,target,0,verb=("shoot","shoots"),weapon=weapon)
+    combat.attack_ex(actor.fighter,target,0,verb=("shoot","shoots"),weapon=weapon, ranged=True)
+
+def bow_shot(actor, target, context):
+    weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+    ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
+    combat.attack_ex(actor.fighter, target, 0, verb=("shoot", "shoots"), weapon=weapon, ranged=True)
 
 def use_ruby():
     return use_gem('fire')

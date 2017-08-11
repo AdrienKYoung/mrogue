@@ -31,7 +31,7 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_types=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
-                 resistances={}, modifiers = {}, base_id=None, _range=1,
+                 resistances={}, modifiers = {}, base_id=None, _range=1, attributes=[],
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
                  sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None, will_bonus=0, fortitude_bonus=0):
         self.is_equipped = False
@@ -75,6 +75,7 @@ class Equipment:
         self._guaranteed_shred_bonus = guaranteed_shred_bonus
         self._pierce_bonus = pierce
         self.range = _range
+        self.attributes = list(attributes)
 
         self._accuracy_bonus = accuracy
         self._crit_bonus = crit_bonus

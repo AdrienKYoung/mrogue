@@ -796,9 +796,9 @@ damage_description_tables = {
 
 # Deprecated - use attack_physical instead
 def attack_ex(fighter, target, stamina_cost, on_hit=None, verb=None, accuracy_modifier=1, damage_multiplier=1, shred_modifier=0,
-              guaranteed_shred_modifier=0, pierce_modifier=0, weapon=None, blockable=True):
+              guaranteed_shred_modifier=0, pierce_modifier=0, weapon=None, blockable=True, ranged=False):
     return attack_physical(fighter, target, stamina_cost, on_hit, verb, accuracy_modifier, damage_multiplier,
-                           shred_modifier, guaranteed_shred_modifier, pierce_modifier, weapon, blockable)
+                           shred_modifier, guaranteed_shred_modifier, pierce_modifier, weapon, blockable, ranged)
 
 def attack_magical(fighter, target, spell_name, accuracy_bonus=0):
     config = abilities.data[spell_name]
@@ -896,11 +896,14 @@ def attack_magical_ex(attacker, target, accuracy=None, base_damage_dice='0d0', s
 
 # Used for attacks from weapons, monster melee attacks, things that affect armor, etc
 def attack_physical(fighter, target, stamina_cost=0, on_hit=None, verb=None, accuracy_modifier=1, damage_multiplier=1, shred_modifier=0,
-              guaranteed_shred_modifier=0, pierce_modifier=0, weapon=None, blockable=True):
+              guaranteed_shred_modifier=0, pierce_modifier=0, weapon=None, blockable=True, ranged=False):
     if weapon is None:
         weapon = main.get_equipped_in_slot(fighter.inventory, 'right hand')
     if target is None or target.fighter is None:
         return 'failed'  # cannot attack non-fighters
+
+    if not ranged and weapon is not None and 'no_melee' in weapon.attributes:
+        weapon = None
 
     # check stamina
     if fighter.owner is player.instance:

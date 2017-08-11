@@ -705,6 +705,16 @@ data = {
         'intent': 'aggressive',
     },
 
+    'ability_bow_shot': {
+        'name': 'Bow Shot',
+        'function': item_actions.bow_shot,
+        'range': 20,
+        'cooldown': 0,
+        'cast_time': 1,
+        'description': 'Fire your weapon at an enemy you can see.',
+        'intent': 'aggressive',
+    },
+
     'ability_off_hand_shot': {
         'name': 'Off-Hand Shot',
         'function': item_actions.offhand_shot,

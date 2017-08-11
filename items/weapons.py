@@ -334,7 +334,30 @@ table = {
         'attack_delay'      : 1000,
         'crit_bonus'        : 1.5,
         'range'             : 10,
-        'ability'           : 'ability_off_hand_shot'
+        'ability'           : 'ability_off_hand_shot',
+        'attributes'        : ['no_melee']
+    },
 
+    'weapon_longbow': {
+        'name'              : 'longbow',
+        'category'          : 'weapon',
+        'damage_types'      : ['stabbing'],
+        'subtype'           : 'ranged',
+        'char'              : 'D',
+        'color'             : libtcodpy.yellow,
+        'type'              : 'item',
+        'slot'              : 'both hands',
+        'description'       : 'A longbow. It has excellent range but takes time to pull back.',
+        'str_requirement'   : 10,
+        'shred'             : 2,
+        'garunteed_shred'   : 0,
+        'accuracy'          : 20,
+        'weapon_dice'       : '2d8',
+        'str_dice'          : 1,
+        'attack_delay'      : 1000,
+        'crit_bonus'        : 2.0,
+        'range'             : 20,
+        'ability'           : 'ability_bow_shot',
+        'attributes'        : ['no_melee']
     }
 }

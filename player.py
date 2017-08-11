@@ -67,7 +67,7 @@ loadouts = {
         'spr':10,
         'con':12,
         'inventory':[
-            ['weapon_longsword','weapon_hatchet','weapon_mace'],
+            ['weapon_longsword','weapon_hatchet','weapon_mace', 'weapon_longbow'],
             'charm_raw',
             'shield_wooden_buckler',
             'equipment_leather_armor',
