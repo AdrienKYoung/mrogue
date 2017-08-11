@@ -738,7 +738,7 @@ class FireBehavior:
             self.owner.destroy()
         else:
             for obj in game.get_objects(self.owner.x, self.owner.y, lambda o: o.fighter is not None):
-                obj.fighter.apply_status_effect(effects.burning())
+                obj.fighter.apply_status_effect(effects.burning(), dc=None)
             # Spread to adjacent tiles
             if self.temperature < 9: # don't spread on the first turn
                 for tile in game.adjacent_tiles_diagonal(self.owner.x, self.owner.y):
@@ -768,7 +768,7 @@ class FrostfireBehavior:
             self.owner.destroy()
         else:
             for obj in game.get_objects(self.owner.x, self.owner.y, lambda o: o.fighter is not None):
-                obj.fighter.apply_status_effect(effects.frozen(duration=5))
+                obj.fighter.apply_status_effect(effects.frozen(duration=5), dc=None)
             if self.temperature < 9: # don't spread on the first turn
                 for adj in game.adjacent_tiles_diagonal(self.owner.x, self.owner.y):
                     tile = game.current_map.tiles[adj[0]][adj[1]]

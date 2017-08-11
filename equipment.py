@@ -427,7 +427,7 @@ class Equipment:
         sl = self.spell_list[spell_name]
         if actor is player.instance:
             miscast = player.get_miscast_chance(spells.library[spell_name])
-            if main.roll_dice('1d100') <= miscast:
+            if libtcod.random_get_int(0, 1, 100) <= miscast:
                 ui.message("You miscast %s." % spells.library[spell_name].name, libtcod.gray)
                 return 'miscast'
             #if player.instance.player_stats.int < spells.library[spell_name].int_requirement - main.skill_value('scholar'):

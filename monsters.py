@@ -312,7 +312,7 @@ proto = {
         },
         'ai': ai.AI_Default,
         'description': 'A round brown beetle. A warm glow emanates from beneath its carapace.',
-        'essence': [(50, 'fire')],
+        'essence': [(20, 'fire')],
         'subtype':'insect',
     },
     'monster_giant_frog': {

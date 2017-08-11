@@ -353,7 +353,7 @@ class Fighter:
                 return False
 
         # roll to hit
-        if new_effect.target_defense is not None:
+        if new_effect.target_defense is not None and dc is not None:
             resist_bonus = 0
             for resist in fighter.resistances.keys():
                 if resist == new_effect.name:
@@ -1211,7 +1211,7 @@ def roll_damage(damage_dice, stat_dice, defense, pierce, damage_types, damage_mu
 
 def attack_text(fighter,target,verb,location,damage,damage_types,severity,attack_name=None):
     # Early exit if the attacker and target are not visible
-    if fighter.owner is not player.instance and target is not player.instance and \
+    if fighter is not None and fighter.owner is not player.instance and target is not player.instance and \
         not fov.player_can_see(target.x, target.y) and not fov.player_can_see(fighter.owner.x, fighter.owner.y):
         return
 
@@ -1227,7 +1227,7 @@ def attack_text(fighter,target,verb,location,damage,damage_types,severity,attack
         else:
             verb = ('hit', 'hits')
     # Set the target's name - check to see if it should be of the type 'itself'/'yourself' and if it can be seen
-    if target is player.instance or fighter.owner is player.instance or fov.player_can_see(target.x, target.y):
+    if target is player.instance or (fighter is not None and fighter.owner is player.instance) or fov.player_can_see(target.x, target.y):
         target_name = syntax.name(target, reflexive=fighter.owner).replace('remains of ', '')
     else:
         target_name = 'something'
