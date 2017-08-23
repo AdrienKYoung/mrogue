@@ -67,7 +67,7 @@ loadouts = {
         'spr':10,
         'con':12,
         'inventory':[
-            ['weapon_longsword','weapon_hatchet','weapon_mace', 'weapon_longbow'],
+            ['weapon_longsword','weapon_hatchet','weapon_mace'],
             'charm_raw',
             'shield_wooden_buckler',
             'equipment_leather_armor',
@@ -87,8 +87,23 @@ loadouts = {
             'equipment_leather_armor',
             'glass_key',
             'weapon_crossbow',
+            'equipment_cloak_of_stealth'
         ],
-        'description' : "Nimble melee fighter. Starts with excellent agility."
+        'description' : "Stealthy ambusher. Starts with a variety of tools, but weak in combat."
+    },
+   'hunter' : {
+        'str':10,
+        'agi':12,
+        'int':8,
+        'spr':10,
+        'con':8,
+        'inventory':[
+            'charm_raw',
+            'weapon_shortsword',
+            'weapon_longbow',
+            'equipment_leather_armor'
+        ],
+        'description' : "Fragile ranged attacker. Starts with a bow."
     },
     'wanderer' : {
         'str':12,
@@ -112,7 +127,7 @@ loadouts = {
             ['book_lesser_death','book_lesser_radiance'],
             'charm_raw',
             'weapon_coal_mace',
-            'equipment_cloth_robes',
+            'equipment_cloth_robes'
         ],
         'description' : "Melee magic caster. Starts with a tome, no armor and a mace."
     },
@@ -125,24 +140,7 @@ loadouts = {
         'inventory':[
             ['book_lesser_arcane', 'book_lesser_cold', 'book_lesser_fire'],
             'equipment_cloth_robes',
-            'charm_raw',
-            #'charm_farmers_talisman',
-            #'charm_holy_symbol',
-            #'charm_shard_of_creation',
-            #'charm_volatile_orb',
-            #'charm_elementalists_lens',
-            #'charm_primal_totem',
-            #'charm_prayer_beads',
-            #'charm_alchemists_flask',
-            'gem_lesser_fire',
-            'gem_lesser_water',
-            'gem_lesser_earth',
-            'gem_lesser_air',
-            'gem_lesser_cold',
-            'gem_lesser_life',
-            'gem_lesser_arcane',
-            'gem_lesser_radiance',
-            'gem_lesser_death'
+            'charm_raw'
         ],
         'description' : "Fragile in melee, but have access to powerful offensive magic. "
                         "Starts with a tome."

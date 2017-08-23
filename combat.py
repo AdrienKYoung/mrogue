@@ -63,7 +63,7 @@ class Fighter:
         self.subtype = subtype
         self.team = team
         self.on_get_hit = on_get_hit
-        self.stealth = stealth
+        self._stealth = stealth
         self.range = _range
         self.on_get_kill = on_get_kill
         self.base_will = will
@@ -506,6 +506,14 @@ class Fighter:
         if main.has_skill('guardian_of_light') and (self.owner is player.instance or self.team == 'ally'):
             bonus += 2
         return max(self.base_armor + bonus - self.shred, 0)
+
+    @property
+    def stealth(self):
+        equipment = [equipment.stealth for equipment in main.get_all_equipped(self.inventory) if equipment.stealth is not None]
+        bonus = 10000
+        if equipment is not None and len(equipment) > 0:
+            bonus = min(equipment)
+        return min(self._stealth, bonus)
 
     def attack_shred(self,weapon=None):
         if weapon is None:

@@ -4,6 +4,25 @@ import player
 
 table = {
 #WEAPONS
+    'weapon_shortsword': {
+        'name'               : 'shortsword',
+        'category'           : 'weapon',
+        'subtype'            : 'sword',
+        'damage_types'       : ['slashing'],
+        'char'               : '/',
+        'color'              : libtcodpy.yellow,
+        'type'               : 'item',
+        'slot'               :'right hand',
+        'description'        : 'A single handed cruciform sword',
+        'stamina_cost'       : 10,
+        'str_requirement'    : 9,
+        'shred'              : 1,
+        'accuracy'           : 1,
+        'weapon_dice'        : '2d6',
+        'str_dice'           : 1,
+        'attack_delay'       : 11,
+        'crit_bonus'         : 1.5
+    },
     'weapon_longsword': {
         'name'               : 'longsword',
         'category'           : 'weapon',
@@ -355,9 +374,32 @@ table = {
         'weapon_dice'       : '2d8',
         'str_dice'          : 1,
         'attack_delay'      : 1000,
-        'crit_bonus'        : 2.0,
+        'crit_bonus'        : 1.5,
         'range'             : 20,
         'ability'           : 'ability_bow_shot',
         'attributes'        : ['no_melee']
-    }
+    },
+
+    'weapon_shortbow': { #todo - rework bows
+        'name'              : 'longbow',
+        'category'          : 'weapon',
+        'damage_types'      : ['stabbing'],
+        'subtype'           : 'ranged',
+        'char'              : 'D',
+        'color'             : libtcodpy.yellow,
+        'type'              : 'item',
+        'slot'              : 'both hands',
+        'description'       : 'A shortbow. It has short range, but can be fired more quickly than a larger weapon.',
+        'str_requirement'   : 9,
+        'shred'             : 2,
+        'garunteed_shred'   : 0,
+        'accuracy'          : 20,
+        'weapon_dice'       : '2d8',
+        'str_dice'          : 1,
+        'attack_delay'      : 1000,
+        'crit_bonus'        : 2.0,
+        'range'             : 8,
+        'ability'           : 'ability_bow_shot',
+        'attributes'        : ['no_melee']
+    },
 }

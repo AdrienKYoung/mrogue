@@ -1481,7 +1481,8 @@ def create_item(name, material=None, quality=''):
             status_effect=p.get('status_effect'),
             will_bonus=p.get('will', 0),
             fortitude_bonus=p.get('fortitude', 0),
-            attributes=p.get('attributes', [])
+            attributes=p.get('attributes', []),
+            stealth=p.get('stealth')
         )
 
         if material is None:
