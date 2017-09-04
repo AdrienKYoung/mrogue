@@ -320,11 +320,22 @@ def handle_keys():
         if not moved:
             return 'didnt-take-turn'
 
+already_alerted_meditate = False
 def do_queued_action(action):
+    global already_alerted_meditate
     if action == 'wait' or action is None:
         instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
     elif action == 'channel-cast':
         instance.fighter.adjust_stamina(consts.STAMINA_REGEN_CHANNEL)
+    elif action == 'channel-meditate':
+        if not already_alerted_meditate and len(main.get_fighters_in_burst(
+                instance.x, instance.y, consts.TORCH_RADIUS, instance, lambda o: o.fighter.team == 'enemy')) > 0:
+            if ui.menu_y_n('Continue meditating while enemies are nearby?'):
+                instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
+                already_alerted_meditate = True
+            else:
+                instance.action_queue = []
+                return 'didnt-take-turn'
     elif callable(action):
         action()
 
@@ -781,17 +792,27 @@ def get_key(name='Glass Key'):
 
 
 def meditate():
+    global already_alerted_meditate
     book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
     if (book is None or not hasattr(book, 'spell_list')) and len(instance.memory.spell_list) == 0:
         ui.message('Without access to magic, you have no need of meditation.', libtcod.dark_cyan)
         return 'didnt-take-turn'
+
+    already_alerted_meditate = False
+
+    if len(main.get_fighters_in_burst(instance.x, instance.y, consts.TORCH_RADIUS, instance, lambda o: o.fighter.team == 'enemy')) > 0:
+        if not ui.menu_y_n('Really meditate with enemies nearby?'):
+            return 'didnt-take-turn'
+        else:
+            already_alerted_meditate = True
+
     ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)
 
     if main.has_skill('solace'):
         instance.fighter.apply_status_effect(effects.solace(),True)
 
     for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
-        instance.action_queue.append('wait')
+        instance.action_queue.append('channel-meditate')
     instance.action_queue.append(_do_meditate)
     return 'start-meditate'
 

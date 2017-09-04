@@ -119,11 +119,11 @@ def bomb_beetle_corpse_tick(object=None, context=None):
             if libtcod.random_get_int(0, 0, 3) != 0:
                 main.create_fire(tile[0], tile[1], 10)
                 main.melt_ice(tile[0], tile[1])
-            monster = main.get_monster_at_tile(tile[0], tile[1])
-            if monster is not None:
-                monster.fighter.take_damage(main.roll_dice('22d3'))
-                if monster.fighter is not None:
-                    monster.fighter.apply_status_effect(effects.burning())
+            monster = main.get_objects(tile[0], tile[1], lambda o: o.fighter is not None)
+            if len(monster) > 0:
+                monster[0].fighter.take_damage(main.roll_dice('22d3'))
+                if monster[0].fighter is not None:
+                    monster[0].fighter.apply_status_effect(effects.burning())
         object.destroy()
 
 table = {
