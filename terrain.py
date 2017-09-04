@@ -17,6 +17,7 @@
 import consts
 import libtcodpy as libtcod
 import game as main
+import actions.on_step_actions
 
 class TileData:
 
@@ -125,7 +126,7 @@ data = {
                             isRamp=True),
     'snow drift': TileData(False, False, 'snow drift', '~', libtcod.lightest_gray, libtcod.light_gray,
                              'pristine, waist-deep powdered snow. It will be difficult to move through until it has been crushed down.',
-                           consts.SNOW_COST, isFloor=True, on_step=main.step_on_snow_drift),
+                           consts.SNOW_COST, isFloor=True, on_step=actions.on_step_actions.step_on_snow_drift),
     'snowy ground': TileData(False, False, 'snowy ground', '.', libtcod.lightest_gray, libtcod.desaturated_amber,
                              'trampled snow, mixed with dirt', isFloor=True),
     'snowy slope': TileData(False, False, 'snowy slope', '/', libtcod.lightest_gray, libtcod.sepia,
@@ -178,6 +179,9 @@ data = {
                              'embers linger on this still-warm floor scorched by flame', isFloor=True),
     'scorched ramp': TileData(False, False, 'scorched ramp', '/', (94, 55, 55), (30, 30, 30),
                              'embers linger on this still-warm floor scorched by flame', isRamp=True),
+    'poisoned water': TileData(False, False, 'poisoned water', 247, (76, 105, 36), (76, 89, 36),
+                             'a shallow pool of acrid-smelling water', consts.SHALLOW_WATER_COST, isWater=True,
+                               on_step=actions.on_step_actions.step_on_poison),
 }
 
 # flags

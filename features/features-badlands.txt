@@ -58,7 +58,7 @@ ENDFEATURE
 FEATURE blight_maze
 CATEGORY badlands
 DEFINE , dry grass
-DEFINE 1 MONSTER_ID monster_golem
+DEFINE 1 MONSTER_ID monster_plague_wight
 SCRIPT fill_blightweed create_slopes
 FLAGS NOELEV
 ........

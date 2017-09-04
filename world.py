@@ -111,6 +111,12 @@ def initialize_world():
                 world_maps[new_map.name] = new_map
         world_maps['marsh_1_1'].add_link(world_maps['beach'], 'east')
 
+        # Make crypt at a random badlands room and link back to the badlands
+        if dungeon.branches['bog'].get('enabled', False):
+            new_map = Map('bog')
+            world_maps['marsh_0_%d' % libtcod.random_get_int(0, 0, 1)].add_link(new_map, 'down')
+            world_maps[new_map.name] = new_map
+
     # Add badlands maps and link back to beach
     if dungeon.branches['badlands'].get('enabled', False):
         for y in range(2):

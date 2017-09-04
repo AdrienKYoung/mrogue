@@ -16,6 +16,7 @@
 
 import libtcodpy
 import game as main
+import log
 
 table = {
     'weapons_0': [
@@ -103,6 +104,20 @@ table = {
         'shield_kite_shield',
         'shield_tower_shield',
     ],
+
+    'loot_weapons_steel' : {
+        'weapon_dagger': { 'material':'steel' },
+        'weapon_hatchet': { 'material':'steel' },
+        'weapon_longsword': { 'material':'steel' },
+        'weapon_mace': { 'material':'steel' },
+        'weapon_spear': { 'material':'steel' },
+        'weapon_messer': { 'material':'steel' },
+        'weapon_greatsword': { 'material':'steel' },
+        'weapon_warhammer': { 'material':'steel' },
+        'weapon_dane_axe': { 'material':'steel' },
+        'weapon_halberd': { 'material':'steel' },
+        'weapon_katar': { 'material':'steel' },
+    },
 
      'consumables_1': [
         'essence_life',
@@ -245,6 +260,7 @@ def item_from_table(branch,loot_table=None):
     if loot_table is None:
         return None
 
+    #fall back to lower level table if higher level isn't available (TODO: Removeme)
     if not loot_table in table:
         split = loot_table.split('_')
         i = int(split[1]) - 1
@@ -283,6 +299,30 @@ def item_from_table(branch,loot_table=None):
         material = choose_armor_material(loot_level)
 
     return main.create_item(item_id, material, quality)
+
+def item_from_table_ex(loot_table, loot_level=1):
+    if loot_table is None or loot_table not in table:
+        log.warn("loot", "Couldn't find loot table {}", loot_table)
+        return None
+
+    loot_table = table[loot_table]
+    chances = { k:v.get('weight',10) for k,v in loot_table.items() }
+    item_id = main.random_choice(chances)
+    choice = loot_table[item_id]
+
+    import items
+    prototype = items.table()[item_id]
+    material = None
+    quality = ''
+    if prototype['category'] == 'weapon':
+        material = choice.get('material', choose_weapon_material(loot_level))
+        quality = choice.get('quality', choose_quality(loot_level))
+    if prototype['category'] == 'armor':
+        material = choice.get('material', choose_armor_material(loot_level))
+        quality = choice.get('quality', choose_quality(loot_level))
+
+    return main.create_item(item_id, material, quality)
+
 
 def choose_loot_table(branch):
     import dungeon

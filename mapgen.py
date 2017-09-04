@@ -691,6 +691,7 @@ def apply_item(x, y, data):
     item_id = None
     quality = None
     material = None
+    loot_table = None
     if len(data) > 1:
         for i in range(1, len(data)):
             if data[i] == 'CHEST':
@@ -708,8 +709,17 @@ def apply_item(x, y, data):
                 quality = data[i + 1]
             elif data[i] == 'MATERIAL':
                 material = data[i + 1]
+            elif data[i] == "LOOT_TABLE":
+                loot_table = data[i + 1]
     if item_id:
         main.spawn_item(item_id, x, y, material=material, quality=quality)
+    elif loot_table:
+        item = loot.item_from_table_ex(loot_table, (loot_level if(loot_level is not None) else 1))
+        if item is not None:
+            item.x = x
+            item.y = y
+            map.add_object(item)
+            item.send_to_back()
     else:
         item = create_random_loot(category=category, loot_level=loot_level)
         if item is not None:
@@ -943,6 +953,7 @@ def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400, cross
 
 
 def create_reed(x, y):
+    import actions.on_step_actions
     obj = main.get_objects(x, y)
     if len(obj) > 0:
         return  # object in the way
@@ -953,11 +964,12 @@ def create_reed(x, y):
         map.tiles[x][y].tile_type = 'grass floor'
     reed = main.GameObject(x, y, 244, 'reeds', libtcod.darker_green, always_visible=True, description='A thicket of '
                            'reeds so tall they obstruct your vision. They are easily crushed underfoot.'
-                           , blocks_sight=True, on_step=main.step_on_reed, burns=True)
+                           , blocks_sight=True, on_step=actions.on_step_actions.step_on_reed, burns=True)
     map.add_object(reed)
 
 
 def create_blightweed(x, y):
+    import actions.on_step_actions
     obj = main.get_objects(x, y)
     if len(obj) > 0:
         return None # object in the way
@@ -966,7 +978,7 @@ def create_blightweed(x, y):
         return None # blocked
     weed = main.GameObject(x, y, 244, 'blightweed', libtcod.desaturated_red, always_visible=True, description=
                            'A cursed, twisted plant bristling with menacing, blood-red thorns. It catches and shreds the'
-                           ' armor of those who attempt to pass through it.', on_step=main.step_on_blightweed, burns=True)
+                           ' armor of those who attempt to pass through it.', on_step=actions.on_step_actions.step_on_blightweed, burns=True)
     map.add_object(weed)
 
 
@@ -2013,10 +2025,6 @@ def make_map_marsh():
         tile = choose_random_tile(open_tiles)
         main.spawn_monster('monster_blastcap', tile[0], tile[1])
 
-    if consts.DEBUG_TEST_FEATURE is not None:
-        tile = choose_random_tile(open_tiles)
-        create_feature(tile[0], tile[1], consts.DEBUG_TEST_FEATURE, open_tiles)
-
     feature_count = libtcod.random_get_int(0, 0, 10)
     for i in range(feature_count):
         tile = choose_random_tile(open_tiles)
@@ -2138,6 +2146,21 @@ def make_map_crypt():
         stairs.interact = main.use_stairs
         stairs.char = '>'
 
+def make_map_bog():
+    open_tiles = []
+    create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'bog', open_tiles=open_tiles)
+    stairs = None
+    for i in range(len(map.objects) - 1, 0, -1):
+        if map.objects[i].name == 'stairs':
+            stairs = map.objects[i]
+            break
+    if stairs is not None:
+        stairs.name = "Staircase to the marsh"
+        stairs.description = 'A narrow stone stairway leading up to the marsh.'
+        stairs.link = map.links[0]
+        stairs.interact = main.use_stairs
+        stairs.char = '>'
+
 
 def make_map_river():
     for y in range(2, consts.MAP_HEIGHT - 2):
@@ -2232,10 +2255,6 @@ def make_map_badlands():
         for y in range(consts.MAP_HEIGHT):
             if not map.tiles[x][y].blocks:
                 open_tiles.append((x, y))
-
-    if consts.DEBUG_TEST_FEATURE is not None:
-        tile = choose_random_tile(open_tiles)
-        create_feature(tile[0], tile[1], consts.DEBUG_TEST_FEATURE, open_tiles)
 
     feature_count = libtcod.random_get_int(0, 0, 3)
     for i in range(feature_count):

@@ -710,24 +710,6 @@ def expire_out_of_vision(obj):
     if not fov.player_can_see(obj.x, obj.y):
         obj.destroy()
 
-
-def step_on_reed(reed, obj):
-    reed.destroy()
-
-
-def step_on_blightweed(weed, obj):
-    if obj.fighter:
-        obj.fighter.time_since_last_damaged = 0
-        if obj.fighter.armor > 0:
-            obj.fighter.get_shredded(1)
-            if fov.player_can_see(obj.x, obj.y):
-                ui.message('The blightweed thorns shred %s armor!' % syntax.name(obj, possesive=True), libtcod.desaturated_red)
-
-def step_on_snow_drift(x,y,obj):
-    if obj is player.instance:
-        player.instance.fighter.adjust_stamina(-current_map.tiles[x][y].stamina_cost)
-    current_map.tiles[x][y].tile_type = 'snowy ground'
-
 def adjacent_tiles_orthogonal(x, y):
     adjacent = []
     if x > 0:

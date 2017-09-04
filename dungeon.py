@@ -137,6 +137,18 @@ branches = {
         'map_color'     : libtcod.Color(255, 191, 0),
         'enabled'       : True
     },
+    'bog': {
+        'name'          : "the poisoned bog",
+        'default_wall'  : 'mossy stone wall',
+        'default_floor' : 'damp soil',
+        'default_ramp'  : 'stone ramp',
+        'scaling'       : 0,
+        'loot'          : None,
+        'monsters'      : None,
+        'generate'      : mapgen.make_map_bog,
+        'map_color'     : libtcod.desaturated_green,
+        'enabled'       : True
+    },
     'gtunnels': {
         'name'          : 'the goblin tunnels',
         'default_wall'  : 'tunnel wall',
