@@ -210,14 +210,13 @@ table = {
         'equipment_ring_of_tenacity',
         'equipment_ring_of_vampirism',
         'equipment_ring_of_mending',
-        'equipment_ring_of_waterbreathing',
+        'equipment_ring_of_breath',
         'equipment_ring_of_burdens',
         'equipment_ring_of_alchemy',
         'equipment_ring_of_poison_immunity',
         'equipment_ring_of_freedom',
         'equipment_ring_of_salvation',
         'equipment_ring_of_blessings',
-        'equipment_ring_of_levitation',
     ],
 
     'elixirs_0': [

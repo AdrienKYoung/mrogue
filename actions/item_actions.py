@@ -80,7 +80,7 @@ def use_diamond():
 def use_onyx():
     return use_gem('death')
 def use_gem(essence):
-    if player.instance.fighter.item_equipped_count('equipment_ring_of_alchemy') > 0:
+    if player.instance.fighter.has_item_with_attribute('alchemy') > 0:
         old_essence = essence
         essence = main.opposite_essence(essence)
         if old_essence != essence:
@@ -118,3 +118,10 @@ def forge():
         main.set_quality(target, new_quality)
         ui.message('It is now a ' + target.owner.name + '.', libtcod.orange)
     return True
+
+def longstride(actor, target, context):
+    if main.is_blocked(target[0], target[1], movement_type=actor.movement_type):
+        if actor is player.instance:
+            ui.message('Something is in the way.', libtcod.gray)
+        return 'cancelled'
+    actor.set_position(target[0], target[1])

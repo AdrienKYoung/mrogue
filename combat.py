@@ -264,10 +264,23 @@ class Fighter:
         return len(match)
         #return len([e.base_id == name for e in main.get_all_equipped(self.inventory)])
 
+    def has_item_with_attribute(self, attribute):
+        for item in main.get_all_equipped(self.inventory):
+            if item.has_attribute(attribute):
+                return True
+        return False
+
+    def item_attribute_count(self, attribute):
+        count = 0
+        for item in main.get_all_equipped(self.inventory):
+            if item.has_attribute(attribute):
+                count += 1
+        return count
+
     def on_tick(self, object=None):
         # Track time since damaged (for repairing shred)
         self.time_since_last_damaged += 1
-        mending_count = self.item_equipped_count('equipment_ring_of_mending')
+        mending_count = self.item_attribute_count('mending')
         if mending_count > 0:
             repair_time = 20 / (mending_count * 2)
         else:
@@ -290,7 +303,7 @@ class Fighter:
                 and self.owner.movement_type & pathfinding.FLYING != pathfinding.FLYING \
                 and self.owner.movement_type & pathfinding.AQUATIC != pathfinding.AQUATIC:  # deep water / deep seawater
             if not (self.can_breath_underwater or self.has_status('waterbreathing') or self.has_status('lichform') or
-                    self is player.instance and main.has_skill('aquatic') or self.item_equipped_count("equipment_ring_of_waterbreathing") > 0):
+                    self is player.instance and main.has_skill('aquatic') or self.has_item_with_attribute("breath") > 0):
                 if self.breath > 0:
                     self.breath -= 1
                 else:
@@ -365,9 +378,9 @@ class Fighter:
                         fighter.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
                 return False
 
-        if new_effect.time_limit is not None:
-           new_effect.time_limit = int(new_effect.time_limit *
-                                       (1 - (fighter.item_equipped_count('equipment_ring_of_fortitude') * 0.3)))
+        #if new_effect.time_limit is not None:
+        #   new_effect.time_limit = int(new_effect.time_limit *
+        #                               (1 - (fighter.item_equipped_count('equipment_ring_of_fortitude') * 0.3)))
 
 
         # check for existing matching effects

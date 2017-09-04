@@ -348,7 +348,7 @@ class GameObject:
                         return True
                 web = object_at_tile(self.x, self.y, 'spiderweb')
                 if web is not None and not (self.fighter and (self.fighter.has_flag(monsters.WEB_IMMUNE) or
-                                                  self.fighter.item_equipped_count('equipment_ring_of_freedom') > 0)):
+                                                  self.fighter.has_item_with_attribute('web_immune'))):
                     ui.message('%s %s against the web' % (
                                     syntax.name(self).capitalize(),
                                     syntax.conjugate(self is player.instance, ('struggle', 'struggles'))))
@@ -1464,7 +1464,7 @@ def create_item(name, material=None, quality=''):
             will_bonus=p.get('will', 0),
             fortitude_bonus=p.get('fortitude', 0),
             attributes=p.get('attributes', []),
-            stealth=p.get('stealth')
+            stealth=p.get('stealth'),
         )
 
         if material is None:

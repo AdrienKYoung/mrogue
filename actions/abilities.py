@@ -1030,6 +1030,14 @@ data = {
         'intent': 'support',
         'function': charm_actions.vitality_potion,
     },
+    'ability_longstride': {
+        'name': 'Longstride',
+        'description': 'instantly teleport to a space you can see.',
+        'range': consts.TORCH_RADIUS,
+        'target_ground': True,
+        'function': item_actions.longstride,
+        'cooldown': 100,
+    }
 }
 
 default_abilities = {

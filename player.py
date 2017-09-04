@@ -37,7 +37,8 @@ class PlayerStats:
 
     @property
     def int(self):
-        return self.base_int
+        bonus = sum([i.int_bonus for i in main.get_all_equipped(instance.fighter.inventory)])
+        return self.base_int + bonus
 
     @property
     def wiz(self):
@@ -45,11 +46,13 @@ class PlayerStats:
 
     @property
     def str(self):
-        return self.base_str
+        bonus = sum([i.str_bonus for i in main.get_all_equipped(instance.fighter.inventory)])
+        return self.base_str + bonus
 
     @property
     def agi(self):
-        return self.base_agi
+        bonus = sum([i.agi_bonus for i in main.get_all_equipped(instance.fighter.inventory)])
+        return self.base_agi + bonus
 
     @property
     def con(self):
@@ -833,7 +836,7 @@ def delay(duration,action,delay_action='delay'):
 
 def jump(actor=None, range=None, stamina_cost=None):
     if range is None:
-        range = consts.BASE_JUMP_RANGE
+        range = consts.BASE_JUMP_RANGE + instance.fighter.item_attribute_count("jump_distance")
     if stamina_cost is None:
         stamina_cost = consts.JUMP_STAMINA_COST
     if not main.current_map.tiles[instance.x][instance.y].jumpable and stamina_cost > 0:
@@ -965,7 +968,7 @@ def on_tick(this):
             ability.on_tick() #  Raise Shield cools down even when not accessible
 
     if instance.fighter.hp < 25:
-        instance.fighter.heal(instance.fighter.item_equipped_count('equipment_ring_of_tenacity'))
+        instance.fighter.heal(instance.fighter.item_attribute_count('tenacity'))
 
 def on_get_hit(this,other,damage):
     if main.has_skill('heir_to_the_heavens'):
@@ -984,15 +987,15 @@ def on_get_hit(this,other,damage):
             ui.message('You feel a surge of adrenaline!', libtcod.light_yellow)
 
     if instance.fighter is not None:
-        rage_count = instance.fighter.item_equipped_count('equipment_ring_of_rage')
+        rage_count = instance.fighter.item_equipped_count('berserk_on_take_damage')
         if main.roll_dice('1d20') <= rage_count:
             instance.fighter.apply_status_effect(effects.berserk())
         if other is not None and other.fighter is not None:
-            if main.roll_dice('1d20') <= instance.fighter.item_equipped_count('equipment_ring_of_vengeance'):
+            if main.roll_dice('1d20') <= instance.fighter.item_attribute_count('curse_on_take_damage'):
                 other.fighter.apply_status_effect(effects.cursed())
 
 def on_get_kill(this,other,damage):
-    this.fighter.heal(this.fighter.item_equipped_count('equipment_ring_of_vampirism') * 2)
+    this.fighter.heal(this.fighter.item_attribute_count('vampiric') * 2)
 
 def get_abilities():
     from actions import abilities

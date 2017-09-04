@@ -33,7 +33,8 @@ class Equipment:
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
                  resistances={}, modifiers = {}, base_id=None, _range=1, attributes=[], stealth=None,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
-                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None, will_bonus=0, fortitude_bonus=0):
+                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None, will_bonus=0,
+                 fortitude_bonus=0, str_bonus=0, agi_bonus=0, int_bonus=0):
         self.is_equipped = False
         self.slot = slot
         self.base_id = base_id
@@ -82,6 +83,9 @@ class Equipment:
         self._crit_bonus = crit_bonus
         self._attack_speed_bonus = attack_speed_bonus
         self._stamina_regen = stamina_regen
+        self.agi_bonus = agi_bonus
+        self.str_bonus = str_bonus
+        self.int_bonus = int_bonus
 
         self._spell_power_bonus = spell_power_bonus
         self._spell_resist_bonus = spell_resist_bonus
@@ -104,6 +108,9 @@ class Equipment:
             self.refill_spell_charges()
         for i in range(starting_level):
             self.level_up(True)
+
+    def has_attribute(self, attribute):
+        return attribute in self.attributes
 
     def get_bonus(self,stat):
         return sum([v.get(stat,0) for v in self.modifiers.values()])
