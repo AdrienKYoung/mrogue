@@ -111,7 +111,7 @@ def initialize_world():
                 world_maps[new_map.name] = new_map
         world_maps['marsh_1_1'].add_link(world_maps['beach'], 'east')
 
-        # Make crypt at a random badlands room and link back to the badlands
+        # Make bog at a random marsh room and link back to the marsh
         if dungeon.branches['bog'].get('enabled', False):
             new_map = Map('bog')
             world_maps['marsh_0_%d' % libtcod.random_get_int(0, 0, 1)].add_link(new_map, 'down')
@@ -195,6 +195,12 @@ def initialize_world():
             world_maps['forest_1_1'].add_link(world_maps['river_1'], 'south')
         if dungeon.branches['gtunnels'].get('enabled', False):
             world_maps['forest_0_1'].add_link(world_maps['gtunnels_1_1'], 'down')
+
+        # Make eolith caverns at a random forest room and link back to the forest
+        if dungeon.branches['eolith'].get('enabled', False):
+            new_map = Map('eolith')
+            world_maps['forest_1_1'].add_link(new_map, 'down')# % libtcod.random_get_int(0, 0, 1)].add_link(new_map, 'down')
+            world_maps[new_map.name] = new_map
 
     # Add Garden maps and link back to river/goblin tunnels
     if dungeon.branches['garden'].get('enabled', False):

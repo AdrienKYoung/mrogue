@@ -236,6 +236,18 @@ branches = {
         'map_color'     : libtcod.darkest_sky,
         'enabled'       : True
     },
+    'eolith': {
+        'name': "Eolith Cavern",
+        'default_wall': 'dark shale wall',
+        'default_floor': 'snowy ground',
+        'default_ramp': 'snowy slope',
+        'scaling': 0,
+        'loot': None,
+        'monsters': None,
+        'generate': mapgen.make_map_eolith,
+        'map_color': libtcod.darker_sky,
+        'enabled': True
+    },
     'garden': {
         'name'          :"the gardens",
         'default_wall'  : 'marble wall',

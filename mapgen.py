@@ -106,6 +106,7 @@ class Room:
     def __init__(self):
         self.tiles = {}
         self.data = {}
+        self.key_points = {}
         self.min_x = None
         self.max_x = None
         self.min_y = None
@@ -140,6 +141,7 @@ class Room:
             return  # No translation
         new_tiles = {}
         new_data = {}
+        new_key_points = {}
         new_min_x = new_min_y = 10000
         new_max_x = new_max_y = -10000
         for tile in self.tiles.keys():
@@ -156,12 +158,16 @@ class Room:
             new_tiles[new_x, new_y] = self.tiles[tile]
             if tile in self.data.keys():
                 new_data[new_x, new_y] = self.data[tile]
+            for key_point in self.key_points.items():
+                if key_point[1] == (tile[0], tile[1]):
+                    new_key_points[key_point[0]] = (new_x, new_y)
         self.min_x = new_min_x
         self.min_y = new_min_y
         self.max_x = new_max_x
         self.max_y = new_max_y
         self.tiles = new_tiles
         self.data = new_data
+        self.key_points = new_key_points
         self.pos = x, y
 
     # Orient to the origin, then rotate about the top-left corner, then reorient to the origin again.
@@ -175,6 +181,7 @@ class Room:
         self.max_y = None
         new_tiles = {}
         new_data = {}
+        new_key_points = {}
         for tile in self.tiles.keys():
             new_x = int(round(float(tile[0]) * math.cos(angle) - float(tile[1]) * math.sin(angle)))
             new_y = int(round(float(tile[0]) * math.sin(angle) + float(tile[1]) * math.cos(angle)))
@@ -189,9 +196,13 @@ class Room:
                 self.max_x = new_x
             if self.max_y is None or new_y > self.max_y:
                 self.max_y = new_y
+            for key_point in self.key_points.items():
+                if key_point[1] == (tile[0], tile[1]):
+                    new_key_points[key_point[0]] = (new_x, new_y)
         self.tiles = new_tiles
         self.data = new_data
         self.pos = self.min_x, self.min_y
+        self.key_points = new_key_points
         self.set_pos(0, 0)
 
     # Orient to the origin, then reflect across one or both axes
@@ -201,6 +212,7 @@ class Room:
         self.set_pos(0, 0)
         new_tiles = {}
         new_data = {}
+        new_key_points = {}
         for tile in self.tiles.keys():
             if reflect_x:
                 new_x = -tile[0] + self.max_x
@@ -213,8 +225,12 @@ class Room:
             new_tiles[(new_x, new_y)] = self.tiles[tile]
             if tile in self.data.keys():
                 new_data[new_x, new_y] = self.data[tile]
+            for key_point in self.key_points.items():
+                if key_point[1] == (tile[0], tile[1]):
+                    new_key_points[key_point[0]] = (new_x, new_y)
         self.tiles = new_tiles
         self.data = new_data
+        self.key_points = new_key_points
 
 
     def set_tile(self, x, y, tile_type, elevation=None):
@@ -243,6 +259,12 @@ class Room:
         del self.tiles[(x, y)]
         if (x, y) in self.data.keys():
             del self.data[(x, y)]
+        to_remove = []
+        for key_point in self.key_points:
+            if key_point[1] == (x, y):
+                to_remove.append(key_point[0])
+        for key in to_remove:
+            del self.key_points[key]
         if x == self.min_x or x == self.max_x or y == self.min_y or y == self.max_y:
             self.max_x = None
             self.min_x = None
@@ -1168,6 +1190,8 @@ def load_feature(lines=[]):
                             feature_room.data[(i_x, y_index)].append(c)
                         else:
                             feature_room.data[(i_x, y_index)] = c
+                    elif 65 <= ord(c) <= 90 or 97 <= ord(c) <= 122:
+                        feature_room.key_points[c] = (i_x, y_index)
                     elif c.isdigit():
                         if (i_x, y_index) in feature_room.data.keys():
                             for s in data_strings[int(c)]:
@@ -2161,6 +2185,24 @@ def make_map_bog():
         stairs.interact = main.use_stairs
         stairs.char = '>'
 
+def make_map_eolith():
+    open_tiles = []
+    key_points = create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'eolith_cavern', open_tiles=open_tiles).key_points
+    treasure_point = key_points.values()[libtcod.random_get_int(0, 0, len(key_points.values()) - 1)]
+    main.spawn_item('weapon_longsword', treasure_point[0], treasure_point[1], quality='')
+    main.spawn_item('equipment_leather_armor', treasure_point[0], treasure_point[1], quality='')
+    change_map_tile(treasure_point[0], treasure_point[1],'ice wall', hard_override=True)
+    stairs = None
+    for i in range(len(map.objects) - 1, 0, -1):
+        if map.objects[i].name == 'stairs':
+            stairs = map.objects[i]
+            break
+    if stairs is not None:
+        stairs.name = "Staircase to the Frozen Forest"
+        stairs.description = 'A narrow stone stairway leading up to the frozen forest.'
+        stairs.link = map.links[0]
+        stairs.interact = main.use_stairs
+        stairs.char = '>'
 
 def make_map_river():
     for y in range(2, consts.MAP_HEIGHT - 2):
