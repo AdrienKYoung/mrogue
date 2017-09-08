@@ -523,10 +523,16 @@ class Fighter:
     @property
     def stealth(self):
         equipment = [equipment.stealth for equipment in main.get_all_equipped(self.inventory) if equipment.stealth is not None]
-        bonus = 10000
+        bonus = None
         if equipment is not None and len(equipment) > 0:
             bonus = min(equipment)
-        return min(self._stealth, bonus)
+        if self._stealth is None:
+            return bonus
+        else:
+            if bonus is None:
+                return self._stealth
+            else:
+                return min(self._stealth, bonus)
 
     def attack_shred(self,weapon=None):
         if weapon is None:

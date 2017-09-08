@@ -199,7 +199,7 @@ def initialize_world():
         # Make eolith caverns at a random forest room and link back to the forest
         if dungeon.branches['eolith'].get('enabled', False):
             new_map = Map('eolith')
-            world_maps['forest_1_1'].add_link(new_map, 'down')# % libtcod.random_get_int(0, 0, 1)].add_link(new_map, 'down')
+            world_maps['forest_%d_%d' % (libtcod.random_get_int(0, 0, 1), libtcod.random_get_int(0, 0, 1))].add_link(new_map, 'down')
             world_maps[new_map.name] = new_map
 
     # Add Garden maps and link back to river/goblin tunnels

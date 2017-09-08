@@ -1455,7 +1455,7 @@ def create_item(name, material=None, quality=''):
             subtype=p.get('subtype'),
             starting_level=level,
             weight=p.get('weight',0),
-            _range=p.get('range',1),
+            range_=p.get('range',1),
             sh_max=p.get('sh_max', 0),
             sh_raise_cost=p.get('sh_raise_cost', 0),
             sh_recovery=p.get('sh_recovery', 0),

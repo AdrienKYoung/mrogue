@@ -8,8 +8,20 @@ table = {
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'slot'          : 'shoulders',
-        'description'   : 'A shimmering cloak that you can almost see through',
+        'description'   : "A heavy cloak woven from rough, dark cloth. "
+                          "It helps its wearer blend into the shadows and avoid detection",
         'weight'        : 2,
-        'stealth'       : 5
+        'stealth'       : 7
+    },
+    'equipment_greater_cloak_of_stealth': {
+        'name'          : 'Greater Cloak of Stealth',
+        'category'      : 'armor',
+        'char'          : chr(168), #upside down question mark
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'slot'          : 'shoulders',
+        'description'   : 'A shimmering cloak that you can almost see through',
+        'weight'        : 3,
+        'stealth'       : 4
     },
 }

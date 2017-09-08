@@ -319,7 +319,7 @@ def green_touch(actor, target, context):
                                elevation=main.current_map.tiles[tile[0]][tile[1]].elevation)
     return 'success'
 
-def fungal_growth(actor=None, target=None):
+def fungal_growth(actor, target, context):
     x,y = target
     corpse = main.get_objects(x, y, lambda o: o.is_corpse)
     if len(corpse) == 0:

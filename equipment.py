@@ -31,7 +31,7 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_types=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
-                 resistances={}, modifiers = {}, base_id=None, _range=1, attributes=[], stealth=None,
+                 resistances={}, modifiers = {}, base_id=None, range_=1, attributes=[], stealth=None,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
                  sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None, will_bonus=0,
                  fortitude_bonus=0, str_bonus=0, agi_bonus=0, int_bonus=0):
@@ -75,9 +75,9 @@ class Equipment:
         self._shred_bonus = shred_bonus
         self._guaranteed_shred_bonus = guaranteed_shred_bonus
         self._pierce_bonus = pierce
-        self.range = _range
+        self._range = range_
         self.attributes = list(attributes)
-        self.stealth = stealth
+        self._stealth = stealth
 
         self._accuracy_bonus = accuracy
         self._crit_bonus = crit_bonus
@@ -222,6 +222,10 @@ class Equipment:
     @property
     def spell_resist_bonus(self):
         return self._spell_resist_bonus + self.get_bonus('spell_resist_bonus')
+
+    @property
+    def stealth(self):
+        return self._stealth
 
     @property
     def holder(self):

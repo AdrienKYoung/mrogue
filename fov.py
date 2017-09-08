@@ -110,9 +110,13 @@ def player_can_see(x, y):
 def monster_can_see_object(monster, target):
     import player
     if monster.elevation == target.elevation and target is player.instance:
-        return player_can_see(monster.x, monster.y)
-    else:
-        return monster_can_see_tile(monster, target.x, target.y)
+        if monster.fighter is None or monster.fighter.stealth == player.instance.fighter.stealth:
+            return player_can_see(monster.x, monster.y)
+        else:
+            return monster.distance_to(player.instance) <= player.instance.fighter.stealth and \
+                   monster_can_see_tile(monster, target.x, target.y)
+
+    return monster_can_see_tile(monster, target.x, target.y)
 
 
 # Checks if the given monster can see the given tile. Recalculates fov using the monster's point of view and elevation.
