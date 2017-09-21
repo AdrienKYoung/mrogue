@@ -207,3 +207,8 @@ def frostfire(actor, target, context):
 
 def vitality_potion(actor, target, context):
     actor.fighter.apply_status_effect(effects.vitality())
+
+def demon_power(actor, target, context):
+    if target is not player.instance:
+        return "didnt-take-turn"
+    player.get_demon_power()

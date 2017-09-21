@@ -177,7 +177,7 @@ def charm_raw():
     elif essence == 'radiance':
         result = charm_actions.invulnerable(player.instance, player.instance, None)
     elif essence == 'void':
-        result = 'didnt-take-turn' #TODO: mutate self
+        result = charm_actions.demon_power(player.instance, player.instance, None)
     else:
         result = 'didnt-take-turn'
 

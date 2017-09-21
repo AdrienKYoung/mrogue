@@ -79,6 +79,8 @@ def use_diamond():
     return use_gem('radiance')
 def use_onyx():
     return use_gem('death')
+def use_void():
+    return use_gem('void')
 def use_gem(essence):
     if player.instance.fighter.has_item_with_attribute('alchemy') > 0:
         old_essence = essence

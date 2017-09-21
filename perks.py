@@ -16,6 +16,7 @@
 
 import player
 import actions
+import actions.perk_actions
 import game as main
 import consts
 
@@ -98,6 +99,12 @@ perk_keys = [
     'heir_to_the_heavens',
     'void_affinity',
     'gaze_into_the_void',
+]
+
+demon_powers = [
+    'vampirism',
+    'bloodlust',
+    'dark_aura'
 ]
 
 perk_list = {
@@ -326,7 +333,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'water_affinity 5',
         'category' : 'Water Magic',
-        'on_acquire': lambda: actions.aquatic(player.instance)
+        'on_acquire': lambda: actions.perk_actions.aquatic(player.instance)
     },
     'stonecloak' : {
         'name' : 'Stonecloak',
@@ -359,7 +366,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'air_affinity 5',
         'category' : 'Air Magic',
-        'on_acquire': lambda: actions.flight(player.instance)
+        'on_acquire': lambda: actions.perk_actions.flight(player.instance)
     },
     'vitality' : {
         'name' : 'Vitality',
@@ -376,7 +383,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'life_affinity 5',
         'category' : 'Life Magic',
-        'on_acquire': lambda: actions.auto_res(player.instance)
+        'on_acquire': lambda: actions.perk_actions.auto_res(player.instance)
     },
     'spellshards' : {
         'name' : 'Spellshards',
@@ -410,7 +417,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'death_affinity 5',
         'category' : 'Death Magic',
-        'on_acquire': lambda: actions.lichform(player.instance)
+        'on_acquire': lambda: actions.perk_actions.lichform(player.instance)
     },
     'guardian_of_light' : {
         'name' : 'Guardian of Light',
@@ -433,7 +440,7 @@ perk_list = {
         'description' : ['Gain 3 Void essence'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'on_acquire': lambda: actions.gaze_into_the_void(player.instance),
+        'on_acquire': lambda: actions.perk_actions.gaze_into_the_void(player.instance),
         'requires' : 'void_affinity 3',
         'category' : 'Void Magic'
     },
@@ -738,4 +745,27 @@ perk_list = {
         'requires' : 'unarmed_mastery 7',
         'category' : 'Unarmed Combat'
     },
+
+    #Demonic Powers
+    'vampirism' : {
+        'name' : 'Vampirism',
+        'description' : ['You heal damage when you kill enemies'],
+        'values': [2,3,4],
+        'max_rank' : 3,
+        'corruption_dice': '30d6'
+    },
+    'bloodlust' : {
+        'name' : 'Bloodlust',
+        'description' : ['You restore stamina when you kill enemies'],
+        'values': [5,7,10],
+        'max_rank' : 3,
+        'corruption_dice': '30d6'
+    },
+    'dark_aura' : {
+        'name' : 'Dark Aura',
+        'description' : ['You curse nearby enemies'],
+        'values': [1,2,3],
+        'max_rank' : 3,
+        'corruption_dice': '30d6'
+    }
 }
