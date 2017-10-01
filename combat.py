@@ -122,6 +122,8 @@ class Fighter:
         return print_height
 
     def adjust_stamina(self, amount):
+        if self.has_status('exhausted'):
+            return
         self.stamina += amount
         if self.stamina < 0:
             self.stamina = 0
@@ -208,7 +210,9 @@ class Fighter:
                 stamina_cost = int((float(main.get_equipped_in_slot(self.inventory, 'right hand').stamina_cost) /
                                     (float(self.owner.player_stats.str) / float(
                                         main.get_equipped_in_slot(self.inventory, 'right hand').str_requirement))))
-            stamina_cost = int(stamina_cost * (1.0 - main.skill_value('combat_training')))
+            stamina_cost = int(stamina_cost
+                               * (1.0 - main.skill_value('combat_training'))
+                               * (1.0 + main.skill_value('withered')))
         return stamina_cost
 
     def calculate_attack_count(self):
@@ -343,6 +347,8 @@ class Fighter:
                 self.status_effects.remove(effect)
             if effect.on_end is not None:
                 effect.on_end(effect,self.owner)
+            if effect.aftereffect is not None:
+                self.apply_status_effect(effect.aftereffect)
 
         # Manage ability cooldowns
         for ability in self.abilities:
@@ -378,18 +384,14 @@ class Fighter:
                         fighter.owner is player.instance, ('resist', 'resists'))), libtcod.gray)
                 return False
 
-        #if new_effect.time_limit is not None:
-        #   new_effect.time_limit = int(new_effect.time_limit *
-        #                               (1 - (fighter.item_equipped_count('equipment_ring_of_fortitude') * 0.3)))
-
-
         # check for existing matching effects
         add_effect = True
         for effect in fighter.status_effects:
             if effect.name == new_effect.name:
                 if 'refresh' in new_effect.stacking_behavior:
                     # refresh the effect
-                    effect.time_limit = new_effect.time_limit
+                    if effect.time_limit is not None:
+                        effect.time_limit = new_effect.time_limit
                     add_effect = False
                 if 'extend' in new_effect.stacking_behavior:
                     effect.time_limit += new_effect.time_limit
@@ -427,6 +429,8 @@ class Fighter:
                 self.status_effects.remove(effect)
                 if effect.on_end is not None:
                     effect.on_end(effect, self.owner)
+                if effect.aftereffect is not None:
+                    self.apply_status_effect(effect.aftereffect)
                 return
 
     def has_attribute(self, name):
@@ -1097,6 +1101,8 @@ def attack_physical(fighter, target, stamina_cost=0, on_hit=None, verb=None, acc
                 syntax.name(fighter.owner).capitalize(),
                 syntax.conjugate(fighter.owner is player.instance, ('kill', 'kills')),
                 syntax.name(target, reflexive=fighter.owner).replace('remains of ', '')), libtcod.red)
+        if main.has_skill('weakened') and libtcod.random_get_float(1, 0.0, 1.0) < main.skill_value('weakened'):
+            fighter.apply_status_effect(effects.exhausted())
     else:
         if target is player.instance and main.has_skill('riposte'):
             fighter.apply_status_effect(effects.off_balance())

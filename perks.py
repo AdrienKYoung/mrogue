@@ -19,6 +19,7 @@ import actions
 import actions.perk_actions
 import game as main
 import consts
+import effects
 
 def meets_requirements(perk):
     if consts.DEBUG_FREE_PERKS:
@@ -105,6 +106,13 @@ demon_powers = [
     'vampirism',
     'bloodlust',
     'dark_aura'
+]
+
+corruption_penalties = [
+    'withered',
+    'toxic',
+    'forsaken',
+    'weakened'
 ]
 
 perk_list = {
@@ -767,5 +775,41 @@ perk_list = {
         'values': [1,2,3],
         'max_rank' : 3,
         'corruption_dice': '30d6'
+    },
+
+    #corruption curses
+    'withered': {
+        'name' : 'Withered',
+        'description' : ['All stamina costs are increased'],
+        'values': [.25,.5,1.0],
+        'max_rank' : 3,
+        'corruption': 100
+    },
+    'toxic': {
+        'name' : 'Toxic',
+        'description' : ['You permanently take extra damage from poison'],
+        'max_rank' : 1,
+        'corruption': 300,
+        'on_acquire' : lambda: actions.perk_actions.permanent_effect(player.instance, effects.toxic())
+    },
+    'forsaken': {
+        'name' : 'Forsaken',
+        'description' : ['You are permanently cursed'],
+        'max_rank' : 1,
+        'corruption': 500,
+        'on_acquire' : lambda: actions.perk_actions.permanent_effect(player.instance, effects.cursed())
+    },
+    'weakened': {
+        'name' : 'Weakened',
+        'description' : ['You may exhaust yourself when attacking'],
+        'values': [0.15,0.20,0.25],
+        'max_rank' : 3,
+        'corruption': 400
+    },
+    'terminus': {
+        'name': 'Terminus',
+        'description': ['Your are completely consumed by corruption!'],
+        'corruption' : 1000,
+        'on_acquire' : lambda: player.on_death(force=True),
     }
 }

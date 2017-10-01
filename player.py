@@ -74,8 +74,7 @@ loadouts = {
             'charm_raw',
             'shield_wooden_buckler',
             'equipment_leather_armor',
-            'equipment_iron_helm',
-            'gem_lesser_void'
+            'equipment_iron_helm'
         ],
         'description' : "Balanced melee fighter. Starts with good weapon and armor."
     },
@@ -614,24 +613,44 @@ def purchase_skill():
                 instance.skill_points -= cost
             ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
-def get_demon_power():
+def aquire_perk(perk):
     learned_skills = main.learned_skills
-    options = (p for p in perks.demon_powers if p not in learned_skills or \
-        learned_skills.get(p) < perks.demon_powers[p]['max_rank'])
-
-    perk_list = perks.perk_list
-    perk = main.random_choice({ k:perk_list[k].get('weight',20) for k in options })
     if perk in learned_skills.keys():
         learned_skills[perk] += 1
     else:
         learned_skills[perk] = 1
+    if perks.perk_list[perk].get('on_acquire') is not None:
+        perk.get('on_acquire')()
+
+def add_corruption(amount):
+    curse = int(amount) / 100
+    instance.corruption += amount
+    if instance.corruption % 100 < int(amount) % 100:
+        curse += 1
+
+    if curse > 0:
+        learned_skills = main.learned_skills
+        options = [p for p in perks.corruption_penalties if p not in learned_skills or \
+                   learned_skills.get(p) < perks.perk_list[p]['max_rank']]
+        perk = main.random_entry([p for p in options if perks.perk_list[p]['corruption'] <= instance.corruption])
+        aquire_perk(perk)
+        ui.message("Corruption taints your soul. {}".format(perks.perk_list[perk]['description'][0]),
+                   spells.essence_colors['void'])
+
+def get_demon_power():
+    learned_skills = main.learned_skills
+    perk_list = perks.perk_list
+    options = (p for p in perks.demon_powers if p not in learned_skills or \
+        learned_skills.get(p) < perk_list[p]['max_rank'])
+    perk = main.random_choice({ k:perk_list[k].get('weight',20) for k in options })
+    aquire_perk(perk)
     ui.message("Received the dark power {}".format(perk_list[perk]['name'].title()), spells.essence_colors['void'])
-    instance.corruption += main.roll_dice(perk_list[perk]['corruption_dice'])
+    add_corruption(main.roll_dice(perk_list[perk]['corruption_dice']))
     #TODO - removeme
     ui.message("Corruption is now {}".format(instance.corruption, libtcod.white))
 
-def on_death(object=instance, context=None):
-    if instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
+def on_death(object=instance, context=None, force=False):
+    if not force and instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
         rings = main.get_equipped_in_slot(instance.fighter.inventory, 'ring')
         broken = None
         for r in rings:
@@ -642,7 +661,7 @@ def on_death(object=instance, context=None):
         instance.fighter.inventory.remove(broken.owner)
         ui.message('Your ring of salvation flashes with a blinding white light, then shatters. Your wounds are healed.', spells.essence_colors['radiance'])
         instance.fighter.heal(instance.fighter.max_hp)
-    elif instance.fighter.has_status('auto-res'):
+    elif not force and instance.fighter.has_status('auto-res'):
         instance.fighter.remove_status('auto-res')
         instance.fighter.heal(instance.fighter.max_hp)
         ui.message("Not today, death.", libtcod.green)
@@ -1019,7 +1038,7 @@ def on_get_hit(this,other,damage):
 
 def on_get_kill(this,other,damage):
     this.fighter.heal(
-        this.fighter.heal(this.fighter.item_attribute_count('vampiric') * 2)
+        this.fighter.item_attribute_count('vampiric') * 2
         + main.skill_value('vampirism')
     )
     this.fighter.adjust_stamina(main.skill_value('bloodlust'))
