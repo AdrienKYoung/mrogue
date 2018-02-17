@@ -16,6 +16,7 @@
 
 import math
 import string
+import sys
 
 import consts
 import libtcodpy as libtcod
@@ -1677,7 +1678,8 @@ def door_interact(door, actor):
     ui.message('Something is blocking the door.')
     return 'didnt-take-turn'
 
-def switch_interact(door):
+def switch_interact(switch, actor):
+    door = switch.door
     ui.message('You hear the rattling of iron chains as a gate opens somewhere.')
     door.locked = False
     door.closed = False
@@ -2237,41 +2239,44 @@ def play_game():
     key = libtcod.Key()
     while not libtcod.console_is_window_closed():
 
-        # Render the screen
-        libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)
-        render_all()
-        libtcod.console_flush()
-
-        # Handle keys and exit game if needed
-        player_action = player.handle_keys()
-        if player_action == 'exit':
-            save_game()
-            in_game = False
-            break
-
-        if consts.RENDER_EVERY_TURN:
+        try:
+            # Render the screen
+            libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)
             render_all()
             libtcod.console_flush()
 
-        # Let monsters take their turn
-        if game_state == 'playing' and player_action != 'didnt-take-turn':
-            dead_tickers = []
-            player.instance.on_tick(object=player.instance)
-            for object in current_map.objects:
-                if object.behavior:
-                    object.behavior.take_turn()
-                if object is not player.instance:
-                    object.on_tick(object=object)
-            for ticker in current_map.tickers:
-                if hasattr(ticker, 'ticks'):
-                    ticker.ticks += 1
-                if hasattr(ticker, 'on_tick'):
-                    ticker.on_tick(ticker)
-                if hasattr(ticker, 'dead') and ticker.dead:
-                    dead_tickers.append(ticker)
-            for ticker in dead_tickers:
-                if ticker in current_map.tickers:
-                    current_map.tickers.remove(ticker)
+            # Handle keys and exit game if needed
+            player_action = player.handle_keys()
+            if player_action == 'exit':
+                save_game()
+                in_game = False
+                break
+
+            if consts.RENDER_EVERY_TURN:
+                render_all()
+                libtcod.console_flush()
+
+            # Let monsters take their turn
+            if game_state == 'playing' and player_action != 'didnt-take-turn':
+                dead_tickers = []
+                player.instance.on_tick(object=player.instance)
+                for object in current_map.objects:
+                    if object.behavior:
+                        object.behavior.take_turn()
+                    if object is not player.instance:
+                        object.on_tick(object=object)
+                for ticker in current_map.tickers:
+                    if hasattr(ticker, 'ticks'):
+                        ticker.ticks += 1
+                    if hasattr(ticker, 'on_tick'):
+                        ticker.on_tick(ticker)
+                    if hasattr(ticker, 'dead') and ticker.dead:
+                        dead_tickers.append(ticker)
+                for ticker in dead_tickers:
+                    if ticker in current_map.tickers:
+                        current_map.tickers.remove(ticker)
+        except:
+            print("Unexpected error:", sys.exc_info()[0])
 
         # Handle auto-targeting
         ui.auto_target_monster()
