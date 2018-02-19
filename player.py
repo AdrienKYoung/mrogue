@@ -18,7 +18,7 @@ import collections
 import string
 
 import log
-
+import json
 
 class PlayerStats:
 
@@ -208,24 +208,28 @@ def create(loadout):
 
     return 'success'
 
-def handle_keys():
+def handle_keys(shift_override):
 
     game_state = main.game_state
     key = main.key
     mouse = main.mouse
+    shift = shift_override or key.shift
 
     ui.mouse_select_monster()
+
+    #filter out garbage keyboard input
+    if key.vk == 0 or key.vk == 66 or not key.pressed:
+        return 'didnt-take-turn'
 
     if key.vk == libtcod.KEY_CHAR:
         key_char = chr(key.c)
     else:
         key_char = None
 
-    if key.vk == libtcod.KEY_ENTER and (key.lalt or key.shift):
+    if key.vk == libtcod.KEY_ENTER and shift:
         # Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
-
-    elif key_char == 'q' and key.shift:
+    elif key_char == 'q' and shift:
         return 'exit'  #exit game
 
     log.info("INPUT","Key input: {}",[key_char])
@@ -301,13 +305,13 @@ def handle_keys():
             if key.vk == libtcod.KEY_TAB:
                 ui.target_next_monster()
             if key_char == 'm':
-                if key.shift:
+                if shift:
                     ui.show_map_screen()
                     return 'didnt-take-turn'
                 else:
                     return meditate()
             if key_char == 'a':
-                if key.shift:
+                if shift:
                     ui.show_action_panel = not ui.show_action_panel
                     return 'didnt-take-turn'
                 else:

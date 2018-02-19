@@ -2240,16 +2240,25 @@ def play_game():
     
     mouse = libtcod.Mouse()
     key = libtcod.Key()
+    shift = False
     while not libtcod.console_is_window_closed():
 
         try:
             # Render the screen
-            libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)
+            libtcod.sys_check_for_event(
+                libtcod.EVENT_KEY_PRESS |
+                libtcod.EVENT_KEY_RELEASE |
+                libtcod.EVENT_MOUSE, key, mouse)
+
+            #handle shift on mac, because its treated as a key press instead of a modifier for some reason
+            if key.vk == libtcod.KEY_SHIFT:
+                shift = key.pressed
+
             render_all()
             libtcod.console_flush()
 
             # Handle keys and exit game if needed
-            player_action = player.handle_keys()
+            player_action = player.handle_keys(shift)
             if player_action == 'exit':
                 save_game()
                 in_game = False
