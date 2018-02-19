@@ -2193,15 +2193,18 @@ def new_game():
 
 def save_game():
     import world
-    f = shelve.open('savegame', 'n')
-    f['map'] = world.world_maps
-    f['current_map'] = current_map.name
-    f['player_index'] = current_map.objects.index(player.instance)
-    f['learned_skills'] = learned_skills
-    f['game_msgs'] = ui.game_msgs
-    f['game_state'] = game_state
-    f['branch_scaling'] = world.get_branch_scaling()
-    f.close()
+    try:
+        f = shelve.open('savegame', 'n')
+        f['map'] = world.world_maps
+        f['current_map'] = current_map.name
+        f['player_index'] = current_map.objects.index(player.instance)
+        f['learned_skills'] = learned_skills
+        f['game_msgs'] = ui.game_msgs
+        f['game_state'] = game_state
+        f['branch_scaling'] = world.get_branch_scaling()
+        f.close()
+    except:
+        print("Unexpected error saving game:", sys.exc_info()[0])
 
 
 def load_game():
