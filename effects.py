@@ -20,7 +20,8 @@ import game as main
 class StatusEffect:
     def __init__(self, name, time_limit=None, color=libtcod.white, stacking_behavior='refresh', on_apply=None, on_end=None, on_tick=None, message=None,
                  attack_power_mod=1.0,armor_mod=1.0,shred_mod=1.0,pierce_mod=1.0,attack_speed_mod=1.0,evasion_mod=1.0,spell_power_mod=1.0, spell_resist_mod=1.0,
-                 accuracy_mod=1.0, resistance_mod={}, stacks=1, description='', cleanseable=True, will_mod=1.0, fortitude_mod=1.0, target_defense=None):
+                 accuracy_mod=1.0, resistance_mod={}, stacks=1, description='', cleanseable=True, will_mod=1.0, fortitude_mod=1.0, target_defense=None,
+                 aftereffect = None):
         self.name = name
         self.time_limit = time_limit
         self.color = color
@@ -45,6 +46,7 @@ class StatusEffect:
         self.will_mod = will_mod
         self.fortitude_mod = fortitude_mod
         self.target_defense = target_defense
+        self.aftereffect = aftereffect
 
 def burning(duration = 6, stacks = 1):
     return StatusEffect('burning', duration, spells.essence_colors['fire'], stacking_behavior='stack-refresh', stacks=stacks,
@@ -54,8 +56,7 @@ def burning(duration = 6, stacks = 1):
 
 def exhausted(duration = 10):
     return StatusEffect('exhausted',duration,libtcod.yellow, message="You feel exhausted!",
-                        description='This unit deals reduced damage.', attack_power_mod=0.55, cleanseable=True,
-                        target_defense='fortitude')
+                        description='This unit deals reduced damage.', cleanseable=True, target_defense='fortitude')
 
 def cursed(duration = 10):
     return StatusEffect('cursed',duration,spells.essence_colors['death'], message="You have been cursed!",
@@ -84,7 +85,7 @@ def immobilized(duration = 5):
                         description='This unit cannot move.', cleanseable=True, evasion_mod=0.5, target_defense='fortitude')
 
 def berserk(duration = 20):
-    return StatusEffect('berserk',duration,libtcod.red, on_end=berserk_end, attack_power_mod=1.5, stacking_behavior='refresh',
+    return StatusEffect('berserk',duration,libtcod.red, aftereffect=exhausted(), attack_power_mod=1.5, stacking_behavior='refresh',
                         message="You are overcome by rage!",
                         description='This unit attacks harder and faster.')
 
@@ -233,6 +234,11 @@ def vitality(duration=10):
                         'You feel healthy.', description='You are regenerating health and incoming damage is halved.',
                         on_tick=regeneration_tick)
 
+def abated(effect, duration=30):
+    return StatusEffect('{} abated'.format(effect.name), time_limit=duration, cleanseable=False,
+                        color=libtcod.yellow, description='Your {} has abated for now'.format(effect.name), aftereffect=effect)
+
+#TODO - Move these to actions
 def burn_apply(effect, object=None):
     if object is not None and object.fighter is not None and object.fighter.has_status('frozen'):
         object.fighter.remove_status('frozen')
@@ -314,7 +320,6 @@ def check_doom(effect, obj=None):
     if len(fx) > 0 and fx[0].stacks >= 13:
         ui.message("Death comes for {}".format(obj.name),libtcod.dark_crimson)
         obj.fighter.take_damage(obj.fighter.max_hp)
-
 
 import ui
 import player

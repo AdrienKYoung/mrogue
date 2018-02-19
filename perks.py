@@ -16,8 +16,10 @@
 
 import player
 import actions
+import actions.perk_actions
 import game as main
 import consts
+import effects
 
 def meets_requirements(perk):
     if consts.DEBUG_FREE_PERKS:
@@ -98,6 +100,19 @@ perk_keys = [
     'heir_to_the_heavens',
     'void_affinity',
     'gaze_into_the_void',
+]
+
+demon_powers = [
+    'vampirism',
+    'bloodlust',
+    'dark_aura'
+]
+
+corruption_penalties = [
+    'withered',
+    'toxic',
+    'forsaken',
+    'weakened'
 ]
 
 perk_list = {
@@ -326,7 +341,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'water_affinity 5',
         'category' : 'Water Magic',
-        'on_acquire': lambda: actions.aquatic(player.instance)
+        'on_acquire': lambda: actions.perk_actions.aquatic(player.instance)
     },
     'stonecloak' : {
         'name' : 'Stonecloak',
@@ -359,7 +374,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'air_affinity 5',
         'category' : 'Air Magic',
-        'on_acquire': lambda: actions.flight(player.instance)
+        'on_acquire': lambda: actions.perk_actions.flight(player.instance)
     },
     'vitality' : {
         'name' : 'Vitality',
@@ -376,7 +391,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'life_affinity 5',
         'category' : 'Life Magic',
-        'on_acquire': lambda: actions.auto_res(player.instance)
+        'on_acquire': lambda: actions.perk_actions.auto_res(player.instance)
     },
     'spellshards' : {
         'name' : 'Spellshards',
@@ -410,7 +425,7 @@ perk_list = {
         'sp_cost' : 20,
         'requires' : 'death_affinity 5',
         'category' : 'Death Magic',
-        'on_acquire': lambda: actions.lichform(player.instance)
+        'on_acquire': lambda: actions.perk_actions.lichform(player.instance)
     },
     'guardian_of_light' : {
         'name' : 'Guardian of Light',
@@ -433,7 +448,7 @@ perk_list = {
         'description' : ['Gain 3 Void essence'],
         'max_rank' : 1,
         'sp_cost' : 20,
-        'on_acquire': lambda: actions.gaze_into_the_void(player.instance),
+        'on_acquire': lambda: actions.perk_actions.gaze_into_the_void(player.instance),
         'requires' : 'void_affinity 3',
         'category' : 'Void Magic'
     },
@@ -738,4 +753,63 @@ perk_list = {
         'requires' : 'unarmed_mastery 7',
         'category' : 'Unarmed Combat'
     },
+
+    #Demonic Powers
+    'vampirism' : {
+        'name' : 'Vampirism',
+        'description' : ['You heal damage when you kill enemies'],
+        'values': [2,3,4],
+        'max_rank' : 3,
+        'corruption_dice': '30d6'
+    },
+    'bloodlust' : {
+        'name' : 'Bloodlust',
+        'description' : ['You restore stamina when you kill enemies'],
+        'values': [5,7,10],
+        'max_rank' : 3,
+        'corruption_dice': '30d6'
+    },
+    'dark_aura' : {
+        'name' : 'Dark Aura',
+        'description' : ['You curse nearby enemies'],
+        'values': [1,2,3],
+        'max_rank' : 3,
+        'corruption_dice': '30d6'
+    },
+
+    #corruption curses
+    'withered': {
+        'name' : 'Withered',
+        'description' : ['All stamina costs are increased'],
+        'values': [.25,.5,1.0],
+        'max_rank' : 3,
+        'corruption': 100
+    },
+    'toxic': {
+        'name' : 'Toxic',
+        'description' : ['You permanently take extra damage from poison'],
+        'max_rank' : 1,
+        'corruption': 300,
+        'on_acquire' : lambda: actions.perk_actions.permanent_effect(player.instance, effects.toxic())
+    },
+    'forsaken': {
+        'name' : 'Forsaken',
+        'description' : ['You are permanently cursed'],
+        'max_rank' : 1,
+        'corruption': 500,
+        'on_acquire' : lambda: actions.perk_actions.permanent_effect(player.instance, effects.cursed())
+    },
+    'weakened': {
+        'name' : 'Weakened',
+        'description' : ['You may exhaust yourself when attacking'],
+        'values': [0.15,0.20,0.25],
+        'max_rank' : 3,
+        'corruption': 400
+    },
+    'terminus': {
+        'name': 'Terminus',
+        'description': ['Your are completely consumed by corruption!'],
+        'corruption' : 1000,
+        'on_acquire' : lambda: player.on_death(force=True),
+    }
 }

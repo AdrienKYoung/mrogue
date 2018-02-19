@@ -351,3 +351,4 @@ def boomerang(actor, target):
         weapon.owner.y = selected_tile[1]
         if actor is player.instance or fov.player_can_see(actor.x, actor.y):
             ui.message('%s boomerang falls to the ground.' % syntax.name(target, possesive=True).capitalize(), libtcod.gray)
+        libtcod.console_flush()

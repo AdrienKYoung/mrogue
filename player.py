@@ -171,6 +171,7 @@ def create(loadout):
     instance.action_queue = []
     instance.skill_points = 20
     instance.skill_point_progress = 0
+    instance.corruption = 0
     instance.fighter.xp = 0
     instance.perk_abilities = []
     if consts.DEBUG_INVINCIBLE:
@@ -612,8 +613,44 @@ def purchase_skill():
                 instance.skill_points -= cost
             ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
-def on_death(object=instance, context=None):
-    if instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
+def aquire_perk(perk):
+    learned_skills = main.learned_skills
+    if perk in learned_skills.keys():
+        learned_skills[perk] += 1
+    else:
+        learned_skills[perk] = 1
+    if perks.perk_list[perk].get('on_acquire') is not None:
+        perk.get('on_acquire')()
+
+def add_corruption(amount):
+    curse = int(amount) / 100
+    instance.corruption += amount
+    if instance.corruption % 100 < int(amount) % 100:
+        curse += 1
+
+    if curse > 0:
+        learned_skills = main.learned_skills
+        options = [p for p in perks.corruption_penalties if p not in learned_skills or \
+                   learned_skills.get(p) < perks.perk_list[p]['max_rank']]
+        perk = main.random_entry([p for p in options if perks.perk_list[p]['corruption'] <= instance.corruption])
+        aquire_perk(perk)
+        ui.message("Corruption taints your soul. {}".format(perks.perk_list[perk]['description'][0]),
+                   spells.essence_colors['void'])
+
+def get_demon_power():
+    learned_skills = main.learned_skills
+    perk_list = perks.perk_list
+    options = (p for p in perks.demon_powers if p not in learned_skills or \
+        learned_skills.get(p) < perk_list[p]['max_rank'])
+    perk = main.random_choice({ k:perk_list[k].get('weight',20) for k in options })
+    aquire_perk(perk)
+    ui.message("Received the dark power {}".format(perk_list[perk]['name'].title()), spells.essence_colors['void'])
+    add_corruption(main.roll_dice(perk_list[perk]['corruption_dice']))
+    #TODO - removeme
+    ui.message("Corruption is now {}".format(instance.corruption, libtcod.white))
+
+def on_death(object=instance, context=None, force=False):
+    if not force and instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
         rings = main.get_equipped_in_slot(instance.fighter.inventory, 'ring')
         broken = None
         for r in rings:
@@ -624,7 +661,7 @@ def on_death(object=instance, context=None):
         instance.fighter.inventory.remove(broken.owner)
         ui.message('Your ring of salvation flashes with a blinding white light, then shatters. Your wounds are healed.', spells.essence_colors['radiance'])
         instance.fighter.heal(instance.fighter.max_hp)
-    elif instance.fighter.has_status('auto-res'):
+    elif not force and instance.fighter.has_status('auto-res'):
         instance.fighter.remove_status('auto-res')
         instance.fighter.heal(instance.fighter.max_hp)
         ui.message("Not today, death.", libtcod.green)
@@ -984,6 +1021,11 @@ def on_tick(this):
                               color=libtcod.dark_blue, description='Your weapon is ready to deliver a heavy attack.'))
         else:
             instance.rising_storm_last_attack = 0
+    if main.has_skill('dark_aura'):
+        sv = main.skill_value('dark_aura')
+        fighters = main.get_fighters_in_burst(instance.x, instance.y, sv, instance)
+        for enemy in (f for f in fighters if f.fighter.team != 'ally'):
+            enemy.fighter.apply_status_effect(effects.cursed(2), 20 + sv * 5)
     if instance.fighter.stamina_regen > 0:
         instance.fighter.adjust_stamina(instance.fighter.stamina_regen)
 
@@ -1019,7 +1061,11 @@ def on_get_hit(this,other,damage):
                 other.fighter.apply_status_effect(effects.cursed())
 
 def on_get_kill(this,other,damage):
-    this.fighter.heal(this.fighter.item_attribute_count('vampiric') * 2)
+    this.fighter.heal(
+        this.fighter.item_attribute_count('vampiric') * 2
+        + main.skill_value('vampirism')
+    )
+    this.fighter.adjust_stamina(main.skill_value('bloodlust'))
 
 def get_abilities():
     from actions import abilities
