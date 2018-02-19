@@ -779,7 +779,7 @@ def reach_and_cleave_attack(dx, dy):
         adjacent.append((target.x, target.y))
         for tile in adjacent:
             cleave_target = main.get_monster_at_tile(tile[0], tile[1])
-            if cleave_target and target.fighter:
+            if cleave_target is not None and cleave_target.fighter is not None:
                 combat.attack_ex(instance.fighter, cleave_target, 0, verb=('cleave', 'cleaves'))
         return 'cleaved'
     return 'failed'
