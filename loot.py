@@ -19,236 +19,200 @@ import game as main
 import log
 
 table = {
-    'weapons_0': [
-        'weapon_dagger',
-        'weapon_hatchet',
-        'weapon_longsword',
-        'weapon_mace',
-        'weapon_spear',
-    ],
-
-     'weapons_1': [
-        'weapon_dagger',
-        'weapon_hatchet',
-        'weapon_longsword',
-        'weapon_mace',
-        'weapon_spear',
-        'weapon_pickaxe',
-    ],
-
-    'weapons_2' : [
-        'weapon_dagger',
-        'weapon_messer',
-        'weapon_hatchet',
-        'weapon_longsword',
-        'weapon_greatsword',
-        'weapon_mace',
-        'weapon_warhammer',
-        'weapon_dane_axe',
-        'weapon_spear',
-        'weapon_halberd',
-        'weapon_pickaxe',
-        'weapon_katar',
-    ],
-
-    'armor_0': [
-        'equipment_leather_armor',
-        'equipment_cloth_robes',
-        'equipment_iron_helm',
-        'equipment_gauntlets',
-        'shield_leather_buckler',
-        'shield_wooden_buckler',
-    ],
-
-    'armor_1': [
-        'equipment_leather_armor',
-        'equipment_leather_armor',
-        'equipment_cloth_robes',
-        'equipment_iron_helm',
-        'equipment_iron_helm',
-        'equipment_greaves',
-        'equipment_greaves',
-        'equipment_gauntlets',
-        'equipment_gauntlets',
-        'equipment_mail_armor',
-        'shield_wooden_buckler',
-        'shield_iron_buckler',
-        'shield_heater_shield',
-        'shield_round_shield',
-    ],
-
-    'armor_2' : [
-        'equipment_iron_helm',
-        'equipment_greaves',
-        'equipment_gauntlets',
-        'equipment_mail_armor',
-        'equipment_brigandine',
-        'equipment_great_helm',
-        'equipment_greaves',
-        'shield_iron_buckler',
-        'shield_heater_shield',
-        'shield_round_shield',
-        'shield_escutcheon',
-    ],
-
-    'armor_3' : [
-        'equipment_brigandine',
-        'equipment_great_helm',
-        'equipment_greaves',
-        'equipment_gauntlets',
-        'equipment_armet_helm',
-        'equipment_plate_armor',
-        'shield_duelists_buckler',
-        'shield_round_shield',
-        'shield_escutcheon',
-        'shield_kite_shield',
-        'shield_tower_shield',
-    ],
-
-    'loot_weapons_steel' : {
-        'weapon_dagger': { 'material':'steel' },
-        'weapon_hatchet': { 'material':'steel' },
-        'weapon_longsword': { 'material':'steel' },
-        'weapon_mace': { 'material':'steel' },
-        'weapon_spear': { 'material':'steel' },
-        'weapon_messer': { 'material':'steel' },
-        'weapon_greatsword': { 'material':'steel' },
-        'weapon_warhammer': { 'material':'steel' },
-        'weapon_dane_axe': { 'material':'steel' },
-        'weapon_halberd': { 'material':'steel' },
-        'weapon_katar': { 'material':'steel' },
+    'weapons_0': {
+        'weapon_dagger' : 20,
+        'weapon_shortsword' : 20,
+        'weapon_shortspear' : 20,
+        'weapon_hatchet' : 20,
+        'weapon_club' : 19,
+        'weapons_1' : 1,
     },
 
-     'consumables_1': [
-        'essence_life',
-        'essence_life',
-        'essence_life',
-        'essence_earth',
-        'essence_earth',
-        'essence_water',
-        'essence_water',
-        'essence_fire',
-        'essence_air',
-        'essence_cold',
-        'essence_arcane',
-    ],
+    'weapons_1': {
+        'weapon_longsword' : 20,
+        'weapon_rapier' : 20,
+        'weapon_war_axe' : 20,
+        'weapon_mace' : 19,
+        'weapon_spear' : 19,
+        'weapon_boomerang' : 1,
+        'weapons_2' : 1,
+    },
 
-    'consumables_2': [
-        'essence_life',
-        'essence_life',
-        'essence_life',
-        'essence_earth',
-        'essence_water',
-        'essence_fire',
-        'essence_air',
-        'essence_cold',
-        'essence_arcane',
-        'essence_death',
-        'essence_radiance',
-    ],
+    'weapons_2' : {
+        'weapon_messer' : 16,
+        'weapon_greatsword' : 16,
+        'weapon_warhammer' : 16,
+        'weapon_raider_axe' : 17,
+        'weapon_halberd' : 17,
+        'weapon_katar' : 17,
+        'weapons_3' : 1
+    },
 
-    'tomes_1': [
-        'book_lesser_arcane',
-        'book_lesser_fire',
-        'book_lesser_death',
-        'book_lesser_cold',
-        'book_lesser_life',
-        'book_lesser_radiance',
-    ],
+    'weapons_3' : {
+        'weapon_assassins_blade' : 20,
+        'weapon_scythe' : 20,
+        'weapon_scimitar' : 20,
+        'weapon_blessed_blade' : 20,
+        'weapon_giant_axe' : 20,
+    },
 
-    'gems_1': [
-        'gem_lesser_fire',
-        'gem_lesser_water',
-        'gem_lesser_earth',
-        'gem_lesser_air',
-        'gem_lesser_cold',
-        'gem_lesser_life',
-        'gem_lesser_arcane',
-    ],
+    'armor_0': {
+        'equipment_leather_armor' : 24,
+        'equipment_cloth_robes' : 20,
+        'equipment_iron_helm' : 20,
+        'shield_leather_buckler' : 15,
+        'shield_wooden_buckler' : 10,
+        'shield_iron_buckler' : 10,
+        'armor_1' : 1,
+    },
 
-    'gems_2': [
-        'gem_lesser_fire',
-        'gem_lesser_water',
-        'gem_lesser_earth',
-        'gem_lesser_air',
-        'gem_lesser_cold',
-        'gem_lesser_life',
-        'gem_lesser_arcane',
-        'gem_lesser_death',
-        'gem_lesser_radiance',
-    ],
+    'armor_1': {
+        'equipment_greaves' : 25,
+        'equipment_gauntlets' : 25,
+        'equipment_mail_armor' : 25,
+        'shield_heater_shield' : 12,
+        'shield_round_shield' : 12,
+        'armor_2' : 1,
+    },
 
-    'keys_1': [
-        'glass_key'
-    ],
+    'armor_2' : {
+        'equipment_brigandine' : 20,
+        'equipment_great_helm' : 20,
+        'equipment_boots_of_agility' : 10,
+        'equipment_gloves_of_strength' : 10,
+        'equipment_crest_of_intelligence' : 10,
+        'shield_escutcheon' : 10,
+        'shield_kite_shield' : 9,
+        'equipment_boots_of_leaping' : 5,
+        'equipment_cloak_of_stealth' : 5,
+        'armor_3' : 1,
+    },
 
-    'charms_1': [
-        'charm_farmers_talisman',
-        'charm_primal_totem',
-        'charm_holy_symbol',
-        'charm_shard_of_creation',
-        'charm_volatile_orb',
-        'charm_prayer_beads',
-        'charm_alchemists_flask',
-    ],
+    'armor_3' : {
+        'equipment_plate_armor' : 25,
+        'equipment_armet_helm' : 20,
+        'shield_duelists_buckler' : 20,
+        'shield_tower_shield' : 20,
+        'equipment_boots_of_levitation' : 5,
+        'equipment_longstrider_boots' : 5,
+        'equipment_greater_cloak_of_stealth' : 5,
+    },
 
-    'charms_2': [
-        'charm_holy_symbol',
-        'charm_volatile_orb',
-        'charm_alchemists_flask',
-        'charm_elementalists_lens',
-        'charm_prayer_beads',
-    ],
+    'consumables_1': {
+        'essence_life' : 24,
+        'essence_water' : 20,
+        'essence_earth' : 15,
+        'essence_fire' : 10,
+        'essence_air' : 10,
+        'essence_cold' : 10,
+        'essence_arcane' : 10,
+        'consumables_2' : 1,
+     },
 
-    'rings_1': [
-        'equipment_ring_of_stamina',
-        'equipment_ring_of_evasion',
-        'equipment_ring_of_accuracy',
-        'equipment_ring_of_vengeance',
-        'equipment_ring_of_rage',
-        'equipment_ring_of_fortitude',
-        'equipment_ring_of_tenacity',
-        'equipment_ring_of_vampirism',
-        'equipment_ring_of_mending',
-        'equipment_ring_of_breath',
-        'equipment_ring_of_burdens',
-        'equipment_ring_of_alchemy',
-        'equipment_ring_of_poison_immunity',
-        'equipment_ring_of_freedom',
-        'equipment_ring_of_salvation',
-        'equipment_ring_of_blessings',
-    ],
+    'consumables_2': {
+        'essence_death' : 40,
+        'essence_radiance' : 40,
+        'essence_void' : 20,
+    },
 
-    'elixirs_0': [
-        'elixir_con',
-        'elixir_str',
-        'elixir_agi',
-        'elixir_int',
-        'elixir_wis',
-    ],
+    'gems_1': {
+        'gem_lesser_life' : 24,
+        'gem_lesser_water' : 20,
+        'gem_lesser_earth' : 15,
+        'gem_lesser_fire' : 10,
+        'gem_lesser_air' : 10,
+        'gem_lesser_cold' : 10,
+        'gem_lesser_arcane' : 10,
+        'gens_2' : 1,
+    },
 
-    'chest_0': [
-        'elixirs_0',
-        'elixir_life',
-        'rings_1',
-        'charms_1',
-        'keys_1',
-        'tomes_1',
-        'armor_2',
-        'weapons_2',
-        'scroll_forge',
-        'treasure_0'
-    ],
+    'gems_2': {
+        'gem_lesser_death' : 40,
+        'gem_lesser_radiance' : 40,
+        'gem_lesser_void' : 20,
+    },
 
-    'treasure_0': [
-        'treasure_bejeweled_chalice',
-        'treasure_burial_mask',
-        'treasure_chest_of_coins',
-        'treasure_giant_pearl',
-        'treasure_jade_necklace',
-        'treasure_silver_tiara',
-        'treasure_music_box',
-    ],
+    'tomes_1': {
+        'book_lesser_arcane' : 10,
+        'book_lesser_fire' : 10,
+        'book_lesser_death' : 10,
+        'book_lesser_cold' : 10,
+        'book_lesser_life' : 10,
+        'book_lesser_radiance' : 10,
+    },
+
+    'keys_1': {
+        'glass_key' : 10
+    },
+
+    'charms_1': {
+        'charm_farmers_talisman' : 15,
+        'charm_primal_totem' : 15,
+        'charm_holy_symbol' : 15,
+        'charm_shard_of_creation' : 15,
+        'charm_volatile_orb' : 15,
+        'charm_prayer_beads' : 14,
+        'charm_alchemists_flask' : 10,
+        'charms_2': 1,
+    },
+
+    'charms_2': {
+        'charm_elementalists_lens' : 100,
+    },
+
+    'rings_1': {
+        'equipment_ring_of_stamina' : 8,
+        'equipment_ring_of_evasion' : 7,
+        'equipment_ring_of_accuracy' : 7,
+        'equipment_ring_of_vengeance' : 7,
+        'equipment_ring_of_rage' : 7,
+        'equipment_ring_of_fortitude' : 7,
+        'equipment_ring_of_tenacity' : 7,
+        'equipment_ring_of_mending' : 7,
+        'equipment_ring_of_breath' : 7,
+        'equipment_ring_of_burdens' : 7,
+        'equipment_ring_of_alchemy' : 7,
+        'equipment_ring_of_poison_immunity' : 7,
+        'equipment_ring_of_freedom' : 7,
+        'equipment_ring_of_blessings' : 7,
+        'rings_2' : 1
+    },
+
+    'rings_2': {
+        'equipment_ring_of_vampirism' : 50,
+        'equipment_ring_of_salvation' : 50,
+    },
+
+    'elixirs_0': {
+        'elixir_con' : 20,
+        'elixir_str' : 20,
+        'elixir_agi' : 20,
+        'elixir_int' : 20,
+        'elixir_wis' : 20,
+    },
+
+    'chest_0': {
+        'elixirs_0' : 10,
+        'elixir_life' : 10,
+        'rings_1' : 10,
+        'charms_1' : 10,
+        'keys_1' : 10,
+        'tomes_1' : 10,
+        'armor_2' : 10,
+        'weapons_2' : 10,
+        'scroll_forge' : 10,
+        'treasure_0' : 10
+    },
+
+    'treasure_0': {
+        'treasure_bejeweled_chalice' : 10,
+        'treasure_burial_mask' : 10,
+        'treasure_chest_of_coins' : 10,
+        'treasure_giant_pearl' : 10,
+        'treasure_jade_necklace' : 10,
+        'treasure_silver_tiara' : 10,
+        'treasure_music_box' : 10,
+    },
 
 }
 
@@ -259,7 +223,7 @@ def item_from_table(branch,loot_table=None):
     if loot_table is None:
         return None
 
-    #fall back to lower level table if higher level isn't available (TODO: Removeme)
+    # fall back to lower level table if higher level isn't available (TODO: Removeme)
     if not loot_table in table:
         split = loot_table.split('_')
         i = int(split[1]) - 1
@@ -283,8 +247,8 @@ def item_from_table(branch,loot_table=None):
             break
 
     loot_table = category+'_'+str(loot_level)
+    item_id = main.random_choice(table[loot_table])
 
-    item_id = table[loot_table][libtcodpy.random_get_int(0,0,len(table[loot_table]))-1]
     if item_id in table.keys():
         return item_from_table(branch, loot_table=item_id)
 
@@ -394,7 +358,7 @@ def check_special_drop():
         return 'elixir_life'
     elif main.roll_dice('1d300') <= elixir_stat_ticker:
         elixir_stat_ticker = 0
-        return table['elixirs_0'][libtcodpy.random_get_int(0,0,len(table['elixirs_0']))-1]
+        return main.random_choice(table['elixirs_0'])
     elif main.roll_dice('1d200') <= scroll_forge_ticker:
         scroll_forge_ticker = 0
         return 'scroll_forge'
@@ -446,7 +410,6 @@ qualities = {
         'weapon': {
             'strength_dice_bonus' : -2,
             'accuracy_bonus' : -1,
-            'break_chance_bonus' : 5.0,
         },
         'armor': {
             'evasion_bonus' : -1,
@@ -492,7 +455,6 @@ qualities = {
         'weapon':{
             'strength_dice_bonus' : 2,
             'accuracy_bonus' : 2,
-            'break_chance_bonus' : -1.5,
         },
         'armor': {
             'evasion_bonus' : 1,
@@ -509,7 +471,6 @@ qualities = {
             'strength_dice_bonus' : 3,
             'accuracy_bonus' : 3,
             'shred_bonus' : 1,
-            'break_chance_bonus' : -10.0,
         },
         'armor':{
             'evasion_bonus' : 1,
@@ -527,7 +488,6 @@ qualities = {
             'accuracy_bonus' : 5,
             'shred_bonus' : 1,
             'peirce_bonus' : 1,
-            'break_chance_bonus' : -1000.0,
         },
         'armor':{
             'evasion_bonus' : 2,
@@ -544,12 +504,10 @@ weapon_materials = {
     'wooden' : {
         'strength_dice_bonus' : -2,
         'accuracy_bonus' : 1,
-        'break_chance_bonus' : 5.0
     },
     'bronze' : {
         'strength_dice_bonus' : 0,
         'accuracy_bonus' : 0,
-        'break_chance_bonus' : 1.5
     },
     'iron' : {
         'strength_dice_bonus' : 0,
@@ -560,31 +518,26 @@ weapon_materials = {
         'strength_dice_bonus' : 1,
         'accuracy_bonus' : 1,
         'shred_bonus' : 2,
-        'break_chance_bonus' : -5.0
     },
     'crystal' : {
         'strength_dice_bonus' : 3,
         'accuracy_bonus' : -2,
         'pierce_bonus' : 1,
-        'break_chance_bonus' : -1000.0
     },
     'meteor' : {
         'strength_dice_bonus' : 5,
         'accuracy_bonus' : -2,
         'shred_bonus' : 1,
-        'break_chance_bonus' : -5.0
     },
     'aetherwood' : {
         'strength_dice_bonus' : 2,
         'accuracy_bonus' : 3,
         'shred_bonus' : 1,
-        'break_chance_bonus' : -15.0
     },
     'blightstone' : {
         'strength_dice_bonus' : 0,
         'accuracy_bonus' : 0,
         'guaranteed_shred_bonus' : 1,
-        'break_chance_bonus' : -5.0
     },
     '' : {
         'strength_dice_bonus' : 0,

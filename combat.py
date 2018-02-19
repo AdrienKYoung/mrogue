@@ -473,7 +473,7 @@ class Fighter:
 
         bonus += sum(equipment.strength_dice_bonus for equipment in main.get_all_equipped(self.inventory) if equipment.category != "weapon")
         if self.owner.player_stats:
-            return max(self.owner.player_stats.str + bonus, 0)
+            return max((self.owner.player_stats.str + bonus) / 2, 0)
         else:
             str_dice_size = int(self.monster_str_dice.split('+')[0].split('d')[1])
             return max(str_dice_size + bonus, 0)

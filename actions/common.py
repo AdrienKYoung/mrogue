@@ -71,6 +71,16 @@ def cleave_attack(actor, target, context):
             actor.fighter.attack(t)
     return 'success'
 
+def reach_and_cleave_attack(actor, target, context):
+    if actor is None:
+        actor = player.instance
+    if actor is player.instance:
+        return player.reach_and_cleave_attack(0, 0)
+    targets = main.get_fighters_in_burst(target[0], target[1], 1, condition=lambda o: o.fighter.team != actor.fighter.team)
+    for t in targets:
+        actor.fighter.attack(t)
+    return 'success'
+
 def bash_attack(actor):
     x,y = ui.target_tile(max_range=1)
     target = None
@@ -176,11 +186,12 @@ def summon_ally(name, duration, x=None, y=None):
     import monsters
     if name in monsters.proto.keys():
         summon = main.spawn_monster(name, summon_pos[0], summon_pos[1], team='ally')
-        if summon.behavior is not None:
-            summon.behavior.follow_target = player.instance
+        if summon is not None:
+            if summon.behavior is not None:
+                summon.behavior.follow_target = player.instance
 
-        # Set summon duration
-        summon.summon_time = duration + libtcod.random_get_int(0, 0, duration)
+            # Set summon duration
+            summon.summon_time = duration + libtcod.random_get_int(0, 0, duration)
         return 'success'
     else:
         return 'didnt-take-turn'
@@ -313,3 +324,30 @@ def knock_back(actor,target):
         target.set_position(target.x + direction[0], target.y + direction[1])
         main.render_map()
         libtcod.console_flush()
+
+def boomerang(actor, target):
+    if actor.fighter.attack(target) == 'failed':
+        return 'didnt-take-turn'
+    catch_skill = 30
+    if actor.player_stats:
+        catch_skill = actor.player_stats.agi
+    if main.roll_dice('1d' + catch_skill) >= 10:
+        #catch boomerang
+        if actor is player.instance:
+            ui.message('You catch the boomerang as it returns to you', libtcod.gray)
+    else:
+        possible_tiles = []
+        for y in range(actor.y - 2, actor.y + 2):
+            for x in range(actor.x - 2, actor.x + 2):
+                if x >= 0 and y >= 0 and x < consts.MAP_WIDTH and y < consts.MAP_HEIGHT and not main.is_blocked(x, y):
+                    possible_tiles.append((x, y))
+        if len(possible_tiles) == 0:
+            selected_tile = main.find_closest_open_tile(target.x, target.y)
+        else:
+            selected_tile = possible_tiles[libtcod.random_get_int(0, 0, len(possible_tiles) - 1)]
+        weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+        weapon.owner.item.drop(no_message=True)
+        weapon.owner.x = selected_tile[0]
+        weapon.owner.y = selected_tile[1]
+        if actor is player.instance or fov.player_can_see(actor.x, actor.y):
+            ui.message('%s boomerang falls to the ground.' % syntax.name(target, possesive=True).capitalize(), libtcod.gray)

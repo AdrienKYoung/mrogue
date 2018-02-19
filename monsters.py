@@ -858,7 +858,7 @@ proto = {
         'flags' : NO_CORPSE | NO_BREATH,
         'shred': 3,
         'subtype':'elemental',
-        'on_hit': 'on_hit_burn'
+        'on_hit': ['on_hit_burn']
     },
     'monster_earth_elemental': {
         'name': 'earth elemental',

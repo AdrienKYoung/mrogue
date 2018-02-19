@@ -719,6 +719,30 @@ def cleave_attack(dx, dy):
     return 'failed'
 
 
+def reach_and_cleave_attack(dx, dy):
+
+    target_space = instance.x + 2 * dx, instance.y + 2 * dy
+    target = main.get_monster_at_tile(target_space[0], target_space[1])
+    if target is None:
+        target = main.get_monster_at_tile((instance.x + dx, instance.y + dy))
+    if target is None:
+        value = instance.move(dx, dy)
+        if value:
+            return 'moved'
+    else:
+        stamina_cost = instance.fighter.calculate_attack_stamina_cost() * 2
+        if instance.fighter.stamina < stamina_cost:
+            ui.message("You don't have the stamina to perform a cleave attack!", libtcod.light_yellow)
+            return 'failed'
+        adjacent = main.adjacent_tiles_diagonal(target.x, target.y)
+        adjacent.append((target.x, target.y))
+        for tile in adjacent:
+            cleave_target = main.get_monster_at_tile(tile[0], tile[1])
+            if cleave_target and target.fighter:
+                combat.attack_ex(instance.fighter, cleave_target, 0, verb=('cleave', 'cleaves'))
+        return 'cleaved'
+    return 'failed'
+
 def bash_attack(dx, dy):
     from actions import common
     target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)

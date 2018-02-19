@@ -71,6 +71,16 @@ data = {
         'range': 1
     },
 
+    'ability_thrust_and_cleave': {
+        'name': 'Thrust/Cleave',
+        'description': 'Attack an enemy up to 2 spaces away and all enemies adjacent to it.',
+        'function': common.reach_and_cleave_attack,
+        'cooldown': 0,
+        'intent': 'aggressive',
+        'targeting': 'beam_interrupt',
+        'range': 1
+    },
+
     'ability_raise_shield': {
         'name': 'raise shield',
         'description': 'restore your shield points to maximum',
@@ -1037,6 +1047,13 @@ data = {
         'target_ground': True,
         'function': item_actions.longstride,
         'cooldown': 100,
+    },
+    'ability_boomerang': {
+        'name': 'Throw Boomerang',
+        'description': 'throw your boomerang at an enemy and attempt to catch it upon return.',
+        'range': 7,
+        'function': common.boomerang,
+        'intent': 'aggressive'
     }
 }
 
