@@ -23,7 +23,7 @@ import libtcodpy as libtcod
 import log
 import syntax
 import shelve
-
+import traceback
 
 #############################################
 # Classes
@@ -682,10 +682,13 @@ class Tile:
 # General Functions
 #############################################
 
-def get_path_to_point(start, end, movement_type=0):
+def get_path_to_point(start, end, movement_type=0, max_edges=-1):
     if current_map is None or current_map.pathfinding is None:
         return None
-    path = current_map.pathfinding.a_star_search(start, end, movement_type=movement_type, max_edges=None)
+    if max_edges == -1:
+        path = current_map.pathfinding.a_star_search(start, end, movement_type=movement_type)
+    else:
+        path = current_map.pathfinding.a_star_search(start, end, movement_type=movement_type, max_edges=max_edges)
     if path == 'failure' or len(path) == 0:
         return None
     return path
@@ -2204,7 +2207,7 @@ def save_game():
         f['branch_scaling'] = world.get_branch_scaling()
         f.close()
     except:
-        print("Unexpected error saving game:", sys.exc_info()[0])
+        print("Unexpected error saving game: ", sys.exc_info()[0])
 
 
 def load_game():
@@ -2288,7 +2291,8 @@ def play_game():
                     if ticker in current_map.tickers:
                         current_map.tickers.remove(ticker)
         except:
-            print("Unexpected error:", sys.exc_info()[0])
+            print("Unexpected error: %s" % sys.exc_info()[0])
+            traceback.print_tb(sys.exc_traceback)
 
         # Handle auto-targeting
         ui.auto_target_monster()

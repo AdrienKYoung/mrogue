@@ -325,14 +325,18 @@ def knock_back(actor,target):
         main.render_map()
         libtcod.console_flush()
 
-def boomerang(actor, target):
-    if actor.fighter.attack(target) == 'failed':
+def boomerang(actor, target, context):
+    sprites = ['<', 'v', '>', '^']
+    ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.yellow, sprites)
+    attack_result = actor.fighter.attack(target)
+    if attack_result == 'failed':
         return 'didnt-take-turn'
     catch_skill = 30
     if actor.player_stats:
         catch_skill = actor.player_stats.agi
-    if main.roll_dice('1d' + catch_skill) >= 10:
+    if main.roll_dice('1d' + str(catch_skill)) >= 10:
         #catch boomerang
+        ui.render_projectile((target.x, target.y), (actor.x, actor.y), libtcod.yellow, sprites)
         if actor is player.instance:
             ui.message('You catch the boomerang as it returns to you', libtcod.gray)
     else:
@@ -345,6 +349,7 @@ def boomerang(actor, target):
             selected_tile = main.find_closest_open_tile(target.x, target.y)
         else:
             selected_tile = possible_tiles[libtcod.random_get_int(0, 0, len(possible_tiles) - 1)]
+        ui.render_projectile((target.x, target.y), (selected_tile[0], selected_tile[1]), libtcod.yellow, sprites)
         weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
         weapon.owner.item.drop(no_message=True)
         weapon.owner.x = selected_tile[0]

@@ -1507,9 +1507,14 @@ def render_projectile(start, end, color, character=None):
     if start[0] == end[0] and start[1] == end[1]:
         return
 
-    if character is None: bolt_char = chr(7)
-    else: bolt_char = character
-    bolt = main.GameObject(start[0], start[1], bolt_char, 'bolt', color=color, movement_type=2)
+    if character is None:
+        bolt_chars = [chr(7)]
+    elif isinstance(character, list):
+        bolt_chars = character
+    else:
+        bolt_chars = [character]
+    frame_index = libtcod.random_get_int(0, 0, len(character) - 1)
+    bolt = main.GameObject(start[0], start[1], bolt_chars[frame_index], 'bolt', color=color, movement_type=2)
 
     line = main.beam(start[0], start[1], end[0], end[1])
     main.current_map.add_object(bolt)
@@ -1528,6 +1533,11 @@ def render_projectile(start, end, color, character=None):
                 bolt.char = '/'
             else:
                 bolt.char = '\\'
+        else:
+            bolt.char = bolt_chars[frame_index]
+            frame_index += 1
+            if frame_index >= len(bolt_chars):
+                frame_index = 0
         main.render_map()
         libtcod.console_flush()
         prev = bolt.x, bolt.y

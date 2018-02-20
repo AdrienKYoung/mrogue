@@ -783,7 +783,7 @@ data = {
     'ability_haste': {
         'name': 'Haste',
         'function': monster_actions.haste,
-        'target_function': ai.target_damaged_ally,
+        'target_function': ai.target_random_ally,
         'range': 8,
         'cooldown': 15,
         'intent': 'support',

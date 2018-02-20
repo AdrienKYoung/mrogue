@@ -59,6 +59,13 @@ def target_damaged_ally(actor):
                 target = ally
     return target
 
+def target_random_ally(actor):
+    if actor is None or actor.fighter is None:
+        return None
+    allies = game.get_fighters_in_burst(actor.x, actor.y, consts.TORCH_RADIUS, actor,
+                                        condition=lambda o: o.fighter.team == actor.fighter.team)
+    return allies[libtcod.random_get_int(0, 0, len(allies) - 1)]
+
 def target_clear_line_of_fire(actor):
     if actor is None or \
             actor.behavior is None or \
@@ -92,7 +99,7 @@ def aggro_on_hit(monster, attacker):
             monster.behavior.behavior.last_seen_position = attacker.x, attacker.y
             monster.behavior.ai_state = 'pursuing'
     elif monster.behavior.ai_state != 'pursuing':
-        monster.behavior.behavior.wander_path = game.get_path_to_point((monster.x, monster.y), (attacker.x, attacker.y), monster.movement_type)
+        monster.behavior.behavior.wander_path = game.get_path_to_point((monster.x, monster.y), game.find_closest_open_tile(attacker.x, attacker.y), monster.movement_type)
         monster.behavior.ai_state = 'wandering'
 
 def pursue(behavior):
@@ -185,7 +192,7 @@ def wander(behavior):
             rand_pos = game.find_closest_open_tile(rand_pos[0], rand_pos[1])
             if rand_pos is None:
                 return 'wandered'
-            behavior.wander_path = game.get_path_to_point((monster.x, monster.y), rand_pos, monster.movement_type)
+            behavior.wander_path = game.get_path_to_point((monster.x, monster.y), rand_pos, monster.movement_type, None)
             if behavior.wander_path is None:
                 return 'wandered'
         old_pos = monster.x, monster.y
