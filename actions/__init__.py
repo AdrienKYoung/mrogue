@@ -71,6 +71,9 @@ def invoke_ability(ability_key, actor, target_override=None, spell_context=None)
 def _invoke_ability_continuation(info, actor, target_override, function, pretargeted=False):
     if not pretargeted:
         target = _get_ability_target(actor, info, target_override)
+        if actor is player.instance and target is player.instance and info['intent'] == 'aggressive':
+            if not ui.menu_y_n("Are you sure you want to do that?"):
+                return 'cancelled'
     else:
         target = pretargeted
 

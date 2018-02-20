@@ -93,7 +93,7 @@ data = {
     'ability_bash': {
         'name': 'Bash',
         'description': 'Knock an enemy back',
-        'targeting': 'self',
+        'targeting': 'override',
         'function': lambda a,t,_: common.bash_attack(a),
         'intent': 'aggressive',
     },
@@ -101,6 +101,7 @@ data = {
     'ability_cleave': {
         'name': 'Cleave',
         'description': 'Make an attack against all adjacent enemies',
+        'targeting': 'override',
         'function': common.cleave_attack,
         'cooldown': 0,
         'intent': 'aggressive',
@@ -114,7 +115,7 @@ data = {
 
     'ability_attack': {
         'name': 'Attack',
-        'targeting': 'self',
+        'targeting': 'override',
         'description': 'Attack an enemy with your held weapon',
         'function': lambda a,t,_: common.attack(),
         'cooldown': 0,

@@ -1048,7 +1048,8 @@ proto = {
         'subtype':'angel',
         'loot_level':15,
         'equipment': [{'weapon_greatsword':30,'weapon_halberd':30,'weapon_warhammer':30},{'equipment_plate_armor':100}],
-        'movement_type': pathfinding.FLYING
+        'movement_type': pathfinding.FLYING,
+        'zombie':'monster_dark_angel'
     },
     'monster_infested_treant': {
         'name': 'infested treant',

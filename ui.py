@@ -327,7 +327,7 @@ def target_next_monster():
         main.changed_tiles.append((selected_monster.x, selected_monster.y))
 
     nearby = []
-    for obj in main.current_map.fighters:
+    for obj in [o for o in main.current_map.fighters if o.fighter.team == 'enemy']:
         if fov.player_can_see(obj.x, obj.y) and obj is not player.instance and not (obj.npc and obj.npc.active):
             nearby.append((obj.distance_to(player.instance), obj))
     nearby.sort(key=lambda m: m[0])
