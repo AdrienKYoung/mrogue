@@ -66,6 +66,9 @@ def on_hit_judgement(attacker, target, damage):
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('2d6')))
 
+def on_hit_self_corruption(attacker, target, damage):
+    if attacker is player.instance:
+        player.add_corruption(main.roll_dice('1d4'))
 
 def on_hit_rot(attacker, target, damage):
     if target.fighter is not None:
@@ -201,5 +204,6 @@ table = {
     'on_hit_chain_lightning': on_hit_chain_lightning,
     'on_hit_knockback': on_hit_knockback,
     'zombie_on_hit': zombie_on_hit,
-    'on_hit_lifesteal': on_hit_lifesteal
+    'on_hit_lifesteal': on_hit_lifesteal,
+    'on_hit_self_corruption': on_hit_self_corruption
 }

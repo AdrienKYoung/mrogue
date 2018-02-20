@@ -52,8 +52,9 @@ table = {
         'weapon_assassins_blade' : 20,
         'weapon_scythe' : 20,
         'weapon_scimitar' : 20,
-        'weapon_blessed_blade' : 20,
         'weapon_giant_axe' : 20,
+        'weapon_blessed_blade' : 5,
+        'weapon_black_blade': 5
     },
 
     'armor_0': {
