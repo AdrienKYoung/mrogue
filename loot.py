@@ -39,12 +39,13 @@ table = {
     },
 
     'weapons_2' : {
-        'weapon_messer' : 16,
-        'weapon_greatsword' : 16,
-        'weapon_warhammer' : 16,
-        'weapon_raider_axe' : 17,
-        'weapon_halberd' : 17,
-        'weapon_katar' : 17,
+        'weapon_messer' : 15,
+        'weapon_greatsword' : 15,
+        'weapon_warhammer' : 15,
+        'weapon_raider_axe' : 15,
+        'weapon_halberd' : 15,
+        'weapon_katar' : 15,
+        'weapon_boomerang' : 9,
         'weapons_3' : 1
     },
 
@@ -55,6 +56,20 @@ table = {
         'weapon_giant_axe' : 20,
         'weapon_blessed_blade' : 5,
         'weapon_black_blade': 5
+    },
+
+    'loot_weapons_steel': {
+        'weapon_dagger': {'weight': 10, 'material': 'steel', 'quality': ''},
+        'weapon_hatchet': {'weight': 10, 'material': 'steel', 'quality': ''},
+        'weapon_longsword': {'weight': 10, 'material': 'steel', 'quality': ''},
+        'weapon_mace': {'weight': 10, 'material': 'steel', 'quality': ''},
+        'weapon_spear': {'weight': 10, 'material': 'steel', 'quality': ''},
+        'weapon_messer': {'weight': 10, 'material': 'steel', 'quality': ''},
+        'weapon_greatsword': {'weight': 10, 'material': 'steel', 'quality': ''},
+        'weapon_warhammer': {'weight': 10, 'material': 'steel', 'quality': ''},
+        'weapon_dane_axe': {'weight': 10, 'material': 'steel', 'quality': ''},
+        'weapon_halberd': {'weight': 5, 'material': 'steel', 'quality': ''},
+        'weapon_katar': {'weight': 5, 'material': 'steel', 'quality': ''},
     },
 
     'armor_0': {
@@ -276,14 +291,20 @@ def item_from_table_ex(loot_table, loot_level=1):
 
     import items
     prototype = items.table()[item_id]
-    material = None
-    quality = ''
+    material = choice.get('material', None)
+    quality = choice.get('quality', None)
     if prototype['category'] == 'weapon':
-        material = choice.get('material', choose_weapon_material(loot_level))
-        quality = choice.get('quality', choose_quality(loot_level))
+        if material is None:
+            material = choice.get('material', choose_weapon_material(loot_level))
+        if quality is None:
+            quality = choice.get('quality', choose_quality(loot_level))
     if prototype['category'] == 'armor':
-        material = choice.get('material', choose_armor_material(loot_level))
-        quality = choice.get('quality', choose_quality(loot_level))
+        if material is None:
+            material = choice.get('material', choose_armor_material(loot_level))
+        if quality is None:
+            quality = choice.get('quality', choose_quality(loot_level))
+    if quality is None:
+        quality = ''
 
     return main.create_item(item_id, material, quality)
 

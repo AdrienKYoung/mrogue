@@ -1513,7 +1513,7 @@ def render_projectile(start, end, color, character=None):
         bolt_chars = character
     else:
         bolt_chars = [character]
-    frame_index = libtcod.random_get_int(0, 0, len(character) - 1)
+    frame_index = 0
     bolt = main.GameObject(start[0], start[1], bolt_chars[frame_index], 'bolt', color=color, movement_type=2)
 
     line = main.beam(start[0], start[1], end[0], end[1])

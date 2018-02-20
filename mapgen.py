@@ -2783,7 +2783,11 @@ def make_basic_map_link(link, connect_with_tunnels=True):
             link_feature = random_from_list(feature_categories[link_feature_category]).name
         else:
             link_feature = feature_categories['default_gate'][0].name
-        create_feature(x, y, link_feature, hard_override=True)
+        exclude = []
+        create_feature(x, y, link_feature, hard_override=True, open_tiles=exclude)
+        if connect_with_tunnels:
+            closest = main.find_closest_open_tile(x, y, exclude=exclude)
+            create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='open', hardoverride=True)
     # find the stairs that we just placed
     stairs = None
     for i in range(len(map.objects) - 1, 0, -1):

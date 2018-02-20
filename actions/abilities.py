@@ -742,7 +742,7 @@ data = {
         'cooldown': 0,
         'stamina_cost' : 5,
         'description' : 'Focus on hitting your target, increasing your accuracy for a turn.',
-        'intent': 'aggressive',
+        'intent': 'support',
     },
 
     'ability_summon_spiders': {

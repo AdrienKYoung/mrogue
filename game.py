@@ -2149,7 +2149,6 @@ def main_menu():
             print('Quitting game...')
             return
 
-
 def new_game():
     global game_state, dungeon_level, in_game, changed_tiles, learned_skills, current_map
 
@@ -2239,63 +2238,75 @@ def SCREEN_HEIGHT():
     return (windowy / tiley) - 4 #filthy hack to deal with the header-bar
 
 def play_game():
-    global key, mouse, game_state, in_game, windowx, windowy
+    global key, mouse, game_state, windowx, windowy, shift
     
     mouse = libtcod.Mouse()
     key = libtcod.Key()
-    shift = False
     while not libtcod.console_is_window_closed():
 
-        try:
-            # Render the screen
-            libtcod.sys_check_for_event(
-                libtcod.EVENT_KEY_PRESS |
-                libtcod.EVENT_KEY_RELEASE |
-                libtcod.EVENT_MOUSE, key, mouse)
-
-            #handle shift on mac, because its treated as a key press instead of a modifier for some reason
-            if key.vk == libtcod.KEY_SHIFT:
-                shift = key.pressed
-
-            render_all()
-            libtcod.console_flush()
-
-            # Handle keys and exit game if needed
-            player_action = player.handle_keys(shift)
-            if player_action == 'exit':
-                save_game()
-                in_game = False
+        if consts.DEBUG_SAFE_CRASH:
+            try:
+                if step() == 'exit':
+                    break
+            except:
+                print("Unexpected error: %s" % sys.exc_info()[0])
+                traceback.print_tb(sys.exc_traceback)
+        else:
+            if step() == 'exit':
                 break
-
-            if consts.RENDER_EVERY_TURN:
-                render_all()
-                libtcod.console_flush()
-
-            # Let monsters take their turn
-            if game_state == 'playing' and player_action != 'didnt-take-turn':
-                dead_tickers = []
-                player.instance.on_tick(object=player.instance)
-                for object in current_map.objects:
-                    if object.behavior:
-                        object.behavior.take_turn()
-                    if object is not player.instance:
-                        object.on_tick(object=object)
-                for ticker in current_map.tickers:
-                    if hasattr(ticker, 'ticks'):
-                        ticker.ticks += 1
-                    if hasattr(ticker, 'on_tick'):
-                        ticker.on_tick(ticker)
-                    if hasattr(ticker, 'dead') and ticker.dead:
-                        dead_tickers.append(ticker)
-                for ticker in dead_tickers:
-                    if ticker in current_map.tickers:
-                        current_map.tickers.remove(ticker)
-        except:
-            print("Unexpected error: %s" % sys.exc_info()[0])
-            traceback.print_tb(sys.exc_traceback)
 
         # Handle auto-targeting
         ui.auto_target_monster()
+
+def step():
+
+    global in_game, shift
+
+    # Render the screen
+    libtcod.sys_check_for_event(
+        libtcod.EVENT_KEY_PRESS |
+        libtcod.EVENT_KEY_RELEASE |
+        libtcod.EVENT_MOUSE, key, mouse)
+
+    # handle shift on mac, because its treated as a key press instead of a modifier for some reason
+    if key.vk == libtcod.KEY_SHIFT:
+        shift = key.pressed
+
+    render_all()
+    libtcod.console_flush()
+
+    # Handle keys and exit game if needed
+    player_action = player.handle_keys(shift)
+    if player_action == 'exit':
+        save_game()
+        in_game = False
+        return 'exit'
+
+    if consts.RENDER_EVERY_TURN:
+        render_all()
+        libtcod.console_flush()
+
+    # Let monsters take their turn
+    if game_state == 'playing' and player_action != 'didnt-take-turn':
+        dead_tickers = []
+        player.instance.on_tick(object=player.instance)
+        for object in current_map.objects:
+            if object.behavior:
+                object.behavior.take_turn()
+            if object is not player.instance:
+                object.on_tick(object=object)
+        for ticker in current_map.tickers:
+            if hasattr(ticker, 'ticks'):
+                ticker.ticks += 1
+            if hasattr(ticker, 'on_tick'):
+                ticker.on_tick(ticker)
+            if hasattr(ticker, 'dead') and ticker.dead:
+                dead_tickers.append(ticker)
+        for ticker in dead_tickers:
+            if ticker in current_map.tickers:
+                current_map.tickers.remove(ticker)
+
+    return
 
 # Globals
 
@@ -2305,6 +2316,7 @@ windowx,windowy = libtcod.sys_get_current_resolution()
 tilex, tiley = 16,16
 libtcod.console_init_root(SCREEN_WIDTH(), SCREEN_HEIGHT(), 'mrogue', False)
 libtcod.sys_set_fps(consts.LIMIT_FPS)
+shift = False
 
 # Consoles
 con = libtcod.console_new(SCREEN_WIDTH(), SCREEN_HEIGHT())
