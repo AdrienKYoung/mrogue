@@ -218,7 +218,7 @@ def handle_keys(shift_override):
     ui.mouse_select_monster()
 
     #filter out garbage keyboard input
-    if key.vk == 0 or key.vk == 66 or not key.pressed:
+    if key.vk == 66:
         return 'didnt-take-turn'
 
     if key.vk == libtcod.KEY_CHAR:
@@ -242,11 +242,18 @@ def handle_keys(shift_override):
             if instance.fighter.has_status('frozen'):
                 return 'frozen'
 
+        #break queued actions on keypress
+        if key.vk != 0 and key.vk != 4 and key.pressed:
+            flush_queued_actions()
+
         if instance.action_queue is not None and len(instance.action_queue) > 0:
             action = instance.action_queue[0]
             instance.action_queue.remove(action)
             do_queued_action(action)
             return action
+
+        if not key.pressed:
+            return 'didnt-take-turn'
 
         moved = False
         ctrl = key.lctrl or key.rctrl
@@ -280,13 +287,16 @@ def handle_keys(shift_override):
             if key_char == 'i':
                 return ui.inspect_inventory()
             if key_char == 'e':
-                chosen_item = ui.inventory_menu('Use which item?')
-                if chosen_item is not None:
-                    use_result = chosen_item.use()
-                    if use_result == 'cancelled':
-                       return 'didnt-take-turn'
-                    else:
-                       return 'used-item'
+                if shift:
+                    explore()
+                else:
+                    chosen_item = ui.inventory_menu('Use which item?')
+                    if chosen_item is not None:
+                        use_result = chosen_item.use()
+                        if use_result == 'cancelled':
+                           return 'didnt-take-turn'
+                        else:
+                           return 'used-item'
             if key_char == 'd':
                 chosen_item = ui.inventory_menu('Drop which item?')
                 if chosen_item is not None:
@@ -328,22 +338,28 @@ def handle_keys(shift_override):
         if not moved:
             return 'didnt-take-turn'
 
-already_alerted_meditate = False
+def flush_queued_actions():
+    global already_alerted
+    instance.action_queue = []
+    already_alerted = True
+    return 'didnt-take-turn'
+
+already_alerted = False
+explore_target = None
 def do_queued_action(action):
-    global already_alerted_meditate
+    global already_alerted, explore_target
     if action == 'wait' or action is None:
         instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
     elif action == 'channel-cast':
         instance.fighter.adjust_stamina(consts.STAMINA_REGEN_CHANNEL)
     elif action == 'channel-meditate':
-        if not already_alerted_meditate and len(main.get_fighters_in_burst(
+        if not already_alerted and len(main.get_fighters_in_burst(
                 instance.x, instance.y, consts.TORCH_RADIUS, instance, lambda o: o.fighter.team == 'enemy')) > 0:
             if ui.menu_y_n('Continue meditating while enemies are nearby?'):
                 instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
-                already_alerted_meditate = True
+                already_alerted = True
             else:
-                instance.action_queue = []
-                return 'didnt-take-turn'
+                return flush_queued_actions()
     elif callable(action):
         action()
 
@@ -858,21 +874,57 @@ def get_key(name='Glass Key'):
             return item
     return None
 
+def explore():
+    global explore_target, already_alerted
+    already_alerted = False
+    explore_target = main.closest_unexplored_tile()
+    if explore_target is not None:
+        instance.action_queue.append(_do_explore)
+        return 'start-explore'
+    else:
+        return 'didnt-take-turn'
+
+def _do_explore():
+    global explore_target, already_alerted
+
+    #if explore_target is None:
+    explore_target = main.closest_unexplored_tile()
+    #print("Explore target: {}".format(explore_target))
+
+    if explore_target is None:
+        ui.message("Done exploring")
+        return flush_queued_actions()
+
+    if not already_alerted and len(main.get_fighters_in_burst(
+            instance.x, instance.y, consts.TORCH_RADIUS, instance, lambda o: o.fighter.team == 'enemy')) > 0:
+        ui.message('Stopped exploring due to nearby enemies')
+        return flush_queued_actions()
+    else:
+        if instance.fighter.stamina > 50:
+            move_result = instance.move_astar(explore_target[0], explore_target[1])
+            #if move_result is not None:
+            #    explore_target = None
+        else:
+             instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
+        if not already_alerted:
+            instance.action_queue.append(_do_explore)
+        return 'exploring'
+
 
 def meditate():
-    global already_alerted_meditate
+    global already_alerted
     book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
     if (book is None or not hasattr(book, 'spell_list')) and len(instance.memory.spell_list) == 0:
         ui.message('Without access to magic, you have no need of meditation.', libtcod.dark_cyan)
         return 'didnt-take-turn'
 
-    already_alerted_meditate = False
+    already_alerted = False
 
     if len(main.get_fighters_in_burst(instance.x, instance.y, consts.TORCH_RADIUS, instance, lambda o: o.fighter.team == 'enemy')) > 0:
         if not ui.menu_y_n('Really meditate with enemies nearby?'):
             return 'didnt-take-turn'
         else:
-            already_alerted_meditate = True
+            already_alerted = True
 
     ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)
 
