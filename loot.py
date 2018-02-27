@@ -398,6 +398,7 @@ item_categories = {
     'key' : { 'plural' : 'keys'},
     'treasure' : { 'plural' : 'treasure' },
     'accessory' : {'plural': 'accessories'},
+    'quiver' : {'plural': 'quivers'},
 }
 
 quality_progression = [

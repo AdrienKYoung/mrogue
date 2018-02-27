@@ -34,7 +34,7 @@ class Equipment:
                  resistances={}, modifiers = {}, base_id=None, range_=1, attributes=[], stealth=None,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
                  sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None, will_bonus=0,
-                 fortitude_bonus=0, str_bonus=0, agi_bonus=0, int_bonus=0):
+                 fortitude_bonus=0, str_bonus=0, agi_bonus=0, int_bonus=0, max_ammo=0):
         self.is_equipped = False
         self.slot = slot
         self.base_id = base_id
@@ -78,6 +78,7 @@ class Equipment:
         self._range = range_
         self.attributes = list(attributes)
         self._stealth = stealth
+        self._max_ammo = max_ammo
 
         self._accuracy_bonus = accuracy
         self._crit_bonus = crit_bonus
@@ -244,6 +245,10 @@ class Equipment:
     @property
     def sh_raise_cost(self):
         return self._sh_raise_cost + self.get_bonus('sh_raise_cost_bonus')
+
+    @property
+    def max_ammo(self):
+        return self._max_ammo + self.get_bonus('max_ammo')
 
     def toggle(self):
         if self.is_equipped:

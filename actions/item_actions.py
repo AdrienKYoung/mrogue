@@ -61,6 +61,28 @@ def bow_shot(actor, target, context):
     ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
     combat.attack_ex(actor.fighter, target, 0, verb=("shoot", "shoots"), weapon=weapon, ranged=True)
 
+def ranged_attack(actor, target, context):
+    spent = actor.fighter.adjust_ammo(-1)
+    if spent != 0 and actor.fighter is not None:
+        weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+        ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
+        result = combat.attack_ex(actor.fighter, target, 0, verb=("shoot", "shoots"), weapon=weapon, ranged=True)
+        if result == 'failed':
+            actor.fighter.adjust_ammo(-spent, False) # Refund ammo
+            return 'didnt-take-turn'
+
+        if result == 'miss' or target.fighter is None:
+            ammo_obj = main.current_map.tiles[target.x][target.y]
+        else:
+            ammo_obj = target
+        if hasattr(ammo_obj, 'recoverable_ammo'):
+            ammo_obj.recoverable_ammo += -spent
+        else:
+            ammo_obj.recoverable_ammo = -spent
+
+    else:
+        return 'didnt-take-turn'
+
 def use_ruby():
     return use_gem('fire')
 def use_garnet():

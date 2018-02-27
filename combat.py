@@ -33,7 +33,7 @@ class Fighter:
                  can_breath_underwater=False, resistances={}, inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
                  damage_bonus=0, monster_str_dice=None, team='enemy', on_get_hit=None, stealth=None,
-                 attributes=[], _range=1, on_get_kill=None, will=0, fortitude=0):
+                 attributes=[], _range=1, on_get_kill=None, will=0, fortitude=0, ammunition=0):
         self.owner = None
         self.base_max_hp = hp
         self.hp = hp
@@ -68,6 +68,7 @@ class Fighter:
         self.on_get_kill = on_get_kill
         self.base_will = will
         self.base_fortitude = fortitude
+        self.ammunition = ammunition
 
         self.base_damage_bonus = damage_bonus
         self.monster_str_dice = monster_str_dice
@@ -537,6 +538,46 @@ class Fighter:
                 return self._stealth
             else:
                 return min(self._stealth, bonus)
+
+    @property
+    def max_ammo(self):
+        quiver = main.get_equipped_in_slot(self.inventory, 'quiver')
+        if quiver is None:
+            return consts.MAX_AMMO_BASE
+        return quiver.max_ammo
+
+    def adjust_ammo(self, amount, show_messages=True):
+        if amount > 0:
+            if self.ammunition < self.max_ammo:
+                picked_up_amount = min(self.max_ammo - self.ammunition, amount)
+                self.ammunition = self.ammunition + picked_up_amount
+                if self.owner is player.instance and show_messages:
+                    arrow_string = 'arrows'
+                    if amount == 1:
+                        arrow_string = 'arrow'
+                    ui.message("You pick up %d %s" % (picked_up_amount, arrow_string), libtcod.gray)
+                return picked_up_amount
+            else:
+                if self.owner is player.instance and show_messages:
+                    ui.message("You cannot hold any more arrows", libtcod.gray)
+                return 0
+        elif amount < 0:
+            if -amount > self.ammunition:
+                quiver = main.get_equipped_in_slot(self.inventory, 'quiver')
+                if quiver is not None and quiver.has_attribute('draw_blood'):
+                    if ui.menu_y_n("Draw a blood arrow?"):
+                        ui.message("You draw an arrow from your own blood", libtcod.red)
+                        self.take_damage(10, None, False, False, False)
+                        self.adjust_ammo(1, False)
+                        return self.adjust_ammo(amount, show_messages)
+                if self.owner is player.instance and show_messages:
+                    ui.message("You don't have enough arrows for that!", libtcod.gray)
+                return 0
+            else:
+                self.ammunition += amount
+                return amount
+        else:
+            return 0
 
     def attack_shred(self,weapon=None):
         if weapon is None:
@@ -1260,7 +1301,7 @@ def attack_text(fighter,target,verb,location,damage,damage_types,severity,attack
         else:
             verb = ('hit', 'hits')
     # Set the target's name - check to see if it should be of the type 'itself'/'yourself' and if it can be seen
-    if target is player.instance or (fighter is not None and fighter.owner is player.instance) or fov.player_can_see(target.x, target.y):
+    if fighter is not None and target is player.instance or (fighter is not None and fighter.owner is player.instance) or fov.player_can_see(target.x, target.y):
         target_name = syntax.name(target, reflexive=fighter.owner).replace('remains of ', '')
     else:
         target_name = 'something'

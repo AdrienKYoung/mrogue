@@ -63,7 +63,11 @@ def cleave_attack(actor, target, context):
         actor = player.instance
     if actor is player.instance:
         return player.cleave_attack(0, 0)
-    if actor.distance_to(target) > 1:
+    if isinstance(target, main.GameObject):
+        dist = main.distance(actor.x, actor.y, target.x, target.y)
+    else:
+        dist = main.distance(actor.x, actor.y, target[0], target[1])
+    if dist > 1:
         return 'didnt-take-turn'
     for adj in main.adjacent_tiles_diagonal(actor.x, actor.y):
         targets = main.get_objects(adj[0], adj[1], lambda o: o.fighter and o.fighter.team == 'ally')

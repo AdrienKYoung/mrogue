@@ -579,6 +579,22 @@ def render_side_panel(acc_mod=1.0):
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
     drawHeight += weapon_string_height + 1
 
+    # Quiver and Ammunition
+    if weapon is not None and weapon.subtype == 'ranged':
+        libtcod.console_print(side_panel, 2, drawHeight, 'Quiver: [%d]' % player.instance.fighter.ammunition)
+        drawHeight += 1
+        quiver = main.get_equipped_in_slot(player.instance.fighter.inventory, 'quiver')
+        if quiver is None:
+            quiver_string = "None"
+            quiver_color = libtcod.gray
+        else:
+            quiver_string = quiver.owner.name.title()
+            quiver_string = (quiver_string[:SIDE_PANEL_WIDTH - 8] + '...') if len(quiver_string) > SIDE_PANEL_WIDTH - 5 else quiver_string
+            quiver_color = loot.qualities['']['color']
+        libtcod.console_set_default_foreground(side_panel, quiver_color)
+        libtcod.console_print(side_panel, 2, drawHeight, quiver_string)
+        drawHeight += 1
+
     seperator_height = drawHeight
     drawHeight += 2
 

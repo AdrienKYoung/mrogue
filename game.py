@@ -394,6 +394,16 @@ class GameObject:
                 if current_map.tiles[x][y].on_step is not None:
                     current_map.tiles[x][y].on_step(x,y,self)
 
+                # grab ammo
+                if self.fighter and self is player.instance:
+                    ammo_objs = get_objects(x, y, lambda o: hasattr(o, 'recoverable_ammo'))
+                    if hasattr(current_map.tiles[x][y], 'recoverable_ammo'):
+                        ammo_objs.append(current_map.tiles[x][y])
+                    for ammo_obj in ammo_objs:
+                        ammo_obj.recoverable_ammo -= self.fighter.adjust_ammo(ammo_obj.recoverable_ammo, True)
+                        if ammo_obj.recoverable_ammo == 0:
+                            del ammo_obj.recoverable_ammo
+
                 if self.light is not None:
                     for _x in range(max(0, self.x - self.light.radius), min(consts.MAP_WIDTH, self.x + self.light.radius + 1)):
                         for _y in range(max(0, self.y - self.light.radius),
@@ -943,6 +953,13 @@ def monster_death(monster, context):
         ui.message('%s is dead!' % syntax.name(monster).capitalize(), libtcod.red)
 
     if monster.fighter.has_flag(monsters.NO_CORPSE):
+        # drop ammo
+        if hasattr(monster, 'recoverable_ammo'):
+            monster_tile = current_map.tiles[monster.x][monster.y]
+            if hasattr(monster_tile, 'recoverable_ammo'):
+                monster_tile.recoverable_ammo += monster.recoverable_ammo
+            else:
+                monster_tile.recoverable_ammo = monster.recoverable_ammo
         monster.destroy()
     elif monster.summon_time is not None:
         monster.destroy()
@@ -1421,7 +1438,7 @@ def create_item(name, material=None, quality=''):
         ability = create_ability(p.get('ability'))
     item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], ability=ability, charges=p.get('charges'))
     equipment_component = None
-    if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book' or p['category'] == 'accessory':
+    if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book' or p['category'] == 'accessory' or p['category'] == 'quiver':
         if consts.DEBUG_UNLOCK_TOMES and 'level' in p.keys():
             level = 10
         else:
@@ -1469,7 +1486,10 @@ def create_item(name, material=None, quality=''):
             fortitude_bonus=p.get('fortitude', 0),
             attributes=p.get('attributes', []),
             stealth=p.get('stealth'),
+            max_ammo=p.get('max_ammo', 0),
         )
+
+
 
         if material is None:
             material = 'iron' if equipment_component.category == 'weapon' else ''

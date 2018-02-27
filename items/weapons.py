@@ -572,7 +572,7 @@ table = {
         'attack_delay'      : 1000,
         'crit_bonus'        : 1.5,
         'range'             : 20,
-        'ability'           : 'ability_bow_shot',
+        'ability'           : 'ability_ranged_attack',
         'attributes'        : ['no_melee']
     },
     'weapon_shortbow': { #todo - rework bows
@@ -594,7 +594,7 @@ table = {
         'attack_delay'      : 1000,
         'crit_bonus'        : 2.0,
         'range'             : 8,
-        'ability'           : 'ability_bow_shot',
+        'ability'           : 'ability_ranged_attack',
         'attributes'        : ['no_melee']
     },
     # Misc

@@ -104,6 +104,7 @@ loadouts = {
             'charm_raw',
             'weapon_shortsword',
             'weapon_longbow',
+            'equipment_quiver_of_blood',
             'equipment_leather_armor'
         ],
         'description' : "Fragile ranged attacker. Starts with a bow."
@@ -201,6 +202,11 @@ def create(loadout):
         i.item.holder = instance
         if i.equipment is not None:
             i.equipment.equip(no_message=True)
+            if i.equipment.max_ammo != 0:
+                instance.fighter.adjust_ammo(i.equipment.max_ammo, False)
+            if i.equipment.subtype == 'ranged':
+                instance.fighter.adjust_ammo(consts.MAX_AMMO_BASE, False)
+
 
     if consts.DEBUG_STARTING_ITEM is not None:
         test = main.create_item(consts.DEBUG_STARTING_ITEM)

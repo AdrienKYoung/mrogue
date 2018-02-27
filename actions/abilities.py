@@ -716,6 +716,14 @@ data = {
         'intent': 'aggressive',
     },
 
+    'ability_ranged_attack': {
+        'name': 'Ranged Attack',
+        'function': item_actions.ranged_attack,
+        'range': 20,
+        'description': 'Fire your weapon at an enemy you can see.',
+        'intent': 'aggressive',
+    },
+
     'ability_bow_shot': {
         'name': 'Bow Shot',
         'function': item_actions.bow_shot,

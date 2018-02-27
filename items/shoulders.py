@@ -24,4 +24,17 @@ table = {
         'weight'        : 3,
         'stealth'       : 4
     },
+    'equipment_quiver_of_blood': {
+        'name'          : 'Quiver of Blood',
+        'category'      : 'quiver',
+        'char'          : '%',
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'slot'          : 'quiver',
+        'description'   : "A dark red leather quiver embroidered with an image of Gyllados, the god of the hunt. One can"
+                          " use one's own life force to draw an arrow from this quiver even when it is empty.",
+        'weight'        : 2,
+        'max_ammo'      : 25,
+        'attributes'    : ['draw_blood']
+    },
 }
