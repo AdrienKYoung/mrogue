@@ -24,6 +24,7 @@ import log
 import syntax
 import shelve
 import traceback
+from collections import deque
 
 #############################################
 # Classes
@@ -684,6 +685,10 @@ class Tile:
         return terrain.data[self.tile_type].on_step
 
     @property
+    def is_dangerous(self):
+        return terrain.data[self.tile_type].dangerous
+
+    @property
     def blocks_sight_all_elevs(self):
         return terrain.data[self.tile_type].blocks_sight_all_elevs
 
@@ -1116,6 +1121,25 @@ def closest_monster(max_range):
     else:
         return low_priority_enemy
 
+def closest_unexplored_tile():
+    open = deque()
+    open.append((player.instance.x, player.instance.y))
+    closed = []
+    while len(open) > 0:
+        curr = open.popleft()
+        for t in adjacent_tiles_diagonal(curr[0], curr[1]):
+            if t not in open and t not in closed and is_explorable(curr):
+                if current_map.tiles[t[0]][t[1]].explored:
+                    open.append(t)
+                else:
+                    return t
+        closed.append(curr)
+    return None
+
+def is_explorable(pos):
+    blockers = get_objects(pos[0],pos[1], lambda o: (o is not player.instance and o.blocks) or (hasattr(o,'locked') and o.locked))
+    tile = current_map.tiles[pos[0]][pos[1]]
+    return len(blockers) < 1 and not tile.is_dangerous and not tile.blocks
 
 def in_bounds(x, y):
     return 0 <= x < consts.MAP_WIDTH and 0 <= y < consts.MAP_HEIGHT
@@ -1674,6 +1698,11 @@ def lock_interact(actor=None, object_name='object'):
 
 
 def door_interact(door, actor):
+    #Band-aid solution to auto-explore door soft-lock
+    #TODO - Fix A*
+    if actor is player.instance:
+        player.flush_queued_actions()
+
     if not is_blocked(door.x, door.y):
         if door.closed:
             do_open = False
@@ -2255,7 +2284,7 @@ def SCREEN_WIDTH():
     return windowx / tilex
 
 def SCREEN_HEIGHT():
-    return (windowy / tiley) - 4 #filthy hack to deal with the header-bar
+    return (windowy / tiley) - 4 #TODO: filthy hack to deal with the header-bar
 
 def play_game():
     global key, mouse, game_state, windowx, windowy, shift

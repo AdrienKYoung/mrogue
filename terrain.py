@@ -24,7 +24,7 @@ class TileData:
     def __init__(self, blocks, blocks_sight, name, char,
                  foreground_color, background_color, description='unremarkable terrain', stamina_cost=0, jumpable=True,
                  burnTemp=0, flammable=0, diggable=False, isWall = False, isFloor = False, isWater = False,
-                 isRamp=False, isPit=False, isIce=False, on_step=None, blocks_sight_all_elevs=True):
+                 isRamp=False, isPit=False, isIce=False, on_step=None, blocks_sight_all_elevs=True, dangerous=False):
         self.blocks = blocks
         self.blocks_sight = blocks_sight
         self.name = name
@@ -45,6 +45,7 @@ class TileData:
         self.on_step = on_step
         self.isIce = isIce
         self.blocks_sight_all_elevs = blocks_sight and blocks_sight_all_elevs
+        self.dangerous = dangerous
 
 data = {
     ###############################################
@@ -80,7 +81,7 @@ data = {
     'shallow seawater': TileData(False, False, 'shallow water', 247, (0, 95, 191), (0, 64, 128),
                              'foamy saltwater, rolled ashore by the gentle waves', consts.SHALLOW_WATER_COST, isWater=True),
     'deep seawater': TileData(False, False, 'deep water', 247, (0, 64, 128), (0, 32, 64),
-                             'vast depths of seawater, rolling with the tide', consts.DEEP_WATER_COST, jumpable=False, isWater=True),
+                             'vast depths of seawater, rolling with the tide', consts.DEEP_WATER_COST, jumpable=False, isWater=True, dangerous=True),
 
     ###############################################
     #                  BADLANDS
@@ -167,21 +168,21 @@ data = {
     'shallow water': TileData(False, False, 'shallow water', 247, (0, 95, 191), (0, 64, 128),
                              'a shallow pool of grimy water', consts.SHALLOW_WATER_COST, isWater=True),
     'deep water': TileData(False, False, 'deep water', 247, (0, 64, 128), (0, 32, 64),
-                             'a deep pool of grimy water', consts.DEEP_WATER_COST, jumpable=False, isWater=True),
+                             'a deep pool of grimy water', consts.DEEP_WATER_COST, jumpable=False, isWater=True, dangerous=True),
     'mud': TileData(False, False, 'mud', 247, (94, 75, 47), (63, 50, 31),
                              'a thick puddle of mud that impedes movement - dodging attacks will be much more difficult here',
                             consts.MUD_COST, isWater=True),
     'lava': TileData(False,False,'lava',247,libtcod.orange,libtcod.dark_red,'Bubbling molten rock',
-                            consts.DEEP_WATER_COST,jumpable=False),
+                            consts.DEEP_WATER_COST,jumpable=False, dangerous=True),
     'chasm': TileData(False, False, 'chasm', libtcod.CHAR_BLOCK1, (16, 16, 32), (0, 0, 16),
-                             'a pit descending into darkness', isPit=True),
+                             'a pit descending into darkness', isPit=True, dangerous=True),
     'scorched floor': TileData(False, False, 'scorched floor', '.', (94, 55, 55), (30, 30, 30),
                              'embers linger on this still-warm floor scorched by flame', isFloor=True),
     'scorched ramp': TileData(False, False, 'scorched ramp', '/', (94, 55, 55), (30, 30, 30),
                              'embers linger on this still-warm floor scorched by flame', isRamp=True),
     'poisoned water': TileData(False, False, 'poisoned water', 247, (76, 105, 36), (76, 89, 36),
                              'a shallow pool of acrid-smelling water', consts.SHALLOW_WATER_COST, isWater=True,
-                               on_step=actions.on_step_actions.step_on_poison),
+                               on_step=actions.on_step_actions.step_on_poison, dangerous=True),
 }
 
 # flags
