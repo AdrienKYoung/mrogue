@@ -411,7 +411,7 @@ branches = {
         'scaling'       : 0,
         'loot'          : None,
         'monsters'      : None,
-        'generate'      : mapgen.make_test_space,
+        'generate'      : mapgen.make_map_slag_fields,
         'map_color'     : libtcod.darker_gray,
         'enabled'       : True
     },

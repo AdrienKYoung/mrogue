@@ -2023,6 +2023,55 @@ def make_map_forest():
 
     make_basic_map_links()
 
+def make_map_slag_fields():
+    sizex,sizey = consts.MAP_WIDTH - 1,consts.MAP_HEIGHT - 1
+    link_locations = []
+    number_features = libtcod.random_get_int(0, 5, 12)
+    if number_features < 9:
+        link_locations = [(consts.MAP_WIDTH/2,1),(1,consts.MAP_HEIGHT/2),(consts.MAP_WIDTH/2,consts.MAP_HEIGHT-1),(consts.MAP_WIDTH-1,consts.MAP_HEIGHT/2)]
+    noise = create_voronoi(sizex,sizey, number_features, 2, link_locations, max_dist=20.0)
+    room = Room()
+    room.set_pos(1,1)
+    for x in range(sizex):
+        for y in range(sizey):
+            elevation = abs(int(5 - math.ceil(noise[0][x][y] * 4)))
+
+            if elevation <= 2:
+                elevation = 1
+                if libtcod.random_get_float(0, 0.0, 1.0) < .1:
+                    tile = 'shale'
+                else:
+                    tile = 'lava'
+            elif elevation > 3:
+                tile = 'dark shale wall'
+            else:
+                tile = 'shale'
+
+            room.set_tile(x, y, tile, elevation)
+    apply_room(room)
+    erode_map('shale', libtcod.random_get_int(0, 2, 10))
+
+    tree_count = libtcod.random_get_int(0, 0, 5)
+    for i in range(tree_count):
+        doodad_pos = ( libtcod.random_get_int(0, 1, consts.MAP_WIDTH - 2),
+                     libtcod.random_get_int(0, 1, consts.MAP_HEIGHT - 2))
+        if not map.tiles[doodad_pos[0]][doodad_pos[1]].is_water:
+            change_map_tile(doodad_pos[0], doodad_pos[1], 'rusted skeleton')
+
+    boulder_count = libtcod.random_get_int(0, 4, 8)
+    for i in range(boulder_count):
+        boulder = create_room_cloud(tile_type='dark shale wall', min_radius=1, max_radius=2)
+        boulder.set_pos(libtcod.random_get_int(0, 10, consts.MAP_WIDTH - 10),
+                        libtcod.random_get_int(0, 10, consts.MAP_HEIGHT - 10))
+        apply_room(boulder)
+
+    ash_count = libtcod.random_get_int(0, 0, 8)
+    for i in range(ash_count):
+        create_terrain_patch((libtcod.random_get_int(0, 10, consts.MAP_WIDTH - 10),
+                              libtcod.random_get_int(0, 10, consts.MAP_HEIGHT - 10)), 'ash')
+
+    create_slopes()
+
 def make_map_marsh():
 
     rooms = []

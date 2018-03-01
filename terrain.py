@@ -89,7 +89,7 @@ data = {
 
     'shale': TileData(False, False, 'shale', '.', (48, 48, 48), (31, 31, 31),
                       'broken shingles of flat, smooth stone', isFloor=True),
-    'dark shale wall': TileData(True, True, 'dark shale wall', '#', (96, 96, 96), (64, 64, 64),
+    'dark shale wall': TileData(True, True, 'dark shale outcrop', '#', (96, 96, 96), (64, 64, 64),
                                 'a sheer cliff of blackened stone', diggable=True, isWall=True),
     'wooden palisade': TileData(True, True, 'wooden palisade', '#', (94, 75, 47), (31, 24, 15),
                                 'a barrier crafted from dry wooden posts lashed together with rope',
@@ -159,6 +159,20 @@ data = {
                             'A tall, narrow tree.', isWall=True, diggable=False, flammable=5),
 
     ###############################################
+    #                  SLAGFIELDS
+    ###############################################
+
+    'lava': TileData(False,False,'lava',247,libtcod.orange,libtcod.dark_red,'Bubbling molten rock',
+                            consts.DEEP_WATER_COST, jumpable=False, dangerous=True),
+
+    'ash': TileData(False, False, 'mud', 247, libtcod.darkest_flame, libtcod.dark_gray,
+                             'A thick layer of ash that impedes movement - dodging attacks will be much more difficult here',
+                            consts.MUD_COST, isWater=False),
+
+    'rusted skeleton': TileData(False, False, 'rusted skeleton', 15, libtcod.desaturated_crimson, (31, 31, 31),
+                      'A rusted, partially metal skeleton with iron fangs', isFloor=True),
+
+    ###############################################
     #                     MISC
     ###############################################
 
@@ -172,8 +186,6 @@ data = {
     'mud': TileData(False, False, 'mud', 247, (94, 75, 47), (63, 50, 31),
                              'a thick puddle of mud that impedes movement - dodging attacks will be much more difficult here',
                             consts.MUD_COST, isWater=True),
-    'lava': TileData(False,False,'lava',247,libtcod.orange,libtcod.dark_red,'Bubbling molten rock',
-                            consts.DEEP_WATER_COST,jumpable=False, dangerous=True),
     'chasm': TileData(False, False, 'chasm', libtcod.CHAR_BLOCK1, (16, 16, 32), (0, 0, 16),
                              'a pit descending into darkness', isPit=True, dangerous=True),
     'scorched floor': TileData(False, False, 'scorched floor', '.', (94, 55, 55), (30, 30, 30),
