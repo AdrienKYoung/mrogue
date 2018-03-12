@@ -110,7 +110,8 @@ data = {
     'ability_jump': {
         'name': 'Jump',
         'targeting': 'self',
-        'function': lambda a,t,_: player.jump(a,2)
+        'function': lambda a,t,_: player.jump(a,2),
+        'intent': 'aggressive'
     },
 
     'ability_attack': {

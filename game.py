@@ -163,7 +163,7 @@ class GameObject:
                  player_stats=None, always_visible=False, interact=None, description="", on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
                  elevation=None, background_color=None, movement_type=0, summon_time = None, zones=[], is_corpse=False,
-                 zombie_type=None, npc=None, light=None):
+                 zombie_type=None, npc=None, light=None, stealth=None):
         self.x = x
         self.y = y
         self.char = char
@@ -222,6 +222,7 @@ class GameObject:
         if self.npc:
             self.npc.owner = self
         self.light = light
+        self.stealth = stealth
 
     @property
     def movement_type(self):
@@ -397,13 +398,11 @@ class GameObject:
 
                 # grab ammo
                 if self.fighter and self is player.instance:
-                    ammo_objs = get_objects(x, y, lambda o: hasattr(o, 'recoverable_ammo'))
-                    if hasattr(current_map.tiles[x][y], 'recoverable_ammo'):
-                        ammo_objs.append(current_map.tiles[x][y])
+                    ammo_objs = get_objects(x, y, lambda o: o.name == 'ammo')
                     for ammo_obj in ammo_objs:
                         ammo_obj.recoverable_ammo -= self.fighter.adjust_ammo(ammo_obj.recoverable_ammo, True)
                         if ammo_obj.recoverable_ammo == 0:
-                            del ammo_obj.recoverable_ammo
+                            ammo_obj.destroy()
 
                 if self.light is not None:
                     for _x in range(max(0, self.x - self.light.radius), min(consts.MAP_WIDTH, self.x + self.light.radius + 1)):
@@ -422,7 +421,11 @@ class GameObject:
             return False
 
     def player_can_see(self):
-        if self.fighter is not None and self.fighter.stealth is not None and player.instance.distance_to(self) >= self.fighter.stealth:
+        if self.fighter is not None:
+            s = self.fighter.stealth
+        else:
+            s = self.stealth
+        if s is not None and player.instance.distance_to(self) >= s:
             return False
         else:
             return fov.player_can_see(self.x, self.y)
@@ -437,7 +440,7 @@ class GameObject:
                     libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
                 else:
                     libtcod.console_put_char_ex(console, self.x, self.y, self.char, self.color, self.background_color)
-        elif self.always_visible and current_map.tiles[self.x][self.y].explored:
+        elif self.always_visible and current_map.tiles[self.x][self.y].explored and self.stealth is None:
             shaded_color = libtcod.Color(self.color[0], self.color[1], self.color[2])
             libtcod.color_scale_HSV(shaded_color, 0.1, 0.4)
             libtcod.console_set_default_foreground(console, shaded_color)
@@ -957,14 +960,12 @@ def monster_death(monster, context):
     if context.get('suppress_messages', False):
         ui.message('%s is dead!' % syntax.name(monster).capitalize(), libtcod.red)
 
+    # drop ammo
+    if hasattr(monster, 'recoverable_ammo'):
+        drop_ammo(monster.x, monster.y, monster.recoverable_ammo)
+        del monster.recoverable_ammo
+
     if monster.fighter.has_flag(monsters.NO_CORPSE):
-        # drop ammo
-        if hasattr(monster, 'recoverable_ammo'):
-            monster_tile = current_map.tiles[monster.x][monster.y]
-            if hasattr(monster_tile, 'recoverable_ammo'):
-                monster_tile.recoverable_ammo += monster.recoverable_ammo
-            else:
-                monster_tile.recoverable_ammo = monster.recoverable_ammo
         monster.destroy()
     elif monster.summon_time is not None:
         monster.destroy()
@@ -987,6 +988,16 @@ def monster_death(monster, context):
         changed_tiles.append((monster.x, monster.y))
         ui.selected_monster = None
         ui.auto_target_monster()
+
+
+def drop_ammo(x, y, amount):
+    ammo_obj = object_at_tile(x, y, 'ammo')
+    if ammo_obj is None:
+        ammo_obj = GameObject(x, y, '\\', 'ammo', libtcod.white, stealth=2)
+        ammo_obj.recoverable_ammo = amount
+        current_map.add_object(ammo_obj)
+    else:
+        ammo_obj.recoverable_ammo += amount
 
 
 def target_monster(max_range=None):
@@ -1243,7 +1254,6 @@ def spawn_monster(name, x, y, team='enemy'):
                     damage_bonus=p.get('attack_bonus', 0),
                     monster_str_dice=p.get('strength_dice'),
                     team=p.get('team', team),
-                    stealth=p.get('stealth'),
                     _range=p.get('range',1),
                     will=int(p.get('will', 5) * modifier.get('will_bonus',1)),
                     fortitude=int(p.get('fortitude', 5) * modifier.get('fortitude_bonus',1))
@@ -1267,7 +1277,7 @@ def spawn_monster(name, x, y, team='enemy'):
         monster = GameObject(x, y, p['char'], mod_tag + p['name'], p['color'], blocks=True, fighter=fighter_component,
                              behavior=behavior, description=p['description'], on_create=p.get('on_create'),
                              movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'),
-                             zombie_type=zombie_type)
+                             zombie_type=zombie_type, stealth=p.get('stealth'))
 
         monster.light = Light(libtcod.flame, 1, 2)
 
@@ -1370,7 +1380,6 @@ def spawn_npc(name, x, y, map_name):
                 damage_bonus=f.get('attack_bonus', 0),
                 monster_str_dice=f.get('strength_dice'),
                 team=f.get('team', 'neutral'),
-                stealth=f.get('stealth'),
                 _range=f.get('range', 1),
                 will=int(f.get('will', 10)),
                 fortitude=int(f.get('fortitude', 10))
@@ -1383,7 +1392,8 @@ def spawn_npc(name, x, y, map_name):
 
         result = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, interact=npc.start_conversation,
                              description=p['description'], on_create=p.get('on_create'), npc=npc_component,
-                             fighter=fighter, behavior=behavior, movement_type=movement_type, on_tick=p.get('on_tick'))
+                             fighter=fighter, behavior=behavior, movement_type=movement_type, on_tick=p.get('on_tick'),
+                             stealth=p.get(stealth))
         result.syntax_data = {
             'proper': p.get('proper_noun', True),
             'gender': p.get('gender', 'neutral')
@@ -1537,6 +1547,7 @@ def create_item(name, material=None, quality=''):
 
     go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))
+
     if ability is not None:
         go.item.ability = ability
     if hasattr(equipment_component, 'material') and equipment_component.material != '':
@@ -1946,8 +1957,8 @@ def fall_in_pit(object):
         return
     pit_ticker = Ticker(5, _pit_ticker)
     pit_ticker.obj = object
-    pit_ticker.old_stealth = object.fighter.stealth
-    object.fighter.stealth = -1
+    pit_ticker.old_stealth = object.stealth
+    object.stealth = -1
     object.fighter.apply_status_effect(effects.stunned(duration=5))
     current_map.tickers.append(pit_ticker)
 
@@ -1962,7 +1973,7 @@ def _pit_ticker(ticker):
             destination = find_closest_open_tile(tile[0], tile[1])
         else:
             destination = find_closest_open_tile(ticker.obj.x, ticker.obj.y)
-        ticker.obj.fighter.stealth = ticker.old_stealth
+        ticker.obj.stealth = ticker.old_stealth
         ticker.obj.set_position(destination[0], destination[1])
 
 def clear_map():

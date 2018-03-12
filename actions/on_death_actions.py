@@ -93,6 +93,9 @@ def bomb_beetle_death(beetle, context):
     beetle.description = 'The explosive carapace of a blast beetle. In a few turns, it will explode!'
     beetle.bomb_timer = 3
     beetle.on_tick = bomb_beetle_corpse_tick
+    if hasattr(beetle, 'recoverable_ammo'):
+        main.drop_ammo(beetle.x, beetle.y, beetle.recoverable_ammo)
+        del beetle.recoverable_ammo
     main.current_map.fighters.remove(beetle)
 
     if ui.selected_monster is beetle:

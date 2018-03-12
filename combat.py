@@ -32,8 +32,8 @@ class Fighter:
     def __init__(self, hp=1, stamina=0, armor=0, evasion=0, accuracy=25, spell_power=0, death_function=None, breath=6,
                  can_breath_underwater=False, resistances={}, inventory=[], on_hit=None, base_shred=0,
                  base_guaranteed_shred=0, base_pierce=0, abilities=[], hit_table=None, monster_flags =0, subtype=None,
-                 damage_bonus=0, monster_str_dice=None, team='enemy', on_get_hit=None, stealth=None,
-                 attributes=[], _range=1, on_get_kill=None, will=0, fortitude=0, ammunition=0):
+                 damage_bonus=0, monster_str_dice=None, team='enemy', on_get_hit=None, attributes=[], _range=1,
+                 on_get_kill=None, will=0, fortitude=0, ammunition=0):
         self.owner = None
         self.base_max_hp = hp
         self.hp = hp
@@ -63,7 +63,6 @@ class Fighter:
         self.subtype = subtype
         self.team = team
         self.on_get_hit = on_get_hit
-        self._stealth = stealth
         self.range = _range
         self.on_get_kill = on_get_kill
         self.base_will = will
@@ -531,13 +530,13 @@ class Fighter:
         bonus = None
         if equipment is not None and len(equipment) > 0:
             bonus = min(equipment)
-        if self._stealth is None:
+        if self.owner.stealth is None:
             return bonus
         else:
             if bonus is None:
-                return self._stealth
+                return self.owner.stealth
             else:
-                return min(self._stealth, bonus)
+                return min(self.owner.stealth, bonus)
 
     @property
     def max_ammo(self):

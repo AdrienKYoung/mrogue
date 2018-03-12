@@ -72,13 +72,14 @@ def ranged_attack(actor, target, context):
             return 'didnt-take-turn'
 
         if result == 'miss' or target.fighter is None:
-            ammo_obj = main.current_map.tiles[target.x][target.y]
+            # ammo lands on the ground
+            main.drop_ammo(target.x, target.y, -spent)
         else:
-            ammo_obj = target
-        if hasattr(ammo_obj, 'recoverable_ammo'):
-            ammo_obj.recoverable_ammo += -spent
-        else:
-            ammo_obj.recoverable_ammo = -spent
+            # target was hit, ammo sticks in them
+            if hasattr(target, 'recoverable_ammo'):
+                target.recoverable_ammo += -spent
+            else:
+                target.recoverable_ammo = -spent
 
     else:
         return 'didnt-take-turn'
