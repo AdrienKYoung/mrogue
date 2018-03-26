@@ -405,12 +405,14 @@ branches = {
     },
     'slagfields': {
         'name'          :"the slagfields",
-        'default_wall'  : 'sea cliff',
-        'default_floor' : 'sand',
+        'default_wall'  : 'dark shale wall',
+        'default_floor' : 'shale',
         'default_ramp'  : 'shale slope',
         'scaling'       : 0,
         'loot'          : None,
-        'monsters'      : None,
+        'monsters':[
+            {'min_depth':0, 'max_depth': None, 'encounter':['monster_roiling_fury']},
+        ],
         'generate'      : mapgen.make_map_slag_fields,
         'map_color'     : libtcod.darker_gray,
         'enabled'       : True

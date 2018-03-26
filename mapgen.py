@@ -2072,6 +2072,8 @@ def make_map_slag_fields():
 
     create_slopes()
 
+    make_basic_map_links()
+
 def make_map_marsh():
 
     rooms = []

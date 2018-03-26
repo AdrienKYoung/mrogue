@@ -19,6 +19,7 @@ import libtcodpy as libtcod
 import player
 import syntax
 import ui
+import random
 
 def invoke_ability(ability_key, actor, target_override=None, spell_context=None):
     import abilities
@@ -119,7 +120,7 @@ def _get_ability_target(actor, info, target_override):
                 target = ui.target_tile(range, targeting, default_target=default_target)
 
         else:
-            if target_override is not None and \
+            if target_override is not None and targeting != 'self' and \
                             main.distance(actor.x, actor.y, target_override[0], target_override[1]) > range:
                 target = None
                 return target  # out of range
@@ -139,6 +140,7 @@ def _get_ability_target(actor, info, target_override):
             elif targeting == 'self':
                 target = actor.x, actor.y
 
+        #Targeting failed
         if isinstance(target, tuple) and target[0] is None:
             target = None
         if target is None:
@@ -173,6 +175,12 @@ def _get_ability_target(actor, info, target_override):
                         if fighter.x == pos[0] and fighter.y == pos[1]:
                             target = fighter
                             break
+
+        #randomly select only some of the targets
+        if info.get('random_select') is not None and not isinstance(target, tuple):
+            mode = info.get('random_select')
+            target = [ target[i] for i in random.sample(xrange(len(target)), mode) ]
+
     return target
 
 def _spawn_warning(actor,tiles):

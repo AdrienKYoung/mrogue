@@ -298,3 +298,13 @@ def wild_growth_tick(effect, object):
     if object is not None and object.fighter is not None:
         spell = abilities.data['ability_wild_growth']
         object.fighter.take_damage(main.roll_dice(spell['damage_per_tick'], normalize_size=4))
+
+def lightning_storm(actor, target, context):
+    for tile in target:
+        obj = main.get_monster_at_tile(tile[0], tile[1])
+        ui.render_explosion(tile[0], tile[1], 0, libtcod.light_green, libtcod.lightest_blue, chr(251))
+        if obj is not None and obj is not actor:
+            if fov.player_can_see(target.x, target.y) or actor is player.instance:
+                ui.message('%s is struck by a bolt of lightning!' %
+                           syntax.name(obj).capitalize(), libtcod.lightest_blue)
+            combat.attack_magical(actor.fighter, obj, 'ability_lightning_storm')

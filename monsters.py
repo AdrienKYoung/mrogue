@@ -1338,6 +1338,34 @@ proto = {
         'flags': NO_CORPSE,
         'range':2
     },
+
+    'monster_roiling_fury': {
+        'name': 'roiling fury',
+        'char': 'f',
+        'color': libtcod.gray,
+        'hp': 20,
+        'strength_dice' : '1d12',
+        'attack_bonus' : 0,
+        'armor': 0,
+        'evasion': 18,
+        'will': 20,
+        'fortitude': 6,
+        'accuracy': 22,
+        'move_speed': 1.0,
+        'attack_speed': 1.0,
+        'ai': ai.AI_Default,
+        'body_type': None,
+        'description': 'The essence of fury from stripped from something that once lived. Manifests itself as a heat'
+                       'shimmer. Attacks with lightning.',
+        'attributes': ['ability_lightning_storm'],
+        'spell_power' : 20,
+        'shred': 3,
+        'stealth':2,
+        'range': 2,
+        'flags' : NO_CORPSE | NO_BREATH,
+        'subtype':'elemental',
+        'movement_type' : pathfinding.FLYING
+    },
 }
 
 modifiers = {

@@ -1064,7 +1064,28 @@ data = {
         'range': 7,
         'function': common.boomerang,
         'intent': 'aggressive'
-    }
+    },
+
+    'ability_lightning_storm': {
+        'name': 'Lightning Storm',
+        'function' : monster_actions.lightning_storm,
+        'element' : ['lightning'],
+        'cooldown' : 1,
+        #'cast_time': 0,
+
+        'targeting': 'self',
+        'random_select': 7,
+        'hits_friendlies' : True,
+        'target_ground': True,
+        'burst': 3,
+        'intent': 'aggressive',
+        #'warning': True,
+
+        'defense_types': [],
+        'base_damage': '4d4',
+        'dice': 2,
+        'shred': 3
+    },
 }
 
 default_abilities = {
