@@ -1366,6 +1366,62 @@ proto = {
         'subtype':'elemental',
         'movement_type' : pathfinding.FLYING
     },
+    'monster_gixian_ravager': {
+        'name': 'Gixian Ravager',
+        'char': 'G',
+        'color': libtcod.dark_magenta,
+        'hp': 100,
+        'strength_dice' : '1d30',
+        'attack_bonus' : 0,
+        'armor': 4,
+        'evasion': 10,
+        'will': 8,
+        'fortitude': 16,
+        'accuracy': 20,
+        'move_speed': 1.0,
+        'attack_speed': 1.2,
+        'ai': ai.AI_Default,
+        'description': 'A undead mass of melted iron. ',
+        'resistances': {'fire' : 2, 'burning': 2},
+        'shred': 1,
+        'flags' : EVIL,
+        'subtype' : 'humanoid',
+        'death_function' : {
+            'function': 'on_death_summon',
+            'monster': 'monster_shambling_iron',
+            'duration': None,
+            'message': '',
+        },
+    },
+    'monster_shambling_iron': {
+        'name': 'Shambling Iron',
+        'char': 'i',
+        'color': libtcod.gray,
+        'hp': 50,
+        'strength_dice' : '1d45',
+        'attack_bonus' : 0,
+        'armor': 9,
+        'evasion': 10,
+        'will': 2,
+        'fortitude': 22,
+        'accuracy': 14,
+        'move_speed': 0.7,
+        'attack_speed': 0.5,
+        'ai': ai.AI_Default,
+        'description': '',
+        'resistances': {'fire' : 2, 'burning': 2},
+        'shred': 1,
+        'flags' : EVIL,
+        'subtype' : 'undead',
+        'death_function' : {
+            'function': 'on_death_summon',
+            'monster': 'monster_blight',
+            'duration': None,
+            'message': '',
+        },
+    }
+
+
 }
 
 modifiers = {

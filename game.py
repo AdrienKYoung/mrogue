@@ -1420,12 +1420,12 @@ def spawn_npc(name, x, y, map_name):
     return None
 
 
-def create_ability(name):
+def create_ability(name, range_override):
     from actions import abilities
     if name in abilities.data:
         a = abilities.data[name]
         return abilities.Ability(name, a.get('name'), a.get('description'), a.get('cooldown'),
-                                 intent=a.get('intent', 'aggressive'))
+                                 intent=a.get('intent', 'aggressive'), range = range_override)
     else:
         return None
 
@@ -1469,7 +1469,7 @@ def create_item(name, material=None, quality=''):
 
     ability = None
     if p.get('ability') is not None and p.get('ability') in abilities.data:
-        ability = create_ability(p.get('ability'))
+        ability = create_ability(p.get('ability'), p.get('range'))
     item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], ability=ability, charges=p.get('charges'))
     equipment_component = None
     if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book' or p['category'] == 'accessory' or p['category'] == 'quiver':

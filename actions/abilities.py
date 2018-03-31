@@ -30,7 +30,7 @@ import common
 import actions
 
 class Ability:
-    def __init__(self, ability_id, name, description, cooldown=0, stamina_cost=0, intent='aggressive'):
+    def __init__(self, ability_id, name, description, cooldown=0, stamina_cost=0, intent='aggressive', range = None):
         self.ability_id = ability_id
         self.name = name
         self.description = description
@@ -38,12 +38,16 @@ class Ability:
         self.current_cd = 0
         self.stamina_cost = stamina_cost
         self.intent = intent
+        self.range = range
 
     def use(self, actor=None, target=None):
         if self.current_cd < 1:
             info = data[self.ability_id]
             result = actions.invoke_ability(self.ability_id, actor, target,
-                                            spell_context={'stamina_cost': self.stamina_cost})
+                                            spell_context={
+                                                'stamina_cost': self.stamina_cost,
+                                                'range': self.range
+                                            })
             if result != 'didnt-take-turn' and result != 'cancelled':
                 self.current_cd = self.cooldown
                 if self.stamina_cost != 0 and actor is player.instance:

@@ -34,6 +34,7 @@ def invoke_ability(ability_key, actor, target_override=None, spell_context=None)
 
     if spell_context is not None:
         for key in spell_context.keys():
+            if spell_context[key] is not None:
                 info[key] = spell_context[key]
         #info = dict(info.items() + spell_context.items())
 
