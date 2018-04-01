@@ -82,7 +82,8 @@ data = {
         'cooldown': 0,
         'intent': 'aggressive',
         'targeting': 'beam_interrupt',
-        'range': 1
+        'range': 1,
+        'target_ground': True
     },
 
     'ability_raise_shield': {
@@ -1074,8 +1075,8 @@ data = {
         'name': 'Lightning Storm',
         'function' : monster_actions.lightning_storm,
         'element' : ['lightning'],
-        'cooldown' : 1,
-        #'cast_time': 0,
+        'cooldown' : 2,
+        'cast_time': 0,
 
         'targeting': 'self',
         'random_select': 7,
@@ -1083,12 +1084,37 @@ data = {
         'target_ground': True,
         'burst': 3,
         'intent': 'aggressive',
-        #'warning': True,
+        'warning': True,
+        'suppress_cast_notif': True,
 
         'defense_types': [],
         'base_damage': '4d4',
         'dice': 2,
         'shred': 3
+    },
+
+    'ability_lava_bile': {
+        'name': 'Lava Bile',
+        'function' : monster_actions.lava_bile,
+        'cooldown' : 2,
+        'cast_time': 0,
+        'targeting': 'pick',
+        'target_ground': True,
+        'warning': True,
+        'range': 1.3,
+        'duration': 99,
+        'intent': 'aggressive',
+        'suppress_cast_notif': False #True
+    },
+
+    'ability_thermal_instability':{
+        'name'      : 'Thermal Instability',
+        'function'  : monster_actions.thermal_instability,
+        'cooldown'  : 5,
+        'targeting' : 'self',
+        'intent'    : 'aggressive',
+        'buff_duration' : 10,
+        'target_function': ai.target_self_no_buff_refresh_meta('unstable')
     },
 }
 

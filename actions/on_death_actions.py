@@ -26,9 +26,14 @@ import common
 
 def on_death_summon(obj,context):
     ui.message('%s is dead!' % syntax.name(obj).capitalize(), libtcod.red)
-    main.current_map.fighters.remove(obj)
     obj.fighter = None
+    main.current_map.fighters.remove(obj)
     obj.destroy()
+
+    if context.get('require_tile') is not None:
+        tile_at_location = main.current_map.tiles[obj.x][obj.y]
+        if context['require_tile'] != tile_at_location.tile_type:
+            return
 
     if 'message' in context.keys():
         ui.message(context['message'])

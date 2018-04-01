@@ -238,6 +238,10 @@ def abated(effect, duration=30):
     return StatusEffect('{} abated'.format(effect.name), time_limit=duration, cleanseable=False,
                         color=libtcod.yellow, description='Your {} has abated for now'.format(effect.name), aftereffect=effect)
 
+def unstable(duration=1):
+    return StatusEffect('unstable', time_limit=duration, color=libtcod.flame, message="You feel like you might explode!",
+                        description="Attacking this unit will cause a large explosion!")
+
 #TODO - Move these to actions
 def burn_apply(effect, object=None):
     if object is not None and object.fighter is not None and object.fighter.has_status('frozen'):

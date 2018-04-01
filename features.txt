@@ -94,5 +94,6 @@ IMPORT features/features-badlands.txt
 IMPORT features/features-gtunnels.txt
 IMPORT features/features-forest.txt
 IMPORT features/features-garden.txt
+IMPORT features/features-slagfields.txt
 IMPORT features/branch-gates.txt
 IMPORT features/premades.txt

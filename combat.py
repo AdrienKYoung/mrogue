@@ -166,7 +166,7 @@ class Fighter:
                     self.owner.is_corpse = True
                     death_context = dict(self.death_function)
                     if suppress_death_messages:
-                        death_context['suppress_messags'] = True
+                        death_context['suppress_messages'] = True
                     function = on_death_actions.table[death_context['function']]
                     if function is not None:
                         if sh is not None:
@@ -178,6 +178,12 @@ class Fighter:
                         attacker.fighter.on_get_kill(attacker,self,damage)
                 if affect_shred:
                     self.time_since_last_damaged = 0
+                if self.has_status('unstable'):
+                    ui.render_explosion(self.owner.x, self.owner.y, 2, libtcod.yellow, libtcod.flame)
+                    for tile in main.get_tiles_in_circular_burst(self.owner.x, self.owner.y, 2):
+                        if(main.roll_dice('1d10') > 3):
+                            main.create_fire(tile[0], tile[1], 10)
+                    self.remove_status('unstable')
         return damage
 
     def get_shredded(self, amount):

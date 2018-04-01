@@ -304,7 +304,14 @@ def lightning_storm(actor, target, context):
         obj = main.get_monster_at_tile(tile[0], tile[1])
         ui.render_explosion(tile[0], tile[1], 0, libtcod.light_green, libtcod.lightest_blue, chr(251))
         if obj is not None and obj is not actor:
-            if fov.player_can_see(target.x, target.y) or actor is player.instance:
+            if fov.player_can_see(tile[0], tile[1]) or actor is player.instance:
                 ui.message('%s is struck by a bolt of lightning!' %
                            syntax.name(obj).capitalize(), libtcod.lightest_blue)
             combat.attack_magical(actor.fighter, obj, 'ability_lightning_storm')
+
+def lava_bile(actor, target, context):
+    main.create_temp_terrain('lava', [target], context['duration'])
+
+def thermal_instability(actor, target, context):
+    ui.render_explosion(actor.x, actor.y, 0, libtcod.yellow, libtcod.dark_flame, chr(19))
+    actor.fighter.apply_status_effect(effects.unstable(context['buff_duration']))

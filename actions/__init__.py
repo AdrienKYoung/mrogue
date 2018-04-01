@@ -50,16 +50,19 @@ def invoke_ability(ability_key, actor, target_override=None, spell_context=None)
             return 'didnt-take-turn'
 
     if 'cast_time' in info.keys():
+        pretargeted = False
+        if info.get('warning', False):
+            targets = _get_ability_target(actor, info, target_override)
+            if targets is None:
+                return 'didnt-take-turn'
+            info['warning_particles'] = _spawn_warning(actor, targets)
+            pretargeted = targets
+
         if 'pre_cast' in info.keys():
             info['pre_cast'](actor, target_override)
-        else:
+        elif not info.get('suppress_cast_notif', False):
             ui.message_flush(
                 syntax.conjugate(actor is player.instance, ['You begin', actor.name.capitalize() + ' begins']) + ' to cast ' + info['name'])
-        pretargeted=False
-        if info.get('warning',False):
-            targets = _get_ability_target(actor,info,target_override)
-            info['warning_particles'] = _spawn_warning(actor,targets)
-            pretargeted = targets
         delegate = lambda: _invoke_ability_continuation(info, actor, target_override, function, pretargeted=pretargeted)
         if actor is player.instance:
             player.delay(info['cast_time'], delegate, 'channel-spell')
@@ -186,6 +189,8 @@ def _get_ability_target(actor, info, target_override):
 
 def _spawn_warning(actor,tiles):
     warning_particles = []
+    if isinstance(tiles, tuple):
+        tiles = [tiles]
     for tile in tiles:
         go = main.GameObject(tile[0], tile[1], 'X', 'Warning', libtcod.red,
                              description="Spell Warning. Source: {}".format(actor.name.capitalize()))

@@ -411,8 +411,14 @@ branches = {
         'scaling'       : 0,
         'loot'          : None,
         'monsters':[
-            {'min_depth':0, 'max_depth': None, 'encounter':['monster_roiling_fury']},
+            {'min_depth':0, 'max_depth': None, 'encounter':['monster_gixian_ravager']},
+            {'min_depth':0, 'max_depth': 3, 'encounter':['monster_roiling_fury']},
+            {'min_depth':0, 'max_depth': None, 'encounter':['monster_living_furnace']},
+            {'min_depth':2, 'max_depth': None, 'encounter':['monster_gixian_archon']},
         ],
+        'encounter_dice': '1d4+4',
+        'loot_dice'     : '0d0',
+        'xp_amount'     : 4,
         'generate'      : mapgen.make_map_slag_fields,
         'map_color'     : libtcod.darker_gray,
         'enabled'       : True

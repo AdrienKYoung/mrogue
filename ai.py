@@ -89,6 +89,19 @@ def target_open_space_near_target(actor):
     target = actor.behavior.behavior.target
     return game.find_closest_open_tile(target.x, target.y)
 
+def target_self_no_buff_refresh_meta(status):
+    return lambda a: _target_self_no_buff_refresh(a, status)
+
+def _target_self_no_buff_refresh(actor, status):
+    if actor is None or \
+            actor.behavior is None or \
+            actor.behavior.behavior is None or \
+            actor.behavior.behavior.target is None or \
+            actor.fighter is None or\
+            actor.fighter.has_status(status):
+        return None
+    return actor
+
 def aggro_on_hit(monster, attacker):
     if attacker is None:
         return

@@ -80,7 +80,7 @@ def reach_and_cleave_attack(actor, target, context):
         actor = player.instance
     if actor is player.instance:
         return player.reach_and_cleave_attack(0, 0)
-    targets = main.get_fighters_in_burst(target[0], target[1], 1, condition=lambda o: o.fighter.team != actor.fighter.team)
+    targets = main.get_fighters_in_burst(target[0], target[1], 1, condition=lambda o: o.fighter.team != actor.fighter.team, fov_source=actor)
     for t in targets:
         actor.fighter.attack(t)
     return 'success'

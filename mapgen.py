@@ -2072,7 +2072,27 @@ def make_map_slag_fields():
 
     create_slopes()
 
+    open_tiles = []
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            tile = map.tiles[x][y]
+            if not tile.blocks and not tile.is_dangerous:
+                open_tiles.append((x, y))
+
+    feature_count = libtcod.random_get_int(0, 5, 10)
+    for i in range(feature_count):
+        tile = choose_random_tile(open_tiles)
+        feature_index = libtcod.random_get_int(0, 0, len(feature_categories['slagfields']) - 1)
+        feature_name = feature_categories['slagfields'][feature_index].name
+        create_feature(tile[0], tile[1], feature_name, open_tiles)
+
     make_basic_map_links()
+
+    active_branch = dungeon.branches[map.branch]
+    main.place_objects(open_tiles,
+                       main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
+                       main.roll_dice(active_branch['loot_dice']),
+                       active_branch['xp_amount'])
 
 def make_map_marsh():
 

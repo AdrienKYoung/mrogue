@@ -1028,6 +1028,10 @@ def get_tiles_in_burst(x, y, radius):
             tiles.append((_x,_y))
     return tiles
 
+def get_tiles_in_circular_burst(x, y, radius):
+    return [ tile for tile in get_tiles_in_burst(x,y,radius) \
+             if distance(tile[0], tile[1], x, y) ]
+
 def opposite_team(team):
     if team == 'ally':
         return 'enemy'
@@ -1420,7 +1424,7 @@ def spawn_npc(name, x, y, map_name):
     return None
 
 
-def create_ability(name, range_override):
+def create_ability(name, range_override = None):
     from actions import abilities
     if name in abilities.data:
         a = abilities.data[name]

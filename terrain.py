@@ -165,12 +165,17 @@ data = {
     'lava': TileData(False,False,'lava',247,libtcod.orange,libtcod.dark_red,'Bubbling molten rock',
                             consts.DEEP_WATER_COST, jumpable=False, dangerous=True),
 
-    'ash': TileData(False, False, 'mud', 247, libtcod.darkest_flame, libtcod.dark_gray,
+    'ash': TileData(False, False, 'ash', 247, libtcod.darkest_flame, libtcod.dark_gray,
                              'A thick layer of ash that impedes movement - dodging attacks will be much more difficult here',
                             consts.MUD_COST, isWater=False),
 
-    'rusted skeleton': TileData(False, False, 'rusted skeleton', 15, libtcod.desaturated_crimson, (31, 31, 31),
+    'rusted skeleton': TileData(True, False, 'rusted skeleton', 15, libtcod.desaturated_crimson, (31, 31, 31),
                       'A rusted, partially metal skeleton with iron fangs', isFloor=True),
+
+    'weathered stone wall': TileData(True, True, 'weathered stone wall', '#', libtcod.darker_gray, libtcod.darkest_gray,
+                             'A weathered stone wall', diggable=True, isWall=True),
+    'weathered stone floor': TileData(False, False, 'weathered stone floor', '.', libtcod.gray, libtcod.darkest_gray,
+                             'A weathered stone wall'),
 
     ###############################################
     #                     MISC
