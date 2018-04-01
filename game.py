@@ -1397,7 +1397,7 @@ def spawn_npc(name, x, y, map_name):
         result = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, interact=npc.start_conversation,
                              description=p['description'], on_create=p.get('on_create'), npc=npc_component,
                              fighter=fighter, behavior=behavior, movement_type=movement_type, on_tick=p.get('on_tick'),
-                             stealth=p.get(stealth))
+                             stealth=p.get('stealth'))
         result.syntax_data = {
             'proper': p.get('proper_noun', True),
             'gender': p.get('gender', 'neutral')
