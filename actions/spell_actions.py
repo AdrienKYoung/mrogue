@@ -34,7 +34,7 @@ def heat_ray(actor, target, context):
     for obj in main.current_map.fighters:
         for l in target:
             if obj.x == l[0] and obj.y == l[1]:
-                combat.spell_attack(actor.fighter, obj,'ability_heat_ray')
+                combat.attack_magical(actor.fighter, obj, 'ability_heat_ray')
 
     main.melt_ice(end[0], end[1])
 
@@ -49,7 +49,7 @@ def fireball(actor, target, context):
     ui.message('The fireball explodes!', libtcod.flame)
     ui.render_explosion(x, y, 1, libtcod.yellow, libtcod.flame)
     for obj in target:
-        combat.spell_attack(actor.fighter, obj, 'ability_fireball')
+        combat.attack_magical(actor.fighter, obj, 'ability_fireball')
         if obj.fighter is not None:
             obj.fighter.apply_status_effect(effects.burning())
 
@@ -94,7 +94,7 @@ def shatter_item(actor, target, context):
     elif target.item is not None:
         item = target
 
-    if main.roll_dice('1d20') + main.roll_dice('1d{}'.format(actor.fighter.spell_power)) > dc:
+    if main.roll_dice('1d20') + main.roll_dice('1d{}'.format(actor.fighter.spell_power())) > dc:
         ui.render_explosion(x, y, 1, libtcod.yellow, libtcod.flame)
         ui.message("The {} shatters into pieces!".format(item.name), libtcod.flame)
         if inventory is not None:
@@ -105,7 +105,16 @@ def shatter_item(actor, target, context):
             damage_factor = item.equipment.weight
         for obj in main.current_map.fighters:
             if obj.distance(x, y) <= context['burst']:
-                combat.spell_attack_ex(actor.fighter, obj, None, '2d{}'.format(damage_factor), context['dice'], ['slashing'], 0)
+                combat.attack_magical_ex(actor, obj,
+                                         base_damage_dice='2d{}'.format(damage_factor),
+                                         spell_dice_number=context['dice'],
+                                         spell_elements=context['element'],
+                                         pierce=context['pierce'],
+                                         shred=context['shred'],
+                                         defense_types=context['defense_types'],
+                                         damage_types=context['damage_types'],
+                                         blockable=context['blockable'],
+                                         attack_name=context['name'])
         return 'success'
     else:
         ui.message("Shatter failed to break the {}!".format(item.name), libtcod.yellow)
@@ -116,11 +125,11 @@ def magma_bolt(actor, target, context):
         main.create_temp_terrain('lava', [tile], main.roll_dice(context['lava_duration']))
         for fighter in main.current_map.fighters:
             if fighter.x == tile[0] and fighter.y == tile[1]:
-                combat.spell_attack(actor.fighter, fighter, 'ability_magma_bolt')
+                combat.attack_magical(actor.fighter, fighter, 'ability_magma_bolt')
 
 def frozen_orb(actor, target, context):
-    if combat.spell_attack(actor.fighter, target,'ability_frozen_orb') == 'hit' and target.fighter is not None:
-        target.fighter.apply_status_effect(effects.slowed(),context['save_dc'] + actor.fighter.spell_power)
+    if combat.attack_magical(actor.fighter, target, 'ability_frozen_orb') == 'hit' and target.fighter is not None:
+        target.fighter.apply_status_effect(effects.slowed(),context['save_dc'] + actor.fighter.spell_power(elements=['cold']))
 
 def flash_frost(actor, target, context):
     target.fighter.apply_status_effect(effects.frozen(5))
@@ -132,7 +141,7 @@ def flash_frost(actor, target, context):
 
 def ice_shards(actor, target, context):
     ui.message('Razor shards of ice blast out!',libtcod.white)
-    dc = context['save_dc'] + actor.fighter.spell_power
+    dc = context['save_dc'] + actor.fighter.spell_power(elements=['cold'])
 
     for tile in target:
         reed = main.object_at_tile(tile[0], tile[1], 'reeds')
@@ -140,7 +149,7 @@ def ice_shards(actor, target, context):
             reed.destroy()
         for obj in main.current_map.fighters:
             if obj.x == tile[0] and obj.y == tile[1]:
-                combat.spell_attack(actor.fighter, obj, 'ability_ice_shards')
+                combat.attack_magical(actor.fighter, obj, 'ability_ice_shards')
                 if obj.fighter is not None:
                     obj.fighter.apply_status_effect(effects.slowed(), dc=dc, source_fighter=actor)
                     obj.fighter.apply_status_effect(effects.bleeding(), dc=dc, source_fighter=actor)
@@ -155,10 +164,10 @@ def snowstorm(actor, target, context):
 
 def snowstorm_tick(actor,target,context):
     caster = context['caster']
-    dc = context['save_dc'] + caster.fighter.spell_power
+    dc = context['save_dc'] + caster.fighter.spell_power(elements=['radiance'])
     for t in target:
         if main.roll_dice('1d10') > 7:
-            combat.spell_attack(caster.fighter,t,'ability_snowstorm')
+            combat.attack_magical(caster.fighter, t, 'ability_snowstorm')
             if t.fighter is not None:
                 t.fighter.apply_status_effect(effects.slowed(), dc, caster)
                 t.fighter.apply_status_effect(effects.blinded(), dc, caster)
@@ -169,7 +178,7 @@ def avalanche(actor, target, context):
     for l in target:
         for obj in main.current_map.fighters:
             if obj.x == l[0] and obj.y == l[1]:
-                combat.spell_attack(actor.fighter, obj, 'ability_avalanche')
+                combat.attack_magical(actor.fighter, obj, 'ability_avalanche')
                 if obj.fighter is not None:
                     obj.fighter.apply_status_effect(effects.immobilized(), context['save_dc'], actor)
         if libtcod.random_get_int(0, 0, 3) > 0:
@@ -182,7 +191,7 @@ def avalanche(actor, target, context):
                 main.changed_tiles.append(l)
 
 def hex(actor,target, context):
-    target.fighter.apply_status_effect(effects.cursed(),context['save_dc'] + actor.fighter.spell_power,actor)
+    target.fighter.apply_status_effect(effects.cursed(),context['save_dc'] + actor.fighter.spell_power(elements=['death']),actor)
 
 def defile(actor, target, context):
     objects = main.get_objects(target[0], target[1],
@@ -205,21 +214,28 @@ def defile(actor, target, context):
         target.fighter.heal(int(target.fighter.max_hp / 3))
         ui.message("Dark magic strengthens {}!".format(target.name))
     else:
-        combat.spell_attack(actor.fighter, target, 'ability_defile')
+        combat.attack_magical(actor.fighter, target, 'ability_defile')
 
 def shackles_of_the_dead(actor,target, context):
     for t in target:
         t.fighter.apply_status_effect(
-            effects.immobilized(duration=context['duration'] + (actor.fighter.spell_power / 5)),
-            context['save_dc'] + actor.fighter.spell_power, actor)
+            effects.immobilized(duration=context['duration'] + (actor.fighter.spell_power(elements=['death']) / 5)),
+            context['save_dc'] + actor.fighter.spell_power(elements=['death']), actor)
 
 def sacrifice(actor, target, context):
     actor.fighter.take_damage(min(30,int(actor.fighter.hp / 2)), attacker=actor)
     damage_mod = float(actor.fighter.max_hp - actor.fighter.hp )/ float(actor.fighter.max_hp)
     ui.render_explosion(actor.x, actor.y, 1, libtcod.violet, libtcod.darkest_violet)
     for f in target:
-        combat.spell_attack_ex(actor.fighter, f, None, context['base_damage'], context['dice'], ['death'],
-                               context['pierce'], 0, damage_mod=1 + damage_mod, defense_type='will')
+        combat.attack_magical_ex(actor, f,
+                                 accuracy=None,
+                                 base_damage_dice=context['base_damage'],
+                                 spell_dice_number=context['dice'],
+                                 spell_elements=context['elements'],
+                                 damage_mod=1 + damage_mod,
+                                 defense_types=context['defense_types'],
+                                 damage_types=context.get('damage_types', context['elements']),
+                                 attack_name=context['name'])
 
 def corpse_dance(actor, target, context):
     x, y = target
@@ -238,8 +254,8 @@ def bless(actor, target, context):
 
 def smite(actor, target, context):
     import monsters
-    dc = context['save_dc'] + actor.fighter.spell_power
-    combat.spell_attack(actor.fighter, target,'ability_smite')
+    dc = context['save_dc'] + actor.fighter.spell_power(elements=['radiance'])
+    combat.attack_magical(actor.fighter, target, 'ability_smite')
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.judgement(main.roll_dice('2d8')), dc, actor)
         if target.fighter.has_flag(monsters.EVIL):
@@ -249,7 +265,7 @@ def smite(actor, target, context):
 def castigate(actor, target, context):
     origin = context['origin']
     ui.render_explosion(origin[0], origin[1], 1, libtcod.violet, libtcod.light_yellow)
-    dc = context['save_dc'] + actor.fighter.spell_power
+    dc = context['save_dc'] + actor.fighter.spell_power(elements=['radiance'])
     for f in target:
         f.fighter.apply_status_effect(effects.judgement(stacks=main.roll_dice('3d8')), dc, actor)
 
@@ -274,7 +290,7 @@ def holy_lance(actor, target, context):
     main.current_map.add_object(lance)
 
     for obj in main.get_fighters_in_burst(x,y,context['burst'],lance,actor.fighter.team):
-            combat.spell_attack(actor.fighter, obj, 'ability_holy_lance')
+            combat.attack_magical(actor.fighter, obj, 'ability_holy_lance')
     return 'success'
 
 
@@ -282,7 +298,7 @@ def holy_lance_tick(actor, target, context):
     caster = context['caster']
     ui.render_explosion(actor.x, actor.y, context['burst'], libtcod.violet, libtcod.light_yellow)
     for f in target:
-        combat.spell_attack(caster.fighter, f, 'ability_holy_lance_tick')
+        combat.attack_magical(caster.fighter, f, 'ability_holy_lance_tick')
 
 
 def green_touch(actor, target, context):
@@ -303,7 +319,7 @@ def green_touch(actor, target, context):
                                elevation=main.current_map.tiles[tile[0]][tile[1]].elevation)
     return 'success'
 
-def fungal_growth(actor=None, target=None):
+def fungal_growth(actor, target, context):
     x,y = target
     corpse = main.get_objects(x, y, lambda o: o.is_corpse)
     if len(corpse) == 0:
@@ -355,6 +371,7 @@ def bramble(actor, target, context):
         _bramble = main.GameObject(tile[0], tile[1], 'x', 'bramble', libtcod.dark_lime, on_step=bramble_on_step,
                                    summon_time=context['duration_base'] + main.roll_dice(context['duration_variance']))
         _bramble.summoner = actor
+        _bramble.spell_power = actor.fighter.spell_power(['life'])
         main.current_map.add_object(_bramble)
     return 'success'
 
@@ -363,14 +380,15 @@ def bramble_on_step(_bramble, obj):
         return
     elif obj.fighter is not None:
         spell = abilities.data['ability_bramble']
-        obj.fighter.take_damage(main.roll_dice(spell['damage'], normalize_size=4), attacker=_bramble.summoner)
+        combat.attack_magical(_bramble.summoner, obj, 'ability_bramble')
         if obj.fighter is not None:
-            obj.fighter.apply_status_effect(effects.bleeding(duration=spell['bleed_duration']))
+            obj.fighter.apply_status_effect(effects.bleeding(duration=spell['bleed_duration']),
+                                            dc=spell['bleed_dc_base'] + _bramble.spell_power / 2)
         _bramble.destroy()
 
 def strangleweeds(actor, target, context):
     hit = False
-    for f in main.get_fighters_in_burst(actor.x, actor.y, context['range'], actor, actor.fighter.team):
+    for f in main.get_fighters_in_burst(actor.x, actor.y, context['range'], actor, lambda o: o.fighter.team != actor.fighter.team):
         tile = main.current_map.tiles[f.x][f.y]
         if tile.tile_type == 'grass floor':
             if actor is player.instance or fov.player_can_see(f.x, f.y):
@@ -395,4 +413,33 @@ def strangleweed_on_tick(effect, object):
 
 def arcane_arrow(actor, target, context):
     ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.fuchsia, None)
-    combat.spell_attack(actor.fighter, target, 'ability_arcane_arrow')
+    combat.attack_magical(actor.fighter, target, 'ability_arcane_arrow', accuracy_bonus=actor.fighter.spell_power(['arcane']))
+
+def spatial_exchange(actor, target, context):
+    if combat.attack_magical(actor.fighter, target, 'ability_spatial_exchange',
+                             accuracy_bonus=actor.fighter.spell_power(['arcane'])) != 'missed':
+        ui.render_explosion(actor.x, actor.y, 0, libtcod.white, spells.essence_colors['arcane'])
+        ui.render_explosion(target.x, target.y, 0, libtcod.white, spells.essence_colors['arcane'])
+        actor.swap_positions(target)
+        combat.attack_magical(actor.fighter, target, 'data_ability_spatial_exchange')
+
+def shimmering_swords(actor, target, context):
+    import pathfinding
+    sp = actor.fighter.spell_power(context['element'])
+    adjacent = []
+    for tile in main.adjacent_tiles_diagonal(actor.x, actor.y):
+        if not main.is_blocked(tile[0], tile[1], movement_type=pathfinding.FLYING):
+            adjacent.append(tile)
+    for i in range(context['sword_count']):
+        if len(adjacent) < 1:
+            break
+        summon_pos = adjacent[libtcod.random_get_int(0, 0, len(adjacent) - 1)]
+        common.summon_ally('monster_shimmering_sword',
+                           context['duration_base'] + main.roll_dice('1d%d' % sp),
+                           summon_pos[0], summon_pos[1])
+        adjacent.remove(summon_pos)
+
+def summon_arcane_construct(actor, target, context):
+    common.summon_ally('monster_arcane_construct',
+                       duration=context['duration_base'] +
+                            main.roll_dice('1d%d' % actor.fighter.spell_power(context['element']), normalize_size=4))

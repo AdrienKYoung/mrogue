@@ -1,0 +1,96 @@
+//part of mrogue, an interactive adventure game
+//Copyright (C) 2017 Adrien Young and Tyler Soberanis
+//
+//This program is free software: you can redistribute it and/or modify
+//it under the terms of the GNU General Public License as published by
+//the Free Software Foundation, either version 3 of the License, or
+//(at your option) any later version.
+//
+//This program is distributed in the hope that it will be useful,
+//but WITHOUT ANY WARRANTY; without even the implied warranty of
+//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//GNU General Public License for more details.
+//
+//You should have received a copy of the GNU General Public License
+//along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+//*******************
+//  Abandoned Hut
+//*******************
+FEATURE abandoned_hut
+CATEGORY slagfields
+DEFINE # weathered stone wall
+DEFINE , weathered stone floor
+FLAGS NOELEV
+SCRIPT create_slopes
+ ______
+_######_
+_#....+___
+_#....####_
+_#.......#_
+_#.......#_
+_#########_
+ _________
+ENDFEATURE
+
+//*******************
+//  House of Fun
+//*******************
+FEATURE house_of_fun
+CATEGORY badlands
+DEFINE # weathered stone wall
+DEFINE ~ oil
+DEFINE $ LOOT_LEVEL 2
+FLAGS NOELEV
+SCRIPT create_slopes
+ ______
+_######_
+_#~~~~+___
+_#~~~~####_
+_#~~~~~~~#_
+_#~~~~~~$#_
+_#########_
+ _________
+ENDFEATURE
+
+//*******************
+//  Ruined Wall
+//*******************
+FEATURE ruined_wall
+CATEGORY slagfields
+DEFINE # weathered stone wall
+DEFINE . weathered stone floor
+FLAGS NOELEV
+SCRIPT create_slopes
+ __
+#._
+#._
+#._
+#._
+#####_
+ _________
+ENDFEATURE
+
+ _________
+ENDFEATURE
+
+//*******************
+//  Lava river
+//*******************
+FEATURE lava_river
+CATEGORY slagfields
+DEFINE ~ lava
+FLAGS NOELEV
+SCRIPT create_slopes
+ ~~
+  ~
+  ~
+  ~
+  ~
+  ~
+   ~
+   ~
+   ~
+  ~~
+ _________
+ENDFEATURE

@@ -34,6 +34,8 @@ def get_charm_data(charm):
         return spells.charm_elementalists_lens
     elif charm.use_function == prayer_beads:
         return spells.charm_prayer_beads
+    elif charm.use_function == alchemists_flask:
+        return spells.charm_alchemists_flask
 
 def print_charm_description(charm, console, x, y, width):
     data = get_charm_data(charm)
@@ -175,7 +177,7 @@ def charm_raw():
     elif essence == 'radiance':
         result = charm_actions.invulnerable(player.instance, player.instance, None)
     elif essence == 'void':
-        result = 'didnt-take-turn' #TODO: mutate self
+        result = charm_actions.demon_power(player.instance, player.instance, None)
     else:
         result = 'didnt-take-turn'
 
@@ -214,7 +216,6 @@ def elementalists_lens():
     return result
 
 def prayer_beads():
-    import actions.charm_actions
     essence = select_essence(spells.charm_prayer_beads)
     if essence is None:
         return 'didnt-take-turn'
@@ -226,6 +227,23 @@ def prayer_beads():
     elif essence == 'air':
         player.instance.fighter.apply_status_effect(effects.levitating())
         result = 'success'
+
+    if result != 'didnt-take-turn' and result != 'cancelled':
+        player.instance.essence.remove(essence)
+    return result
+
+def alchemists_flask():
+    essence = select_essence(spells.charm_alchemists_flask)
+    if essence is None:
+        return 'didnt-take-turn'
+
+    result = 'didnt-take-turn'
+    if essence == 'water':
+        result = actions.invoke_ability('ability_acid_flask', player.instance)
+    elif essence == 'cold':
+        result = actions.invoke_ability('ability_frostfire', player.instance)
+    elif essence == 'life':
+        result = actions.invoke_ability('ability_vitality_potion', player.instance)
 
     if result != 'didnt-take-turn' and result != 'cancelled':
         player.instance.essence.remove(essence)

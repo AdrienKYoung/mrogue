@@ -54,7 +54,35 @@ def recover_shield(actor, target, context):
 def offhand_shot(actor, target, context):
     weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'left hand')
     ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
-    combat.attack_ex(actor.fighter,target,0,verb=("shoot","shoots"),weapon=weapon)
+    combat.attack_ex(actor.fighter,target,0,verb=("shoot","shoots"),weapon=weapon, ranged=True)
+
+def bow_shot(actor, target, context):
+    weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+    ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
+    combat.attack_ex(actor.fighter, target, 0, verb=("shoot", "shoots"), weapon=weapon, ranged=True)
+
+def ranged_attack(actor, target, context):
+    spent = actor.fighter.adjust_ammo(-1)
+    if spent != 0 and actor.fighter is not None:
+        weapon = main.get_equipped_in_slot(actor.fighter.inventory, 'right hand')
+        ui.render_projectile((actor.x, actor.y), (target.x, target.y), libtcod.white)
+        result = combat.attack_ex(actor.fighter, target, 0, verb=("shoot", "shoots"), weapon=weapon, ranged=True)
+        if result == 'failed':
+            actor.fighter.adjust_ammo(-spent, False) # Refund ammo
+            return 'didnt-take-turn'
+
+        if result == 'miss' or target.fighter is None:
+            # ammo lands on the ground
+            main.drop_ammo(target.x, target.y, -spent)
+        else:
+            # target was hit, ammo sticks in them
+            if hasattr(target, 'recoverable_ammo'):
+                target.recoverable_ammo += -spent
+            else:
+                target.recoverable_ammo = -spent
+
+    else:
+        return 'didnt-take-turn'
 
 def use_ruby():
     return use_gem('fire')
@@ -74,8 +102,10 @@ def use_diamond():
     return use_gem('radiance')
 def use_onyx():
     return use_gem('death')
+def use_void():
+    return use_gem('void')
 def use_gem(essence):
-    if player.instance.fighter.item_equipped_count('equipment_ring_of_alchemy') > 0:
+    if player.instance.fighter.has_item_with_attribute('alchemy') > 0:
         old_essence = essence
         essence = main.opposite_essence(essence)
         if old_essence != essence:
@@ -113,3 +143,10 @@ def forge():
         main.set_quality(target, new_quality)
         ui.message('It is now a ' + target.owner.name + '.', libtcod.orange)
     return True
+
+def longstride(actor, target, context):
+    if main.is_blocked(target[0], target[1], movement_type=actor.movement_type):
+        if actor is player.instance:
+            ui.message('Something is in the way.', libtcod.gray)
+        return 'cancelled'
+    actor.set_position(target[0], target[1])

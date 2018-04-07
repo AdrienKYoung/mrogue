@@ -198,3 +198,17 @@ _###......###_
 ___########___
 ______________
 ENDFEATURE
+
+//*******************
+//   Badlands Gate
+//*******************
+FEATURE slagfields_gate
+CATEGORY slagfields_hlink
+DEFINE # dark shale wall
+DEFINE . shale
+DEFINE ~ lava
+FLAGS NOREFLECT NOELEV
+SCRIPT create_slopes
+ ###
+~~>~~
+ENDFEATURE

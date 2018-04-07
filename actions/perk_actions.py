@@ -113,3 +113,8 @@ def learn_ability(ability):
     dat = abilities.data[ability]
     a = abilities.Ability(dat.get('name'), dat.get('description', ''), dat.get('function'), dat.get('cooldown', 0))
     player.instance.perk_abilities.append(a)
+
+def permanent_effect(target, effect):
+    effect.duration = None
+    effect.aftereffect = effects.abated(effect)
+    target.fighter.apply_status_effect(effect)

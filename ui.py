@@ -327,7 +327,7 @@ def target_next_monster():
         main.changed_tiles.append((selected_monster.x, selected_monster.y))
 
     nearby = []
-    for obj in main.current_map.fighters:
+    for obj in [o for o in main.current_map.fighters if o.fighter.team == 'enemy']:
         if fov.player_can_see(obj.x, obj.y) and obj is not player.instance and not (obj.npc and obj.npc.active):
             nearby.append((obj.distance_to(player.instance), obj))
     nearby.sort(key=lambda m: m[0])
@@ -578,6 +578,22 @@ def render_side_panel(acc_mod=1.0):
     libtcod.console_print_rect_ex(side_panel, 2, drawHeight, SIDE_PANEL_WIDTH - 3, weapon_string_height, libtcod.BKGND_DEFAULT, libtcod.LEFT, weapon_string)
     libtcod.console_set_default_foreground(side_panel, libtcod.white)
     drawHeight += weapon_string_height + 1
+
+    # Quiver and Ammunition
+    if weapon is not None and weapon.subtype == 'ranged':
+        libtcod.console_print(side_panel, 2, drawHeight, 'Quiver: [%d]' % player.instance.fighter.ammunition)
+        drawHeight += 1
+        quiver = main.get_equipped_in_slot(player.instance.fighter.inventory, 'quiver')
+        if quiver is None:
+            quiver_string = "None"
+            quiver_color = libtcod.gray
+        else:
+            quiver_string = quiver.owner.name.title()
+            quiver_string = (quiver_string[:SIDE_PANEL_WIDTH - 8] + '...') if len(quiver_string) > SIDE_PANEL_WIDTH - 5 else quiver_string
+            quiver_color = loot.qualities['']['color']
+        libtcod.console_set_default_foreground(side_panel, quiver_color)
+        libtcod.console_print(side_panel, 2, drawHeight, quiver_string)
+        drawHeight += 1
 
     seperator_height = drawHeight
     drawHeight += 2
@@ -1507,9 +1523,14 @@ def render_projectile(start, end, color, character=None):
     if start[0] == end[0] and start[1] == end[1]:
         return
 
-    if character is None: bolt_char = chr(7)
-    else: bolt_char = character
-    bolt = main.GameObject(start[0], start[1], bolt_char, 'bolt', color=color, movement_type=2)
+    if character is None:
+        bolt_chars = [chr(7)]
+    elif isinstance(character, list):
+        bolt_chars = character
+    else:
+        bolt_chars = [character]
+    frame_index = 0
+    bolt = main.GameObject(start[0], start[1], bolt_chars[frame_index], 'bolt', color=color, movement_type=2)
 
     line = main.beam(start[0], start[1], end[0], end[1])
     main.current_map.add_object(bolt)
@@ -1528,6 +1549,11 @@ def render_projectile(start, end, color, character=None):
                 bolt.char = '/'
             else:
                 bolt.char = '\\'
+        else:
+            bolt.char = bolt_chars[frame_index]
+            frame_index += 1
+            if frame_index >= len(bolt_chars):
+                frame_index = 0
         main.render_map()
         libtcod.console_flush()
         prev = bolt.x, bolt.y

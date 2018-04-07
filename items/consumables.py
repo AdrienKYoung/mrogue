@@ -107,6 +107,15 @@ table = {
         'on_use'        : item_actions.use_onyx,
         'description'   : 'The essence of dark envelops this gemstone. Absorbing it will bestow a single dark essence.'
     },
+    'gem_lesser_void': {
+        'name'          : 'Mysterious Ore',
+        'type'          : 'item',
+        'category'      : 'gem',
+        'char'          : chr(4),
+        'color'         : spells.essence_colors['void'],
+        'on_use'        : item_actions.use_void,
+        'description'   : 'Who knows what kind of essence is locked away in this stone?'
+    },
 
     # Essence
     'essence_fire' : {

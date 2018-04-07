@@ -63,7 +63,7 @@ charm_volatile_orb = {
     },
     'arcane': {
         'name': 'Time bomb',
-        'description' : 'Create a time bomb, which explodes after a delay'
+        'description' : 'Place a time bomb, which explodes after a delay'
     },
 }
 
@@ -136,6 +136,22 @@ charm_prayer_beads = {
         'name': 'Levitate',
         'description': 'Levitate over obstacles for a brief time'
     },
+}
+
+charm_alchemists_flask = {
+    'water': {
+        'name': 'Acid Flask',
+        'description': 'Hurl a flask of acid that explodes on impact, severely shredding armor'
+    },
+    'cold': {
+        'name': 'Frostfire',
+        'description': 'Ignite a frostfire that freezes water and cools lava'
+    },
+    'life': {
+        'name': 'Vitality Potion',
+        'description': 'Drink a potion that regenerates your health and reduces all incoming damage by half for a '
+                       'short time'
+    }
 }
 
 charm_raw_effects = {
@@ -504,6 +520,61 @@ library = {
         ],
         23
     ),
+
+    'spell_arcane_arrow' : Spell(
+        'arcane arrow',
+        'ability_arcane_arrow',
+        'Fire a dart of magical energy',
+        [
+            {'stamina_cost':12,'charges':5,},
+            {'stamina_cost':10,'charges':7,},
+            {'stamina_cost':8,'charges':10,}
+        ],
+        14),
+
+    'spell_spatial_exchange': Spell(
+        'spatial exchange',
+        'ability_spatial_exchange',
+        'Swap places with a target, dealing damage to it.',
+        [
+            {'stamina_cost':25,'charges':2, 'range': 5},
+            {'stamina_cost':20,'charges':3, 'range': 7},
+            {'stamina_cost':15,'charges':4, 'range': 9}
+        ],
+        18),
+
+    'spell_shimmering_swords': Spell(
+        'shimmering swords',
+        'ability_shimmering_swords',
+        'Summon a host of levitating swords on adjacent spaces.',
+        [
+            {'stamina_cost': 30, 'charges': 1, 'sword_count': 4},
+            {'stamina_cost': 25, 'charges': 1, 'sword_count': 6},
+            {'stamina_cost': 20, 'charges': 1, 'sword_count': 8},
+        ],
+        20),
+
+    'spell_time_bomb': Spell(
+        'time bomb',
+        'ability_time_bomb',
+        'Place a time bomb, which explodes after a delay',
+        [
+            {'stamina_cost': 25, 'charges': 2},
+            {'stamina_cost': 20, 'charges': 3},
+            {'stamina_cost': 15, 'charges': 4},
+        ],
+        22),
+
+    'spell_arcane_construct': Spell(
+        'arcane construct',
+        'ability_summon_arcane_construct',
+        'Construct a magical ally that can cast Arcane Arrow.',
+        [
+            {'stamina_cost': 50, 'charges': 1},
+            {'stamina_cost': 40, 'charges': 1},
+            {'stamina_cost': 30, 'charges': 1},
+        ],
+        26),
 }
 
 essence_colors = {

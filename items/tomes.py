@@ -3,7 +3,7 @@ import spells
 
 table = {
     'book_lesser_fire' : {
-        'name'          : 'Book of Lesser Flames',
+        'name'          : 'Book of Embers',
         'category'      : 'book',
         'char'          : '#',
         'color'         : spells.essence_colors['fire'],
@@ -134,6 +134,32 @@ table = {
         ],
         'level_costs': [
             1,1,1,2,2,2,3,3,3,3,4,4,4
+        ]
+    },
+    'book_lesser_arcane' : {
+        'name'          : "The Sorcerer's Handbook",
+        'category'      : 'book',
+        'char'          : '#',
+        'color'         : spells.essence_colors['arcane'],
+        'type'          : 'item',
+        'slot'          : 'left hand',
+        'description'   : 'A heavy tome bound in aged leather. It seems to vibrate with an inner power.',
+        'essence':'arcane',
+        'level' : 1,
+        'spells': [
+            'spell_arcane_arrow',
+            'spell_spatial_exchange',
+            'spell_shimmering_swords',
+            'spell_time_bomb',
+            'spell_arcane_construct'
+        ],
+        'levels': [
+            'spell_arcane_arrow', 'spell_spatial_exchange', 'spell_arcane_arrow', 'spell_shimmering_swords', 'spell_time_bomb',
+            'spell_spatial_exchange', 'spell_arcane_construct', 'spell_arcane_arrow','spell_spatial_exchange', 'spell_shimmering_swords',
+            'spell_arcane_construct', 'spell_time_bomb', 'spell_arcane_construct', 'spell_shimmering_swords', 'spell_time_bomb'
+        ],
+        'level_costs': [
+            1,1,1,1,2,2,2,3,3,3,3,4,4,4,4
         ]
     },
 }

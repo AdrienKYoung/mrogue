@@ -16,13 +16,15 @@
 
 import math
 import string
+import sys
 
 import consts
 import libtcodpy as libtcod
 import log
 import syntax
 import shelve
-
+import traceback
+from collections import deque
 
 #############################################
 # Classes
@@ -48,7 +50,7 @@ class Item:
         if self.type == 'item':
             if len(actor.fighter.inventory) >= 26:
                 if actor is player.instance:
-                    ui.message('Your inventory is too full to pick up ' + self.owner.name)
+                    ui.message('Your inventory is too full to pick up the ' + self.owner.name)
             else:
                 index = ord('a')
                 while chr(index) in [i.item.inventory_index for i in actor.fighter.inventory]:
@@ -161,7 +163,7 @@ class GameObject:
                  player_stats=None, always_visible=False, interact=None, description="", on_create=None,
                  update_speed=1.0, misc=None, blocks_sight=False, on_step=None, burns=False, on_tick=None,
                  elevation=None, background_color=None, movement_type=0, summon_time = None, zones=[], is_corpse=False,
-                 zombie_type=None, npc=None, light=None):
+                 zombie_type=None, npc=None, light=None, stealth=None):
         self.x = x
         self.y = y
         self.char = char
@@ -220,6 +222,7 @@ class GameObject:
         if self.npc:
             self.npc.owner = self
         self.light = light
+        self.stealth = stealth
 
     @property
     def movement_type(self):
@@ -348,7 +351,7 @@ class GameObject:
                         return True
                 web = object_at_tile(self.x, self.y, 'spiderweb')
                 if web is not None and not (self.fighter and (self.fighter.has_flag(monsters.WEB_IMMUNE) or
-                                                  self.fighter.item_equipped_count('equipment_ring_of_freedom') > 0)):
+                                                  self.fighter.has_item_with_attribute('web_immune'))):
                     ui.message('%s %s against the web' % (
                                     syntax.name(self).capitalize(),
                                     syntax.conjugate(self is player.instance, ('struggle', 'struggles'))))
@@ -393,6 +396,14 @@ class GameObject:
                 if current_map.tiles[x][y].on_step is not None:
                     current_map.tiles[x][y].on_step(x,y,self)
 
+                # grab ammo
+                if self.fighter and self is player.instance:
+                    ammo_objs = get_objects(x, y, lambda o: o.name == 'ammo')
+                    for ammo_obj in ammo_objs:
+                        ammo_obj.recoverable_ammo -= self.fighter.adjust_ammo(ammo_obj.recoverable_ammo, True)
+                        if ammo_obj.recoverable_ammo == 0:
+                            ammo_obj.destroy()
+
                 if self.light is not None:
                     for _x in range(max(0, self.x - self.light.radius), min(consts.MAP_WIDTH, self.x + self.light.radius + 1)):
                         for _y in range(max(0, self.y - self.light.radius),
@@ -410,7 +421,11 @@ class GameObject:
             return False
 
     def player_can_see(self):
-        if self.fighter is not None and self.fighter.stealth is not None and player.instance.distance_to(self) >= self.fighter.stealth:
+        if self.fighter is not None:
+            s = self.fighter.stealth
+        else:
+            s = self.stealth
+        if s is not None and player.instance.distance_to(self) >= s:
             return False
         else:
             return fov.player_can_see(self.x, self.y)
@@ -425,7 +440,7 @@ class GameObject:
                     libtcod.console_put_char(console, self.x, self.y, self.char, libtcod.BKGND_NONE)
                 else:
                     libtcod.console_put_char_ex(console, self.x, self.y, self.char, self.color, self.background_color)
-        elif self.always_visible and current_map.tiles[self.x][self.y].explored:
+        elif self.always_visible and current_map.tiles[self.x][self.y].explored and self.stealth is None:
             shaded_color = libtcod.Color(self.color[0], self.color[1], self.color[2])
             libtcod.color_scale_HSV(shaded_color, 0.1, 0.4)
             libtcod.console_set_default_foreground(console, shaded_color)
@@ -673,6 +688,10 @@ class Tile:
         return terrain.data[self.tile_type].on_step
 
     @property
+    def is_dangerous(self):
+        return terrain.data[self.tile_type].dangerous
+
+    @property
     def blocks_sight_all_elevs(self):
         return terrain.data[self.tile_type].blocks_sight_all_elevs
 
@@ -681,10 +700,13 @@ class Tile:
 # General Functions
 #############################################
 
-def get_path_to_point(start, end, movement_type=0):
+def get_path_to_point(start, end, movement_type=0, max_edges=-1):
     if current_map is None or current_map.pathfinding is None:
         return None
-    path = current_map.pathfinding.a_star_search(start, end, movement_type=movement_type, max_edges=None)
+    if max_edges == -1:
+        path = current_map.pathfinding.a_star_search(start, end, movement_type=movement_type)
+    else:
+        path = current_map.pathfinding.a_star_search(start, end, movement_type=movement_type, max_edges=max_edges)
     if path == 'failure' or len(path) == 0:
         return None
     return path
@@ -709,24 +731,6 @@ def skill_value(name):
 def expire_out_of_vision(obj):
     if not fov.player_can_see(obj.x, obj.y):
         obj.destroy()
-
-
-def step_on_reed(reed, obj):
-    reed.destroy()
-
-
-def step_on_blightweed(weed, obj):
-    if obj.fighter:
-        obj.fighter.time_since_last_damaged = 0
-        if obj.fighter.armor > 0:
-            obj.fighter.get_shredded(1)
-            if fov.player_can_see(obj.x, obj.y):
-                ui.message('The blightweed thorns shred %s armor!' % syntax.name(obj, possesive=True), libtcod.desaturated_red)
-
-def step_on_snow_drift(x,y,obj):
-    if obj is player.instance:
-        player.instance.fighter.adjust_stamina(-current_map.tiles[x][y].stamina_cost)
-    current_map.tiles[x][y].tile_type = 'snowy ground'
 
 def adjacent_tiles_orthogonal(x, y):
     adjacent = []
@@ -843,19 +847,22 @@ def raise_dead(actor,target, duration=None):
         ui.message('A corpse walks again...', libtcod.dark_violet)
 
 
-def create_temp_terrain(type,tiles,duration):
+def create_temp_terrain(type, tiles, duration, save_old_terrain=False):
     terrain_data = terrain.data[type]
-    ticker = Ticker(duration,_temp_terrain_on_tick)
+    ticker = Ticker(duration, _temp_terrain_on_tick)
     ticker.restore = []
     ticker.map = current_map
 
-    for (x,y) in tiles:
+    for (x, y) in tiles:
         # Don't place walls over game objects
         if terrain_data.blocks and len(get_objects(x, y)) > 0:
             continue
         tile = current_map.tiles[x][y]
         if tile.diggable or not tile.is_wall:
-            ticker.restore.append((x,y,dungeon.branches[current_map.branch]['default_floor']))
+            if save_old_terrain:
+                ticker.restore.append((x,y,tile.tile_type))
+            else:
+                ticker.restore.append((x,y,dungeon.branches[current_map.branch]['default_floor']))
             tile.tile_type = type
             changed_tiles.append((x, y))
             if terrain_data.blocks:
@@ -950,14 +957,21 @@ def monster_death(monster, context):
             current_map.add_object(item)
             item.send_to_back()
 
-    ui.message('%s is dead!' % syntax.name(monster).capitalize(), libtcod.red)
+    if context.get('suppress_messages', False):
+        ui.message('%s is dead!' % syntax.name(monster).capitalize(), libtcod.red)
+
+    # drop ammo
+    if hasattr(monster, 'recoverable_ammo'):
+        drop_ammo(monster.x, monster.y, monster.recoverable_ammo)
+        del monster.recoverable_ammo
 
     if monster.fighter.has_flag(monsters.NO_CORPSE):
         monster.destroy()
     elif monster.summon_time is not None:
         monster.destroy()
-        ui.message('%s corpse fades into the world from whence it came.' %
-                   syntax.pronoun(monster, possesive=True).capitalize(), libtcod.gray)
+        if context.get('suppress_messages', False):
+            ui.message('%s corpse fades back to the world from whence it came.' %
+                       syntax.pronoun(monster, possesive=True).capitalize(), libtcod.gray)
     else:
         monster.char = '%'
         monster.color = libtcod.darker_red
@@ -974,6 +988,16 @@ def monster_death(monster, context):
         changed_tiles.append((monster.x, monster.y))
         ui.selected_monster = None
         ui.auto_target_monster()
+
+
+def drop_ammo(x, y, amount):
+    ammo_obj = object_at_tile(x, y, 'ammo')
+    if ammo_obj is None:
+        ammo_obj = GameObject(x, y, '\\', 'ammo', libtcod.white, stealth=2)
+        ammo_obj.recoverable_ammo = amount
+        current_map.add_object(ammo_obj)
+    else:
+        ammo_obj.recoverable_ammo += amount
 
 
 def target_monster(max_range=None):
@@ -1003,6 +1027,10 @@ def get_tiles_in_burst(x, y, radius):
         for _y in range(max(0, y - radius), min(y + radius + 1, consts.MAP_HEIGHT)):
             tiles.append((_x,_y))
     return tiles
+
+def get_tiles_in_circular_burst(x, y, radius):
+    return [ tile for tile in get_tiles_in_burst(x,y,radius) \
+             if distance(tile[0], tile[1], x, y) ]
 
 def opposite_team(team):
     if team == 'ally':
@@ -1108,6 +1136,25 @@ def closest_monster(max_range):
     else:
         return low_priority_enemy
 
+def closest_unexplored_tile():
+    open = deque()
+    open.append((player.instance.x, player.instance.y))
+    closed = []
+    while len(open) > 0:
+        curr = open.popleft()
+        for t in adjacent_tiles_diagonal(curr[0], curr[1]):
+            if t not in open and t not in closed and is_explorable(curr):
+                if current_map.tiles[t[0]][t[1]].explored:
+                    open.append(t)
+                else:
+                    return t
+        closed.append(curr)
+    return None
+
+def is_explorable(pos):
+    blockers = get_objects(pos[0],pos[1], lambda o: (o is not player.instance and o.blocks) or (hasattr(o,'locked') and o.locked))
+    tile = current_map.tiles[pos[0]][pos[1]]
+    return len(blockers) < 1 and not tile.is_dangerous and not tile.blocks
 
 def in_bounds(x, y):
     return 0 <= x < consts.MAP_WIDTH and 0 <= y < consts.MAP_HEIGHT
@@ -1211,7 +1258,6 @@ def spawn_monster(name, x, y, team='enemy'):
                     damage_bonus=p.get('attack_bonus', 0),
                     monster_str_dice=p.get('strength_dice'),
                     team=p.get('team', team),
-                    stealth=p.get('stealth'),
                     _range=p.get('range',1),
                     will=int(p.get('will', 5) * modifier.get('will_bonus',1)),
                     fortitude=int(p.get('fortitude', 5) * modifier.get('fortitude_bonus',1))
@@ -1235,7 +1281,7 @@ def spawn_monster(name, x, y, team='enemy'):
         monster = GameObject(x, y, p['char'], mod_tag + p['name'], p['color'], blocks=True, fighter=fighter_component,
                              behavior=behavior, description=p['description'], on_create=p.get('on_create'),
                              movement_type=p.get('movement_type', pathfinding.NORMAL), on_tick=p.get('on_tick'),
-                             zombie_type=zombie_type)
+                             zombie_type=zombie_type, stealth=p.get('stealth'))
 
         monster.light = Light(libtcod.flame, 1, 2)
 
@@ -1306,7 +1352,7 @@ def spawn_npc(name, x, y, map_name):
         result = npc.npcs[name]
     else:
         p = npc.data[name]
-        npc_component = npc.NPC(p['dialog'],p['root'], p['location'])
+        npc_component = npc.NPC(name, p['root'])
         fighter = None
         behavior = None
         attack_speed = 1.0
@@ -1338,7 +1384,6 @@ def spawn_npc(name, x, y, map_name):
                 damage_bonus=f.get('attack_bonus', 0),
                 monster_str_dice=f.get('strength_dice'),
                 team=f.get('team', 'neutral'),
-                stealth=f.get('stealth'),
                 _range=f.get('range', 1),
                 will=int(f.get('will', 10)),
                 fortitude=int(f.get('fortitude', 10))
@@ -1351,7 +1396,8 @@ def spawn_npc(name, x, y, map_name):
 
         result = GameObject(x, y, p['char'], p['name'], p['color'], blocks=True, interact=npc.start_conversation,
                              description=p['description'], on_create=p.get('on_create'), npc=npc_component,
-                             fighter=fighter, behavior=behavior, movement_type=movement_type, on_tick=p.get('on_tick'))
+                             fighter=fighter, behavior=behavior, movement_type=movement_type, on_tick=p.get('on_tick'),
+                             stealth=p.get('stealth'))
         result.syntax_data = {
             'proper': p.get('proper_noun', True),
             'gender': p.get('gender', 'neutral')
@@ -1378,12 +1424,12 @@ def spawn_npc(name, x, y, map_name):
     return None
 
 
-def create_ability(name):
+def create_ability(name, range_override = None):
     from actions import abilities
     if name in abilities.data:
         a = abilities.data[name]
         return abilities.Ability(name, a.get('name'), a.get('description'), a.get('cooldown'),
-                                 intent=a.get('intent', 'aggressive'))
+                                 intent=a.get('intent', 'aggressive'), range = range_override)
     else:
         return None
 
@@ -1427,10 +1473,10 @@ def create_item(name, material=None, quality=''):
 
     ability = None
     if p.get('ability') is not None and p.get('ability') in abilities.data:
-        ability = create_ability(p.get('ability'))
+        ability = create_ability(p.get('ability'), p.get('range'))
     item_component = Item(category=p['category'], use_function=p.get('on_use'), type=p['type'], ability=ability, charges=p.get('charges'))
     equipment_component = None
-    if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book' or p['category'] == 'accessory':
+    if p['category'] == 'weapon' or p['category'] == 'armor' or p['category'] == 'book' or p['category'] == 'accessory' or p['category'] == 'quiver':
         if consts.DEBUG_UNLOCK_TOMES and 'level' in p.keys():
             level = 10
         else:
@@ -1468,7 +1514,7 @@ def create_item(name, material=None, quality=''):
             subtype=p.get('subtype'),
             starting_level=level,
             weight=p.get('weight',0),
-            _range=p.get('range',1),
+            range_=p.get('range',1),
             sh_max=p.get('sh_max', 0),
             sh_raise_cost=p.get('sh_raise_cost', 0),
             sh_recovery=p.get('sh_recovery', 0),
@@ -1476,7 +1522,12 @@ def create_item(name, material=None, quality=''):
             status_effect=p.get('status_effect'),
             will_bonus=p.get('will', 0),
             fortitude_bonus=p.get('fortitude', 0),
+            attributes=p.get('attributes', []),
+            stealth=p.get('stealth'),
+            max_ammo=p.get('max_ammo', 0),
         )
+
+
 
         if material is None:
             material = 'iron' if equipment_component.category == 'weapon' else ''
@@ -1500,6 +1551,7 @@ def create_item(name, material=None, quality=''):
 
     go = GameObject(0, 0, p['char'], p['name'], p.get('color', libtcod.white), item=item_component,
                       equipment=equipment_component, always_visible=True, description=p.get('description'))
+
     if ability is not None:
         go.item.ability = ability
     if hasattr(equipment_component, 'material') and equipment_component.material != '':
@@ -1562,9 +1614,22 @@ def melt_ice(x, y):
         current_map.tiles[x][y].tile_type = 'deep water'
     changed_tiles.append((x, y))
 
+def freeze_water(x, y, permanent=False):
+    if x < 0 or y < 0 or x >= consts.MAP_WIDTH or y >= consts.MAP_WIDTH:
+        return
+    if not current_map.tiles[x][y].is_water:
+        return
+    if current_map.tiles[x][y].jumpable:
+        ice_type = 'ice'
+    else:
+        ice_type = 'deep_ice'
+    if permanent:
+        current_map.tiles[x][y].tile_type = ice_type
+        changed_tiles.append((x, y))
+    else:
+        create_temp_terrain(ice_type, [(x, y)], 30 + roll_dice('1d30'), save_old_terrain=True)
 
-def create_fire(x,y,temp):
-    global changed_tiles
+def create_fire(x ,y, temp):
 
     tile = current_map.tiles[x][y]
     if tile.is_water or (tile.blocks and tile.flammable == 0) or tile.is_pit:
@@ -1593,6 +1658,23 @@ def create_fire(x,y,temp):
         obj.destroy()
     changed_tiles.append((x, y))
 
+def create_frostfire(x, y):
+    tile = current_map.tiles[x][y]
+    if tile.is_water:
+        freeze_water(x, y)
+    elif tile.tile_type == 'lava':
+        tile.tile_type = 'scorched floor'
+        changed_tiles.append((x, y))
+    current = object_at_tile(x, y, 'Frostfire')
+    if current is not None:
+        if current.misc.temperature < 10:
+            current.misc.temperature = 10
+        return
+    component = ai.FrostfireBehavior(10)
+    obj = GameObject(x, y, libtcod.CHAR_ARROW2_N, 'Frostfire', libtcod.light_sky, misc=component,
+                     description='An eerie blue flame of pure cold, freezing anything it touches')
+    current_map.add_object(obj)
+    changed_tiles.append((x, y))
 
 def create_reeker_gas(x, y, duration=consts.REEKER_PUFF_DURATION):
     if not current_map.tiles[x][y].blocks and \
@@ -1631,6 +1713,11 @@ def lock_interact(actor=None, object_name='object'):
 
 
 def door_interact(door, actor):
+    #Band-aid solution to auto-explore door soft-lock
+    #TODO - Fix A*
+    if actor is player.instance:
+        player.flush_queued_actions()
+
     if not is_blocked(door.x, door.y):
         if door.closed:
             do_open = False
@@ -1658,7 +1745,8 @@ def door_interact(door, actor):
     ui.message('Something is blocking the door.')
     return 'didnt-take-turn'
 
-def switch_interact(door):
+def switch_interact(switch, actor):
+    door = switch.door
     ui.message('You hear the rattling of iron chains as a gate opens somewhere.')
     door.locked = False
     door.closed = False
@@ -1873,8 +1961,8 @@ def fall_in_pit(object):
         return
     pit_ticker = Ticker(5, _pit_ticker)
     pit_ticker.obj = object
-    pit_ticker.old_stealth = object.fighter.stealth
-    object.fighter.stealth = -1
+    pit_ticker.old_stealth = object.stealth
+    object.stealth = -1
     object.fighter.apply_status_effect(effects.stunned(duration=5))
     current_map.tickers.append(pit_ticker)
 
@@ -1889,7 +1977,7 @@ def _pit_ticker(ticker):
             destination = find_closest_open_tile(tile[0], tile[1])
         else:
             destination = find_closest_open_tile(ticker.obj.x, ticker.obj.y)
-        ticker.obj.fighter.stealth = ticker.old_stealth
+        ticker.obj.stealth = ticker.old_stealth
         ticker.obj.set_position(destination[0], destination[1])
 
 def clear_map():
@@ -2125,7 +2213,6 @@ def main_menu():
             print('Quitting game...')
             return
 
-
 def new_game():
     global game_state, dungeon_level, in_game, changed_tiles, learned_skills, current_map
 
@@ -2163,7 +2250,7 @@ def new_game():
     player.instance.memory = equipment.Equipment(None,'tome',spell_list=[])
 
     ui.game_msgs = []
-    ui.message('Welcome to the dungeon...', libtcod.gold)
+    ui.message('You wake up on a beach...', libtcod.gold)
 
     for y in range(consts.MAP_HEIGHT):
         for x in range(consts.MAP_WIDTH):
@@ -2172,15 +2259,18 @@ def new_game():
 
 def save_game():
     import world
-    f = shelve.open('savegame', 'n')
-    f['map'] = world.world_maps
-    f['current_map'] = current_map.name
-    f['player_index'] = current_map.objects.index(player.instance)
-    f['learned_skills'] = learned_skills
-    f['game_msgs'] = ui.game_msgs
-    f['game_state'] = game_state
-    f['branch_scaling'] = world.get_branch_scaling()
-    f.close()
+    try:
+        f = shelve.open('savegame', 'n')
+        f['map'] = world.world_maps
+        f['current_map'] = current_map.name
+        f['player_index'] = current_map.objects.index(player.instance)
+        f['learned_skills'] = learned_skills
+        f['game_msgs'] = ui.game_msgs
+        f['game_state'] = game_state
+        f['branch_scaling'] = world.get_branch_scaling()
+        f.close()
+    except:
+        print("Unexpected error saving game: ", sys.exc_info()[0])
 
 
 def load_game():
@@ -2209,53 +2299,78 @@ def SCREEN_WIDTH():
     return windowx / tilex
 
 def SCREEN_HEIGHT():
-    return (windowy / tiley) - 4 #filthy hack to deal with the header-bar
+    return (windowy / tiley) - 4 #TODO: filthy hack to deal with the header-bar
 
 def play_game():
-    global key, mouse, game_state, in_game, windowx, windowy
+    global key, mouse, game_state, windowx, windowy, shift
     
     mouse = libtcod.Mouse()
     key = libtcod.Key()
     while not libtcod.console_is_window_closed():
 
-        # Render the screen
-        libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS | libtcod.EVENT_MOUSE, key, mouse)
-        render_all()
-        libtcod.console_flush()
-
-        # Handle keys and exit game if needed
-        player_action = player.handle_keys()
-        if player_action == 'exit':
-            save_game()
-            in_game = False
-            break
-
-        if consts.RENDER_EVERY_TURN:
-            render_all()
-            libtcod.console_flush()
-
-        # Let monsters take their turn
-        if game_state == 'playing' and player_action != 'didnt-take-turn':
-            dead_tickers = []
-            player.instance.on_tick(object=player.instance)
-            for object in current_map.objects:
-                if object.behavior:
-                    object.behavior.take_turn()
-                if object is not player.instance:
-                    object.on_tick(object=object)
-            for ticker in current_map.tickers:
-                if hasattr(ticker, 'ticks'):
-                    ticker.ticks += 1
-                if hasattr(ticker, 'on_tick'):
-                    ticker.on_tick(ticker)
-                if hasattr(ticker, 'dead') and ticker.dead:
-                    dead_tickers.append(ticker)
-            for ticker in dead_tickers:
-                if ticker in current_map.tickers:
-                    current_map.tickers.remove(ticker)
+        if consts.DEBUG_SAFE_CRASH:
+            try:
+                if step() == 'exit':
+                    break
+            except:
+                print("Unexpected error: %s" % sys.exc_info()[0])
+                traceback.print_tb(sys.exc_traceback)
+        else:
+            if step() == 'exit':
+                break
 
         # Handle auto-targeting
         ui.auto_target_monster()
+
+def step():
+
+    global in_game, shift
+
+    # Render the screen
+    libtcod.sys_check_for_event(
+        libtcod.EVENT_KEY_PRESS |
+        libtcod.EVENT_KEY_RELEASE |
+        libtcod.EVENT_MOUSE, key, mouse)
+
+    # handle shift on mac, because its treated as a key press instead of a modifier for some reason
+    if key.vk == libtcod.KEY_SHIFT:
+        shift = key.pressed
+
+    render_all()
+    libtcod.console_flush()
+
+    # Handle keys and exit game if needed
+    player_action = player.handle_keys(shift)
+    if player_action == 'exit':
+        save_game()
+        in_game = False
+        return 'exit'
+
+    if consts.RENDER_EVERY_TURN:
+        render_all()
+        libtcod.console_flush()
+
+    # Let monsters take their turn
+    if game_state == 'playing' and player_action != 'didnt-take-turn':
+        dead_tickers = []
+        player.instance.on_tick(object=player.instance)
+        for object in current_map.objects:
+            if object.behavior:
+                object.behavior.take_turn()
+            if object is not player.instance:
+                object.on_tick(object=object)
+        for ticker in current_map.tickers:
+            if hasattr(ticker, 'ticks'):
+                ticker.ticks += 1
+            if hasattr(ticker, 'on_tick'):
+                ticker.on_tick(ticker)
+            if hasattr(ticker, 'dead') and ticker.dead:
+                dead_tickers.append(ticker)
+        for ticker in dead_tickers:
+            if ticker in current_map.tickers:
+                current_map.tickers.remove(ticker)
+
+    return
 
 # Globals
 
@@ -2265,6 +2380,7 @@ windowx,windowy = libtcod.sys_get_current_resolution()
 tilex, tiley = 16,16
 libtcod.console_init_root(SCREEN_WIDTH(), SCREEN_HEIGHT(), 'mrogue', False)
 libtcod.sys_set_fps(consts.LIMIT_FPS)
+shift = False
 
 # Consoles
 con = libtcod.console_new(SCREEN_WIDTH(), SCREEN_HEIGHT())

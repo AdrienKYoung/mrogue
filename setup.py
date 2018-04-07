@@ -19,7 +19,7 @@ import py2exe
 import zipfile, os
 
 project_name = "mrogue"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = ['SDL2.dll','libtcod.dll',
                 'terminal16x16_gs_ro.png','menu_background.png','features.txt',
                 'legal/COPYING','legal/LIBTCOD-LICENSE.txt','legal/MROGUE-LICENSE.txt',
@@ -32,6 +32,7 @@ features = [
     'features/features-forest.txt',
     'features/features-gtunnels.txt',
     'features/features-marsh.txt',
+    'features/features-slagfields.txt',
     'features/premades.txt',
 ]
 

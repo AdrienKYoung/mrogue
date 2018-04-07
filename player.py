@@ -18,7 +18,7 @@ import collections
 import string
 
 import log
-
+import json
 
 class PlayerStats:
 
@@ -37,7 +37,8 @@ class PlayerStats:
 
     @property
     def int(self):
-        return self.base_int
+        bonus = sum([i.int_bonus for i in main.get_all_equipped(instance.fighter.inventory)])
+        return self.base_int + bonus
 
     @property
     def wiz(self):
@@ -45,11 +46,13 @@ class PlayerStats:
 
     @property
     def str(self):
-        return self.base_str
+        bonus = sum([i.str_bonus for i in main.get_all_equipped(instance.fighter.inventory)])
+        return self.base_str + bonus
 
     @property
     def agi(self):
-        return self.base_agi
+        bonus = sum([i.agi_bonus for i in main.get_all_equipped(instance.fighter.inventory)])
+        return self.base_agi + bonus
 
     @property
     def con(self):
@@ -87,8 +90,24 @@ loadouts = {
             'equipment_leather_armor',
             'glass_key',
             'weapon_crossbow',
+            'equipment_cloak_of_stealth'
         ],
-        'description' : "Nimble melee fighter. Starts with excellent agility."
+        'description' : "Stealthy ambusher. Starts with a variety of tools, but weak in combat."
+    },
+   'hunter' : {
+        'str':10,
+        'agi':12,
+        'int':8,
+        'spr':10,
+        'con':8,
+        'inventory':[
+            'charm_raw',
+            'weapon_shortsword',
+            'weapon_longbow',
+            'equipment_quiver_of_blood',
+            'equipment_leather_armor'
+        ],
+        'description' : "Fragile ranged attacker. Starts with a bow."
     },
     'wanderer' : {
         'str':12,
@@ -112,7 +131,7 @@ loadouts = {
             ['book_lesser_death','book_lesser_radiance'],
             'charm_raw',
             'weapon_coal_mace',
-            'equipment_cloth_robes',
+            'equipment_cloth_robes'
         ],
         'description' : "Melee magic caster. Starts with a tome, no armor and a mace."
     },
@@ -123,25 +142,9 @@ loadouts = {
         'spr':10,
         'con':8,
         'inventory':[
-            ['book_lesser_cold', 'book_lesser_fire'],
-            'charm_raw',
-            #'charm_farmers_talisman',
-            #'charm_holy_symbol',
-            #'charm_shard_of_creation',
-            #'charm_volatile_orb',
-            #'charm_elementalists_lens',
-            #'charm_primal_totem',
-            #'charm_prayer_beads',
+            ['book_lesser_arcane', 'book_lesser_cold', 'book_lesser_fire'],
             'equipment_cloth_robes',
-            'gem_lesser_fire',
-            'gem_lesser_water',
-            'gem_lesser_earth',
-            'gem_lesser_air',
-            'gem_lesser_cold',
-            'gem_lesser_life',
-            'gem_lesser_arcane',
-            'gem_lesser_radiance',
-            'gem_lesser_death'
+            'charm_raw'
         ],
         'description' : "Fragile in melee, but have access to powerful offensive magic. "
                         "Starts with a tome."
@@ -169,6 +172,7 @@ def create(loadout):
     instance.action_queue = []
     instance.skill_points = 20
     instance.skill_point_progress = 0
+    instance.corruption = 0
     instance.fighter.xp = 0
     instance.perk_abilities = []
     if consts.DEBUG_INVINCIBLE:
@@ -198,6 +202,11 @@ def create(loadout):
         i.item.holder = instance
         if i.equipment is not None:
             i.equipment.equip(no_message=True)
+            if i.equipment.max_ammo != 0:
+                instance.fighter.adjust_ammo(i.equipment.max_ammo, False)
+            if i.equipment.subtype == 'ranged':
+                instance.fighter.adjust_ammo(consts.MAX_AMMO_BASE, False)
+
 
     if consts.DEBUG_STARTING_ITEM is not None:
         test = main.create_item(consts.DEBUG_STARTING_ITEM)
@@ -205,24 +214,28 @@ def create(loadout):
 
     return 'success'
 
-def handle_keys():
+def handle_keys(shift_override):
 
     game_state = main.game_state
     key = main.key
     mouse = main.mouse
+    shift = shift_override or key.shift
 
     ui.mouse_select_monster()
+
+    #filter out garbage keyboard input
+    if key.vk == 66:
+        return 'didnt-take-turn'
 
     if key.vk == libtcod.KEY_CHAR:
         key_char = chr(key.c)
     else:
         key_char = None
 
-    if key.vk == libtcod.KEY_ENTER and (key.lalt or key.shift):
+    if key.vk == libtcod.KEY_ENTER and shift:
         # Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
-
-    elif key_char == 'q' and key.shift:
+    elif key_char == 'q' and shift:
         return 'exit'  #exit game
 
     log.info("INPUT","Key input: {}",[key_char])
@@ -235,11 +248,18 @@ def handle_keys():
             if instance.fighter.has_status('frozen'):
                 return 'frozen'
 
+        #break queued actions on keypress
+        if key.vk != 0 and key.vk != 4 and key.pressed:
+            flush_queued_actions()
+
         if instance.action_queue is not None and len(instance.action_queue) > 0:
             action = instance.action_queue[0]
             instance.action_queue.remove(action)
             do_queued_action(action)
             return action
+
+        if not key.pressed:
+            return 'didnt-take-turn'
 
         moved = False
         ctrl = key.lctrl or key.rctrl
@@ -273,13 +293,16 @@ def handle_keys():
             if key_char == 'i':
                 return ui.inspect_inventory()
             if key_char == 'e':
-                chosen_item = ui.inventory_menu('Use which item?')
-                if chosen_item is not None:
-                    use_result = chosen_item.use()
-                    if use_result == 'cancelled':
-                       return 'didnt-take-turn'
-                    else:
-                       return 'used-item'
+                if shift:
+                    explore()
+                else:
+                    chosen_item = ui.inventory_menu('Use which item?')
+                    if chosen_item is not None:
+                        use_result = chosen_item.use()
+                        if use_result == 'cancelled':
+                           return 'didnt-take-turn'
+                        else:
+                           return 'used-item'
             if key_char == 'd':
                 chosen_item = ui.inventory_menu('Drop which item?')
                 if chosen_item is not None:
@@ -298,13 +321,13 @@ def handle_keys():
             if key.vk == libtcod.KEY_TAB:
                 ui.target_next_monster()
             if key_char == 'm':
-                if key.shift:
+                if shift:
                     ui.show_map_screen()
                     return 'didnt-take-turn'
                 else:
                     return meditate()
             if key_char == 'a':
-                if key.shift:
+                if shift:
                     ui.show_action_panel = not ui.show_action_panel
                     return 'didnt-take-turn'
                 else:
@@ -321,11 +344,28 @@ def handle_keys():
         if not moved:
             return 'didnt-take-turn'
 
+def flush_queued_actions():
+    global already_alerted
+    instance.action_queue = []
+    already_alerted = True
+    return 'didnt-take-turn'
+
+already_alerted = False
+explore_target = None
 def do_queued_action(action):
+    global already_alerted, explore_target
     if action == 'wait' or action is None:
         instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
     elif action == 'channel-cast':
         instance.fighter.adjust_stamina(consts.STAMINA_REGEN_CHANNEL)
+    elif action == 'channel-meditate':
+        if not already_alerted and len(main.get_fighters_in_burst(
+                instance.x, instance.y, consts.TORCH_RADIUS, instance, lambda o: o.fighter.team == 'enemy')) > 0:
+            if ui.menu_y_n('Continue meditating while enemies are nearby?'):
+                instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
+                already_alerted = True
+            else:
+                return flush_queued_actions()
     elif callable(action):
         action()
 
@@ -599,8 +639,44 @@ def purchase_skill():
                 instance.skill_points -= cost
             ui.message("Learned skill {}".format(perks.perk_list[skill]['name'].title()),libtcod.white)
 
-def on_death(object=instance, context=None):
-    if instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
+def aquire_perk(perk):
+    learned_skills = main.learned_skills
+    if perk in learned_skills.keys():
+        learned_skills[perk] += 1
+    else:
+        learned_skills[perk] = 1
+    if perks.perk_list[perk].get('on_acquire') is not None:
+        perk.get('on_acquire')()
+
+def add_corruption(amount):
+    curse = int(amount) / 100
+    instance.corruption += amount
+    if instance.corruption % 100 < int(amount) % 100:
+        curse += 1
+
+    if curse > 0:
+        learned_skills = main.learned_skills
+        options = [p for p in perks.corruption_penalties if p not in learned_skills or \
+                   learned_skills.get(p) < perks.perk_list[p]['max_rank']]
+        perk = main.random_entry([p for p in options if perks.perk_list[p]['corruption'] <= instance.corruption])
+        aquire_perk(perk)
+        ui.message("Corruption taints your soul. {}".format(perks.perk_list[perk]['description'][0]),
+                   spells.essence_colors['void'])
+
+def get_demon_power():
+    learned_skills = main.learned_skills
+    perk_list = perks.perk_list
+    options = (p for p in perks.demon_powers if p not in learned_skills or \
+        learned_skills.get(p) < perk_list[p]['max_rank'])
+    perk = main.random_choice({ k:perk_list[k].get('weight',20) for k in options })
+    aquire_perk(perk)
+    ui.message("Received the dark power {}".format(perk_list[perk]['name'].title()), spells.essence_colors['void'])
+    add_corruption(main.roll_dice(perk_list[perk]['corruption_dice']))
+    #TODO - removeme
+    ui.message("Corruption is now {}".format(instance.corruption, libtcod.white))
+
+def on_death(object=instance, context=None, force=False):
+    if not force and instance.fighter.item_equipped_count('equipment_ring_of_salvation') > 0:
         rings = main.get_equipped_in_slot(instance.fighter.inventory, 'ring')
         broken = None
         for r in rings:
@@ -611,7 +687,7 @@ def on_death(object=instance, context=None):
         instance.fighter.inventory.remove(broken.owner)
         ui.message('Your ring of salvation flashes with a blinding white light, then shatters. Your wounds are healed.', spells.essence_colors['radiance'])
         instance.fighter.heal(instance.fighter.max_hp)
-    elif instance.fighter.has_status('auto-res'):
+    elif not force and instance.fighter.has_status('auto-res'):
         instance.fighter.remove_status('auto-res')
         instance.fighter.heal(instance.fighter.max_hp)
         ui.message("Not today, death.", libtcod.green)
@@ -706,6 +782,30 @@ def cleave_attack(dx, dy):
     return 'failed'
 
 
+def reach_and_cleave_attack(dx, dy):
+
+    target_space = instance.x + 2 * dx, instance.y + 2 * dy
+    target = main.get_monster_at_tile(target_space[0], target_space[1])
+    if target is None:
+        target = main.get_monster_at_tile((instance.x + dx, instance.y + dy))
+    if target is None:
+        value = instance.move(dx, dy)
+        if value:
+            return 'moved'
+    else:
+        stamina_cost = instance.fighter.calculate_attack_stamina_cost() * 2
+        if instance.fighter.stamina < stamina_cost:
+            ui.message("You don't have the stamina to perform a cleave attack!", libtcod.light_yellow)
+            return 'failed'
+        adjacent = main.adjacent_tiles_diagonal(target.x, target.y)
+        adjacent.append((target.x, target.y))
+        for tile in adjacent:
+            cleave_target = main.get_monster_at_tile(tile[0], tile[1])
+            if cleave_target is not None and cleave_target.fighter is not None:
+                combat.attack_ex(instance.fighter, cleave_target, 0, verb=('cleave', 'cleaves'))
+        return 'cleaved'
+    return 'failed'
+
 def bash_attack(dx, dy):
     from actions import common
     target = main.get_monster_at_tile(instance.x + dx, instance.y + dy)
@@ -780,19 +880,65 @@ def get_key(name='Glass Key'):
             return item
     return None
 
+def explore():
+    global explore_target, already_alerted
+    already_alerted = False
+    explore_target = main.closest_unexplored_tile()
+    if explore_target is not None:
+        instance.action_queue.append(_do_explore)
+        return 'start-explore'
+    else:
+        return 'didnt-take-turn'
+
+def _do_explore():
+    global explore_target, already_alerted
+
+    #if explore_target is None:
+    explore_target = main.closest_unexplored_tile()
+    #print("Explore target: {}".format(explore_target))
+
+    if explore_target is None:
+        ui.message("Done exploring")
+        return flush_queued_actions()
+
+    if not already_alerted and len(main.get_fighters_in_burst(
+            instance.x, instance.y, consts.TORCH_RADIUS, instance, lambda o: o.fighter.team == 'enemy')) > 0:
+        ui.message('Stopped exploring due to nearby enemies')
+        return flush_queued_actions()
+    else:
+        if instance.fighter.stamina > 50:
+            move_result = instance.move_astar(explore_target[0], explore_target[1])
+            #if move_result is not None:
+            #    explore_target = None
+        else:
+             instance.fighter.adjust_stamina(consts.STAMINA_REGEN_WAIT)
+        if not already_alerted:
+            instance.action_queue.append(_do_explore)
+        return 'exploring'
+
 
 def meditate():
+    global already_alerted
     book = main.get_equipped_in_slot(instance.fighter.inventory, 'left hand')
     if (book is None or not hasattr(book, 'spell_list')) and len(instance.memory.spell_list) == 0:
         ui.message('Without access to magic, you have no need of meditation.', libtcod.dark_cyan)
         return 'didnt-take-turn'
+
+    already_alerted = False
+
+    if len(main.get_fighters_in_burst(instance.x, instance.y, consts.TORCH_RADIUS, instance, lambda o: o.fighter.team == 'enemy')) > 0:
+        if not ui.menu_y_n('Really meditate with enemies nearby?'):
+            return 'didnt-take-turn'
+        else:
+            already_alerted = True
+
     ui.message('You tap into the magic of the world around you...', libtcod.dark_cyan)
 
     if main.has_skill('solace'):
         instance.fighter.apply_status_effect(effects.solace(),True)
 
     for i in range(consts.MEDITATE_CHANNEL_TIME - 1):
-        instance.action_queue.append('wait')
+        instance.action_queue.append('channel-meditate')
     instance.action_queue.append(_do_meditate)
     return 'start-meditate'
 
@@ -813,7 +959,7 @@ def delay(duration,action,delay_action='delay'):
 
 def jump(actor=None, range=None, stamina_cost=None):
     if range is None:
-        range = consts.BASE_JUMP_RANGE
+        range = consts.BASE_JUMP_RANGE + instance.fighter.item_attribute_count("jump_distance")
     if stamina_cost is None:
         stamina_cost = consts.JUMP_STAMINA_COST
     if not main.current_map.tiles[instance.x][instance.y].jumpable and stamina_cost > 0:
@@ -937,6 +1083,11 @@ def on_tick(this):
                               color=libtcod.dark_blue, description='Your weapon is ready to deliver a heavy attack.'))
         else:
             instance.rising_storm_last_attack = 0
+    if main.has_skill('dark_aura'):
+        sv = main.skill_value('dark_aura')
+        fighters = main.get_fighters_in_burst(instance.x, instance.y, sv, instance)
+        for enemy in (f for f in fighters if f.fighter.team != 'ally'):
+            enemy.fighter.apply_status_effect(effects.cursed(2), 20 + sv * 5)
     if instance.fighter.stamina_regen > 0:
         instance.fighter.adjust_stamina(instance.fighter.stamina_regen)
 
@@ -945,7 +1096,7 @@ def on_tick(this):
             ability.on_tick() #  Raise Shield cools down even when not accessible
 
     if instance.fighter.hp < 25:
-        instance.fighter.heal(instance.fighter.item_equipped_count('equipment_ring_of_tenacity'))
+        instance.fighter.heal(instance.fighter.item_attribute_count('tenacity'))
 
 def on_get_hit(this,other,damage):
     if main.has_skill('heir_to_the_heavens'):
@@ -964,15 +1115,19 @@ def on_get_hit(this,other,damage):
             ui.message('You feel a surge of adrenaline!', libtcod.light_yellow)
 
     if instance.fighter is not None:
-        rage_count = instance.fighter.item_equipped_count('equipment_ring_of_rage')
+        rage_count = instance.fighter.item_equipped_count('berserk_on_take_damage')
         if main.roll_dice('1d20') <= rage_count:
             instance.fighter.apply_status_effect(effects.berserk())
         if other is not None and other.fighter is not None:
-            if main.roll_dice('1d20') <= instance.fighter.item_equipped_count('equipment_ring_of_vengeance'):
+            if main.roll_dice('1d20') <= instance.fighter.item_attribute_count('curse_on_take_damage'):
                 other.fighter.apply_status_effect(effects.cursed())
 
 def on_get_kill(this,other,damage):
-    this.fighter.heal(this.fighter.item_equipped_count('equipment_ring_of_vampirism') * 2)
+    this.fighter.heal(
+        this.fighter.item_attribute_count('vampiric') * 2
+        + main.skill_value('vampirism')
+    )
+    this.fighter.adjust_stamina(main.skill_value('bloodlust'))
 
 def get_abilities():
     from actions import abilities

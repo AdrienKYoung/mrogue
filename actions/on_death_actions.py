@@ -26,9 +26,14 @@ import common
 
 def on_death_summon(obj,context):
     ui.message('%s is dead!' % syntax.name(obj).capitalize(), libtcod.red)
-    main.current_map.fighters.remove(obj)
     obj.fighter = None
+    main.current_map.fighters.remove(obj)
     obj.destroy()
+
+    if context.get('require_tile') is not None:
+        tile_at_location = main.current_map.tiles[obj.x][obj.y]
+        if context['require_tile'] != tile_at_location.tile_type:
+            return
 
     if 'message' in context.keys():
         ui.message(context['message'])
@@ -93,6 +98,9 @@ def bomb_beetle_death(beetle, context):
     beetle.description = 'The explosive carapace of a blast beetle. In a few turns, it will explode!'
     beetle.bomb_timer = 3
     beetle.on_tick = bomb_beetle_corpse_tick
+    if hasattr(beetle, 'recoverable_ammo'):
+        main.drop_ammo(beetle.x, beetle.y, beetle.recoverable_ammo)
+        del beetle.recoverable_ammo
     main.current_map.fighters.remove(beetle)
 
     if ui.selected_monster is beetle:
@@ -119,11 +127,11 @@ def bomb_beetle_corpse_tick(object=None, context=None):
             if libtcod.random_get_int(0, 0, 3) != 0:
                 main.create_fire(tile[0], tile[1], 10)
                 main.melt_ice(tile[0], tile[1])
-            monster = main.get_monster_at_tile(tile[0], tile[1])
-            if monster is not None:
-                monster.fighter.take_damage(main.roll_dice('22d3'))
-                if monster.fighter is not None:
-                    monster.fighter.apply_status_effect(effects.burning())
+            monster = main.get_objects(tile[0], tile[1], lambda o: o.fighter is not None)
+            if len(monster) > 0:
+                monster[0].fighter.take_damage(main.roll_dice('22d3'))
+                if monster[0].fighter is not None:
+                    monster[0].fighter.apply_status_effect(effects.burning())
         object.destroy()
 
 table = {

@@ -137,6 +137,18 @@ branches = {
         'map_color'     : libtcod.Color(255, 191, 0),
         'enabled'       : True
     },
+    'bog': {
+        'name'          : "the poisoned bog",
+        'default_wall'  : 'mossy stone wall',
+        'default_floor' : 'damp soil',
+        'default_ramp'  : 'stone ramp',
+        'scaling'       : 0,
+        'loot'          : None,
+        'monsters'      : None,
+        'generate'      : mapgen.make_map_bog,
+        'map_color'     : libtcod.desaturated_green,
+        'enabled'       : True
+    },
     'gtunnels': {
         'name'          : 'the goblin tunnels',
         'default_wall'  : 'tunnel wall',
@@ -223,6 +235,18 @@ branches = {
         'generate':mapgen.make_map_forest,
         'map_color'     : libtcod.darkest_sky,
         'enabled'       : True
+    },
+    'eolith': {
+        'name': "Eolith Cavern",
+        'default_wall': 'dark shale wall',
+        'default_floor': 'snowy ground',
+        'default_ramp': 'snowy slope',
+        'scaling': 0,
+        'loot': None,
+        'monsters': None,
+        'generate': mapgen.make_map_eolith,
+        'map_color': libtcod.darker_sky,
+        'enabled': True
     },
     'garden': {
         'name'          :"the gardens",
@@ -381,15 +405,23 @@ branches = {
     },
     'slagfields': {
         'name'          :"the slagfields",
-        'default_wall'  : 'sea cliff',
-        'default_floor' : 'sand',
+        'default_wall'  : 'dark shale wall',
+        'default_floor' : 'shale',
         'default_ramp'  : 'shale slope',
         'scaling'       : 0,
         'loot'          : None,
-        'monsters'      : None,
-        'generate'      : mapgen.make_test_space,
+        'monsters':[
+            {'min_depth':0, 'max_depth': None, 'encounter':['monster_gixian_ravager']},
+            {'min_depth':0, 'max_depth': 3, 'encounter':['monster_roiling_fury']},
+            {'min_depth':0, 'max_depth': None, 'encounter':['monster_living_furnace']},
+            {'min_depth':2, 'max_depth': None, 'encounter':['monster_gixian_archon']},
+        ],
+        'encounter_dice': '1d4+4',
+        'loot_dice'     : '0d0',
+        'xp_amount'     : 4,
+        'generate'      : mapgen.make_map_slag_fields,
         'map_color'     : libtcod.darker_gray,
-        'enabled'       : False
+        'enabled'       : True
     },
     'foundry': {
         'name'          :"foundry of war",

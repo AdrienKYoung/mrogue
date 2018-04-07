@@ -91,4 +91,14 @@ table = {
         'description'   : 'A simple string of wooden beads, as carried by the monks of the Arang Mountains.',
         'charges'       : 3,
     },
+    'charm_alchemists_flask' : {
+        'name'          : "Alchemist's Flask",
+        'type'          : 'item',
+        'category'      : 'charm',
+        'char'          : chr(235),
+        'color'         : libtcodpy.yellow,
+        'on_use'        : charms.alchemists_flask,
+        'description'   : 'A narrow glass flask that tingles with residual magic.',
+        'charges'       : 3,
+    },
 }

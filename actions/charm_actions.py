@@ -57,7 +57,7 @@ def firebomb(actor, target, context):
     if actor is player.instance or fov.player_can_see(x, y):
         ui.message('The firebomb explodes!', spells.essence_colors['fire'])
     for f in target:
-        if combat.spell_attack_ex(actor.fighter, f, None, '4d10', 0, ['fire'], 0) == 'hit' and f.fighter is not None:
+        if combat.attack_magical(actor.fighter, f, 'ability_fire_bomb') == 'hit' and f.fighter is not None:
             f.fighter.apply_status_effect(effects.burning())
 
 def icebomb(actor, target, context):
@@ -67,8 +67,8 @@ def icebomb(actor, target, context):
     if actor is player.instance or fov.player_can_see(x, y):
         ui.message('The icebomb explodes!', spells.essence_colors['cold'])
     for f in target:
-        if combat.spell_attack_ex(actor.fighter, f, None, '3d10', 0, ['cold'], 0) == 'hit' and f.fighter is not None:
-            f.fighter.apply_status_effect(effects.frozen(duration=6))
+        if combat.attack_magical(actor.fighter, f, 'ability_ice_bomb') == 'hit' and f.fighter is not None:
+            f.fighter.apply_status_effect(effects.frozen(duration=context['freeze_duration']))
 
 def timebomb(actor, target, context):
     (x, y) = target[0], target[1]
@@ -93,7 +93,7 @@ def _timebomb_ticker(ticker):
         for adj in main.adjacent_inclusive(x, y):
             for f in main.current_map.fighters:
                 if f.x == adj[0] and f.y == adj[1]:
-                    combat.spell_attack_ex(ticker.actor.fighter, f, None, '6d10', 0, ['lightning'], 0)
+                    combat.attack_magical(ticker.actor.fighter, f, 'data_time_bomb_explosion')
 
 def holy_water(actor, target, context):
     import monsters
@@ -102,7 +102,7 @@ def holy_water(actor, target, context):
             ui.message('That target is not vulnerable to holy water.', libtcod.gray)
         return 'cancelled'
     ui.render_projectile((actor.x, actor.y), (target.x, target.y), color=spells.essence_colors['water'], character=libtcod.CHAR_BLOCK2)
-    combat.spell_attack_ex(actor.fighter, target, None, context['base_damage'], 0, context['element'], context['pierce'])
+    combat.attack_magical(actor.fighter, target, 'ability_holy_water')
     if target.fighter is not None:
         target.fighter.apply_status_effect(effects.stunned(duration=(3 + main.roll_dice('1d6'))))
     return 'success'
@@ -194,3 +194,21 @@ def create_terrain(actor, target, context):
         for t in tiles:
             fov.set_fov_properties(t[0], t[1], len(main.get_objects(t[0], t[1], lambda o: o.blocks_sight)) > 0,
                                    elevation=main.current_map.tiles[t[0]][t[1]].elevation)
+
+def acid_flask(actor, target, context):
+    (x, y) = context['origin']
+    ui.render_projectile((actor.x, actor.y), (x, y), libtcod.lime, character='!')
+    ui.render_explosion(x, y, 1, libtcod.lightest_lime, libtcod.dark_lime)
+    for t in target:
+        combat.attack_magical(actor.fighter, t, 'ability_acid_flask')
+
+def frostfire(actor, target, context):
+    main.create_frostfire(target[0], target[1])
+
+def vitality_potion(actor, target, context):
+    actor.fighter.apply_status_effect(effects.vitality())
+
+def demon_power(actor, target, context):
+    if target is not player.instance:
+        return "didnt-take-turn"
+    player.get_demon_power()

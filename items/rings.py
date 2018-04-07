@@ -11,16 +11,19 @@ table = {
         'slot'          : 'ring',
         'description'   : "A jade ring with the image of an oxen carved around it."
                           "Slowly regenerates its wearer's stamina over time",
-        'stamina_regen' : 2
+        'stamina_regen' : 2,
+        'attributes' : ['stamina_regen'],
     },
-    'equipment_ring_of_waterbreathing': {
-        'name'          : 'Ring of Waterbreathing',
+    'equipment_ring_of_breath': {
+        'name'          : 'Ring of Breath',
         'category'      : 'accessory',
         'char'          : chr(147),
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'slot'          : 'ring',
-        'description'   : 'A pink coral ring. Grants its wearer immunity to drowning.',
+        'description'   : 'A small ring covered in silvery scales. '
+                          'Grants its wearer immunity to drowning and toxic fumes.',
+        'attributes'    : 'breath'
     },
     'equipment_ring_of_evasion': {
         'name'          : 'Ring of Evasion',
@@ -52,6 +55,7 @@ table = {
         'slot'          : 'ring',
         'description'   : 'A ring composed of two halves joined together: one polished wood, the other hammered iron. '
                           'Reduces the amount of time it takes to repair shredded armor.',
+        'attributes'    : 'mending'
     },
     'equipment_ring_of_vampirism': {
         'name'          : 'Ring of Vampirism',
@@ -62,6 +66,7 @@ table = {
         'slot'          : 'ring',
         'description'   : 'A bone ring lined with needles that dig into your flesh, drawing blood. Killing living '
                           'creatures while wearing it will heal you slightly.',
+        'attributes'    : 'vampiric'
     },
     'equipment_ring_of_tenacity': {
         'name'          : 'Ring of Tenacity',
@@ -72,6 +77,7 @@ table = {
         'slot'          : 'ring',
         'description'   : "A simple brass ring that glows red when its wearer is near death. "
                           "Heals you over time as long as your health is low.",
+        'attributes'    : 'tenacity'
     },
     'equipment_ring_of_fortitude': {
         'name'          : 'Ring of Fortitude',
@@ -80,8 +86,18 @@ table = {
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'slot'          : 'ring',
-        'description'   : 'A stone ring carved with images of walls and castles. '
-                          'Reduces the duration of hostile status effects.',
+        'description'   : 'A stone ring carved with images of walls and castles.',
+        'fortitude_bonus' : 10,
+    },
+    'equipment_ring_of_will': {
+        'name'          : 'Ring of Fortitude',
+        'category'      : 'accessory',
+        'char'          : chr(147),
+        'color'         : libtcodpy.yellow,
+        'type'          : 'item',
+        'slot'          : 'ring',
+        'description'   : 'An ivory ring carved with images of owls.',
+        'fortitude_bonus' : 10,
     },
     'equipment_ring_of_rage': {
         'name'          : 'Ring of Rage',
@@ -92,6 +108,7 @@ table = {
         'slot'          : 'ring',
         'description'   : 'A ring of braided hairs and strung with teeth. Taking damage while wearing this ring '
                           'will sometimes cause its wearer to enter a berserk rage.',
+        'attributes'    : ['berserk_on_take_damage'],
     },
     'equipment_ring_of_vengeance': {
         'name'          : 'Ring of Vengeance',
@@ -102,6 +119,7 @@ table = {
         'slot'          : 'ring',
         'description'   : 'A golden ring set with a skull cast in silver. '
                           'Enemies that damage the wearer of this ring will be cursed, reducing their defenses.',
+        'attributes'    : ['curse_on_take_damage'],
     },
     'equipment_ring_of_burdens': {
         'name'          : 'Ring of Burdens',
@@ -122,6 +140,7 @@ table = {
         'slot'          : 'ring',
         'description'   : 'A dull lead ring that transforms to a lustrous gold when slipped onto a finger. '
                           'While equipped, gems will give their opposite essence, if possible.',
+        'attributes'    : ['alchemy']
     },
     'equipment_ring_of_poison_immunity': {
         'name'          : 'Ring of Poison Immunity',
@@ -143,7 +162,8 @@ table = {
         'slot'          : 'ring',
         'description'   : 'An alabaster ring set with a silver image of a bird in flight. '
                           'Grants immunity to movement-impairing effects.',
-        'resistances'    : {'immobilized' : 'immune', 'displacement' : 'immune'}
+        'resistances'    : {'immobilized' : 'immune', 'displacement' : 'immune'},
+        'attributes'    : ['web_immune']
     },
     'equipment_ring_of_salvation': {
         'name'          : 'Ring of Salvation',
@@ -154,6 +174,7 @@ table = {
         'slot'          : 'ring',
         'description'   : 'A golden ring said to have been made by the Martyr herself. '
                           'This ring has the power to protect its wearer from death, but only once.',
+        'attributes'    : ['auto_res']
     },
     'equipment_ring_of_blessings': {
         'name'          : 'Ring of Blessings',
@@ -166,14 +187,15 @@ table = {
                           'Protects its wearer from curses, judgement, and doom.',
         'resistances'    : {'cursed' : 'immune', 'doom' : 'immune', 'judgement' : 'immune'}
     },
-    'equipment_ring_of_levitation': {
-        'name'          : 'Ring of Levitation',
+    'equipment_obsidian_ring': {
+        'name'          : 'Obsidian Ring',
         'category'      : 'accessory',
         'char'          : chr(147),
         'color'         : libtcodpy.yellow,
         'type'          : 'item',
         'slot'          : 'ring',
-        'description'   : 'A glass ring that feels almost weightless. Allows its wearer to levitate.',
-        'status_effect' : effects.levitating,
+        'description'   : "A black shard of obsidian roughly carved to be worn on one's finger. "
+                          "It greatly protects the wearer from fire, and grants immunity to burning.",
+        'resistances'    : {'fire' : 2, 'burning' : 'immune'}
     },
 }

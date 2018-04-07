@@ -59,6 +59,13 @@ def target_damaged_ally(actor):
                 target = ally
     return target
 
+def target_random_ally(actor):
+    if actor is None or actor.fighter is None:
+        return None
+    allies = game.get_fighters_in_burst(actor.x, actor.y, consts.TORCH_RADIUS, actor,
+                                        condition=lambda o: o.fighter.team == actor.fighter.team)
+    return allies[libtcod.random_get_int(0, 0, len(allies) - 1)]
+
 def target_clear_line_of_fire(actor):
     if actor is None or \
             actor.behavior is None or \
@@ -82,6 +89,19 @@ def target_open_space_near_target(actor):
     target = actor.behavior.behavior.target
     return game.find_closest_open_tile(target.x, target.y)
 
+def target_self_no_buff_refresh_meta(status):
+    return lambda a: _target_self_no_buff_refresh(a, status)
+
+def _target_self_no_buff_refresh(actor, status):
+    if actor is None or \
+            actor.behavior is None or \
+            actor.behavior.behavior is None or \
+            actor.behavior.behavior.target is None or \
+            actor.fighter is None or\
+            actor.fighter.has_status(status):
+        return None
+    return actor
+
 def aggro_on_hit(monster, attacker):
     if attacker is None:
         return
@@ -92,7 +112,7 @@ def aggro_on_hit(monster, attacker):
             monster.behavior.behavior.last_seen_position = attacker.x, attacker.y
             monster.behavior.ai_state = 'pursuing'
     elif monster.behavior.ai_state != 'pursuing':
-        monster.behavior.behavior.wander_path = game.get_path_to_point((monster.x, monster.y), (attacker.x, attacker.y), monster.movement_type)
+        monster.behavior.behavior.wander_path = game.get_path_to_point((monster.x, monster.y), game.find_closest_open_tile(attacker.x, attacker.y), monster.movement_type)
         monster.behavior.ai_state = 'wandering'
 
 def pursue(behavior):
@@ -185,7 +205,7 @@ def wander(behavior):
             rand_pos = game.find_closest_open_tile(rand_pos[0], rand_pos[1])
             if rand_pos is None:
                 return 'wandered'
-            behavior.wander_path = game.get_path_to_point((monster.x, monster.y), rand_pos, monster.movement_type)
+            behavior.wander_path = game.get_path_to_point((monster.x, monster.y), rand_pos, monster.movement_type, None)
             if behavior.wander_path is None:
                 return 'wandered'
         old_pos = monster.x, monster.y
@@ -738,7 +758,7 @@ class FireBehavior:
             self.owner.destroy()
         else:
             for obj in game.get_objects(self.owner.x, self.owner.y, lambda o: o.fighter is not None):
-                obj.fighter.apply_status_effect(effects.burning())
+                obj.fighter.apply_status_effect(effects.burning(), dc=None)
             # Spread to adjacent tiles
             if self.temperature < 9: # don't spread on the first turn
                 for tile in game.adjacent_tiles_diagonal(self.owner.x, self.owner.y):
@@ -746,6 +766,34 @@ class FireBehavior:
                         game.create_fire(tile[0], tile[1], 10)
                     if game.current_map.tiles[tile[0]][tile[1]].is_ice:
                         game.melt_ice(tile[0], tile[1])
+
+class FrostfireBehavior:
+    def __init__(self, temp):
+        self.temperature = temp
+
+    def on_tick(self, object=None):
+        if self.temperature > 8:
+            self.owner.color = libtcod.white
+        elif self.temperature > 6:
+            self.owner.color = libtcod.lightest_sky
+        elif self.temperature > 4:
+            self.owner.color = libtcod.light_sky
+        elif self.temperature > 2:
+            self.owner.color = libtcod.sky
+        else:
+            self.owner.color = libtcod.desaturated_sky
+
+        self.temperature -= 1
+        if self.temperature == 0:
+            self.owner.destroy()
+        else:
+            for obj in game.get_objects(self.owner.x, self.owner.y, lambda o: o.fighter is not None):
+                obj.fighter.apply_status_effect(effects.frozen(duration=5), dc=None)
+            if self.temperature < 9: # don't spread on the first turn
+                for adj in game.adjacent_tiles_diagonal(self.owner.x, self.owner.y):
+                    tile = game.current_map.tiles[adj[0]][adj[1]]
+                    if libtcod.random_get_int(0, 1, 100) <= 20 and (tile.is_water or tile.tile_type == 'lava'):
+                        game.create_frostfire(adj[0], adj[1])
 
 
 import effects

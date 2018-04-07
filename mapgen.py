@@ -106,6 +106,7 @@ class Room:
     def __init__(self):
         self.tiles = {}
         self.data = {}
+        self.key_points = {}
         self.min_x = None
         self.max_x = None
         self.min_y = None
@@ -140,6 +141,7 @@ class Room:
             return  # No translation
         new_tiles = {}
         new_data = {}
+        new_key_points = {}
         new_min_x = new_min_y = 10000
         new_max_x = new_max_y = -10000
         for tile in self.tiles.keys():
@@ -156,12 +158,16 @@ class Room:
             new_tiles[new_x, new_y] = self.tiles[tile]
             if tile in self.data.keys():
                 new_data[new_x, new_y] = self.data[tile]
+            for key_point in self.key_points.items():
+                if key_point[1] == (tile[0], tile[1]):
+                    new_key_points[key_point[0]] = (new_x, new_y)
         self.min_x = new_min_x
         self.min_y = new_min_y
         self.max_x = new_max_x
         self.max_y = new_max_y
         self.tiles = new_tiles
         self.data = new_data
+        self.key_points = new_key_points
         self.pos = x, y
 
     # Orient to the origin, then rotate about the top-left corner, then reorient to the origin again.
@@ -175,6 +181,7 @@ class Room:
         self.max_y = None
         new_tiles = {}
         new_data = {}
+        new_key_points = {}
         for tile in self.tiles.keys():
             new_x = int(round(float(tile[0]) * math.cos(angle) - float(tile[1]) * math.sin(angle)))
             new_y = int(round(float(tile[0]) * math.sin(angle) + float(tile[1]) * math.cos(angle)))
@@ -189,9 +196,13 @@ class Room:
                 self.max_x = new_x
             if self.max_y is None or new_y > self.max_y:
                 self.max_y = new_y
+            for key_point in self.key_points.items():
+                if key_point[1] == (tile[0], tile[1]):
+                    new_key_points[key_point[0]] = (new_x, new_y)
         self.tiles = new_tiles
         self.data = new_data
         self.pos = self.min_x, self.min_y
+        self.key_points = new_key_points
         self.set_pos(0, 0)
 
     # Orient to the origin, then reflect across one or both axes
@@ -201,6 +212,7 @@ class Room:
         self.set_pos(0, 0)
         new_tiles = {}
         new_data = {}
+        new_key_points = {}
         for tile in self.tiles.keys():
             if reflect_x:
                 new_x = -tile[0] + self.max_x
@@ -213,8 +225,12 @@ class Room:
             new_tiles[(new_x, new_y)] = self.tiles[tile]
             if tile in self.data.keys():
                 new_data[new_x, new_y] = self.data[tile]
+            for key_point in self.key_points.items():
+                if key_point[1] == (tile[0], tile[1]):
+                    new_key_points[key_point[0]] = (new_x, new_y)
         self.tiles = new_tiles
         self.data = new_data
+        self.key_points = new_key_points
 
 
     def set_tile(self, x, y, tile_type, elevation=None):
@@ -243,6 +259,12 @@ class Room:
         del self.tiles[(x, y)]
         if (x, y) in self.data.keys():
             del self.data[(x, y)]
+        to_remove = []
+        for key_point in self.key_points:
+            if key_point[1] == (x, y):
+                to_remove.append(key_point[0])
+        for key in to_remove:
+            del self.key_points[key]
         if x == self.min_x or x == self.max_x or y == self.min_y or y == self.max_y:
             self.max_x = None
             self.min_x = None
@@ -691,6 +713,7 @@ def apply_item(x, y, data):
     item_id = None
     quality = None
     material = None
+    loot_table = None
     if len(data) > 1:
         for i in range(1, len(data)):
             if data[i] == 'CHEST':
@@ -708,8 +731,17 @@ def apply_item(x, y, data):
                 quality = data[i + 1]
             elif data[i] == 'MATERIAL':
                 material = data[i + 1]
+            elif data[i] == "LOOT_TABLE":
+                loot_table = data[i + 1]
     if item_id:
         main.spawn_item(item_id, x, y, material=material, quality=quality)
+    elif loot_table:
+        item = loot.item_from_table_ex(loot_table, (loot_level if(loot_level is not None) else 1))
+        if item is not None:
+            item.x = x
+            item.y = y
+            map.add_object(item)
+            item.send_to_back()
     else:
         item = create_random_loot(category=category, loot_level=loot_level)
         if item is not None:
@@ -943,6 +975,7 @@ def create_terrain_patch(start, terrain_type, min_patch=20, max_patch=400, cross
 
 
 def create_reed(x, y):
+    import actions.on_step_actions
     obj = main.get_objects(x, y)
     if len(obj) > 0:
         return  # object in the way
@@ -953,11 +986,12 @@ def create_reed(x, y):
         map.tiles[x][y].tile_type = 'grass floor'
     reed = main.GameObject(x, y, 244, 'reeds', libtcod.darker_green, always_visible=True, description='A thicket of '
                            'reeds so tall they obstruct your vision. They are easily crushed underfoot.'
-                           , blocks_sight=True, on_step=main.step_on_reed, burns=True)
+                           , blocks_sight=True, on_step=actions.on_step_actions.step_on_reed, burns=True)
     map.add_object(reed)
 
 
 def create_blightweed(x, y):
+    import actions.on_step_actions
     obj = main.get_objects(x, y)
     if len(obj) > 0:
         return None # object in the way
@@ -966,7 +1000,7 @@ def create_blightweed(x, y):
         return None # blocked
     weed = main.GameObject(x, y, 244, 'blightweed', libtcod.desaturated_red, always_visible=True, description=
                            'A cursed, twisted plant bristling with menacing, blood-red thorns. It catches and shreds the'
-                           ' armor of those who attempt to pass through it.', on_step=main.step_on_blightweed, burns=True)
+                           ' armor of those who attempt to pass through it.', on_step=actions.on_step_actions.step_on_blightweed, burns=True)
     map.add_object(weed)
 
 
@@ -1156,6 +1190,8 @@ def load_feature(lines=[]):
                             feature_room.data[(i_x, y_index)].append(c)
                         else:
                             feature_room.data[(i_x, y_index)] = c
+                    elif 65 <= ord(c) <= 90 or 97 <= ord(c) <= 122:
+                        feature_room.key_points[c] = (i_x, y_index)
                     elif c.isdigit():
                         if (i_x, y_index) in feature_room.data.keys():
                             for s in data_strings[int(c)]:
@@ -1987,6 +2023,77 @@ def make_map_forest():
 
     make_basic_map_links()
 
+def make_map_slag_fields():
+    sizex,sizey = consts.MAP_WIDTH - 1,consts.MAP_HEIGHT - 1
+    link_locations = []
+    number_features = libtcod.random_get_int(0, 5, 12)
+    if number_features < 9:
+        link_locations = [(consts.MAP_WIDTH/2,1),(1,consts.MAP_HEIGHT/2),(consts.MAP_WIDTH/2,consts.MAP_HEIGHT-1),(consts.MAP_WIDTH-1,consts.MAP_HEIGHT/2)]
+    noise = create_voronoi(sizex,sizey, number_features, 2, link_locations, max_dist=20.0)
+    room = Room()
+    room.set_pos(1,1)
+    for x in range(sizex):
+        for y in range(sizey):
+            elevation = abs(int(5 - math.ceil(noise[0][x][y] * 4)))
+
+            if elevation <= 2:
+                elevation = 1
+                if libtcod.random_get_float(0, 0.0, 1.0) < .1:
+                    tile = 'shale'
+                else:
+                    tile = 'lava'
+            elif elevation > 3:
+                tile = 'dark shale wall'
+            else:
+                tile = 'shale'
+
+            room.set_tile(x, y, tile, elevation)
+    apply_room(room)
+    erode_map('shale', libtcod.random_get_int(0, 2, 10))
+
+    tree_count = libtcod.random_get_int(0, 0, 5)
+    for i in range(tree_count):
+        doodad_pos = ( libtcod.random_get_int(0, 1, consts.MAP_WIDTH - 2),
+                     libtcod.random_get_int(0, 1, consts.MAP_HEIGHT - 2))
+        if not map.tiles[doodad_pos[0]][doodad_pos[1]].is_water:
+            change_map_tile(doodad_pos[0], doodad_pos[1], 'rusted skeleton')
+
+    boulder_count = libtcod.random_get_int(0, 4, 8)
+    for i in range(boulder_count):
+        boulder = create_room_cloud(tile_type='dark shale wall', min_radius=1, max_radius=2)
+        boulder.set_pos(libtcod.random_get_int(0, 10, consts.MAP_WIDTH - 10),
+                        libtcod.random_get_int(0, 10, consts.MAP_HEIGHT - 10))
+        apply_room(boulder)
+
+    ash_count = libtcod.random_get_int(0, 0, 8)
+    for i in range(ash_count):
+        create_terrain_patch((libtcod.random_get_int(0, 10, consts.MAP_WIDTH - 10),
+                              libtcod.random_get_int(0, 10, consts.MAP_HEIGHT - 10)), 'ash')
+
+    create_slopes()
+
+    open_tiles = []
+    for y in range(consts.MAP_HEIGHT):
+        for x in range(consts.MAP_WIDTH):
+            tile = map.tiles[x][y]
+            if not tile.blocks and not tile.is_dangerous:
+                open_tiles.append((x, y))
+
+    feature_count = libtcod.random_get_int(0, 5, 10)
+    for i in range(feature_count):
+        tile = choose_random_tile(open_tiles)
+        feature_index = libtcod.random_get_int(0, 0, len(feature_categories['slagfields']) - 1)
+        feature_name = feature_categories['slagfields'][feature_index].name
+        create_feature(tile[0], tile[1], feature_name, open_tiles)
+
+    make_basic_map_links()
+
+    active_branch = dungeon.branches[map.branch]
+    main.place_objects(open_tiles,
+                       main.roll_dice(active_branch['encounter_dice']) + main.roll_dice('1d' + str(map.difficulty + 1)),
+                       main.roll_dice(active_branch['loot_dice']),
+                       active_branch['xp_amount'])
+
 def make_map_marsh():
 
     rooms = []
@@ -2012,10 +2119,6 @@ def make_map_marsh():
     for i in range(blastcap_count):
         tile = choose_random_tile(open_tiles)
         main.spawn_monster('monster_blastcap', tile[0], tile[1])
-
-    if consts.DEBUG_TEST_FEATURE is not None:
-        tile = choose_random_tile(open_tiles)
-        create_feature(tile[0], tile[1], consts.DEBUG_TEST_FEATURE, open_tiles)
 
     feature_count = libtcod.random_get_int(0, 0, 10)
     for i in range(feature_count):
@@ -2138,6 +2241,39 @@ def make_map_crypt():
         stairs.interact = main.use_stairs
         stairs.char = '>'
 
+def make_map_bog():
+    open_tiles = []
+    create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'bog', open_tiles=open_tiles)
+    stairs = None
+    for i in range(len(map.objects) - 1, 0, -1):
+        if map.objects[i].name == 'stairs':
+            stairs = map.objects[i]
+            break
+    if stairs is not None:
+        stairs.name = "Staircase to the marsh"
+        stairs.description = 'A narrow stone stairway leading up to the marsh.'
+        stairs.link = map.links[0]
+        stairs.interact = main.use_stairs
+        stairs.char = '>'
+
+def make_map_eolith():
+    open_tiles = []
+    key_points = create_feature(consts.MAP_WIDTH / 2, consts.MAP_HEIGHT / 2, 'eolith_cavern', open_tiles=open_tiles).key_points
+    treasure_point = key_points.values()[libtcod.random_get_int(0, 0, len(key_points.values()) - 1)]
+    main.spawn_item('weapon_longsword', treasure_point[0], treasure_point[1], quality='')
+    main.spawn_item('equipment_leather_armor', treasure_point[0], treasure_point[1], quality='')
+    change_map_tile(treasure_point[0], treasure_point[1],'ice wall', hard_override=True)
+    stairs = None
+    for i in range(len(map.objects) - 1, 0, -1):
+        if map.objects[i].name == 'stairs':
+            stairs = map.objects[i]
+            break
+    if stairs is not None:
+        stairs.name = "Staircase to the Frozen Forest"
+        stairs.description = 'A narrow stone stairway leading up to the frozen forest.'
+        stairs.link = map.links[0]
+        stairs.interact = main.use_stairs
+        stairs.char = '>'
 
 def make_map_river():
     for y in range(2, consts.MAP_HEIGHT - 2):
@@ -2232,10 +2368,6 @@ def make_map_badlands():
         for y in range(consts.MAP_HEIGHT):
             if not map.tiles[x][y].blocks:
                 open_tiles.append((x, y))
-
-    if consts.DEBUG_TEST_FEATURE is not None:
-        tile = choose_random_tile(open_tiles)
-        create_feature(tile[0], tile[1], consts.DEBUG_TEST_FEATURE, open_tiles)
 
     feature_count = libtcod.random_get_int(0, 0, 3)
     for i in range(feature_count):
@@ -2722,7 +2854,11 @@ def make_basic_map_link(link, connect_with_tunnels=True):
             link_feature = random_from_list(feature_categories[link_feature_category]).name
         else:
             link_feature = feature_categories['default_gate'][0].name
-        create_feature(x, y, link_feature, hard_override=True)
+        exclude = []
+        create_feature(x, y, link_feature, hard_override=True, open_tiles=exclude)
+        if connect_with_tunnels:
+            closest = main.find_closest_open_tile(x, y, exclude=exclude)
+            create_wandering_tunnel(closest[0], closest[1], x, y, tile_type='open', hardoverride=True)
     # find the stairs that we just placed
     stairs = None
     for i in range(len(map.objects) - 1, 0, -1):

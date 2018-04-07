@@ -6,11 +6,17 @@ import types
 import ai
 
 class NPC:
-    def __init__(self, dialog, dialog_root, location):
-        self.dialog = dialog
+    def __init__(self, npc_id, dialog_root='meeting_1'):
+        self.npc_id = npc_id
         self.dialog_root = dialog_root
-        self.location = location
         self.active = True
+
+    @property
+    def dialog(self):
+        return data[self.npc_id]['dialog']
+    @property
+    def location(self):
+        return data[self.npc_id]['location']
 
     def deactivate(self):
         if hasattr(self, 'owner') and self.owner and self.owner.interact:
@@ -458,7 +464,7 @@ data = {
                 'text':"\"For you? Ha! Charity is no virtue of the mercenary, small one. What have you for me in "
                        "exchange for my service?\"",
                 'options': {
-                    'Give treasure':lambda: ui.buy(lambda :event_recruit_npc('npc_rigel'),'treasure','success_1','greeting_1'),
+                    'Give treasure':lambda: ui.buy(lambda :event_recruit_npc('npc_rigel'),'treasure','success_1', 'greeting_1'),
                     'Never mind':'greeting_1'
                 }
             },
@@ -485,6 +491,8 @@ fighters = {
         'strength_dice' : '2d24',
         'armor': 0,
         'evasion': 3,
+        'will': 14,
+        'fortitude': 18,
         'accuracy': 32,
         'move_speed': 1.0,
         'attack_speed': 0.95,

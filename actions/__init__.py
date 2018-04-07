@@ -19,6 +19,7 @@ import libtcodpy as libtcod
 import player
 import syntax
 import ui
+import random
 
 def invoke_ability(ability_key, actor, target_override=None, spell_context=None):
     import abilities
@@ -33,6 +34,7 @@ def invoke_ability(ability_key, actor, target_override=None, spell_context=None)
 
     if spell_context is not None:
         for key in spell_context.keys():
+            if spell_context[key] is not None:
                 info[key] = spell_context[key]
         #info = dict(info.items() + spell_context.items())
 
@@ -48,16 +50,19 @@ def invoke_ability(ability_key, actor, target_override=None, spell_context=None)
             return 'didnt-take-turn'
 
     if 'cast_time' in info.keys():
+        pretargeted = False
+        if info.get('warning', False):
+            targets = _get_ability_target(actor, info, target_override)
+            if targets is None:
+                return 'didnt-take-turn'
+            info['warning_particles'] = _spawn_warning(actor, targets)
+            pretargeted = targets
+
         if 'pre_cast' in info.keys():
             info['pre_cast'](actor, target_override)
-        else:
+        elif not info.get('suppress_cast_notif', False):
             ui.message_flush(
                 syntax.conjugate(actor is player.instance, ['You begin', actor.name.capitalize() + ' begins']) + ' to cast ' + info['name'])
-        pretargeted=False
-        if info.get('warning',False):
-            targets = _get_ability_target(actor,info,target_override)
-            info['warning_particles'] = _spawn_warning(actor,targets)
-            pretargeted = targets
         delegate = lambda: _invoke_ability_continuation(info, actor, target_override, function, pretargeted=pretargeted)
         if actor is player.instance:
             player.delay(info['cast_time'], delegate, 'channel-spell')
@@ -71,6 +76,9 @@ def invoke_ability(ability_key, actor, target_override=None, spell_context=None)
 def _invoke_ability_continuation(info, actor, target_override, function, pretargeted=False):
     if not pretargeted:
         target = _get_ability_target(actor, info, target_override)
+        if actor is player.instance and target is player.instance and info['intent'] == 'aggressive' and info.get('targeting', None) != 'self':
+            if not ui.menu_y_n("Are you sure you want to do that?"):
+                return 'cancelled'
     else:
         target = pretargeted
 
@@ -116,7 +124,7 @@ def _get_ability_target(actor, info, target_override):
                 target = ui.target_tile(range, targeting, default_target=default_target)
 
         else:
-            if target_override is not None and \
+            if target_override is not None and targeting != 'self' and \
                             main.distance(actor.x, actor.y, target_override[0], target_override[1]) > range:
                 target = None
                 return target  # out of range
@@ -136,6 +144,7 @@ def _get_ability_target(actor, info, target_override):
             elif targeting == 'self':
                 target = actor.x, actor.y
 
+        #Targeting failed
         if isinstance(target, tuple) and target[0] is None:
             target = None
         if target is None:
@@ -170,10 +179,18 @@ def _get_ability_target(actor, info, target_override):
                         if fighter.x == pos[0] and fighter.y == pos[1]:
                             target = fighter
                             break
+
+        #randomly select only some of the targets
+        if info.get('random_select') is not None and not isinstance(target, tuple):
+            mode = info.get('random_select')
+            target = [ target[i] for i in random.sample(xrange(len(target)), mode) ]
+
     return target
 
 def _spawn_warning(actor,tiles):
     warning_particles = []
+    if isinstance(tiles, tuple):
+        tiles = [tiles]
     for tile in tiles:
         go = main.GameObject(tile[0], tile[1], 'X', 'Warning', libtcod.red,
                              description="Spell Warning. Source: {}".format(actor.name.capitalize()))

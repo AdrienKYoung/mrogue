@@ -17,13 +17,14 @@
 import consts
 import libtcodpy as libtcod
 import game as main
+import actions.on_step_actions
 
 class TileData:
 
     def __init__(self, blocks, blocks_sight, name, char,
                  foreground_color, background_color, description='unremarkable terrain', stamina_cost=0, jumpable=True,
                  burnTemp=0, flammable=0, diggable=False, isWall = False, isFloor = False, isWater = False,
-                 isRamp=False, isPit=False, isIce=False, on_step=None, blocks_sight_all_elevs=True):
+                 isRamp=False, isPit=False, isIce=False, on_step=None, blocks_sight_all_elevs=True, dangerous=False):
         self.blocks = blocks
         self.blocks_sight = blocks_sight
         self.name = name
@@ -44,6 +45,7 @@ class TileData:
         self.on_step = on_step
         self.isIce = isIce
         self.blocks_sight_all_elevs = blocks_sight and blocks_sight_all_elevs
+        self.dangerous = dangerous
 
 data = {
     ###############################################
@@ -79,7 +81,7 @@ data = {
     'shallow seawater': TileData(False, False, 'shallow water', 247, (0, 95, 191), (0, 64, 128),
                              'foamy saltwater, rolled ashore by the gentle waves', consts.SHALLOW_WATER_COST, isWater=True),
     'deep seawater': TileData(False, False, 'deep water', 247, (0, 64, 128), (0, 32, 64),
-                             'vast depths of seawater, rolling with the tide', consts.DEEP_WATER_COST, jumpable=False, isWater=True),
+                             'vast depths of seawater, rolling with the tide', consts.DEEP_WATER_COST, jumpable=False, isWater=True, dangerous=True),
 
     ###############################################
     #                  BADLANDS
@@ -87,7 +89,7 @@ data = {
 
     'shale': TileData(False, False, 'shale', '.', (48, 48, 48), (31, 31, 31),
                       'broken shingles of flat, smooth stone', isFloor=True),
-    'dark shale wall': TileData(True, True, 'dark shale wall', '#', (96, 96, 96), (64, 64, 64),
+    'dark shale wall': TileData(True, True, 'dark shale outcrop', '#', (96, 96, 96), (64, 64, 64),
                                 'a sheer cliff of blackened stone', diggable=True, isWall=True),
     'wooden palisade': TileData(True, True, 'wooden palisade', '#', (94, 75, 47), (31, 24, 15),
                                 'a barrier crafted from dry wooden posts lashed together with rope',
@@ -125,7 +127,7 @@ data = {
                             isRamp=True),
     'snow drift': TileData(False, False, 'snow drift', '~', libtcod.lightest_gray, libtcod.light_gray,
                              'pristine, waist-deep powdered snow. It will be difficult to move through until it has been crushed down.',
-                           consts.SNOW_COST, isFloor=True, on_step=main.step_on_snow_drift),
+                           consts.SNOW_COST, isFloor=True, on_step=actions.on_step_actions.step_on_snow_drift),
     'snowy ground': TileData(False, False, 'snowy ground', '.', libtcod.lightest_gray, libtcod.desaturated_amber,
                              'trampled snow, mixed with dirt', isFloor=True),
     'snowy slope': TileData(False, False, 'snowy slope', '/', libtcod.lightest_gray, libtcod.sepia,
@@ -157,6 +159,25 @@ data = {
                             'A tall, narrow tree.', isWall=True, diggable=False, flammable=5),
 
     ###############################################
+    #                  SLAGFIELDS
+    ###############################################
+
+    'lava': TileData(False,False,'lava',247,libtcod.orange,libtcod.dark_red,'Bubbling molten rock',
+                            consts.DEEP_WATER_COST, jumpable=False, dangerous=True),
+
+    'ash': TileData(False, False, 'ash', 247, libtcod.darkest_flame, libtcod.dark_gray,
+                             'A thick layer of ash that impedes movement - dodging attacks will be much more difficult here',
+                            consts.MUD_COST, isWater=False),
+
+    'rusted skeleton': TileData(True, False, 'rusted skeleton', 15, libtcod.desaturated_crimson, (31, 31, 31),
+                      'A rusted, partially metal skeleton with iron fangs', isFloor=True),
+
+    'weathered stone wall': TileData(True, True, 'weathered stone wall', '#', libtcod.darker_gray, libtcod.darkest_gray,
+                             'A weathered stone wall', diggable=True, isWall=True),
+    'weathered stone floor': TileData(False, False, 'weathered stone floor', '.', libtcod.gray, libtcod.darkest_gray,
+                             'A weathered stone wall'),
+
+    ###############################################
     #                     MISC
     ###############################################
 
@@ -166,18 +187,19 @@ data = {
     'shallow water': TileData(False, False, 'shallow water', 247, (0, 95, 191), (0, 64, 128),
                              'a shallow pool of grimy water', consts.SHALLOW_WATER_COST, isWater=True),
     'deep water': TileData(False, False, 'deep water', 247, (0, 64, 128), (0, 32, 64),
-                             'a deep pool of grimy water', consts.DEEP_WATER_COST, jumpable=False, isWater=True),
+                             'a deep pool of grimy water', consts.DEEP_WATER_COST, jumpable=False, isWater=True, dangerous=True),
     'mud': TileData(False, False, 'mud', 247, (94, 75, 47), (63, 50, 31),
                              'a thick puddle of mud that impedes movement - dodging attacks will be much more difficult here',
                             consts.MUD_COST, isWater=True),
-    'lava': TileData(False,False,'lava',247,libtcod.orange,libtcod.dark_red,'Bubbling molten rock',
-                            consts.DEEP_WATER_COST,jumpable=False),
     'chasm': TileData(False, False, 'chasm', libtcod.CHAR_BLOCK1, (16, 16, 32), (0, 0, 16),
-                             'a pit descending into darkness', isPit=True),
+                             'a pit descending into darkness', isPit=True, dangerous=True),
     'scorched floor': TileData(False, False, 'scorched floor', '.', (94, 55, 55), (30, 30, 30),
                              'embers linger on this still-warm floor scorched by flame', isFloor=True),
     'scorched ramp': TileData(False, False, 'scorched ramp', '/', (94, 55, 55), (30, 30, 30),
                              'embers linger on this still-warm floor scorched by flame', isRamp=True),
+    'poisoned water': TileData(False, False, 'poisoned water', 247, (76, 105, 36), (76, 89, 36),
+                             'a shallow pool of acrid-smelling water', consts.SHALLOW_WATER_COST, isWater=True,
+                               on_step=actions.on_step_actions.step_on_poison, dangerous=True),
 }
 
 # flags

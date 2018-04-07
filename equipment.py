@@ -31,9 +31,10 @@ class Equipment:
                  guaranteed_shred_bonus=0, pierce=0, accuracy=0, ctrl_attack=None, ctrl_attack_desc=None,
                  break_chance=0.0, weapon_dice=None, str_dice=None, on_hit=None, damage_types=None, attack_speed_bonus=0,
                  attack_delay=0, essence=None, spell_list=None, level_progression=None, level_costs=None,
-                 resistances={}, modifiers = {}, base_id=None, _range=1,
+                 resistances={}, modifiers = {}, base_id=None, range_=1, attributes=[], stealth=None,
                  crit_bonus=1.0, subtype=None, spell_resist_bonus=0, starting_level=0, weight=0,
-                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None, will_bonus=0, fortitude_bonus=0):
+                 sh_max=0, sh_recovery=0, sh_raise_cost=0, stamina_regen=0, status_effect=None, will_bonus=0,
+                 fortitude_bonus=0, str_bonus=0, agi_bonus=0, int_bonus=0, max_ammo=0):
         self.is_equipped = False
         self.slot = slot
         self.base_id = base_id
@@ -74,12 +75,18 @@ class Equipment:
         self._shred_bonus = shred_bonus
         self._guaranteed_shred_bonus = guaranteed_shred_bonus
         self._pierce_bonus = pierce
-        self.range = _range
+        self._range = range_
+        self.attributes = list(attributes)
+        self._stealth = stealth
+        self._max_ammo = max_ammo
 
         self._accuracy_bonus = accuracy
         self._crit_bonus = crit_bonus
         self._attack_speed_bonus = attack_speed_bonus
         self._stamina_regen = stamina_regen
+        self.agi_bonus = agi_bonus
+        self.str_bonus = str_bonus
+        self.int_bonus = int_bonus
 
         self._spell_power_bonus = spell_power_bonus
         self._spell_resist_bonus = spell_resist_bonus
@@ -102,6 +109,9 @@ class Equipment:
             self.refill_spell_charges()
         for i in range(starting_level):
             self.level_up(True)
+
+    def has_attribute(self, attribute):
+        return attribute in self.attributes
 
     def get_bonus(self,stat):
         return sum([v.get(stat,0) for v in self.modifiers.values()])
@@ -215,6 +225,10 @@ class Equipment:
         return self._spell_resist_bonus + self.get_bonus('spell_resist_bonus')
 
     @property
+    def stealth(self):
+        return self._stealth
+
+    @property
     def holder(self):
         return self.owner.item.holder
 
@@ -231,6 +245,10 @@ class Equipment:
     @property
     def sh_raise_cost(self):
         return self._sh_raise_cost + self.get_bonus('sh_raise_cost_bonus')
+
+    @property
+    def max_ammo(self):
+        return self._max_ammo + self.get_bonus('max_ammo')
 
     def toggle(self):
         if self.is_equipped:
@@ -426,7 +444,7 @@ class Equipment:
         sl = self.spell_list[spell_name]
         if actor is player.instance:
             miscast = player.get_miscast_chance(spells.library[spell_name])
-            if main.roll_dice('1d100') <= miscast:
+            if libtcod.random_get_int(0, 1, 100) <= miscast:
                 ui.message("You miscast %s." % spells.library[spell_name].name, libtcod.gray)
                 return 'miscast'
             #if player.instance.player_stats.int < spells.library[spell_name].int_requirement - main.skill_value('scholar'):
